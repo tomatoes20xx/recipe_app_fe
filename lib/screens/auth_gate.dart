@@ -1,0 +1,53 @@
+import "package:flutter/material.dart";
+
+import "../api/api_client.dart";
+import "../auth/auth_controller.dart";
+import "home_screen.dart";
+import "login_screen.dart";
+
+class AuthGate extends StatefulWidget {
+  const AuthGate({super.key, required this.auth, required this.apiClient});
+
+  final AuthController auth;
+  final ApiClient apiClient;
+
+  @override
+  State<AuthGate> createState() => _AuthGateState();
+}
+
+class _AuthGateState extends State<AuthGate> {
+  bool bootstrapped = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _bootstrap();
+  }
+
+  Future<void> _bootstrap() async {
+    await widget.auth.bootstrap();
+    if (!mounted) return;
+    setState(() => bootstrapped = true);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!bootstrapped) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    // This makes AuthGate rebuild automatically on login/logout
+    return AnimatedBuilder(
+      animation: widget.auth,
+      builder: (context, _) {
+        if (widget.auth.isLoggedIn) {
+          return HomeScreen(auth: widget.auth, apiClient: widget.apiClient);
+        }
+
+        return LoginScreen(auth: widget.auth);
+      },
+    );
+  }
+}
