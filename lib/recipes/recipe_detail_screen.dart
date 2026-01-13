@@ -150,16 +150,7 @@ class _Header extends StatelessWidget {
                         onBackgroundImageError: (exception, stackTrace) {
                           // Image failed to load, will show child as fallback
                         },
-                        child: Text(
-                          r.authorUsername.isNotEmpty
-                              ? r.authorUsername[0].toUpperCase()
-                              : "?",
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.onPrimaryContainer,
-                          ),
-                        ),
+                        child: null,
                       )
                     : CircleAvatar(
                         radius: 12,

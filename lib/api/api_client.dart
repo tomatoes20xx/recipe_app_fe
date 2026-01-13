@@ -46,17 +46,31 @@ class ApiClient {
 }
 
   Future<dynamic> get(String path, {Map<String, String>? query, bool auth = false}) async {
-  final res = await _client.get(_uri(path, query), headers: await _headers(auth: auth));
-  return _handle(res);
+  try {
+    final res = await _client.get(_uri(path, query), headers: await _headers(auth: auth));
+    return _handle(res);
+  } on http.ClientException catch (e) {
+    throw ApiException(0, "Connection failed: ${e.message}. Make sure your backend is running and your phone is on the same network.");
+  } catch (e) {
+    if (e is ApiException) rethrow;
+    throw ApiException(0, "Network error: $e");
+  }
 }
 
   Future<dynamic> post(String path, {Object? body, bool auth = false}) async {
-  final res = await _client.post(
-    _uri(path),
-    headers: await _headers(auth: auth, hasBody: body != null),
-    body: body == null ? null : jsonEncode(body),
-  );
-  return _handle(res);
+  try {
+    final res = await _client.post(
+      _uri(path),
+      headers: await _headers(auth: auth, hasBody: body != null),
+      body: body == null ? null : jsonEncode(body),
+    );
+    return _handle(res);
+  } on http.ClientException catch (e) {
+    throw ApiException(0, "Connection failed: ${e.message}. Make sure your backend is running and your phone is on the same network.");
+  } catch (e) {
+    if (e is ApiException) rethrow;
+    throw ApiException(0, "Network error: $e");
+  }
 }
 
   Future<dynamic> patch(String path, {Object? body, bool auth = false}) async {

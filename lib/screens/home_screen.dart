@@ -10,6 +10,7 @@ import "../feed/feed_models.dart";
 import "../recipes/recipe_detail_screen.dart";
 import "create_recipe_screen.dart";
 import "profile_screen.dart";
+import "search_screen.dart";
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, required this.auth, required this.apiClient});
@@ -96,6 +97,25 @@ class _HomeScreenState extends State<HomeScreen> {
             },
             icon: const Icon(Icons.add_rounded),
             tooltip: "Create Recipe",
+            style: IconButton.styleFrom(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
+          IconButton(
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => SearchScreen(
+                    apiClient: widget.apiClient,
+                    auth: widget.auth,
+                  ),
+                ),
+              );
+            },
+            icon: const Icon(Icons.search_rounded),
+            tooltip: "Search",
             style: IconButton.styleFrom(
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -542,16 +562,7 @@ Widget _buildUserAvatar(BuildContext context, String? avatarUrl, String username
       onBackgroundImageError: (exception, stackTrace) {
         // Image failed to load, will show child as fallback
       },
-      child: username.isNotEmpty
-          ? Text(
-              username[0].toUpperCase(),
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.onPrimaryContainer,
-              ),
-            )
-          : null,
+      child: null,
     );
   }
   return CircleAvatar(
@@ -627,16 +638,7 @@ class _FeedCardState extends State<_FeedCard> {
                                 onBackgroundImageError: (exception, stackTrace) {
                                   // Image failed to load, will show child as fallback
                                 },
-                                child: Text(
-                                  widget.item.authorUsername.isNotEmpty
-                                      ? widget.item.authorUsername[0].toUpperCase()
-                                      : "?",
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                    color: Theme.of(context).colorScheme.onPrimaryContainer,
-                                  ),
-                                ),
+                                child: null,
                               )
                             : CircleAvatar(
                                 radius: 10,
