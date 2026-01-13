@@ -108,6 +108,7 @@ class RecipeDetail {
   final List<String> tags;
   final DateTime createdAt;
   final String authorUsername;
+  final String? authorAvatarUrl;
 
   final RecipeCounts counts;
   final List<RecipeIngredient> ingredients;
@@ -122,6 +123,7 @@ class RecipeDetail {
     required this.tags,
     required this.createdAt,
     required this.authorUsername,
+    this.authorAvatarUrl,
     required this.counts,
     required this.ingredients,
     required this.steps,
@@ -148,6 +150,7 @@ class RecipeDetail {
       tags: tagsRaw.map((e) => e.toString()).toList(),
       createdAt: DateTime.parse(json["created_at"].toString()),
       authorUsername: json["author_username"].toString(),
+      authorAvatarUrl: json["author_avatar_url"]?.toString(),
       counts: RecipeCounts.fromJson(countsRaw),
       ingredients: ingredientsRaw
           .map((e) => RecipeIngredient.fromJson(Map<String, dynamic>.from(e as Map)))

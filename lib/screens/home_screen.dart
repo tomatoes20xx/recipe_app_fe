@@ -9,6 +9,7 @@ import "../feed/feed_controller.dart";
 import "../feed/feed_models.dart";
 import "../recipes/recipe_detail_screen.dart";
 import "create_recipe_screen.dart";
+import "profile_screen.dart";
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, required this.auth, required this.apiClient});
@@ -116,7 +117,11 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      drawer: _FeedScopeDrawer(feed: feed, auth: widget.auth),
+      drawer: _FeedScopeDrawer(
+        feed: feed,
+        auth: widget.auth,
+        apiClient: widget.apiClient,
+      ),
       body: Column(
         children: [
           _Controls(feed: feed),
@@ -206,9 +211,14 @@ class _Controls extends StatelessWidget {
 }
 
 class _FeedScopeDrawer extends StatelessWidget {
-  const _FeedScopeDrawer({required this.feed, required this.auth});
+  const _FeedScopeDrawer({
+    required this.feed,
+    required this.auth,
+    required this.apiClient,
+  });
   final FeedController feed;
   final AuthController auth;
+  final ApiClient apiClient;
 
   @override
   Widget build(BuildContext context) {
@@ -265,6 +275,32 @@ class _FeedScopeDrawer extends StatelessWidget {
                 Navigator.of(context).pop();
               },
             ),
+            const Divider(),
+            if (auth.isLoggedIn)
+              ListTile(
+                leading: _buildUserAvatar(
+                  context,
+                  auth.me?["avatar_url"]?.toString(),
+                  auth.me?["username"]?.toString() ?? "",
+                ),
+                title: const Text("Profile"),
+                subtitle: Text(
+                  auth.me?["username"] != null
+                      ? "@${auth.me!["username"]}"
+                      : "View your profile",
+                ),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => ProfileScreen(
+                      auth: auth,
+                      apiClient: apiClient,
+                      ),
+                    ),
+                  );
+                },
+              ),
           ],
         ),
       ),
@@ -497,6 +533,46 @@ String _buildImageUrl(String relativeUrl) {
   return "${Config.apiBaseUrl}$relativeUrl";
 }
 
+Widget _buildUserAvatar(BuildContext context, String? avatarUrl, String username) {
+  if (avatarUrl != null && avatarUrl.isNotEmpty) {
+    return CircleAvatar(
+      radius: 20,
+      backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+      backgroundImage: NetworkImage(_buildImageUrl(avatarUrl)),
+      onBackgroundImageError: (exception, stackTrace) {
+        // Image failed to load, will show child as fallback
+      },
+      child: username.isNotEmpty
+          ? Text(
+              username[0].toUpperCase(),
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.onPrimaryContainer,
+              ),
+            )
+          : null,
+    );
+  }
+  return CircleAvatar(
+    radius: 20,
+    backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+    child: username.isNotEmpty
+        ? Text(
+            username[0].toUpperCase(),
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.onPrimaryContainer,
+            ),
+          )
+        : Icon(
+            Icons.person_outline_rounded,
+            color: Theme.of(context).colorScheme.primary,
+          ),
+  );
+}
+
 class _FeedCard extends StatefulWidget {
   const _FeedCard({required this.item, required this.sort, required this.feed});
   final FeedItem item;
@@ -543,12 +619,40 @@ class _FeedCardState extends State<_FeedCard> {
                     // Username and date at the top
                     Row(
                       children: [
-                        Icon(
-                          Icons.person_outline_rounded,
-                          size: 14,
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                        ),
-                        const SizedBox(width: 4),
+                        widget.item.authorAvatarUrl != null && widget.item.authorAvatarUrl!.isNotEmpty
+                            ? CircleAvatar(
+                                radius: 10,
+                                backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                                backgroundImage: NetworkImage(_buildImageUrl(widget.item.authorAvatarUrl!)),
+                                onBackgroundImageError: (exception, stackTrace) {
+                                  // Image failed to load, will show child as fallback
+                                },
+                                child: Text(
+                                  widget.item.authorUsername.isNotEmpty
+                                      ? widget.item.authorUsername[0].toUpperCase()
+                                      : "?",
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                    color: Theme.of(context).colorScheme.onPrimaryContainer,
+                                  ),
+                                ),
+                              )
+                            : CircleAvatar(
+                                radius: 10,
+                                backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                                child: Text(
+                                  widget.item.authorUsername.isNotEmpty
+                                      ? widget.item.authorUsername[0].toUpperCase()
+                                      : "?",
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                    color: Theme.of(context).colorScheme.onPrimaryContainer,
+                                  ),
+                                ),
+                              ),
+                        const SizedBox(width: 6),
                         Flexible(
                           child: Text(
                             "@${widget.item.authorUsername}",

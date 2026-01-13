@@ -30,6 +30,7 @@ class FeedItem {
   final String? description;
   final DateTime createdAt;
   final String authorUsername;
+  final String? authorAvatarUrl;
 
   final int likes;
   final int comments;
@@ -49,6 +50,7 @@ class FeedItem {
     required this.description,
     required this.createdAt,
     required this.authorUsername,
+    this.authorAvatarUrl,
     required this.likes,
     required this.comments,
     required this.bookmarks,
@@ -71,6 +73,7 @@ class FeedItem {
       description: json["description"] == null ? null : json["description"].toString(),
       createdAt: DateTime.parse(json["created_at"].toString()),
       authorUsername: (json["author_username"] ?? "").toString(),
+      authorAvatarUrl: json["author_avatar_url"]?.toString(),
       likes: (json["likes"] ?? 0) as int,
       comments: (json["comments"] ?? 0) as int,
       bookmarks: (json["bookmarks"] ?? 0) as int,
@@ -97,6 +100,7 @@ class FeedItem {
       description: description ?? this.description,
       createdAt: createdAt,
       authorUsername: authorUsername,
+      authorAvatarUrl: authorAvatarUrl,
       likes: likes ?? this.likes,
       comments: comments ?? this.comments,
       bookmarks: bookmarks ?? this.bookmarks,

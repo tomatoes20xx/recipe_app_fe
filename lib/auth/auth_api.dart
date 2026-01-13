@@ -1,3 +1,7 @@
+import "dart:io";
+
+import "package:http/http.dart" as http;
+
 import "../api/api_client.dart";
 
 class AuthApi {
@@ -48,5 +52,49 @@ class AuthApi {
     final data = await api.get("/me", auth: true);
     if (data == null) return null;
     return Map<String, dynamic>.from(data as Map);
+  }
+
+  Future<Map<String, dynamic>> uploadAvatar(File imageFile) async {
+    final length = await imageFile.length();
+    final filename = imageFile.path.split('/').last;
+    final extension = filename.split('.').last.toLowerCase();
+    
+    // Determine content type
+    String contentType;
+    switch (extension) {
+      case 'jpg':
+      case 'jpeg':
+        contentType = 'image/jpeg';
+        break;
+      case 'png':
+        contentType = 'image/png';
+        break;
+      case 'webp':
+        contentType = 'image/webp';
+        break;
+      default:
+        contentType = 'image/jpeg';
+    }
+    
+    final multipartFile = http.MultipartFile(
+      'file',
+      imageFile.openRead(),
+      length,
+      filename: filename,
+      contentType: http.MediaType.parse(contentType),
+    );
+    
+    final data = await api.postMultipart(
+      "/users/me/avatar",
+      fields: {},
+      files: [multipartFile],
+      auth: true,
+    );
+    
+    return Map<String, dynamic>.from(data as Map);
+  }
+
+  Future<void> deleteAvatar() async {
+    await api.delete("/users/me/avatar", auth: true);
   }
 }

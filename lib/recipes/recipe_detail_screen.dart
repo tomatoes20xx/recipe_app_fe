@@ -140,7 +140,45 @@ class _Header extends StatelessWidget {
           children: [
             Text(r.title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
             const SizedBox(height: 8),
-            Text("@${r.authorUsername} • $date", style: Theme.of(context).textTheme.bodySmall),
+            Row(
+              children: [
+                r.authorAvatarUrl != null && r.authorAvatarUrl!.isNotEmpty
+                    ? CircleAvatar(
+                        radius: 12,
+                        backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                        backgroundImage: NetworkImage(_buildImageUrl(r.authorAvatarUrl!)),
+                        onBackgroundImageError: (exception, stackTrace) {
+                          // Image failed to load, will show child as fallback
+                        },
+                        child: Text(
+                          r.authorUsername.isNotEmpty
+                              ? r.authorUsername[0].toUpperCase()
+                              : "?",
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.onPrimaryContainer,
+                          ),
+                        ),
+                      )
+                    : CircleAvatar(
+                        radius: 12,
+                        backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                        child: Text(
+                          r.authorUsername.isNotEmpty
+                              ? r.authorUsername[0].toUpperCase()
+                              : "?",
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.onPrimaryContainer,
+                          ),
+                        ),
+                      ),
+                const SizedBox(width: 6),
+                Text("@${r.authorUsername} • $date", style: Theme.of(context).textTheme.bodySmall),
+              ],
+            ),
             if (hasCuisine) ...[
               const SizedBox(height: 6),
               Text("Cuisine: $cuisine", style: Theme.of(context).textTheme.bodyMedium),
