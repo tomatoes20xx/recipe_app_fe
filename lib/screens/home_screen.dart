@@ -32,6 +32,8 @@ class _HomeScreenState extends State<HomeScreen> {
   late final FeedController feed;
   final ScrollController sc = ScrollController();
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  final PageController _tiktokPageController = PageController();
+  bool _isTikTokView = false;
 
   @override
   void initState() {
@@ -56,6 +58,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void dispose() {
     sc.dispose();
+    _tiktokPageController.dispose();
     feed.removeListener(_onFeedChanged);
     feed.dispose();
     super.dispose();
@@ -149,17 +152,32 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       body: Column(
         children: [
-          _Controls(feed: feed),
+          _Controls(
+            feed: feed,
+            isTikTokView: _isTikTokView,
+            onViewToggle: () {
+              setState(() {
+                _isTikTokView = !_isTikTokView;
+              });
+            },
+          ),
           Expanded(
             child: RefreshIndicator(
               onRefresh: feed.refresh,
               color: Theme.of(context).colorScheme.primary,
-              child: _FeedList(
-                feed: feed,
-                controller: sc,
-                apiClient: widget.apiClient,
-                auth: widget.auth,
-              ),
+              child: _isTikTokView
+                  ? _TikTokFeedList(
+                      feed: feed,
+                      pageController: _tiktokPageController,
+                      apiClient: widget.apiClient,
+                      auth: widget.auth,
+                    )
+                  : _FeedList(
+                      feed: feed,
+                      controller: sc,
+                      apiClient: widget.apiClient,
+                      auth: widget.auth,
+                    ),
             ),
           ),
         ],
@@ -171,8 +189,14 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 class _Controls extends StatelessWidget {
-  const _Controls({required this.feed});
+  const _Controls({
+    required this.feed,
+    required this.isTikTokView,
+    required this.onViewToggle,
+  });
   final FeedController feed;
+  final bool isTikTokView;
+  final VoidCallback onViewToggle;
 
   @override
   Widget build(BuildContext context) {
@@ -230,6 +254,18 @@ class _Controls extends StatelessWidget {
                   ),
                 ),
               ),
+            const Spacer(),
+            // View toggle button
+            IconButton(
+              onPressed: onViewToggle,
+              icon: Icon(isTikTokView ? Icons.view_list_rounded : Icons.view_carousel_rounded),
+              tooltip: isTikTokView ? "List View" : "TikTok View",
+              style: IconButton.styleFrom(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -588,6 +624,124 @@ class _FeedList extends StatelessWidget {
               child: _FeedCard(item: item, sort: feed.sort, feed: feed),
             ),
           ),
+        );
+      },
+    );
+  }
+}
+
+class _TikTokFeedList extends StatefulWidget {
+  const _TikTokFeedList({
+    required this.feed,
+    required this.pageController,
+    required this.apiClient,
+    required this.auth,
+  });
+  final FeedController feed;
+  final PageController pageController;
+  final ApiClient apiClient;
+  final AuthController auth;
+
+  @override
+  State<_TikTokFeedList> createState() => _TikTokFeedListState();
+}
+
+class _TikTokFeedListState extends State<_TikTokFeedList> {
+  int _currentPage = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.pageController.addListener(_onPageChanged);
+  }
+
+  @override
+  void dispose() {
+    widget.pageController.removeListener(_onPageChanged);
+    super.dispose();
+  }
+
+  void _onPageChanged() {
+    final newPage = widget.pageController.page?.round() ?? 0;
+    if (newPage != _currentPage) {
+      setState(() {
+        _currentPage = newPage;
+      });
+      // Load more when near the end
+      if (newPage >= widget.feed.items.length - 2 && widget.feed.nextCursor != null) {
+        widget.feed.loadMore();
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.feed.isLoading && widget.feed.items.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (widget.feed.error != null && widget.feed.items.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.error_outline_rounded,
+              size: 48,
+              color: Theme.of(context).colorScheme.error,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              "Error",
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+            ),
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.all(24),
+              child: Text(
+                widget.feed.error!,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                    ),
+              ),
+            ),
+            FilledButton.icon(
+              onPressed: widget.feed.loadInitial,
+              icon: const Icon(Icons.refresh_rounded),
+              label: const Text("Retry"),
+              style: FilledButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return PageView.builder(
+      controller: widget.pageController,
+      scrollDirection: Axis.vertical,
+      physics: const PageScrollPhysics(),
+      itemCount: widget.feed.items.length + (widget.feed.nextCursor != null ? 1 : 0),
+      itemBuilder: (context, index) {
+        if (index >= widget.feed.items.length) {
+          // Loading indicator at the end
+          if (widget.feed.isLoadingMore) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          return const Center(child: Text("No more items"));
+        }
+
+        final item = widget.feed.items[index];
+        return _TikTokFeedCard(
+          item: item,
+          sort: widget.feed.sort,
+          feed: widget.feed,
+          apiClient: widget.apiClient,
+          auth: widget.auth,
         );
       },
     );
@@ -1089,6 +1243,409 @@ class _ExpandableDescription extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+class _TikTokFeedCard extends StatefulWidget {
+  const _TikTokFeedCard({
+    required this.item,
+    required this.sort,
+    required this.feed,
+    required this.apiClient,
+    required this.auth,
+  });
+  final FeedItem item;
+  final String sort;
+  final FeedController feed;
+  final ApiClient apiClient;
+  final AuthController auth;
+
+  @override
+  State<_TikTokFeedCard> createState() => _TikTokFeedCardState();
+}
+
+class _TikTokFeedCardState extends State<_TikTokFeedCard> {
+  final PageController _imagePageController = PageController();
+  int _currentImageIndex = 0;
+
+  @override
+  void dispose() {
+    _imagePageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final date = _formatDate(widget.item.createdAt);
+    final hasMultipleImages = widget.item.images.length > 1;
+
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        // Image carousel
+        if (widget.item.images.isNotEmpty)
+            GestureDetector(
+              onTap: () async {
+                final result = await Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => RecipeDetailScreen(
+                      recipeId: widget.item.id,
+                      apiClient: widget.apiClient,
+                      auth: widget.auth,
+                    ),
+                  ),
+                );
+                if (result != null && result is int) {
+                  widget.feed.updateCommentCount(widget.item.id, result);
+                }
+              },
+              child: PageView.builder(
+                controller: _imagePageController,
+                scrollDirection: Axis.horizontal,
+                itemCount: widget.item.images.length,
+                onPageChanged: (index) {
+                  setState(() {
+                    _currentImageIndex = index;
+                  });
+                },
+                itemBuilder: (context, index) {
+                  final image = widget.item.images[index];
+                  return Image.network(
+                    _buildImageUrl(image.url),
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                        child: Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.broken_image_rounded,
+                                size: 48,
+                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                "Error loading image",
+                                style: TextStyle(
+                                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return Container(
+                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                        child: Center(
+                          child: CircularProgressIndicator(
+                            value: loadingProgress.expectedTotalBytes != null
+                                ? loadingProgress.cumulativeBytesLoaded /
+                                    loadingProgress.expectedTotalBytes!
+                                : null,
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
+            )
+        else
+          Container(
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              child: Center(
+                child: Icon(
+                  Icons.image_outlined,
+                  size: 80,
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+                ),
+              ),
+            ),
+        // Gradient overlay at bottom
+        Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              height: 300,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.transparent,
+                    Colors.black.withOpacity(0.7),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        // Content overlay
+        Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: GestureDetector(
+              onTap: () async {
+                final result = await Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => RecipeDetailScreen(
+                      recipeId: widget.item.id,
+                      apiClient: widget.apiClient,
+                      auth: widget.auth,
+                    ),
+                  ),
+                );
+                if (result != null && result is int) {
+                  widget.feed.updateCommentCount(widget.item.id, result);
+                }
+              },
+              child: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Author info
+                    Row(
+                      children: [
+                        widget.item.authorAvatarUrl != null && widget.item.authorAvatarUrl!.isNotEmpty
+                            ? CircleAvatar(
+                                radius: 16,
+                                backgroundColor: Colors.white.withOpacity(0.2),
+                                backgroundImage: NetworkImage(_buildImageUrl(widget.item.authorAvatarUrl!)),
+                                onBackgroundImageError: (exception, stackTrace) {},
+                                child: null,
+                              )
+                            : CircleAvatar(
+                                radius: 16,
+                                backgroundColor: Colors.white.withOpacity(0.2),
+                                child: Text(
+                                  widget.item.authorUsername.isNotEmpty
+                                      ? widget.item.authorUsername[0].toUpperCase()
+                                      : "?",
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                "@${widget.item.authorUsername}",
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 14,
+                                ),
+                              ),
+                              Text(
+                                date,
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(0.8),
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    // Title
+                    Text(
+                      widget.item.title,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        shadows: [
+                          Shadow(
+                            offset: Offset(0, 1),
+                            blurRadius: 3,
+                            color: Colors.black54,
+                          ),
+                        ],
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    // Description
+                    if (widget.item.description != null && widget.item.description!.trim().isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        widget.item.description!,
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.9),
+                          fontSize: 14,
+                          shadows: const [
+                            Shadow(
+                              offset: Offset(0, 1),
+                              blurRadius: 2,
+                              color: Colors.black54,
+                            ),
+                          ],
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                    const SizedBox(height: 16),
+                    // Stats row
+                    Row(
+                      children: [
+                        _TikTokStat(
+                          icon: Icons.favorite_rounded,
+                          value: widget.item.likes.toString(),
+                          active: widget.item.viewerHasLiked,
+                          onTap: () => widget.feed.toggleLike(widget.item.id),
+                        ),
+                        const SizedBox(width: 20),
+                        _TikTokStat(
+                          icon: Icons.chat_bubble_outline_rounded,
+                          value: widget.item.comments.toString(),
+                        ),
+                        const SizedBox(width: 20),
+                        _TikTokStat(
+                          icon: Icons.bookmark_rounded,
+                          value: widget.item.bookmarks.toString(),
+                          active: widget.item.viewerHasBookmarked,
+                          onTap: () => widget.feed.toggleBookmark(widget.item.id),
+                        ),
+                        const Spacer(),
+                        if (widget.sort == "top" && widget.item.likesWindow != null)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Text(
+                                  "🔥",
+                                  style: TextStyle(fontSize: 14),
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  "${widget.item.likesWindow}",
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+                )
+              ),
+            ),
+          ),
+        // Image indicator dots (if multiple images)
+        if (hasMultipleImages)
+          Positioned(
+            top: 16,
+            left: 0,
+            right: 0,
+            child: SafeArea(
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: List.generate(
+                      widget.item.images.length,
+                      (index) => Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 3),
+                        width: 6,
+                        height: 6,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: index == _currentImageIndex
+                              ? Colors.white
+                              : Colors.white.withOpacity(0.5),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _TikTokStat extends StatelessWidget {
+  const _TikTokStat({
+    required this.icon,
+    required this.value,
+    this.active = false,
+    this.onTap,
+  });
+  final IconData icon;
+  final String value;
+  final bool active;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final child = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(
+          icon,
+          size: 24,
+          color: active ? Colors.red : Colors.white,
+        ),
+        const SizedBox(width: 6),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+            shadows: [
+              Shadow(
+                offset: Offset(0, 1),
+                blurRadius: 2,
+                color: Colors.black54,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+
+    if (onTap == null) return child;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: child,
     );
   }
 }
