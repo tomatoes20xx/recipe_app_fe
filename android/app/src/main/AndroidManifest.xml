@@ -5,7 +5,7 @@
     <application
         android:label="recipe_app_fe"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@mipmap/launcher_icon"
         android:usesCleartextTraffic="true">
         
         <activity

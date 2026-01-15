@@ -31,27 +31,28 @@ class RecipeApi {
     final trimmedCuisine = cuisine?.trim();
     final tagsList = tags.isEmpty ? [] : tags;
 
-    // If images are provided, use multipart upload
+    // Always use multipart upload for consistency across devices
+    // This ensures the same request format works on both emulator and real devices
+    // Send recipe fields directly as form fields
+    // Arrays/objects need to be JSON-encoded strings
+    final fields = <String, String>{
+      "title": trimmedTitle,
+      "tags": jsonEncode(tagsList),
+      "ingredients": jsonEncode(ingredients),
+      "steps": jsonEncode(steps),
+    };
+    
+    // Add optional fields only if they have values
+    if (trimmedDescription != null && trimmedDescription.isNotEmpty) {
+      fields["description"] = trimmedDescription;
+    }
+    if (trimmedCuisine != null && trimmedCuisine.isNotEmpty) {
+      fields["cuisine"] = trimmedCuisine;
+    }
+    
+    // Create multipart files (empty list if no images)
+    final multipartFiles = <http.MultipartFile>[];
     if (images != null && images.isNotEmpty) {
-      // Send recipe fields directly as form fields
-      // Arrays/objects need to be JSON-encoded strings
-      final fields = <String, String>{
-        "title": trimmedTitle,
-        "tags": jsonEncode(tagsList),
-        "ingredients": jsonEncode(ingredients),
-        "steps": jsonEncode(steps),
-      };
-      
-      // Add optional fields only if they have values
-      if (trimmedDescription != null && trimmedDescription.isNotEmpty) {
-        fields["description"] = trimmedDescription;
-      }
-      if (trimmedCuisine != null && trimmedCuisine.isNotEmpty) {
-        fields["cuisine"] = trimmedCuisine;
-      }
-      
-      // Create multipart files
-      final multipartFiles = <http.MultipartFile>[];
       for (final file in images) {
         final length = await file.length();
         final filename = file.path.split('/').last;
@@ -67,34 +68,15 @@ class RecipeApi {
           ),
         );
       }
-      
-      final data = await api.postMultipart(
-        "/recipes",
-        fields: fields,
-        files: multipartFiles,
-        auth: true,
-      );
-      
-      return await _handleRecipeCreationResponse(data);
     }
     
-    // No images, use regular JSON POST
-    final body = <String, dynamic>{
-      "title": trimmedTitle,
-      "tags": tagsList,
-      "ingredients": ingredients,
-      "steps": steps,
-    };
-
-    // Add optional fields only if they have values
-    if (trimmedDescription != null && trimmedDescription.isNotEmpty) {
-      body["description"] = trimmedDescription;
-    }
-    if (trimmedCuisine != null && trimmedCuisine.isNotEmpty) {
-      body["cuisine"] = trimmedCuisine;
-    }
-
-    final data = await api.post("/recipes", body: body, auth: true);
+    final data = await api.postMultipart(
+      "/recipes",
+      fields: fields,
+      files: multipartFiles,
+      auth: true,
+    );
+    
     return await _handleRecipeCreationResponse(data);
   }
 

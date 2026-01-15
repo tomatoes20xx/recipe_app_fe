@@ -63,6 +63,11 @@ class ApiClient {
       _uri(path),
       headers: await _headers(auth: auth, hasBody: body != null),
       body: body == null ? null : jsonEncode(body),
+    ).timeout(
+      const Duration(seconds: 30),
+      onTimeout: () {
+        throw ApiException(0, "Request timeout. The server took too long to respond.");
+      },
     );
     return _handle(res);
   } on http.ClientException catch (e) {
@@ -106,27 +111,39 @@ Future<dynamic> postMultipart(
   required List<http.MultipartFile> files,
   bool auth = false,
 }) async {
-  final request = http.MultipartRequest('POST', _uri(path));
-  
-  // Add fields
-  request.fields.addAll(fields);
-  
-  // Add files
-  request.files.addAll(files);
-  
-  // Add auth header
-  if (auth) {
-    final token = await tokenStorage.readToken();
-    if (token != null && token.isNotEmpty) {
-      request.headers["Authorization"] = "Bearer $token";
+  try {
+    final request = http.MultipartRequest('POST', _uri(path));
+    
+    // Add fields
+    request.fields.addAll(fields);
+    
+    // Add files
+    request.files.addAll(files);
+    
+    // Add auth header
+    if (auth) {
+      final token = await tokenStorage.readToken();
+      if (token != null && token.isNotEmpty) {
+        request.headers["Authorization"] = "Bearer $token";
+      }
     }
+    
+    request.headers["Accept"] = "application/json";
+    
+    final streamedResponse = await _client.send(request).timeout(
+      const Duration(seconds: 30),
+      onTimeout: () {
+        throw ApiException(0, "Request timeout. The server took too long to respond.");
+      },
+    );
+    final res = await http.Response.fromStream(streamedResponse);
+    return _handle(res);
+  } on http.ClientException catch (e) {
+    throw ApiException(0, "Connection failed: ${e.message}. Make sure your backend is running and your phone is on the same network.");
+  } catch (e) {
+    if (e is ApiException) rethrow;
+    throw ApiException(0, "Network error: $e");
   }
-  
-  request.headers["Accept"] = "application/json";
-  
-  final streamedResponse = await _client.send(request);
-  final res = await http.Response.fromStream(streamedResponse);
-  return _handle(res);
 }
 
 
