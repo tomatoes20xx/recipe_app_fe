@@ -8,14 +8,21 @@ import "../feed/feed_api.dart";
 import "../feed/feed_controller.dart";
 import "../feed/feed_models.dart";
 import "../recipes/recipe_detail_screen.dart";
+import "../theme/theme_controller.dart";
 import "create_recipe_screen.dart";
 import "profile_screen.dart";
 import "search_screen.dart";
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key, required this.auth, required this.apiClient});
+  const HomeScreen({
+    super.key,
+    required this.auth,
+    required this.apiClient,
+    required this.themeController,
+  });
   final AuthController auth;
   final ApiClient apiClient;
+  final ThemeController themeController;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -56,22 +63,21 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      key: _scaffoldKey,
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      appBar: AppBar(
-        elevation: 0,
-        scrolledUnderElevation: 1,
-        leading: IconButton(
-          onPressed: () => _scaffoldKey.currentState?.openDrawer(),
-          icon: const Icon(Icons.menu_rounded),
-          tooltip: "Menu",
-        ),
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
+    return AnimatedBuilder(
+      animation: widget.themeController,
+      builder: (context, _) {
+        return Scaffold(
+          key: _scaffoldKey,
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          appBar: AppBar(
+            elevation: 0,
+            scrolledUnderElevation: 1,
+            leading: IconButton(
+              onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+              icon: const Icon(Icons.menu_rounded),
+              tooltip: "Menu",
+            ),
+            title: Text(
               "Feed",
               style: TextStyle(
                 fontSize: 28,
@@ -80,8 +86,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
-          ],
-        ),
         actions: [
           IconButton(
             onPressed: () async {
@@ -141,6 +145,7 @@ class _HomeScreenState extends State<HomeScreen> {
         feed: feed,
         auth: widget.auth,
         apiClient: widget.apiClient,
+        themeController: widget.themeController,
       ),
       body: Column(
         children: [
@@ -159,6 +164,8 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
+        );
+      },
     );
   }
 }
@@ -235,10 +242,12 @@ class _FeedScopeDrawer extends StatelessWidget {
     required this.feed,
     required this.auth,
     required this.apiClient,
+    required this.themeController,
   });
   final FeedController feed;
   final AuthController auth;
   final ApiClient apiClient;
+  final ThemeController themeController;
 
   @override
   Widget build(BuildContext context) {
@@ -249,11 +258,50 @@ class _FeedScopeDrawer extends StatelessWidget {
           children: [
             Padding(
               padding: const EdgeInsets.all(16),
-              child: Text(
-                "Feed Scope",
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    "Feed Scope",
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                  AnimatedBuilder(
+                    animation: themeController,
+                    builder: (context, _) {
+                      return Switch(
+                        value: themeController.isDarkMode,
+                        onChanged: (_) => themeController.toggleTheme(),
+                        thumbIcon: WidgetStateProperty.resolveWith<Icon?>((states) {
+                          return Icon(
+                            themeController.isDarkMode
+                                ? Icons.dark_mode_rounded
+                                : Icons.light_mode_rounded,
+                            size: 18,
+                            color: themeController.isDarkMode
+                                ? Colors.white
+                                : Colors.orange,
+                          );
+                        }),
+                        thumbColor: WidgetStateProperty.resolveWith<Color?>((states) {
+                          // Use a very light semi-transparent color instead of fully transparent
+                          // This prevents grainy rendering while keeping the icon visible
+                          return themeController.isDarkMode
+                              ? Colors.white.withOpacity(0.15)
+                              : Colors.black.withOpacity(0.08);
+                        }),
+                        trackOutlineColor: WidgetStateProperty.resolveWith<Color?>((states) {
+                          return Theme.of(context).colorScheme.outline.withOpacity(0.2);
+                        }),
+                        trackOutlineWidth: WidgetStateProperty.resolveWith<double?>((states) {
+                          return 1.0;
+                        }),
+                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      );
+                    },
+                  ),
+                ],
               ),
             ),
             const Divider(),

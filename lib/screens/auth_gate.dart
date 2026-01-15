@@ -2,14 +2,21 @@ import "package:flutter/material.dart";
 
 import "../api/api_client.dart";
 import "../auth/auth_controller.dart";
+import "../theme/theme_controller.dart";
 import "home_screen.dart";
 import "login_screen.dart";
 
 class AuthGate extends StatefulWidget {
-  const AuthGate({super.key, required this.auth, required this.apiClient});
+  const AuthGate({
+    super.key,
+    required this.auth,
+    required this.apiClient,
+    required this.themeController,
+  });
 
   final AuthController auth;
   final ApiClient apiClient;
+  final ThemeController themeController;
 
   @override
   State<AuthGate> createState() => _AuthGateState();
@@ -57,7 +64,11 @@ class _AuthGateState extends State<AuthGate> {
       animation: widget.auth,
       builder: (context, _) {
         if (widget.auth.isLoggedIn) {
-          return HomeScreen(auth: widget.auth, apiClient: widget.apiClient);
+          return HomeScreen(
+            auth: widget.auth,
+            apiClient: widget.apiClient,
+            themeController: widget.themeController,
+          );
         }
 
         return LoginScreen(auth: widget.auth);
