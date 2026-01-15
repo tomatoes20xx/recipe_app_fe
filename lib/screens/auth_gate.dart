@@ -17,6 +17,7 @@ class AuthGate extends StatefulWidget {
 
 class _AuthGateState extends State<AuthGate> {
   bool bootstrapped = false;
+  String? error;
 
   @override
   void initState() {
@@ -25,9 +26,22 @@ class _AuthGateState extends State<AuthGate> {
   }
 
   Future<void> _bootstrap() async {
-    await widget.auth.bootstrap();
-    if (!mounted) return;
-    setState(() => bootstrapped = true);
+    try {
+      // Add overall timeout to prevent infinite hanging
+      await widget.auth.bootstrap().timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          // If bootstrap takes too long, just continue without auth
+          // User can still login manually
+        },
+      );
+    } catch (e) {
+      // If bootstrap fails, still show the app (user can try to login)
+      // Don't block the app from starting
+    } finally {
+      if (!mounted) return;
+      setState(() => bootstrapped = true);
+    }
   }
 
   @override

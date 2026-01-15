@@ -2,6 +2,7 @@ import "dart:io";
 
 import "package:flutter/material.dart";
 import "package:image_picker/image_picker.dart";
+import "package:image/image.dart" as img;
 
 import "../api/api_client.dart";
 import "../auth/auth_api.dart";
@@ -33,8 +34,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       setState(() => _isUploading = true);
 
+      // Compress the image before uploading (avatars are small, but compression helps)
+      final compressedFile = await _compressImage(File(image.path));
+      final fileToUpload = compressedFile ?? File(image.path);
+
       final authApi = AuthApi(widget.apiClient);
-      await authApi.uploadAvatar(File(image.path));
+      await authApi.uploadAvatar(fileToUpload);
       
       // Refresh user data
       await widget.auth.bootstrap();
@@ -54,6 +59,58 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (mounted) {
         setState(() => _isUploading = false);
       }
+    }
+  }
+
+  /// Compresses and resizes an image to reduce file size
+  /// Max dimensions: 512x512 (for avatars), Quality: 85%
+  Future<File?> _compressImage(File imageFile) async {
+    try {
+      final bytes = await imageFile.readAsBytes();
+      final originalImage = img.decodeImage(bytes);
+      
+      if (originalImage == null) return null;
+
+      // For avatars, resize to 512x512 (square, center crop)
+      const maxDimension = 512;
+      
+      // Calculate dimensions for square center crop
+      int width = originalImage.width;
+      int height = originalImage.height;
+      int cropSize = width < height ? width : height;
+      int offsetX = (width - cropSize) ~/ 2;
+      int offsetY = (height - cropSize) ~/ 2;
+
+      // Crop to square (center)
+      final croppedImage = img.copyCrop(
+        originalImage,
+        x: offsetX,
+        y: offsetY,
+        width: cropSize,
+        height: cropSize,
+      );
+
+      // Resize to 512x512
+      final resizedImage = img.copyResize(
+        croppedImage,
+        width: maxDimension,
+        height: maxDimension,
+        interpolation: img.Interpolation.linear,
+      );
+
+      // Convert to JPEG with 85% quality
+      final jpegBytes = img.encodeJpg(resizedImage, quality: 85);
+      
+      // Save to a temporary file
+      final tempDir = Directory.systemTemp;
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final compressedFile = File('${tempDir.path}/compressed_avatar_$timestamp.jpg');
+      await compressedFile.writeAsBytes(jpegBytes);
+      
+      return compressedFile;
+    } catch (e) {
+      // If compression fails, return null to use original
+      return null;
     }
   }
 

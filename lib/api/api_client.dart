@@ -1,4 +1,5 @@
 import "dart:convert";
+import "dart:io";
 import "package:http/http.dart" as http;
 
 import "../config.dart";
@@ -130,16 +131,27 @@ Future<dynamic> postMultipart(
     
     request.headers["Accept"] = "application/json";
     
+    // Increase timeout for large file uploads (2 minutes for large images)
     final streamedResponse = await _client.send(request).timeout(
-      const Duration(seconds: 30),
+      const Duration(minutes: 2),
       onTimeout: () {
-        throw ApiException(0, "Request timeout. The server took too long to respond.");
+        throw ApiException(0, "Request timeout. The server took too long to respond. Try using smaller images.");
       },
     );
     final res = await http.Response.fromStream(streamedResponse);
     return _handle(res);
   } on http.ClientException catch (e) {
+    // Handle connection reset/aborted errors (ECONNRESET, EPIPE)
+    final message = e.message.toLowerCase();
+    if (message.contains("connection closed") || 
+        message.contains("connection reset") ||
+        message.contains("aborted") ||
+        message.contains("broken pipe")) {
+      throw ApiException(499, "Upload was cancelled or connection was reset. Please try again.");
+    }
     throw ApiException(0, "Connection failed: ${e.message}. Make sure your backend is running and your phone is on the same network.");
+  } on SocketException catch (e) {
+    throw ApiException(0, "Network error: ${e.message}. Check your internet connection.");
   } catch (e) {
     if (e is ApiException) rethrow;
     throw ApiException(0, "Network error: $e");
@@ -150,6 +162,11 @@ Future<dynamic> postMultipart(
   dynamic _handle(http.Response res) {
     final isJson = (res.headers["content-type"] ?? "").contains("application/json");
     final data = isJson && res.body.isNotEmpty ? jsonDecode(res.body) : res.body;
+
+    // Handle 499 (Client Closed Request) - connection was reset/aborted
+    if (res.statusCode == 499) {
+      throw ApiException(499, "Upload was cancelled or connection was reset. Please try again.");
+    }
 
     if (res.statusCode >= 200 && res.statusCode < 300) return data;
 

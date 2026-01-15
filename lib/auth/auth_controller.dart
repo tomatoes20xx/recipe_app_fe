@@ -19,26 +19,40 @@ class AuthController extends ChangeNotifier {
   bool get isLoggedIn => token != null && token!.isNotEmpty;
 
   Future<void> bootstrap() async {
-    token = await tokenStorage.readToken();
-    if (token == null || token!.isEmpty) {
-      me = null;
-      notifyListeners();
-      return;
-    }
-
     try {
-      me = await authApi.me(); // validates token
-      if (me == null) {
+      token = await tokenStorage.readToken();
+      if (token == null || token!.isEmpty) {
+        me = null;
+        notifyListeners();
+        return;
+      }
+
+      // Add timeout to prevent hanging if server is unreachable
+      try {
+        me = await authApi.me().timeout(
+          const Duration(seconds: 5),
+          onTimeout: () {
+            // Server unreachable - treat as logged out
+            return null;
+          },
+        );
+        if (me == null) {
+          await logout();
+          return;
+        }
+      } catch (e) {
+        // token invalid / server unreachable -> treat as logged out
         await logout();
         return;
       }
-    } catch (_) {
-      // token invalid / server unreachable -> treat as logged out
-      await logout();
-      return;
-    }
 
-    notifyListeners();
+      notifyListeners();
+    } catch (e) {
+      // Any error during bootstrap - just treat as logged out
+      token = null;
+      me = null;
+      notifyListeners();
+    }
   }
 
   Future<void> login(String email, String password) async {

@@ -2,6 +2,7 @@ import "dart:io";
 
 import "package:flutter/material.dart";
 import "package:image_picker/image_picker.dart";
+import "package:image/image.dart" as img;
 
 import "../api/api_client.dart";
 import "../recipes/recipe_api.dart";
@@ -30,6 +31,7 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
 
   bool _isSubmitting = false;
   String? _error;
+  String? _uploadStatus; // For showing upload progress
 
   @override
   void dispose() {
@@ -99,9 +101,18 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
         imageQuality: 85,
       );
       if (image != null) {
-        setState(() {
-          _selectedImages.add(image);
-        });
+        // Compress and resize the image before adding it for faster uploads
+        final compressedFile = await _compressImage(File(image.path));
+        if (compressedFile != null) {
+          setState(() {
+            _selectedImages.add(XFile(compressedFile.path));
+          });
+        } else {
+          // If compression fails, use original
+          setState(() {
+            _selectedImages.add(image);
+          });
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -109,6 +120,54 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
           SnackBar(content: Text("Error picking image: $e")),
         );
       }
+    }
+  }
+
+  /// Compresses and resizes an image to reduce file size
+  /// Max dimensions: 1920x1920, Quality: 85% (balanced for quality and speed)
+  Future<File?> _compressImage(File imageFile) async {
+    try {
+      final bytes = await imageFile.readAsBytes();
+      final originalImage = img.decodeImage(bytes);
+      
+      if (originalImage == null) return null;
+
+      // Calculate new dimensions (max 1920px on longest side)
+      int width = originalImage.width;
+      int height = originalImage.height;
+      const maxDimension = 1920;
+      
+      if (width > maxDimension || height > maxDimension) {
+        if (width > height) {
+          height = (height * maxDimension / width).round();
+          width = maxDimension;
+        } else {
+          width = (width * maxDimension / height).round();
+          height = maxDimension;
+        }
+      }
+
+      // Resize the image
+      final resizedImage = img.copyResize(
+        originalImage,
+        width: width,
+        height: height,
+        interpolation: img.Interpolation.linear,
+      );
+
+      // Convert to JPEG with 85% quality
+      final jpegBytes = img.encodeJpg(resizedImage, quality: 85);
+      
+      // Save to a temporary file
+      final tempDir = Directory.systemTemp;
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final compressedFile = File('${tempDir.path}/compressed_$timestamp.jpg');
+      await compressedFile.writeAsBytes(jpegBytes);
+      
+      return compressedFile;
+    } catch (e) {
+      // If compression fails, return null to use original
+      return null;
     }
   }
 
@@ -202,6 +261,26 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
           .map((xfile) => File(xfile.path))
           .toList();
       
+      // Show upload status
+      if (mounted && imageFiles.isNotEmpty) {
+        setState(() {
+          _uploadStatus = "Preparing upload...";
+        });
+        
+        // Calculate total size for user feedback
+        int totalSize = 0;
+        for (final file in imageFiles) {
+          totalSize += await file.length();
+        }
+        final sizeMB = (totalSize / 1024 / 1024).toStringAsFixed(2);
+        
+        if (mounted) {
+          setState(() {
+            _uploadStatus = "Uploading ${imageFiles.length} image(s) (${sizeMB} MB)...";
+          });
+        }
+      }
+      
       await api.createRecipe(
         title: _titleController.text.trim(),
         description: _descriptionController.text.trim().isEmpty
@@ -217,13 +296,20 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
       );
 
       if (mounted) {
+        setState(() {
+          _uploadStatus = null;
+          _isSubmitting = false;
+        });
         Navigator.of(context).pop(true); // Return true to indicate success
       }
     } catch (e) {
-      setState(() {
-        _error = e.toString();
-        _isSubmitting = false;
-      });
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _isSubmitting = false;
+          _uploadStatus = null;
+        });
+      }
     }
   }
 
@@ -516,6 +602,43 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
                           _error!,
                           style: TextStyle(
                             color: Theme.of(context).colorScheme.onErrorContainer,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+            // Upload status message
+            if (_uploadStatus != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Theme.of(context).colorScheme.onPrimaryContainer,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          _uploadStatus!,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onPrimaryContainer,
+                            fontSize: 14,
                           ),
                         ),
                       ),

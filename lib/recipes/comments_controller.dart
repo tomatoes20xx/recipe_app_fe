@@ -1,4 +1,5 @@
 import "package:flutter/foundation.dart";
+
 import "comment_models.dart";
 import "recipe_api.dart";
 
@@ -21,11 +22,8 @@ class CommentsController extends ChangeNotifier {
       comments.clear();
       final loadedComments = await recipeApi.getComments(recipeId);
       comments.addAll(loadedComments);
-    } catch (e, stackTrace) {
+    } catch (e) {
       error = e.toString();
-      // Log the error for debugging
-      debugPrint("Error loading comments: $e");
-      debugPrint("Stack trace: $stackTrace");
     } finally {
       isLoading = false;
       notifyListeners();
