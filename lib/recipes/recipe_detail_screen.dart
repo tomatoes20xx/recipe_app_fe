@@ -127,7 +127,7 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final date = "${r.createdAt.toLocal()}".split(".").first;
+    final date = _formatDate(r.createdAt);
 
     final cuisine = r.cuisine; // helps avoid any nullable weirdness
     final hasCuisine = cuisine != null && cuisine.trim().isNotEmpty;
@@ -297,6 +297,15 @@ String _buildImageUrl(String relativeUrl) {
     return relativeUrl;
   }
   return "${Config.apiBaseUrl}$relativeUrl";
+}
+
+String _formatDate(DateTime date) {
+  const months = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+  final localDate = date.toLocal();
+  return '${months[localDate.month - 1]} ${localDate.day}, ${localDate.year}';
 }
 
 class _ImageGallery extends StatefulWidget {
@@ -656,7 +665,7 @@ class _CommentsSectionState extends State<_CommentsSection> {
             )
           else
             ...widget.commentsController.comments.map((comment) {
-              final date = "${comment.createdAt.toLocal()}".split(".").first;
+              final date = _formatDate(comment.createdAt);
               return ListTile(
                 dense: true,
                 title: Text(comment.content),

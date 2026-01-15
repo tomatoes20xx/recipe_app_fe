@@ -601,6 +601,15 @@ String _buildImageUrl(String relativeUrl) {
   return "${Config.apiBaseUrl}$relativeUrl";
 }
 
+String _formatDate(DateTime date) {
+  const months = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+  final localDate = date.toLocal();
+  return '${months[localDate.month - 1]} ${localDate.day}, ${localDate.year}';
+}
+
 Widget _buildUserAvatar(BuildContext context, String? avatarUrl, String username) {
   if (avatarUrl != null && avatarUrl.isNotEmpty) {
     return CircleAvatar(
@@ -644,12 +653,33 @@ class _FeedCard extends StatefulWidget {
 
 class _FeedCardState extends State<_FeedCard> {
   bool _isDescriptionExpanded = false;
+  final GlobalKey _leftContentKey = GlobalKey();
+  double? _leftContentHeight;
+
+  void _measureLeftContent() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_leftContentKey.currentContext != null && mounted) {
+        final RenderBox? box = _leftContentKey.currentContext?.findRenderObject() as RenderBox?;
+        if (box != null) {
+          final height = box.size.height;
+          if (_leftContentHeight != height) {
+            setState(() {
+              _leftContentHeight = height;
+            });
+          }
+        }
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    final date = "${widget.item.createdAt.toLocal()}".split(".").first;
+    final date = _formatDate(widget.item.createdAt);
     final firstImage = widget.item.images.isNotEmpty ? widget.item.images.first : null;
     final hasDescription = widget.item.description != null && widget.item.description!.trim().isNotEmpty;
+
+    // Measure left content height after build
+    _measureLeftContent();
 
     return Card(
       elevation: 0,
@@ -670,6 +700,7 @@ class _FeedCardState extends State<_FeedCard> {
           children: [
             Expanded(
               child: Padding(
+                key: _leftContentKey,
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -815,30 +846,34 @@ class _FeedCardState extends State<_FeedCard> {
               ),
             ),
             Container(
-              width: 120,
-              height: 120,
-              decoration: BoxDecoration(
-                borderRadius: const BorderRadius.only(
-                  topRight: Radius.circular(16),
-                  bottomRight: Radius.circular(16),
-                ),
-                color: Theme.of(context).colorScheme.surfaceContainerHighest,
-              ),
-              child: firstImage != null
+                  width: 120,
+                  height: _leftContentHeight ?? 120, // Fallback to 120 if not yet measured
+                  decoration: BoxDecoration(
+                    borderRadius: const BorderRadius.only(
+                      topRight: Radius.circular(16),
+                      bottomRight: Radius.circular(16),
+                    ),
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  ),
+                  child: firstImage != null
                   ? ClipRRect(
                       borderRadius: const BorderRadius.only(
                         topRight: Radius.circular(16),
                         bottomRight: Radius.circular(16),
                       ),
-                      child: Image.network(
-                        _buildImageUrl(firstImage.url),
-                          width: 120,
-                          height: 120,
-                          fit: BoxFit.cover,
+                      child: _leftContentHeight != null
+                        ? SizedBox(
+                            width: 120,
+                            height: _leftContentHeight!,
+                            child: Image.network(
+                              _buildImageUrl(firstImage.url),
+                              width: 120,
+                              height: _leftContentHeight!,
+                              fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) {
                             return Container(
                               width: 120,
-                              height: 120,
+                              height: _leftContentHeight!,
                               color: Theme.of(context).colorScheme.surfaceContainerHighest,
                               child: Center(
                                 child: Column(
@@ -866,7 +901,7 @@ class _FeedCardState extends State<_FeedCard> {
                             if (loadingProgress == null) return child;
                             return Container(
                               width: 120,
-                              height: 120,
+                              height: _leftContentHeight!,
                               color: Theme.of(context).colorScheme.surfaceContainerHighest,
                               child: Center(
                                 child: CircularProgressIndicator(
@@ -879,8 +914,59 @@ class _FeedCardState extends State<_FeedCard> {
                               ),
                             );
                           },
-                        ),
-                      )
+                            ),
+                          )
+                        : Image.network(
+                            _buildImageUrl(firstImage.url),
+                            width: 120,
+                            height: 120,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                width: 120,
+                                height: 120,
+                                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                                child: Center(
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.broken_image_rounded,
+                                        size: 32,
+                                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        "Error",
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) return child;
+                              return Container(
+                                width: 120,
+                                height: 120,
+                                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                                child: Center(
+                                  child: CircularProgressIndicator(
+                                    value: loadingProgress.expectedTotalBytes != null
+                                        ? loadingProgress.cumulativeBytesLoaded /
+                                            loadingProgress.expectedTotalBytes!
+                                        : null,
+                                    strokeWidth: 2,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                    )
                     : Center(
                         child: Icon(
                           Icons.image_outlined,
@@ -888,7 +974,7 @@ class _FeedCardState extends State<_FeedCard> {
                           color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
                         ),
                       ),
-              ),
+                ),
           ],
         ),
       ),
