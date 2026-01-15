@@ -8,12 +8,20 @@ import "../api/api_client.dart";
 import "../auth/auth_api.dart";
 import "../auth/auth_controller.dart";
 import "../config.dart";
+import "../users/user_api.dart";
+import "../users/user_models.dart";
 
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key, required this.auth, required this.apiClient});
+  const ProfileScreen({
+    super.key,
+    required this.auth,
+    required this.apiClient,
+    this.username,
+  });
 
   final AuthController auth;
   final ApiClient apiClient;
+  final String? username; // If provided, view this user's profile instead of current user
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -23,6 +31,80 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final ImagePicker _imagePicker = ImagePicker();
   bool _isUploading = false;
   bool _isDeleting = false;
+  bool _isLoadingProfile = false;
+  bool _isFollowing = false;
+  UserProfile? _userProfile;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.username != null) {
+      _loadUserProfile();
+    }
+  }
+
+  Future<void> _loadUserProfile() async {
+    if (widget.username == null) return;
+
+    setState(() {
+      _isLoadingProfile = true;
+      _error = null;
+    });
+
+    try {
+      final userApi = UserApi(widget.apiClient);
+      final profile = await userApi.getUserProfile(widget.username!);
+      setState(() {
+        _userProfile = profile;
+        _isFollowing = profile.viewerIsFollowing;
+        _isLoadingProfile = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+        _isLoadingProfile = false;
+      });
+    }
+  }
+
+  Future<void> _toggleFollow() async {
+    if (widget.username == null || _userProfile == null) return;
+
+    final oldFollowing = _isFollowing;
+    final newFollowing = !_isFollowing;
+    
+    setState(() {
+      _isFollowing = newFollowing;
+      _userProfile = _userProfile!.copyWith(
+        viewerIsFollowing: newFollowing,
+        followersCount: _userProfile!.followersCount + (newFollowing ? 1 : -1),
+      );
+    });
+
+    try {
+      final userApi = UserApi(widget.apiClient);
+      if (newFollowing) {
+        await userApi.followUser(widget.username!);
+      } else {
+        await userApi.unfollowUser(widget.username!);
+      }
+    } catch (e) {
+      // Rollback on error
+      setState(() {
+        _isFollowing = oldFollowing;
+        _userProfile = _userProfile!.copyWith(
+          viewerIsFollowing: oldFollowing,
+          followersCount: _userProfile!.followersCount + (oldFollowing ? 1 : -1),
+        );
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Failed to ${newFollowing ? 'follow' : 'unfollow'}: $e")),
+        );
+      }
+    }
+  }
 
   Future<void> _uploadAvatar() async {
     try {
@@ -221,8 +303,164 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return "${Config.apiBaseUrl}$relativeUrl";
   }
 
+  Widget _buildUserAvatar(BuildContext context, String? avatarUrl, String username, {double radius = 40}) {
+    if (avatarUrl != null && avatarUrl.isNotEmpty) {
+      return CircleAvatar(
+        radius: radius,
+        backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+        backgroundImage: NetworkImage(_buildImageUrl(avatarUrl)),
+        onBackgroundImageError: (exception, stackTrace) {
+          // Image failed to load, will show child as fallback
+        },
+        child: null,
+      );
+    }
+    return CircleAvatar(
+      radius: radius,
+      backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+      child: username.isNotEmpty
+          ? Text(
+              username[0].toUpperCase(),
+              style: TextStyle(
+                fontSize: radius * 0.8,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.onPrimaryContainer,
+              ),
+            )
+          : Icon(
+              Icons.person_outline_rounded,
+              size: radius,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    // If viewing another user's profile
+    if (widget.username != null) {
+      if (_isLoadingProfile) {
+        return Scaffold(
+          appBar: AppBar(title: const Text("Profile")),
+          body: const Center(child: CircularProgressIndicator()),
+        );
+      }
+
+      if (_error != null || _userProfile == null) {
+        return Scaffold(
+          appBar: AppBar(title: const Text("Profile")),
+          body: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.error_outline,
+                  size: 48,
+                  color: Theme.of(context).colorScheme.error,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  _error ?? "User not found",
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: _loadUserProfile,
+                  child: const Text("Retry"),
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+
+      return Scaffold(
+        appBar: AppBar(
+          title: Text(_userProfile!.displayName ?? _userProfile!.username),
+        ),
+        body: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        _buildUserAvatar(
+                          context,
+                          _userProfile!.avatarUrl,
+                          _userProfile!.username,
+                          radius: 40,
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _userProfile!.displayName ?? _userProfile!.username,
+                                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                "@${_userProfile!.username}",
+                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                                    ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (widget.auth.isLoggedIn && !_userProfile!.isViewer)
+                          FollowButton(
+                            isFollowing: _isFollowing,
+                            onTap: _toggleFollow,
+                          ),
+                      ],
+                    ),
+                    if (_userProfile!.bio != null && _userProfile!.bio!.isNotEmpty) ...[
+                      const SizedBox(height: 16),
+                      Text(
+                        _userProfile!.bio!,
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                    ],
+                    const SizedBox(height: 16),
+                    const Divider(),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _StatItem(
+                          label: "Recipes",
+                          value: _userProfile!.recipesCount.toString(),
+                        ),
+                        _StatItem(
+                          label: "Followers",
+                          value: _userProfile!.followersCount.toString(),
+                        ),
+                        _StatItem(
+                          label: "Following",
+                          value: _userProfile!.followingCount.toString(),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Viewing own profile
     final user = widget.auth.me;
 
     if (user == null) {
@@ -260,28 +498,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             : () => _showAvatarMenu(context, avatarUrl),
                         child: Stack(
                           children: [
-                            avatarUrl != null && avatarUrl.isNotEmpty
-                                ? CircleAvatar(
-                                    radius: 40,
-                                    backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                                    backgroundImage: NetworkImage(_buildImageUrl(avatarUrl)),
-                                    onBackgroundImageError: (exception, stackTrace) {
-                                      // Image failed to load, will show child as fallback
-                                    },
-                                    child: null,
-                                  )
-                                : CircleAvatar(
-                                    radius: 40,
-                                    backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                                    child: Text(
-                                      username.isNotEmpty ? username[0].toUpperCase() : "?",
-                                      style: TextStyle(
-                                        fontSize: 32,
-                                        fontWeight: FontWeight.bold,
-                                        color: Theme.of(context).colorScheme.onPrimaryContainer,
-                                      ),
-                                    ),
-                                  ),
+                            _buildUserAvatar(context, avatarUrl, username, radius: 40),
                             if (_isUploading || _isDeleting)
                               Positioned.fill(
                                 child: Container(
@@ -369,6 +586,72 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _StatItem extends StatelessWidget {
+  const _StatItem({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              ),
+        ),
+      ],
+    );
+  }
+}
+
+class FollowButton extends StatelessWidget {
+  const FollowButton({
+    super.key,
+    required this.isFollowing,
+    required this.onTap,
+  });
+
+  final bool isFollowing;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton(
+      onPressed: onTap,
+      style: OutlinedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        side: BorderSide(
+          color: isFollowing
+              ? Theme.of(context).colorScheme.outline
+              : Theme.of(context).colorScheme.primary,
+        ),
+      ),
+      child: Text(
+        isFollowing ? "Following" : "Follow",
+        style: TextStyle(
+          fontWeight: FontWeight.w600,
+          color: isFollowing
+              ? Theme.of(context).colorScheme.onSurface
+              : Theme.of(context).colorScheme.primary,
+        ),
       ),
     );
   }
