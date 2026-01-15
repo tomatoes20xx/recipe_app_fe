@@ -34,6 +34,10 @@ class _HomeScreenState extends State<HomeScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final PageController _tiktokPageController = PageController();
   bool _isTikTokView = false;
+  bool _showControls = true;
+  double _lastScrollOffset = 0.0;
+  DateTime _lastScrollTime = DateTime.now();
+  DateTime _lastTikTokScrollTime = DateTime.now();
 
   @override
   void initState() {
@@ -43,12 +47,59 @@ class _HomeScreenState extends State<HomeScreen> {
     feed.addListener(_onFeedChanged);
     feed.loadInitial();
 
-    sc.addListener(() {
-      // when 300px close to bottom, load more
-      if (sc.position.pixels > sc.position.maxScrollExtent - 300) {
-        feed.loadMore();
+    sc.addListener(_onScroll);
+  }
+
+  void _onScroll() {
+    if (!sc.hasClients) return;
+    
+    final currentOffset = sc.position.pixels;
+    final currentTime = DateTime.now();
+    final timeDelta = currentTime.difference(_lastScrollTime).inMilliseconds;
+    
+    // when 300px close to bottom, load more
+    if (currentOffset > sc.position.maxScrollExtent - 300) {
+      feed.loadMore();
+    }
+
+    // Always show controls when at the top
+    if (currentOffset <= 10) {
+      if (!_showControls) {
+        setState(() {
+          _showControls = true;
+        });
       }
-    });
+      _lastScrollOffset = currentOffset;
+      _lastScrollTime = currentTime;
+      return;
+    }
+
+    // Calculate scroll speed (pixels per millisecond)
+    final scrollDelta = currentOffset - _lastScrollOffset;
+    final scrollSpeed = timeDelta > 0 ? (scrollDelta.abs() / timeDelta) : 0.0;
+    
+    // Fast scroll threshold: 0.5 pixels per millisecond (500 pixels per second)
+    const fastScrollThreshold = 0.5;
+
+    if (scrollDelta > 10) {
+      // Scrolling down - always hide controls
+      if (_showControls) {
+        setState(() {
+          _showControls = false;
+        });
+      }
+    } else if (scrollDelta < -10 && scrollSpeed > fastScrollThreshold) {
+      // Scrolling up fast - show controls
+      if (!_showControls) {
+        setState(() {
+          _showControls = true;
+        });
+      }
+    }
+    // Slow scroll up - don't change controls state
+
+    _lastScrollOffset = currentOffset;
+    _lastScrollTime = currentTime;
   }
 
   void _onFeedChanged() {
@@ -72,78 +123,87 @@ class _HomeScreenState extends State<HomeScreen> {
         return Scaffold(
           key: _scaffoldKey,
           backgroundColor: Theme.of(context).colorScheme.surface,
-          appBar: AppBar(
-            elevation: 0,
-            scrolledUnderElevation: 1,
-            leading: IconButton(
-              onPressed: () => _scaffoldKey.currentState?.openDrawer(),
-              icon: const Icon(Icons.menu_rounded),
-              tooltip: "Menu",
-            ),
-            title: Text(
-              "Feed",
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.w700,
-                letterSpacing: -0.5,
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-            ),
-        actions: [
-          IconButton(
-            onPressed: () async {
-              final result = await Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => CreateRecipeScreen(apiClient: widget.apiClient),
-                ),
-              );
-              if (result == true) {
-                // Recipe created successfully, refresh feed
-                feed.refresh();
-              }
-            },
-            icon: const Icon(Icons.add_rounded),
-            tooltip: "Create Recipe",
-            style: IconButton.styleFrom(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
+          appBar: PreferredSize(
+            preferredSize: const Size.fromHeight(kToolbarHeight),
+            child: AnimatedSize(
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeInOut,
+              child: _showControls
+                  ? AppBar(
+                      elevation: 0,
+                      scrolledUnderElevation: 1,
+                      leading: IconButton(
+                        onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+                        icon: const Icon(Icons.menu_rounded),
+                        tooltip: "Menu",
+                      ),
+                      title: Text(
+                        "Feed",
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: -0.5,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                      actions: [
+                        IconButton(
+                          onPressed: () async {
+                            final result = await Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => CreateRecipeScreen(apiClient: widget.apiClient),
+                              ),
+                            );
+                            if (result == true) {
+                              // Recipe created successfully, refresh feed
+                              feed.refresh();
+                            }
+                          },
+                          icon: const Icon(Icons.add_rounded),
+                          tooltip: "Create Recipe",
+                          style: IconButton.styleFrom(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => SearchScreen(
+                                  apiClient: widget.apiClient,
+                                  auth: widget.auth,
+                                ),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.search_rounded),
+                          tooltip: "Search",
+                          style: IconButton.styleFrom(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: IconButton(
+                            onPressed: () => widget.auth.logout(),
+                            icon: const Icon(Icons.logout_rounded),
+                            tooltip: "Logout",
+                            style: IconButton.styleFrom(
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
+                  : const SizedBox.shrink(),
             ),
           ),
-          IconButton(
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => SearchScreen(
-                    apiClient: widget.apiClient,
-                    auth: widget.auth,
-                  ),
-                ),
-              );
-            },
-            icon: const Icon(Icons.search_rounded),
-            tooltip: "Search",
-            style: IconButton.styleFrom(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: IconButton(
-              onPressed: () => widget.auth.logout(),
-              icon: const Icon(Icons.logout_rounded),
-              tooltip: "Logout",
-              style: IconButton.styleFrom(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
       drawer: _FeedScopeDrawer(
         feed: feed,
         auth: widget.auth,
@@ -152,25 +212,84 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       body: Column(
         children: [
-          _Controls(
-            feed: feed,
-            isTikTokView: _isTikTokView,
-            onViewToggle: () {
-              setState(() {
-                _isTikTokView = !_isTikTokView;
-              });
-            },
+          AnimatedSize(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeInOut,
+            child: _showControls
+                ? AnimatedSlide(
+                    duration: const Duration(milliseconds: 200),
+                    curve: Curves.easeInOut,
+                    offset: Offset.zero,
+                    child: _Controls(
+                      feed: feed,
+                      isTikTokView: _isTikTokView,
+                      onViewToggle: () {
+                        setState(() {
+                          _isTikTokView = !_isTikTokView;
+                        });
+                      },
+                    ),
+                  )
+                : const SizedBox.shrink(),
           ),
           Expanded(
             child: RefreshIndicator(
               onRefresh: feed.refresh,
               color: Theme.of(context).colorScheme.primary,
               child: _isTikTokView
-                  ? _TikTokFeedList(
-                      feed: feed,
-                      pageController: _tiktokPageController,
-                      apiClient: widget.apiClient,
-                      auth: widget.auth,
+                  ? NotificationListener<ScrollUpdateNotification>(
+                      onNotification: (notification) {
+                        // Only process vertical scrolls, ignore horizontal scrolls (image carousel)
+                        if (notification.scrollDelta != null && notification.metrics.axis == Axis.vertical) {
+                          final currentOffset = notification.metrics.pixels;
+                          final currentTime = DateTime.now();
+                          final timeDelta = currentTime.difference(_lastTikTokScrollTime).inMilliseconds;
+                          
+                          // Always show controls when at the top
+                          if (currentOffset <= 10) {
+                            if (!_showControls) {
+                              setState(() {
+                                _showControls = true;
+                              });
+                            }
+                            _lastTikTokScrollTime = currentTime;
+                            return false;
+                          }
+
+                          // Calculate scroll speed
+                          final scrollDelta = notification.scrollDelta!;
+                          final scrollSpeed = timeDelta > 0 ? (scrollDelta.abs() / timeDelta) : 0.0;
+                          
+                          // Fast scroll threshold: 0.5 pixels per millisecond (500 pixels per second)
+                          const fastScrollThreshold = 0.5;
+
+                          if (scrollDelta > 10) {
+                            // Scrolling down - always hide controls
+                            if (_showControls) {
+                              setState(() {
+                                _showControls = false;
+                              });
+                            }
+                          } else if (scrollDelta < -10 && scrollSpeed > fastScrollThreshold) {
+                            // Scrolling up fast - show controls
+                            if (!_showControls) {
+                              setState(() {
+                                _showControls = true;
+                              });
+                            }
+                          }
+                          // Slow scroll up - don't change controls state
+
+                          _lastTikTokScrollTime = currentTime;
+                        }
+                        return false;
+                      },
+                      child: _TikTokFeedList(
+                        feed: feed,
+                        pageController: _tiktokPageController,
+                        apiClient: widget.apiClient,
+                        auth: widget.auth,
+                      ),
                     )
                   : _FeedList(
                       feed: feed,
