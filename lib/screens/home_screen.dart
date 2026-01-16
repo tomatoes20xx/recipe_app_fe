@@ -32,12 +32,12 @@ class _HomeScreenState extends State<HomeScreen> {
   late final FeedController feed;
   final ScrollController sc = ScrollController();
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  final PageController _tiktokPageController = PageController();
-  bool _isTikTokView = false;
+  final PageController _fullScreenPageController = PageController();
+  bool _isFullScreenView = false;
   bool _showControls = true;
   double _lastScrollOffset = 0.0;
   DateTime _lastScrollTime = DateTime.now();
-  DateTime _lastTikTokScrollTime = DateTime.now();
+  DateTime _lastFullScreenScrollTime = DateTime.now();
 
   @override
   void initState() {
@@ -109,7 +109,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void dispose() {
     sc.dispose();
-    _tiktokPageController.dispose();
+    _fullScreenPageController.dispose();
     feed.removeListener(_onFeedChanged);
     feed.dispose();
     super.dispose();
@@ -222,10 +222,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     offset: Offset.zero,
                     child: _Controls(
                       feed: feed,
-                      isTikTokView: _isTikTokView,
+                      isFullScreenView: _isFullScreenView,
                       onViewToggle: () {
                         setState(() {
-                          _isTikTokView = !_isTikTokView;
+                          _isFullScreenView = !_isFullScreenView;
                         });
                       },
                     ),
@@ -236,14 +236,14 @@ class _HomeScreenState extends State<HomeScreen> {
             child: RefreshIndicator(
               onRefresh: feed.refresh,
               color: Theme.of(context).colorScheme.primary,
-              child: _isTikTokView
+              child: _isFullScreenView
                   ? NotificationListener<ScrollUpdateNotification>(
                       onNotification: (notification) {
                         // Only process vertical scrolls, ignore horizontal scrolls (image carousel)
                         if (notification.scrollDelta != null && notification.metrics.axis == Axis.vertical) {
                           final currentOffset = notification.metrics.pixels;
                           final currentTime = DateTime.now();
-                          final timeDelta = currentTime.difference(_lastTikTokScrollTime).inMilliseconds;
+                          final timeDelta = currentTime.difference(_lastFullScreenScrollTime).inMilliseconds;
                           
                           // Always show controls when at the top
                           if (currentOffset <= 10) {
@@ -252,7 +252,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 _showControls = true;
                               });
                             }
-                            _lastTikTokScrollTime = currentTime;
+                            _lastFullScreenScrollTime = currentTime;
                             return false;
                           }
 
@@ -280,13 +280,13 @@ class _HomeScreenState extends State<HomeScreen> {
                           }
                           // Slow scroll up - don't change controls state
 
-                          _lastTikTokScrollTime = currentTime;
+                          _lastFullScreenScrollTime = currentTime;
                         }
                         return false;
                       },
-                      child: _TikTokFeedList(
+                      child: _FullScreenFeedList(
                         feed: feed,
-                        pageController: _tiktokPageController,
+                        pageController: _fullScreenPageController,
                         apiClient: widget.apiClient,
                         auth: widget.auth,
                       ),
@@ -310,11 +310,11 @@ class _HomeScreenState extends State<HomeScreen> {
 class _Controls extends StatelessWidget {
   const _Controls({
     required this.feed,
-    required this.isTikTokView,
+    required this.isFullScreenView,
     required this.onViewToggle,
   });
   final FeedController feed;
-  final bool isTikTokView;
+  final bool isFullScreenView;
   final VoidCallback onViewToggle;
 
   @override
@@ -377,8 +377,8 @@ class _Controls extends StatelessWidget {
             // View toggle button
             IconButton(
               onPressed: onViewToggle,
-              icon: Icon(isTikTokView ? Icons.view_list_rounded : Icons.view_carousel_rounded),
-              tooltip: isTikTokView ? "List View" : "TikTok View",
+              icon: Icon(isFullScreenView ? Icons.view_list_rounded : Icons.view_carousel_rounded),
+              tooltip: isFullScreenView ? "List View" : "Full Screen View",
               style: IconButton.styleFrom(
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -749,8 +749,8 @@ class _FeedList extends StatelessWidget {
   }
 }
 
-class _TikTokFeedList extends StatefulWidget {
-  const _TikTokFeedList({
+class _FullScreenFeedList extends StatefulWidget {
+  const _FullScreenFeedList({
     required this.feed,
     required this.pageController,
     required this.apiClient,
@@ -762,10 +762,10 @@ class _TikTokFeedList extends StatefulWidget {
   final AuthController auth;
 
   @override
-  State<_TikTokFeedList> createState() => _TikTokFeedListState();
+  State<_FullScreenFeedList> createState() => _FullScreenFeedListState();
 }
 
-class _TikTokFeedListState extends State<_TikTokFeedList> {
+class _FullScreenFeedListState extends State<_FullScreenFeedList> {
   int _currentPage = 0;
 
   @override
@@ -855,7 +855,7 @@ class _TikTokFeedListState extends State<_TikTokFeedList> {
         }
 
         final item = widget.feed.items[index];
-        return _TikTokFeedCard(
+        return _FullScreenFeedCard(
           item: item,
           sort: widget.feed.sort,
           feed: widget.feed,
@@ -1366,8 +1366,8 @@ class _ExpandableDescription extends StatelessWidget {
   }
 }
 
-class _TikTokExpandableDescription extends StatelessWidget {
-  const _TikTokExpandableDescription({
+class _FullScreenExpandableDescription extends StatelessWidget {
+  const _FullScreenExpandableDescription({
     required this.description,
     required this.isExpanded,
     required this.onTap,
@@ -1485,8 +1485,8 @@ class _TikTokExpandableDescription extends StatelessWidget {
   }
 }
 
-class _TikTokFeedCard extends StatefulWidget {
-  const _TikTokFeedCard({
+class _FullScreenFeedCard extends StatefulWidget {
+  const _FullScreenFeedCard({
     required this.item,
     required this.sort,
     required this.feed,
@@ -1500,10 +1500,10 @@ class _TikTokFeedCard extends StatefulWidget {
   final AuthController auth;
 
   @override
-  State<_TikTokFeedCard> createState() => _TikTokFeedCardState();
+  State<_FullScreenFeedCard> createState() => _FullScreenFeedCardState();
 }
 
-class _TikTokFeedCardState extends State<_TikTokFeedCard> {
+class _FullScreenFeedCardState extends State<_FullScreenFeedCard> {
   final PageController _imagePageController = PageController();
   int _currentImageIndex = 0;
   bool _isDescriptionExpanded = false;
@@ -1725,7 +1725,7 @@ class _TikTokFeedCardState extends State<_TikTokFeedCard> {
                     // Description
                     if (widget.item.description != null && widget.item.description!.trim().isNotEmpty) ...[
                       const SizedBox(height: 8),
-                      _TikTokExpandableDescription(
+                      _FullScreenExpandableDescription(
                         description: widget.item.description!,
                         isExpanded: _isDescriptionExpanded,
                         onTap: () {
@@ -1739,19 +1739,19 @@ class _TikTokFeedCardState extends State<_TikTokFeedCard> {
                     // Stats row
                     Row(
                       children: [
-                        _TikTokStat(
+                        _FullScreenStat(
                           icon: Icons.favorite_rounded,
                           value: widget.item.likes.toString(),
                           active: widget.item.viewerHasLiked,
                           onTap: () => widget.feed.toggleLike(widget.item.id),
                         ),
                         const SizedBox(width: 20),
-                        _TikTokStat(
+                        _FullScreenStat(
                           icon: Icons.chat_bubble_outline_rounded,
                           value: widget.item.comments.toString(),
                         ),
                         const SizedBox(width: 20),
-                        _TikTokStat(
+                        _FullScreenStat(
                           icon: Icons.bookmark_rounded,
                           value: widget.item.bookmarks.toString(),
                           active: widget.item.viewerHasBookmarked,
@@ -1832,8 +1832,8 @@ class _TikTokFeedCardState extends State<_TikTokFeedCard> {
   }
 }
 
-class _TikTokStat extends StatelessWidget {
-  const _TikTokStat({
+class _FullScreenStat extends StatelessWidget {
+  const _FullScreenStat({
     required this.icon,
     required this.value,
     this.active = false,
