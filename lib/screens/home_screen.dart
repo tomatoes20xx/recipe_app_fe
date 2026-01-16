@@ -42,6 +42,10 @@ class _HomeScreenState extends State<HomeScreen> {
   double _lastScrollOffset = 0.0;
   DateTime _lastScrollTime = DateTime.now();
   DateTime _lastFullScreenScrollTime = DateTime.now();
+  
+  // Track positions when switching views
+  int? _savedListIndex; // Saved index for list view (estimated from scroll position)
+  int _currentFullScreenIndex = 0; // Current page index in full screen view
 
   @override
   void initState() {
@@ -251,10 +255,52 @@ class _HomeScreenState extends State<HomeScreen> {
                       isFullScreenView: _isFullScreenView,
                       onViewToggle: () async {
                         final newValue = !_isFullScreenView;
+                        
+                        // Save current position before switching
+                        if (_isFullScreenView) {
+                          // Switching from full screen to list - save current page index
+                          _savedListIndex = _currentFullScreenIndex;
+                        } else {
+                          // Switching from list to full screen - save current scroll position
+                          if (sc.hasClients && feed.items.isNotEmpty) {
+                            // Estimate which item is currently visible based on scroll position
+                            // Approximate: each card is roughly 200px tall
+                            const estimatedCardHeight = 200.0;
+                            final scrollOffset = sc.position.pixels;
+                            final estimatedIndex = (scrollOffset / estimatedCardHeight).floor();
+                            _currentFullScreenIndex = estimatedIndex.clamp(0, feed.items.length - 1);
+                          }
+                        }
+                        
                         setState(() {
                           _isFullScreenView = newValue;
                         });
                         await _saveFullScreenViewPreference(newValue);
+                        
+                        // Restore position after switching (with a small delay to ensure widget is built)
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          if (!mounted) return;
+                          
+                          if (newValue && _currentFullScreenIndex >= 0) {
+                            // Switching to full screen - restore page index
+                            if (_fullScreenPageController.hasClients && 
+                                _currentFullScreenIndex < feed.items.length) {
+                              _fullScreenPageController.jumpToPage(_currentFullScreenIndex);
+                            }
+                          } else if (!newValue && _savedListIndex != null) {
+                            // Switching to list - restore scroll position, centered in viewport
+                            if (sc.hasClients) {
+                              const estimatedCardHeight = 200.0;
+                              // Calculate target offset to center the item in the viewport
+                              final viewportHeight = MediaQuery.of(context).size.height;
+                              final targetItemOffset = _savedListIndex! * estimatedCardHeight;
+                              // Center the item by subtracting half the viewport height
+                              final targetOffset = (targetItemOffset - (viewportHeight / 2) + (estimatedCardHeight / 2))
+                                  .clamp(0.0, sc.position.maxScrollExtent);
+                              sc.jumpTo(targetOffset);
+                            }
+                          }
+                        });
                       },
                     ),
                   )
@@ -317,6 +363,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         pageController: _fullScreenPageController,
                         apiClient: widget.apiClient,
                         auth: widget.auth,
+                        onPageChanged: (index) {
+                          _currentFullScreenIndex = index;
+                        },
                       ),
                     )
                   : _FeedList(
@@ -784,11 +833,13 @@ class _FullScreenFeedList extends StatefulWidget {
     required this.pageController,
     required this.apiClient,
     required this.auth,
+    this.onPageChanged,
   });
   final FeedController feed;
   final PageController pageController;
   final ApiClient apiClient;
   final AuthController auth;
+  final ValueChanged<int>? onPageChanged;
 
   @override
   State<_FullScreenFeedList> createState() => _FullScreenFeedListState();
@@ -815,6 +866,7 @@ class _FullScreenFeedListState extends State<_FullScreenFeedList> {
       setState(() {
         _currentPage = newPage;
       });
+      widget.onPageChanged?.call(newPage);
       // Load more when near the end
       if (newPage >= widget.feed.items.length - 2 && widget.feed.nextCursor != null) {
         widget.feed.loadMore();
@@ -875,6 +927,9 @@ class _FullScreenFeedListState extends State<_FullScreenFeedList> {
       physics: const PageScrollPhysics(),
       itemCount: widget.feed.items.length + (widget.feed.nextCursor != null ? 1 : 0),
       allowImplicitScrolling: false, // Disable pre-rendering for better performance
+      onPageChanged: (index) {
+        widget.onPageChanged?.call(index);
+      },
       itemBuilder: (context, index) {
         if (index >= widget.feed.items.length) {
           // Loading indicator at the end
