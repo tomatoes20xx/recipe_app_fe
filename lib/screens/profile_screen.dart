@@ -8,8 +8,11 @@ import "../api/api_client.dart";
 import "../auth/auth_api.dart";
 import "../auth/auth_controller.dart";
 import "../config.dart";
+import "../feed/feed_models.dart";
+import "../recipes/recipe_detail_screen.dart";
 import "../users/user_api.dart";
 import "../users/user_models.dart";
+import "../users/user_recipes_controller.dart";
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({
@@ -35,13 +38,49 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _isFollowing = false;
   UserProfile? _userProfile;
   String? _error;
+  
+  late final UserRecipesController? _recipesController;
+  final ScrollController _recipesScrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
+    
+    // Initialize recipes controller if viewing a user profile
+    final targetUsername = widget.username ?? widget.auth.me?["username"]?.toString();
+    if (targetUsername != null) {
+      _recipesController = UserRecipesController(
+        userApi: UserApi(widget.apiClient),
+        username: targetUsername,
+      );
+      _recipesController!.addListener(_onRecipesChanged);
+      _recipesScrollController.addListener(() {
+        if (_recipesScrollController.hasClients &&
+            _recipesScrollController.position.pixels > 
+            _recipesScrollController.position.maxScrollExtent - 300) {
+          _recipesController!.loadMore();
+        }
+      });
+      _recipesController!.loadInitial();
+    } else {
+      _recipesController = null;
+    }
+    
     if (widget.username != null) {
       _loadUserProfile();
     }
+  }
+
+  void _onRecipesChanged() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    _recipesScrollController.dispose();
+    _recipesController?.removeListener(_onRecipesChanged);
+    _recipesController?.dispose();
+    super.dispose();
   }
 
   Future<void> _loadUserProfile() async {
@@ -379,83 +418,93 @@ class _ProfileScreenState extends State<ProfileScreen> {
         appBar: AppBar(
           title: Text(_userProfile!.displayName ?? _userProfile!.username),
         ),
-        body: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        _buildUserAvatar(
-                          context,
-                          _userProfile!.avatarUrl,
-                          _userProfile!.username,
-                          radius: 40,
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                _userProfile!.displayName ?? _userProfile!.username,
-                                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                "@${_userProfile!.username}",
-                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                                    ),
-                              ),
-                            ],
+        body: RefreshIndicator(
+          onRefresh: () async {
+            await _loadUserProfile();
+            await _recipesController?.refresh();
+          },
+          child: ListView(
+            controller: _recipesScrollController,
+            padding: const EdgeInsets.all(16),
+            children: [
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          _buildUserAvatar(
+                            context,
+                            _userProfile!.avatarUrl,
+                            _userProfile!.username,
+                            radius: 40,
                           ),
-                        ),
-                        if (widget.auth.isLoggedIn && !_userProfile!.isViewer)
-                          FollowButton(
-                            isFollowing: _isFollowing,
-                            onTap: _toggleFollow,
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  _userProfile!.displayName ?? _userProfile!.username,
+                                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  "@${_userProfile!.username}",
+                                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                                      ),
+                                ),
+                              ],
+                            ),
                           ),
+                          if (widget.auth.isLoggedIn && !_userProfile!.isViewer)
+                            FollowButton(
+                              isFollowing: _isFollowing,
+                              onTap: _toggleFollow,
+                            ),
+                        ],
+                      ),
+                      if (_userProfile!.bio != null && _userProfile!.bio!.isNotEmpty) ...[
+                        const SizedBox(height: 16),
+                        Text(
+                          _userProfile!.bio!,
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
                       ],
-                    ),
-                    if (_userProfile!.bio != null && _userProfile!.bio!.isNotEmpty) ...[
                       const SizedBox(height: 16),
-                      Text(
-                        _userProfile!.bio!,
-                        style: Theme.of(context).textTheme.bodyMedium,
+                      const Divider(),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          _StatItem(
+                            label: "Recipes",
+                            value: _userProfile!.recipesCount.toString(),
+                          ),
+                          _StatItem(
+                            label: "Followers",
+                            value: _userProfile!.followersCount.toString(),
+                          ),
+                          _StatItem(
+                            label: "Following",
+                            value: _userProfile!.followingCount.toString(),
+                          ),
+                        ],
                       ),
                     ],
-                    const SizedBox(height: 16),
-                    const Divider(),
-                    const SizedBox(height: 8),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        _StatItem(
-                          label: "Recipes",
-                          value: _userProfile!.recipesCount.toString(),
-                        ),
-                        _StatItem(
-                          label: "Followers",
-                          value: _userProfile!.followersCount.toString(),
-                        ),
-                        _StatItem(
-                          label: "Following",
-                          value: _userProfile!.followingCount.toString(),
-                        ),
-                      ],
-                    ),
-                  ],
+                  ),
                 ),
               ),
-            ),
-          ],
+              const SizedBox(height: 16),
+              // Recipes section
+              ...(_recipesController != null ? [_buildRecipesSection(context)] : []),
+            ],
+          ),
         ),
       );
     }
@@ -481,23 +530,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
       appBar: AppBar(
         title: const Text("Profile"),
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      GestureDetector(
-                        onTap: _isUploading || _isDeleting
-                            ? null
-                            : () => _showAvatarMenu(context, avatarUrl),
-                        child: Stack(
-                          children: [
+      body: RefreshIndicator(
+        onRefresh: () async {
+          await widget.auth.bootstrap();
+          await _recipesController?.refresh();
+        },
+        child: ListView(
+          controller: _recipesScrollController,
+          padding: const EdgeInsets.all(16),
+          children: [
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        GestureDetector(
+                          onTap: _isUploading || _isDeleting
+                              ? null
+                              : () => _showAvatarMenu(context, avatarUrl),
+                          child: Stack(
+                            children: [
                             _buildUserAvatar(context, avatarUrl, username, radius: 40),
                             if (_isUploading || _isDeleting)
                               Positioned.fill(
@@ -584,9 +639,254 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ],
               ),
             ),
-          ),
-        ],
+            ),
+            const SizedBox(height: 16),
+            // Recipes section
+            _buildRecipesSection(context),
+          ],
+        ),
       ),
+    );
+  }
+
+  Widget _buildRecipesSection(BuildContext context) {
+    final controller = _recipesController;
+    if (controller == null) return const SizedBox.shrink();
+
+    if (controller.isLoading && controller.items.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.all(32),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (controller.error != null && controller.items.isEmpty) {
+      return Card(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            children: [
+              Icon(
+                Icons.error_outline,
+                size: 48,
+                color: Theme.of(context).colorScheme.error,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                "Error loading recipes",
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                controller.error!,
+                style: Theme.of(context).textTheme.bodySmall,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () => controller.loadInitial(),
+                child: const Text("Retry"),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (controller.items.isEmpty) {
+      return Card(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Center(
+            child: Column(
+              children: [
+                Icon(
+                  Icons.restaurant_menu_outlined,
+                  size: 64,
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  "No recipes yet",
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                      ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  widget.username == null
+                      ? "Create your first recipe!"
+                      : "This user hasn't created any recipes yet",
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                      ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+          child: Text(
+            "Recipes",
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+          ),
+        ),
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 3,
+            crossAxisSpacing: 2,
+            mainAxisSpacing: 2,
+            childAspectRatio: 0.75,
+          ),
+          itemCount: controller.items.length + (controller.isLoadingMore ? 1 : 0),
+          itemBuilder: (context, index) {
+            if (index >= controller.items.length) {
+              return Container(
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                child: const Center(child: CircularProgressIndicator()),
+              );
+            }
+
+            final recipe = controller.items[index];
+            return RepaintBoundary(
+              child: _RecipeGridCard(
+                recipe: recipe,
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => RecipeDetailScreen(
+                        recipeId: recipe.id,
+                        apiClient: widget.apiClient,
+                        auth: widget.auth,
+                      ),
+                    ),
+                  );
+                },
+                buildImageUrl: _buildImageUrl,
+              ),
+            );
+          },
+        ),
+        if (controller.isLoadingMore)
+          const Padding(
+            padding: EdgeInsets.all(16),
+            child: Center(child: CircularProgressIndicator()),
+          ),
+      ],
+    );
+  }
+
+  // Memoized date formatter - cache formatted dates to avoid repeated formatting
+  static final Map<DateTime, String> _dateCache = {};
+  String _formatDate(DateTime date) {
+    // Use a normalized date (without time) as cache key
+    final normalizedDate = DateTime(date.year, date.month, date.day);
+    
+    return _dateCache.putIfAbsent(normalizedDate, () {
+      const months = [
+        'January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December'
+      ];
+      final localDate = date.toLocal();
+      return '${months[localDate.month - 1]} ${localDate.day}, ${localDate.year}';
+    });
+  }
+}
+
+// Optimized cached image widget for profile screen
+class _ProfileCachedImageWidget extends StatelessWidget {
+  const _ProfileCachedImageWidget({
+    required this.imageUrl,
+    required this.width,
+    required this.height,
+    this.fit = BoxFit.cover,
+  });
+
+  final String imageUrl;
+  final double width;
+  final double height;
+  final BoxFit fit;
+
+  @override
+  Widget build(BuildContext context) {
+    // Handle infinite dimensions - don't set cacheWidth/cacheHeight if dimensions are infinite
+    final int? cacheWidth = width.isFinite ? width.toInt() : null;
+    final int? cacheHeight = height.isFinite ? height.toInt() : null;
+    
+    return Image.network(
+      imageUrl,
+      width: width.isFinite ? width : null,
+      height: height.isFinite ? height : null,
+      fit: fit,
+      cacheWidth: cacheWidth,
+      cacheHeight: cacheHeight,
+      frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+        if (wasSynchronouslyLoaded || frame != null) {
+          return child;
+        }
+        return AnimatedOpacity(
+          opacity: frame == null ? 0 : 1,
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOut,
+          child: child,
+        );
+      },
+      errorBuilder: (context, error, stackTrace) {
+        final containerWidth = width.isFinite ? width : null;
+        final containerHeight = height.isFinite ? height : null;
+        
+        return Container(
+          width: containerWidth,
+          height: containerHeight,
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+          child: Center(
+            child: Icon(
+              Icons.broken_image_rounded,
+              size: width.isFinite && width > 100 ? 48.0 : 32.0,
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+            ),
+          ),
+        );
+      },
+      loadingBuilder: (context, child, loadingProgress) {
+        if (loadingProgress == null) {
+          return child;
+        }
+        final containerWidth = width.isFinite ? width : null;
+        final containerHeight = height.isFinite ? height : null;
+        
+        return Container(
+          width: containerWidth,
+          height: containerHeight,
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+          child: Center(
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              value: loadingProgress.expectedTotalBytes != null
+                  ? loadingProgress.cumulativeBytesLoaded /
+                      loadingProgress.expectedTotalBytes!
+                  : null,
+              valueColor: AlwaysStoppedAnimation<Color>(
+                Theme.of(context).colorScheme.primary,
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -615,6 +915,140 @@ class _StatItem extends StatelessWidget {
               ),
         ),
       ],
+    );
+  }
+}
+
+class _RecipeGridCard extends StatelessWidget {
+  const _RecipeGridCard({
+    required this.recipe,
+    required this.onTap,
+    required this.buildImageUrl,
+  });
+
+  final FeedItem recipe;
+  final VoidCallback onTap;
+  final String Function(String) buildImageUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    final firstImage = recipe.images.isNotEmpty ? recipe.images.first : null;
+    final imageUrl = firstImage != null ? buildImageUrl(firstImage.url) : null;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          // Background image
+          if (imageUrl != null)
+            _ProfileCachedImageWidget(
+              imageUrl: imageUrl,
+              width: double.infinity,
+              height: double.infinity,
+              fit: BoxFit.cover,
+            )
+          else
+            Container(
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              child: Icon(
+                Icons.restaurant_menu_outlined,
+                size: 40,
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+              ),
+            ),
+          // Gradient overlay for better text readability
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.transparent,
+                    Colors.black.withOpacity(0.7),
+                  ],
+                  stops: const [0.4, 1.0],
+                ),
+              ),
+            ),
+          ),
+          // Overlay content
+          Positioned(
+            left: 6,
+            right: 6,
+            bottom: 6,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Title
+                Text(
+                  recipe.title,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    shadows: [
+                      Shadow(
+                        color: Colors.black54,
+                        blurRadius: 4,
+                      ),
+                    ],
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
+                // Stats row
+                Row(
+                  children: [
+                    Icon(
+                      Icons.favorite,
+                      size: 12,
+                      color: Colors.white.withOpacity(0.9),
+                    ),
+                    const SizedBox(width: 2),
+                    Text(
+                      recipe.likes.toString(),
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.9),
+                        fontSize: 11,
+                        shadows: const [
+                          Shadow(
+                            color: Colors.black54,
+                            blurRadius: 4,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Icon(
+                      Icons.chat_bubble,
+                      size: 12,
+                      color: Colors.white.withOpacity(0.9),
+                    ),
+                    const SizedBox(width: 2),
+                    Text(
+                      recipe.comments.toString(),
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.9),
+                        fontSize: 11,
+                        shadows: const [
+                          Shadow(
+                            color: Colors.black54,
+                            blurRadius: 4,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

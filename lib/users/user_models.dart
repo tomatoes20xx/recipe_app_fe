@@ -1,3 +1,5 @@
+import "../feed/feed_models.dart";
+
 class UserSearchResult {
   final String username;
   final String? displayName;
@@ -56,6 +58,28 @@ class UserSearchResponse {
         .toList();
 
     return UserSearchResponse(
+      items: items,
+      nextCursor: json["next_cursor"]?.toString(),
+    );
+  }
+}
+
+class UserRecipesResponse {
+  final List<FeedItem> items;
+  final String? nextCursor;
+
+  UserRecipesResponse({
+    required this.items,
+    this.nextCursor,
+  });
+
+  factory UserRecipesResponse.fromJson(Map<String, dynamic> json) {
+    final itemsRaw = (json["items"] as List?) ?? [];
+    final items = itemsRaw
+        .map((e) => FeedItem.fromJson(Map<String, dynamic>.from(e as Map)))
+        .toList();
+
+    return UserRecipesResponse(
       items: items,
       nextCursor: json["next_cursor"]?.toString(),
     );

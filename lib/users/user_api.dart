@@ -1,4 +1,5 @@
 import "../api/api_client.dart";
+import "../feed/feed_models.dart";
 import "user_models.dart";
 
 class UserApi {
@@ -35,5 +36,20 @@ class UserApi {
   /// Unfollow a user
   Future<void> unfollowUser(String username) async {
     await api.delete("/users/$username/follow", auth: true);
+  }
+
+  /// Get recipes by a specific user
+  Future<UserRecipesResponse> getUserRecipes({
+    required String username,
+    int limit = 20,
+    String? cursor,
+  }) async {
+    final queryParams = <String, String>{
+      "limit": limit.toString(),
+      if (cursor != null) "cursor": cursor,
+    };
+
+    final data = await api.get("/users/$username/recipes", query: queryParams, auth: true);
+    return UserRecipesResponse.fromJson(Map<String, dynamic>.from(data as Map));
   }
 }
