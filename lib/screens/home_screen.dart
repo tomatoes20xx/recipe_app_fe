@@ -1,5 +1,6 @@
 import "package:flutter/gestures.dart";
 import "package:flutter/material.dart";
+import "package:flutter_secure_storage/flutter_secure_storage.dart";
 
 import "../api/api_client.dart";
 import "../auth/auth_controller.dart";
@@ -29,6 +30,9 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  static const _kFullScreenViewKey = "full_screen_view";
+  final FlutterSecureStorage _storage = const FlutterSecureStorage();
+
   late final FeedController feed;
   final ScrollController sc = ScrollController();
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
@@ -48,6 +52,33 @@ class _HomeScreenState extends State<HomeScreen> {
     feed.loadInitial();
 
     sc.addListener(_onScroll);
+    _loadFullScreenViewPreference();
+  }
+
+  Future<void> _loadFullScreenViewPreference() async {
+    try {
+      final savedPreference = await _storage.read(key: _kFullScreenViewKey);
+      debugPrint("Loaded full screen view preference: $savedPreference");
+      if (savedPreference != null && mounted) {
+        setState(() {
+          _isFullScreenView = savedPreference == "true";
+        });
+        debugPrint("Set full screen view to: $_isFullScreenView");
+      }
+    } catch (e) {
+      // If loading fails, use default (false)
+      debugPrint("Error loading full screen view preference: $e");
+    }
+  }
+
+  Future<void> _saveFullScreenViewPreference(bool value) async {
+    try {
+      await _storage.write(key: _kFullScreenViewKey, value: value.toString());
+      debugPrint("Saved full screen view preference: $value");
+    } catch (e) {
+      // If saving fails, continue anyway
+      debugPrint("Error saving full screen view preference: $e");
+    }
   }
 
   void _onScroll() {
@@ -223,10 +254,12 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: _Controls(
                       feed: feed,
                       isFullScreenView: _isFullScreenView,
-                      onViewToggle: () {
+                      onViewToggle: () async {
+                        final newValue = !_isFullScreenView;
                         setState(() {
-                          _isFullScreenView = !_isFullScreenView;
+                          _isFullScreenView = newValue;
                         });
+                        await _saveFullScreenViewPreference(newValue);
                       },
                     ),
                   )
