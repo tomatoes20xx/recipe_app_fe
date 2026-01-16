@@ -89,7 +89,7 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
   }
 
   void _performSearch(String query) {
-    if (query.trim().length >= 1) {
+    if (query.trim().isNotEmpty) {
       if (_currentTab == 0) {
         recipeSearchController.search(query);
       } else {

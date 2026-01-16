@@ -70,7 +70,7 @@ class FeedItem {
     return FeedItem(
       id: json["id"].toString(),
       title: (json["title"] ?? "").toString(),
-      description: json["description"] == null ? null : json["description"].toString(),
+      description: json["description"]?.toString(),
       createdAt: DateTime.parse(json["created_at"].toString()),
       authorUsername: (json["author_username"] ?? "").toString(),
       authorAvatarUrl: json["author_avatar_url"]?.toString(),

@@ -276,7 +276,7 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
         
         if (mounted) {
           setState(() {
-            _uploadStatus = "Uploading ${imageFiles.length} image(s) (${sizeMB} MB)...";
+            _uploadStatus = "Uploading ${imageFiles.length} image(s) ($sizeMB MB)...";
           });
         }
       }

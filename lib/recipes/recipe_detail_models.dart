@@ -78,7 +78,7 @@ class RecipeIngredient {
       displayName: json["display_name"].toString(),
       normalizedName: json["normalized_name"].toString(),
       quantity: _asDouble(json["quantity"]),
-      unit: json["unit"] == null ? null : json["unit"].toString(),
+      unit: json["unit"]?.toString(),
       sortOrder: _asInt(json["sort_order"]),
     );
   }
@@ -145,8 +145,8 @@ class RecipeDetail {
     return RecipeDetail(
       id: json["id"].toString(),
       title: json["title"].toString(),
-      description: json["description"] == null ? null : json["description"].toString(),
-      cuisine: json["cuisine"] == null ? null : json["cuisine"].toString(),
+      description: json["description"]?.toString(),
+      cuisine: json["cuisine"]?.toString(),
       tags: tagsRaw.map((e) => e.toString()).toList(),
       createdAt: DateTime.parse(json["created_at"].toString()),
       authorUsername: json["author_username"].toString(),

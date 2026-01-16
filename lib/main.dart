@@ -51,7 +51,6 @@ class MyApp extends StatelessWidget {
               secondary: Colors.blueAccent,
               surface: Colors.grey[900]!,
               onSurface: Colors.white,
-              background: Colors.black,
             ),
           ),
           themeMode: themeController.themeMode,
