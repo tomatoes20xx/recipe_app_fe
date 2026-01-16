@@ -292,6 +292,7 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
       controller: _recipeScrollController,
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.symmetric(horizontal: 16),
+      cacheExtent: 500, // Cache 500px worth of items off-screen for smoother scrolling
       itemCount: recipeSearchController.items.length + (recipeSearchController.isLoadingMore ? 1 : 0),
       itemBuilder: (context, index) {
         if (index >= recipeSearchController.items.length) {
@@ -304,66 +305,68 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
         final item = recipeSearchController.items[index];
         final date = _formatDate(item.createdAt);
 
-        return Card(
-          margin: const EdgeInsets.only(bottom: 8),
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: BorderSide(
-              color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
-              width: 1,
+        return RepaintBoundary(
+          child: Card(
+            margin: const EdgeInsets.only(bottom: 8),
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: BorderSide(
+                color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
+                width: 1,
+              ),
             ),
-          ),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(16),
-            onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => RecipeDetailScreen(
-                    recipeId: item.id,
-                    apiClient: widget.apiClient,
-                    auth: widget.auth,
-                  ),
-                ),
-              );
-            },
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          item.title,
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            _buildUserAvatar(context, item.authorAvatarUrl, item.authorUsername),
-                            const SizedBox(width: 6),
-                            Text(
-                              "@${item.authorUsername} • $date",
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                                  ),
-                            ),
-                          ],
-                        ),
-                      ],
+            child: InkWell(
+              borderRadius: BorderRadius.circular(16),
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => RecipeDetailScreen(
+                      recipeId: item.id,
+                      apiClient: widget.apiClient,
+                      auth: widget.auth,
                     ),
                   ),
-                  Icon(
-                    Icons.chevron_right,
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
-                  ),
-                ],
+                );
+              },
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            item.title,
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              _buildUserAvatar(context, item.authorAvatarUrl, item.authorUsername),
+                              const SizedBox(width: 6),
+                              Text(
+                                "@${item.authorUsername} • $date",
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                                    ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(
+                      Icons.chevron_right,
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -465,6 +468,7 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
       controller: _userScrollController,
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.symmetric(horizontal: 16),
+      cacheExtent: 500, // Cache 500px worth of items off-screen for smoother scrolling
       itemCount: userSearchController.items.length + (userSearchController.isLoadingMore ? 1 : 0),
       itemBuilder: (context, index) {
         if (index >= userSearchController.items.length) {
@@ -477,74 +481,76 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
         final user = userSearchController.items[index];
         final isCurrentUser = user.viewerIsMe;
 
-        return Card(
-          margin: const EdgeInsets.only(bottom: 8),
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: BorderSide(
-              color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
-              width: 1,
+        return RepaintBoundary(
+          child: Card(
+            margin: const EdgeInsets.only(bottom: 8),
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: BorderSide(
+                color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
+                width: 1,
+              ),
             ),
-          ),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(16),
-            onTap: () {
-              if (isCurrentUser) {
-                // Navigate to own profile
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => ProfileScreen(
-                      auth: widget.auth!,
-                      apiClient: widget.apiClient,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(16),
+              onTap: () {
+                if (isCurrentUser) {
+                  // Navigate to own profile
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => ProfileScreen(
+                        auth: widget.auth!,
+                        apiClient: widget.apiClient,
+                      ),
                     ),
-                  ),
-                );
-              } else if (widget.auth?.isLoggedIn == true) {
-                // Navigate to other user's profile
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => ProfileScreen(
-                      auth: widget.auth!,
-                      apiClient: widget.apiClient,
-                      username: user.username,
+                  );
+                } else if (widget.auth?.isLoggedIn == true) {
+                  // Navigate to other user's profile
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => ProfileScreen(
+                        auth: widget.auth!,
+                        apiClient: widget.apiClient,
+                        username: user.username,
+                      ),
                     ),
-                  ),
-                );
-              }
-            },
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  _buildUserAvatar(context, user.avatarUrl, user.username, radius: 24),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          user.displayName ?? user.username,
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          "@${user.username}",
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                              ),
-                        ),
-                      ],
+                  );
+                }
+              },
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    _buildUserAvatar(context, user.avatarUrl, user.username, radius: 24),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            user.displayName ?? user.username,
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            "@${user.username}",
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                                ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  if (widget.auth?.isLoggedIn == true && !isCurrentUser)
-                    FollowButton(
-                      isFollowing: user.viewerIsFollowing,
-                      onTap: () => userSearchController.toggleFollow(user.username),
-                    ),
-                ],
+                    if (widget.auth?.isLoggedIn == true && !isCurrentUser)
+                      FollowButton(
+                        isFollowing: user.viewerIsFollowing,
+                        onTap: () => userSearchController.toggleFollow(user.username),
+                      ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -553,13 +559,20 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
     );
   }
 
+  // Memoized date formatter - cache formatted dates to avoid repeated formatting
+  static final Map<DateTime, String> _dateCache = {};
   String _formatDate(DateTime date) {
-    const months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
-    ];
-    final localDate = date.toLocal();
-    return '${months[localDate.month - 1]} ${localDate.day}, ${localDate.year}';
+    // Use a normalized date (without time) as cache key
+    final normalizedDate = DateTime(date.year, date.month, date.day);
+    
+    return _dateCache.putIfAbsent(normalizedDate, () {
+      const months = [
+        'January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December'
+      ];
+      final localDate = date.toLocal();
+      return '${months[localDate.month - 1]} ${localDate.day}, ${localDate.year}';
+    });
   }
 }
 

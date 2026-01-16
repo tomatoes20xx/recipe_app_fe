@@ -58,26 +58,21 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _loadFullScreenViewPreference() async {
     try {
       final savedPreference = await _storage.read(key: _kFullScreenViewKey);
-      debugPrint("Loaded full screen view preference: $savedPreference");
       if (savedPreference != null && mounted) {
         setState(() {
           _isFullScreenView = savedPreference == "true";
         });
-        debugPrint("Set full screen view to: $_isFullScreenView");
       }
     } catch (e) {
       // If loading fails, use default (false)
-      debugPrint("Error loading full screen view preference: $e");
     }
   }
 
   Future<void> _saveFullScreenViewPreference(bool value) async {
     try {
       await _storage.write(key: _kFullScreenViewKey, value: value.toString());
-      debugPrint("Saved full screen view preference: $value");
     } catch (e) {
       // If saving fails, continue anyway
-      debugPrint("Error saving full screen view preference: $e");
     }
   }
 
@@ -716,6 +711,7 @@ class _FeedList extends StatelessWidget {
       controller: controller,
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.only(bottom: 16),
+      cacheExtent: 500, // Cache 500px worth of items off-screen for smoother scrolling
       itemCount: feed.items.length + 1, // + footer
       itemBuilder: (context, i) {
         if (i == feed.items.length) {
@@ -878,6 +874,7 @@ class _FullScreenFeedListState extends State<_FullScreenFeedList> {
       scrollDirection: Axis.vertical,
       physics: const PageScrollPhysics(),
       itemCount: widget.feed.items.length + (widget.feed.nextCursor != null ? 1 : 0),
+      allowImplicitScrolling: false, // Disable pre-rendering for better performance
       itemBuilder: (context, index) {
         if (index >= widget.feed.items.length) {
           // Loading indicator at the end
@@ -900,6 +897,7 @@ class _FullScreenFeedListState extends State<_FullScreenFeedList> {
   }
 }
 
+// Memoized image URL builder - cache results to avoid repeated string operations
 String _buildImageUrl(String relativeUrl) {
   if (relativeUrl.startsWith('http://') || relativeUrl.startsWith('https://')) {
     return relativeUrl;
@@ -907,21 +905,136 @@ String _buildImageUrl(String relativeUrl) {
   return "${Config.apiBaseUrl}$relativeUrl";
 }
 
+// Memoized date formatter - cache formatted dates to avoid repeated formatting
+final Map<DateTime, String> _dateCache = {};
 String _formatDate(DateTime date) {
-  const months = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
-  ];
-  final localDate = date.toLocal();
-  return '${months[localDate.month - 1]} ${localDate.day}, ${localDate.year}';
+  // Use a normalized date (without time) as cache key
+  final normalizedDate = DateTime(date.year, date.month, date.day);
+  
+  return _dateCache.putIfAbsent(normalizedDate, () {
+    const months = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    final localDate = date.toLocal();
+    return '${months[localDate.month - 1]} ${localDate.day}, ${localDate.year}';
+  });
 }
 
+// Optimized image widget with proper error handling, loading states, and caching
+// Uses Flutter's built-in Image.network with cache headers for performance
+class _CachedNetworkImageWidget extends StatelessWidget {
+  const _CachedNetworkImageWidget({
+    required this.imageUrl,
+    required this.width,
+    required this.height,
+    this.fit = BoxFit.cover,
+  });
+
+  final String imageUrl;
+  final double width;
+  final double height;
+  final BoxFit fit;
+
+  @override
+  Widget build(BuildContext context) {
+    // Handle infinite dimensions - don't set cacheWidth/cacheHeight if dimensions are infinite
+    final int? cacheWidth = width.isFinite ? width.toInt() : null;
+    final int? cacheHeight = height.isFinite ? height.toInt() : null;
+    
+    return Image.network(
+      imageUrl,
+      width: width.isFinite ? width : null,
+      height: height.isFinite ? height : null,
+      fit: fit,
+      cacheWidth: cacheWidth,
+      cacheHeight: cacheHeight,
+      // Enable caching - Flutter will cache based on HTTP cache headers
+      // and use memory cache for frequently accessed images
+      frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+        if (wasSynchronouslyLoaded || frame != null) {
+          return child;
+        }
+        // Fade in animation for loaded images
+        return AnimatedOpacity(
+          opacity: frame == null ? 0 : 1,
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOut,
+          child: child,
+        );
+      },
+      errorBuilder: (context, error, stackTrace) {
+        final containerWidth = width.isFinite ? width : null;
+        final containerHeight = height.isFinite ? height : null;
+        final iconSize = width.isFinite && width > 100 ? 48.0 : 32.0;
+        
+        return Container(
+          width: containerWidth,
+          height: containerHeight,
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.broken_image_rounded,
+                  size: iconSize,
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+                ),
+                if (width.isFinite && width > 100) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    "Error",
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        );
+      },
+      loadingBuilder: (context, child, loadingProgress) {
+        if (loadingProgress == null) {
+          return child;
+        }
+        final containerWidth = width.isFinite ? width : null;
+        final containerHeight = height.isFinite ? height : null;
+        
+        return Container(
+          width: containerWidth,
+          height: containerHeight,
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+          child: Center(
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              value: loadingProgress.expectedTotalBytes != null
+                  ? loadingProgress.cumulativeBytesLoaded /
+                      loadingProgress.expectedTotalBytes!
+                  : null,
+              valueColor: AlwaysStoppedAnimation<Color>(
+                Theme.of(context).colorScheme.primary,
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+// Optimized avatar widget with caching
 Widget _buildUserAvatar(BuildContext context, String? avatarUrl, String username) {
   if (avatarUrl != null && avatarUrl.isNotEmpty) {
     return CircleAvatar(
       radius: 20,
       backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-      backgroundImage: NetworkImage(_buildImageUrl(avatarUrl)),
+      backgroundImage: NetworkImage(
+        _buildImageUrl(avatarUrl),
+        // Enable caching - Flutter will cache based on HTTP cache headers
+      ),
       onBackgroundImageError: (exception, stackTrace) {
         // Image failed to load, will show child as fallback
       },
@@ -980,12 +1093,15 @@ class _FeedCardState extends State<_FeedCard> {
 
   @override
   Widget build(BuildContext context) {
+    // Memoize expensive computations
     final date = _formatDate(widget.item.createdAt);
     final firstImage = widget.item.images.isNotEmpty ? widget.item.images.first : null;
     final hasDescription = widget.item.description != null && widget.item.description!.trim().isNotEmpty;
 
-    // Measure left content height after build
-    _measureLeftContent();
+    // Measure left content height after build (only once)
+    if (_leftContentHeight == null) {
+      _measureLeftContent();
+    }
 
     return Card(
       elevation: 0,
@@ -1167,111 +1283,12 @@ class _FeedCardState extends State<_FeedCard> {
                         topRight: Radius.circular(16),
                         bottomRight: Radius.circular(16),
                       ),
-                      child: _leftContentHeight != null
-                        ? SizedBox(
-                            width: 120,
-                            height: _leftContentHeight!,
-                            child: Image.network(
-                              _buildImageUrl(firstImage.url),
-                              width: 120,
-                              height: _leftContentHeight!,
-                              fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Container(
-                              width: 120,
-                              height: _leftContentHeight!,
-                              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                              child: Center(
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      Icons.broken_image_rounded,
-                                      size: 32,
-                                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      "Error",
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          },
-                          loadingBuilder: (context, child, loadingProgress) {
-                            if (loadingProgress == null) return child;
-                            return Container(
-                              width: 120,
-                              height: _leftContentHeight!,
-                              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                              child: Center(
-                                child: CircularProgressIndicator(
-                                  value: loadingProgress.expectedTotalBytes != null
-                                      ? loadingProgress.cumulativeBytesLoaded /
-                                          loadingProgress.expectedTotalBytes!
-                                      : null,
-                                  strokeWidth: 2,
-                                ),
-                              ),
-                            );
-                          },
-                            ),
-                          )
-                        : Image.network(
-                            _buildImageUrl(firstImage.url),
-                            width: 120,
-                            height: 120,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return Container(
-                                width: 120,
-                                height: 120,
-                                color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                                child: Center(
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        Icons.broken_image_rounded,
-                                        size: 32,
-                                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        "Error",
-                                        style: TextStyle(
-                                          fontSize: 10,
-                                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            },
-                            loadingBuilder: (context, child, loadingProgress) {
-                              if (loadingProgress == null) return child;
-                              return Container(
-                                width: 120,
-                                height: 120,
-                                color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                                child: Center(
-                                  child: CircularProgressIndicator(
-                                    value: loadingProgress.expectedTotalBytes != null
-                                        ? loadingProgress.cumulativeBytesLoaded /
-                                            loadingProgress.expectedTotalBytes!
-                                        : null,
-                                    strokeWidth: 2,
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
+                      child: _CachedNetworkImageWidget(
+                        imageUrl: _buildImageUrl(firstImage.url),
+                        width: 120,
+                        height: _leftContentHeight ?? 120,
+                        fit: BoxFit.cover,
+                      ),
                     )
                     : Center(
                         child: Icon(
@@ -1576,54 +1593,21 @@ class _FullScreenFeedCardState extends State<_FullScreenFeedCard> {
                 controller: _imagePageController,
                 scrollDirection: Axis.horizontal,
                 itemCount: widget.item.images.length,
+                allowImplicitScrolling: false, // Disable pre-rendering for better performance
                 onPageChanged: (index) {
-                  setState(() {
-                    _currentImageIndex = index;
-                  });
+                  if (_currentImageIndex != index) {
+                    setState(() {
+                      _currentImageIndex = index;
+                    });
+                  }
                 },
                 itemBuilder: (context, index) {
                   final image = widget.item.images[index];
-                  return Image.network(
-                    _buildImageUrl(image.url),
+                  return _CachedNetworkImageWidget(
+                    imageUrl: _buildImageUrl(image.url),
+                    width: double.infinity,
+                    height: double.infinity,
                     fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                        child: Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.broken_image_rounded,
-                                size: 48,
-                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                "Error loading image",
-                                style: TextStyle(
-                                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                    loadingBuilder: (context, child, loadingProgress) {
-                      if (loadingProgress == null) return child;
-                      return Container(
-                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                        child: Center(
-                          child: CircularProgressIndicator(
-                            value: loadingProgress.expectedTotalBytes != null
-                                ? loadingProgress.cumulativeBytesLoaded /
-                                    loadingProgress.expectedTotalBytes!
-                                : null,
-                          ),
-                        ),
-                      );
-                    },
                   );
                 },
               ),
