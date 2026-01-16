@@ -80,6 +80,62 @@ class RecipeApi {
     return await _handleRecipeCreationResponse(data);
   }
 
+  Future<String> updateRecipe({
+    required String recipeId,
+    String? title,
+    String? description,
+    String? cuisine,
+    List<String>? tags,
+    List<Map<String, dynamic>>? ingredients,
+    List<Map<String, dynamic>>? steps,
+  }) async {
+    final body = <String, dynamic>{};
+    
+    // Only include fields that are provided (partial update)
+    if (title != null) {
+      body["title"] = title.trim();
+    }
+    if (description != null) {
+      body["description"] = description.trim();
+    }
+    if (cuisine != null) {
+      body["cuisine"] = cuisine.trim();
+    }
+    if (tags != null) {
+      body["tags"] = tags;
+    }
+    if (ingredients != null) {
+      body["ingredients"] = ingredients;
+    }
+    if (steps != null) {
+      body["steps"] = steps;
+    }
+    
+    if (body.isEmpty) {
+      throw Exception("At least one field must be provided for update");
+    }
+    
+    final data = await api.patch(
+      "/recipes/$recipeId",
+      body: body,
+      auth: true,
+    );
+    
+    // API returns { id: recipeId }
+    if (data is Map && data.containsKey("id")) {
+      return data["id"].toString();
+    }
+    if (data is String) {
+      return data;
+    }
+    throw Exception("Unexpected response format from update recipe");
+  }
+
+  Future<void> deleteRecipe(String recipeId) async {
+    await api.delete("/recipes/$recipeId", auth: true);
+    // DELETE returns 204 No Content, so no response body to parse
+  }
+
   Future<RecipeDetail> _handleRecipeCreationResponse(dynamic data) async {
     if (data == null) {
       throw Exception("API returned null response");

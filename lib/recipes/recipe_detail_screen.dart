@@ -3,6 +3,7 @@ import "package:flutter/material.dart";
 import "../api/api_client.dart";
 import "../auth/auth_controller.dart";
 import "../config.dart";
+import "../screens/create_recipe_screen.dart";
 import "comments_controller.dart";
 import "recipe_api.dart";
 import "recipe_detail_controller.dart";
@@ -53,9 +54,58 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     super.dispose();
   }
 
+  Future<void> _showDeleteConfirmation(BuildContext context, RecipeDetail recipe) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Delete Recipe"),
+        content: Text(
+          "Are you sure you want to delete \"${recipe.title}\"? This action cannot be undone.",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.error,
+            ),
+            child: const Text("Delete"),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    try {
+      final recipeApi = RecipeApi(widget.apiClient);
+      await recipeApi.deleteRecipe(recipe.id);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Recipe deleted successfully")),
+        );
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Failed to delete recipe: $e")),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final r = c.recipe;
+    final isOwner = widget.auth != null &&
+        widget.auth!.isLoggedIn &&
+        r != null &&
+        widget.auth!.me?["username"]?.toString() == r.authorUsername;
 
     return Scaffold(
       appBar: AppBar(
@@ -67,6 +117,34 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
             Navigator.of(context).pop(commentCount);
           },
         ),
+        actions: [
+          if (isOwner) ...[
+            IconButton(
+              icon: const Icon(Icons.edit),
+              tooltip: "Edit Recipe",
+              onPressed: () async {
+                final result = await Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => CreateRecipeScreen(
+                      apiClient: widget.apiClient,
+                      recipeId: r.id,
+                      recipe: r,
+                    ),
+                  ),
+                );
+                if (result == true && mounted) {
+                  // Refresh recipe data after editing
+                  c.refresh();
+                }
+              },
+            ),
+            IconButton(
+              icon: const Icon(Icons.delete_outline),
+              tooltip: "Delete Recipe",
+              onPressed: () => _showDeleteConfirmation(context, r),
+            ),
+          ],
+        ],
       ),
         body: c.isLoading
             ? const Center(child: CircularProgressIndicator())

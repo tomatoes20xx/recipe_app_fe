@@ -112,8 +112,27 @@ Future<dynamic> postMultipart(
   required List<http.MultipartFile> files,
   bool auth = false,
 }) async {
+  return _multipartRequest('POST', path, fields: fields, files: files, auth: auth);
+}
+
+Future<dynamic> putMultipart(
+  String path, {
+  required Map<String, String> fields,
+  required List<http.MultipartFile> files,
+  bool auth = false,
+}) async {
+  return _multipartRequest('PUT', path, fields: fields, files: files, auth: auth);
+}
+
+Future<dynamic> _multipartRequest(
+  String method,
+  String path, {
+  required Map<String, String> fields,
+  required List<http.MultipartFile> files,
+  bool auth = false,
+}) async {
   try {
-    final request = http.MultipartRequest('POST', _uri(path));
+    final request = http.MultipartRequest(method, _uri(path));
     
     // Add fields
     request.fields.addAll(fields);
@@ -168,6 +187,9 @@ Future<dynamic> postMultipart(
       throw ApiException(499, "Upload was cancelled or connection was reset. Please try again.");
     }
 
+    // Handle 204 No Content (common for DELETE requests)
+    if (res.statusCode == 204) return null;
+    
     if (res.statusCode >= 200 && res.statusCode < 300) return data;
 
     // Fastify often returns { error, message } or { error, details }
