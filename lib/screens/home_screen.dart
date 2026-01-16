@@ -1366,6 +1366,125 @@ class _ExpandableDescription extends StatelessWidget {
   }
 }
 
+class _TikTokExpandableDescription extends StatelessWidget {
+  const _TikTokExpandableDescription({
+    required this.description,
+    required this.isExpanded,
+    required this.onTap,
+  });
+
+  final String description;
+  final bool isExpanded;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    // Simple heuristic: if description is longer than ~100 chars, it likely needs expansion
+    final needsExpansion = description.length > 100;
+    final textStyle = TextStyle(
+      color: Colors.white.withOpacity(0.9),
+      fontSize: 14,
+      height: 1.4,
+      shadows: const [
+        Shadow(
+          offset: Offset(0, 1),
+          blurRadius: 2,
+          color: Colors.black54,
+        ),
+      ],
+    );
+    final buttonStyle = textStyle.copyWith(
+      fontWeight: FontWeight.w600,
+      color: Colors.white,
+    );
+
+    if (!needsExpansion) {
+      return Text(
+        description,
+        style: textStyle,
+      );
+    }
+
+    if (isExpanded) {
+      // When expanded, show full text with "less" at the end
+      return Text.rich(
+        TextSpan(
+          children: [
+            TextSpan(
+              text: description,
+              style: textStyle,
+            ),
+            const TextSpan(text: " "),
+            TextSpan(
+              text: "less",
+              style: buttonStyle,
+              recognizer: TapGestureRecognizer()
+                ..onTap = () {
+                  // Stop event propagation so clicking the button doesn't navigate
+                  onTap();
+                },
+            ),
+          ],
+        ),
+      );
+    }
+
+    // When collapsed, show truncated text with "more" inline
+    // We need to manually truncate to ensure "more" is always visible
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Measure how much space " more" takes
+        final moreTextPainter = TextPainter(
+          text: TextSpan(text: " more", style: buttonStyle),
+          textDirection: TextDirection.ltr,
+        );
+        moreTextPainter.layout();
+        final moreWidth = moreTextPainter.width;
+        
+        // Create a text painter to measure text with available width (minus "more" space)
+        final availableWidth = constraints.maxWidth - moreWidth;
+        final textPainter = TextPainter(
+          text: TextSpan(text: description, style: textStyle),
+          maxLines: 2,
+          textDirection: TextDirection.ltr,
+        );
+        textPainter.layout(maxWidth: availableWidth);
+        
+        String displayText = description;
+        if (textPainter.didExceedMaxLines) {
+          // Find where to cut the text at the end of the second line
+          final position = textPainter.getPositionForOffset(
+            Offset(availableWidth, textPainter.height),
+          );
+          final cutPoint = (position.offset - 3).clamp(0, description.length);
+          displayText = "${description.substring(0, cutPoint).trim()}...";
+        }
+
+        return Text.rich(
+          TextSpan(
+            children: [
+              TextSpan(
+                text: displayText,
+                style: textStyle,
+              ),
+              const TextSpan(text: " "),
+              TextSpan(
+                text: "more",
+                style: buttonStyle,
+                recognizer: TapGestureRecognizer()
+                  ..onTap = () {
+                    // Stop event propagation so clicking the button doesn't navigate
+                    onTap();
+                  },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
 class _TikTokFeedCard extends StatefulWidget {
   const _TikTokFeedCard({
     required this.item,
@@ -1387,6 +1506,7 @@ class _TikTokFeedCard extends StatefulWidget {
 class _TikTokFeedCardState extends State<_TikTokFeedCard> {
   final PageController _imagePageController = PageController();
   int _currentImageIndex = 0;
+  bool _isDescriptionExpanded = false;
 
   @override
   void dispose() {
@@ -1605,21 +1725,14 @@ class _TikTokFeedCardState extends State<_TikTokFeedCard> {
                     // Description
                     if (widget.item.description != null && widget.item.description!.trim().isNotEmpty) ...[
                       const SizedBox(height: 8),
-                      Text(
-                        widget.item.description!,
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.9),
-                          fontSize: 14,
-                          shadows: const [
-                            Shadow(
-                              offset: Offset(0, 1),
-                              blurRadius: 2,
-                              color: Colors.black54,
-                            ),
-                          ],
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
+                      _TikTokExpandableDescription(
+                        description: widget.item.description!,
+                        isExpanded: _isDescriptionExpanded,
+                        onTap: () {
+                          setState(() {
+                            _isDescriptionExpanded = !_isDescriptionExpanded;
+                          });
+                        },
                       ),
                     ],
                     const SizedBox(height: 16),
