@@ -58,10 +58,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         if (_recipesScrollController.hasClients &&
             _recipesScrollController.position.pixels > 
             _recipesScrollController.position.maxScrollExtent - 300) {
-          _recipesController!.loadMore();
+          _recipesController.loadMore();
         }
       });
-      _recipesController!.loadInitial();
+      _recipesController.loadInitial();
     } else {
       _recipesController = null;
     }
