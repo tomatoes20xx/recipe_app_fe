@@ -3,6 +3,7 @@ import "package:flutter/material.dart";
 import "../api/api_client.dart";
 import "../auth/auth_controller.dart";
 import "../screens/create_recipe_screen.dart";
+import "../screens/profile_screen.dart";
 import "../utils/ui_utils.dart";
 import "comments_bottom_sheet.dart";
 import "recipe_api.dart";
@@ -316,7 +317,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                                   ),
                                   const SizedBox(height: 12),
                                   // User Info Row
-                                  _UserInfoRow(r: r),
+                                  _UserInfoRow(r: r, apiClient: widget.apiClient, auth: widget.auth),
                                   const SizedBox(height: 12),
                                   // Hashtag
                                   if (r.tags.isNotEmpty) ...[
@@ -349,8 +350,10 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
 }
 
 class _UserInfoRow extends StatelessWidget {
-  const _UserInfoRow({required this.r});
+  const _UserInfoRow({required this.r, required this.apiClient, this.auth});
   final RecipeDetail r;
+  final ApiClient apiClient;
+  final AuthController? auth;
 
   @override
   Widget build(BuildContext context) {
@@ -360,11 +363,30 @@ class _UserInfoRow extends StatelessWidget {
 
     return Row(
       children: [
-        buildUserAvatar(
-          context,
-          r.authorAvatarUrl,
-          r.authorUsername,
-          radius: 16,
+        GestureDetector(
+          onTap: () {
+            if (auth == null) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("Log in to view profiles")),
+              );
+              return;
+            }
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => ProfileScreen(
+                  auth: auth!,
+                  apiClient: apiClient,
+                  username: r.authorUsername,
+                ),
+              ),
+            );
+          },
+          child: buildUserAvatar(
+            context,
+            r.authorAvatarUrl,
+            r.authorUsername,
+            radius: 16,
+          ),
         ),
         const SizedBox(width: 8),
         Expanded(

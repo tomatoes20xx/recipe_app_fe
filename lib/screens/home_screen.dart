@@ -1042,30 +1042,43 @@ class _FeedCardState extends State<_FeedCard> {
                     // Username and date at the top
                     Row(
                       children: [
-                        widget.item.authorAvatarUrl != null && widget.item.authorAvatarUrl!.isNotEmpty
-                            ? CircleAvatar(
-                                radius: 10,
-                                backgroundColor: Theme.of(context).colorScheme.primary,
-                                backgroundImage: NetworkImage(buildImageUrl(widget.item.authorAvatarUrl!)),
-                                onBackgroundImageError: (exception, stackTrace) {
-                                  // Image failed to load, will show child as fallback
-                                },
-                                child: null,
-                              )
-                            : CircleAvatar(
-                                radius: 10,
-                                backgroundColor: Theme.of(context).colorScheme.primary,
-                                child: Text(
-                                  widget.item.authorUsername.isNotEmpty
-                                      ? widget.item.authorUsername[0].toUpperCase()
-                                      : "?",
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                    color: Theme.of(context).colorScheme.onPrimary,
-                                  ),
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => ProfileScreen(
+                                  auth: widget.auth,
+                                  apiClient: widget.apiClient,
+                                  username: widget.item.authorUsername,
                                 ),
                               ),
+                            );
+                          },
+                          child: widget.item.authorAvatarUrl != null && widget.item.authorAvatarUrl!.isNotEmpty
+                              ? CircleAvatar(
+                                  radius: 10,
+                                  backgroundColor: Theme.of(context).colorScheme.primary,
+                                  backgroundImage: NetworkImage(buildImageUrl(widget.item.authorAvatarUrl!)),
+                                  onBackgroundImageError: (exception, stackTrace) {
+                                    // Image failed to load, will show child as fallback
+                                  },
+                                  child: null,
+                                )
+                              : CircleAvatar(
+                                  radius: 10,
+                                  backgroundColor: Theme.of(context).colorScheme.primary,
+                                  child: Text(
+                                    widget.item.authorUsername.isNotEmpty
+                                        ? widget.item.authorUsername[0].toUpperCase()
+                                        : "?",
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                      color: Theme.of(context).colorScheme.onPrimary,
+                                    ),
+                                  ),
+                                ),
+                        ),
                         const SizedBox(width: 6),
                         Flexible(
                           child: Text(
@@ -1592,28 +1605,41 @@ class _FullScreenFeedCardState extends State<_FullScreenFeedCard> {
                     // Author info
                     Row(
                       children: [
-                        widget.item.authorAvatarUrl != null && widget.item.authorAvatarUrl!.isNotEmpty
-                            ? CircleAvatar(
-                                radius: 16,
-                                backgroundColor: Theme.of(context).colorScheme.primary,
-                                backgroundImage: NetworkImage(buildImageUrl(widget.item.authorAvatarUrl!)),
-                                onBackgroundImageError: (exception, stackTrace) {},
-                                child: null,
-                              )
-                            : CircleAvatar(
-                                radius: 16,
-                                backgroundColor: Theme.of(context).colorScheme.primary,
-                                child: Text(
-                                  widget.item.authorUsername.isNotEmpty
-                                      ? widget.item.authorUsername[0].toUpperCase()
-                                      : "?",
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                    color: Theme.of(context).colorScheme.onPrimary,
-                                  ),
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => ProfileScreen(
+                                  auth: widget.auth,
+                                  apiClient: widget.apiClient,
+                                  username: widget.item.authorUsername,
                                 ),
                               ),
+                            );
+                          },
+                          child: widget.item.authorAvatarUrl != null && widget.item.authorAvatarUrl!.isNotEmpty
+                              ? CircleAvatar(
+                                  radius: 16,
+                                  backgroundColor: Theme.of(context).colorScheme.primary,
+                                  backgroundImage: NetworkImage(buildImageUrl(widget.item.authorAvatarUrl!)),
+                                  onBackgroundImageError: (exception, stackTrace) {},
+                                  child: null,
+                                )
+                              : CircleAvatar(
+                                  radius: 16,
+                                  backgroundColor: Theme.of(context).colorScheme.primary,
+                                  child: Text(
+                                    widget.item.authorUsername.isNotEmpty
+                                        ? widget.item.authorUsername[0].toUpperCase()
+                                        : "?",
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                      color: Theme.of(context).colorScheme.onPrimary,
+                                    ),
+                                  ),
+                                ),
+                        ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Column(
