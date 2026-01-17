@@ -34,13 +34,24 @@ class CommentsController extends ChangeNotifier {
     await load();
   }
 
-  Future<void> addComment(String content) async {
+  Future<void> addComment(String content, {String? parentId}) async {
     if (content.trim().isEmpty) return;
 
     try {
-      await recipeApi.postComment(recipeId, content);
+      await recipeApi.postComment(recipeId, content, parentId: parentId);
       // Always reload comments after posting to get full data with author info
-      // This ensures we have the correct author_username and all fields
+      await load();
+    } catch (e) {
+      error = e.toString();
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  Future<void> deleteComment(String commentId) async {
+    try {
+      await recipeApi.deleteComment(recipeId, commentId);
+      // Reload comments after deletion to reflect changes
       await load();
     } catch (e) {
       error = e.toString();

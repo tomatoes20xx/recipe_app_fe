@@ -191,23 +191,51 @@ class RecipeApi {
     final data = await api.get("/recipes/$recipeId/comments", auth: true);
     if (data == null) return [];
     
-    // API returns: { items: [...], nextCursor: "..." }
-    List<dynamic> commentsList;
+    // API returns nested structure: { items: [{ id, body, replies: [...] }], nextCursor: "..." }
+    List<dynamic> topLevelComments;
     if (data is Map && data.containsKey("items")) {
-      commentsList = data["items"] as List? ?? [];
+      topLevelComments = data["items"] as List? ?? [];
     } else if (data is List) {
       // Fallback: handle direct list response
-      commentsList = data;
+      topLevelComments = data;
     } else {
       return [];
     }
     
-    return commentsList
-        .map((e) => Comment.fromJson(Map<String, dynamic>.from(e as Map)))
-        .toList();
+    // Recursively flatten the nested structure: extract replies at any depth and set their parent_id
+    final flatComments = <Comment>[];
+    
+    // Recursive function to process a comment and all its nested replies
+    void processComment(Map<String, dynamic> commentMap, String? parentId) {
+      // Create the comment with the given parent_id
+      final commentData = Map<String, dynamic>.from(commentMap);
+      if (parentId != null) {
+        commentData["parent_id"] = parentId;
+      }
+      final comment = Comment.fromJson(commentData);
+      flatComments.add(comment);
+      
+      // Recursively process replies
+      final replies = commentMap["replies"] as List?;
+      if (replies != null && replies.isNotEmpty) {
+        for (final replyData in replies) {
+          final replyMap = Map<String, dynamic>.from(replyData as Map);
+          // Recursively process this reply with the current comment as its parent
+          processComment(replyMap, comment.id);
+        }
+      }
+    }
+    
+    // Process all top-level comments (parent_id = null)
+    for (final item in topLevelComments) {
+      final itemMap = Map<String, dynamic>.from(item as Map);
+      processComment(itemMap, null);
+    }
+    
+    return flatComments;
   }
 
-  Future<Comment> postComment(String recipeId, String content) async {
+  Future<Comment> postComment(String recipeId, String content, {String? parentId}) async {
     final trimmedContent = content.trim();
     if (trimmedContent.isEmpty) {
       throw Exception("Comment cannot be empty");
@@ -215,16 +243,24 @@ class RecipeApi {
     if (trimmedContent.length > 2000) {
       throw Exception("Comment cannot exceed 2000 characters");
     }
-    
+    final body = <String, dynamic>{"body": trimmedContent};
+    if (parentId != null && parentId.isNotEmpty) {
+      body["parent_id"] = parentId;
+    }
     final data = await api.post(
       "/recipes/$recipeId/comments",
-      body: {"body": trimmedContent},
+      body: body,
       auth: true,
     );
     if (data == null) {
       throw Exception("API returned null response");
     }
     return Comment.fromJson(Map<String, dynamic>.from(data as Map));
+  }
+
+  Future<void> deleteComment(String recipeId, String commentId) async {
+    await api.delete("/recipes/$recipeId/comments/$commentId", auth: true);
+    // DELETE returns 204 No Content, so no response body to parse
   }
 
   Future<void> like(String recipeId) async {
