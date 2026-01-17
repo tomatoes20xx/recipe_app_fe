@@ -1167,33 +1167,6 @@ class _FeedCardState extends State<_FeedCard> {
                           active: widget.item.viewerHasBookmarked,
                           onTap: () => widget.feed.toggleBookmark(widget.item.id),
                         ),
-                        const Spacer(),
-                        if (widget.sort == "top" && widget.item.likesWindow != null)
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.5),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  "🔥",
-                                  style: TextStyle(fontSize: 14),
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  "${widget.item.likesWindow}",
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                    color: Theme.of(context).colorScheme.onPrimaryContainer,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
                       ],
                     ),
                   ],
@@ -1210,26 +1183,63 @@ class _FeedCardState extends State<_FeedCard> {
                     ),
                     color: Theme.of(context).colorScheme.surfaceContainerHighest,
                   ),
-                  child: firstImage != null
-                  ? ClipRRect(
-                      borderRadius: const BorderRadius.only(
-                        topRight: Radius.circular(16),
-                        bottomRight: Radius.circular(16),
-                      ),
-                      child: CachedNetworkImageWidget(
-                        imageUrl: buildImageUrl(firstImage.url),
-                        width: 120,
-                        height: _leftContentHeight ?? 120,
-                        fit: BoxFit.cover,
-                      ),
-                    )
-                    : Center(
-                        child: Icon(
-                          Icons.image_outlined,
-                          size: 40,
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+                  child: Stack(
+                    clipBehavior: Clip.antiAlias,
+                    children: [
+                      if (firstImage != null)
+                        Positioned.fill(
+                          child: ClipRRect(
+                            borderRadius: const BorderRadius.only(
+                              topRight: Radius.circular(16),
+                              bottomRight: Radius.circular(16),
+                            ),
+                            child: CachedNetworkImageWidget(
+                              imageUrl: buildImageUrl(firstImage.url),
+                              width: 120,
+                              height: _leftContentHeight ?? 120,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        )
+                      else
+                        Positioned.fill(
+                          child: Center(
+                            child: Icon(
+                              Icons.image_outlined,
+                              size: 40,
+                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+                            ),
+                          ),
                         ),
-                      ),
+                      if (widget.sort == "top" && widget.item.likesWindow != null)
+                        Positioned(
+                          top: 8,
+                          right: 8,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.45),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Text("🔥", style: TextStyle(fontSize: 12)),
+                                const SizedBox(width: 4),
+                                Text(
+                                  "${widget.item.likesWindow}",
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
           ],
         ),
@@ -1729,38 +1739,39 @@ class _FullScreenFeedCardState extends State<_FullScreenFeedCard> {
                           active: widget.item.viewerHasBookmarked,
                           onTap: () => widget.feed.toggleBookmark(widget.item.id),
                         ),
-                        const Spacer(),
-                        if (widget.sort == "top" && widget.item.likesWindow != null)
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Text(
-                                  "🔥",
-                                  style: TextStyle(fontSize: 14),
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  "${widget.item.likesWindow}",
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
                       ],
                     ),
                   ],
                 ),
                 )
+              ),
+            ),
+          ),
+        // Fire badge (top sort) - top right of image
+        if (widget.sort == "top" && widget.item.likesWindow != null)
+          Positioned(
+            top: 16,
+            right: 16,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.45),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text("🔥", style: TextStyle(fontSize: 14)),
+                  const SizedBox(width: 4),
+                  Text(
+                    "${widget.item.likesWindow}",
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
