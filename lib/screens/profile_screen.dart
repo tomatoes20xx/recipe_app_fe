@@ -7,12 +7,14 @@ import "package:image/image.dart" as img;
 import "../api/api_client.dart";
 import "../auth/auth_api.dart";
 import "../auth/auth_controller.dart";
+import "../config.dart";
 import "../feed/feed_models.dart";
 import "../recipes/recipe_detail_screen.dart";
 import "../users/user_api.dart";
 import "../users/user_models.dart";
 import "../users/user_recipes_controller.dart";
-import "../utils/ui_utils.dart";
+import "followers_screen.dart";
+import "following_screen.dart";
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({
@@ -38,6 +40,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _isFollowing = false;
   UserProfile? _userProfile;
   String? _error;
+  bool _isLoadingPrivacy = false;
   
   late final UserRecipesController? _recipesController;
   final ScrollController _recipesScrollController = ScrollController();
@@ -68,6 +71,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
     
     if (widget.username != null) {
       _loadUserProfile();
+    } else {
+      // Load own profile to get privacy settings
+      _loadOwnProfile();
+    }
+  }
+
+  Future<void> _loadOwnProfile() async {
+    final currentUsername = widget.auth.me?["username"]?.toString();
+    if (currentUsername == null) return;
+
+    try {
+      final userApi = UserApi(widget.apiClient);
+      final profile = await userApi.getUserProfile(currentUsername);
+      setState(() {
+        _userProfile = profile;
+      });
+    } catch (e) {
+      // Silently fail - not critical for own profile
     }
   }
 
@@ -140,6 +161,46 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Failed to ${newFollowing ? 'follow' : 'unfollow'}: $e")),
+        );
+      }
+    }
+  }
+
+  Future<void> _updatePrivacy({
+    bool? followersPrivate,
+    bool? followingPrivate,
+  }) async {
+    setState(() {
+      _isLoadingPrivacy = true;
+    });
+
+    try {
+      final userApi = UserApi(widget.apiClient);
+      final updatedPrivacy = await userApi.updatePrivacy(
+        followersPrivate: followersPrivate,
+        followingPrivate: followingPrivate,
+      );
+
+      // Update local profile with new privacy settings
+      if (_userProfile != null) {
+        setState(() {
+          _userProfile = _userProfile!.copyWith(privacy: updatedPrivacy);
+          _isLoadingPrivacy = false;
+        });
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Privacy settings updated")),
+        );
+      }
+    } catch (e) {
+      setState(() {
+        _isLoadingPrivacy = false;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Failed to update privacy: $e")),
         );
       }
     }
@@ -444,17 +505,53 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
-                          _StatItem(
-                            label: "Recipes",
-                            value: _userProfile!.recipesCount.toString(),
+                          Expanded(
+                            child: InkWell(
+                              onTap: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => FollowersScreen(
+                                      username: _userProfile!.username,
+                                      apiClient: widget.apiClient,
+                                      auth: widget.auth,
+                                    ),
+                                  ),
+                                );
+                              },
+                              borderRadius: BorderRadius.circular(8),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                                child: _StatItem(
+                                  label: "Followers",
+                                  value: _userProfile!.followersCount.toString(),
+                                  showChevron: true,
+                                ),
+                              ),
+                            ),
                           ),
-                          _StatItem(
-                            label: "Followers",
-                            value: _userProfile!.followersCount.toString(),
-                          ),
-                          _StatItem(
-                            label: "Following",
-                            value: _userProfile!.followingCount.toString(),
+                          Expanded(
+                            child: InkWell(
+                              onTap: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => FollowingScreen(
+                                      username: _userProfile!.username,
+                                      apiClient: widget.apiClient,
+                                      auth: widget.auth,
+                                    ),
+                                  ),
+                                );
+                              },
+                              borderRadius: BorderRadius.circular(8),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                                child: _StatItem(
+                                  label: "Following",
+                                  value: _userProfile!.followingCount.toString(),
+                                  showChevron: true,
+                                ),
+                              ),
+                            ),
                           ),
                         ],
                       ),
@@ -598,6 +695,73 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ],
                     ),
                   ],
+                  const SizedBox(height: 16),
+                  const Divider(),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      Expanded(
+                        child: InkWell(
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => FollowersScreen(
+                                  username: username,
+                                  apiClient: widget.apiClient,
+                                  auth: widget.auth,
+                                ),
+                              ),
+                            );
+                          },
+                          borderRadius: BorderRadius.circular(8),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                            child: _StatItem(
+                              label: "Followers",
+                              value: _userProfile?.followersCount.toString() ?? "0",
+                              showChevron: true,
+                            ),
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: InkWell(
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => FollowingScreen(
+                                  username: username,
+                                  apiClient: widget.apiClient,
+                                  auth: widget.auth,
+                                ),
+                              ),
+                            );
+                          },
+                          borderRadius: BorderRadius.circular(8),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                            child: _StatItem(
+                              label: "Following",
+                              value: _userProfile?.followingCount.toString() ?? "0",
+                              showChevron: true,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  // Privacy settings (only for own profile)
+                  if (_userProfile?.isViewer == true && _userProfile?.privacy != null) ...[
+                    const SizedBox(height: 16),
+                    const Divider(),
+                    const SizedBox(height: 8),
+                    _PrivacySettings(
+                      privacy: _userProfile!.privacy!,
+                      onUpdate: _updatePrivacy,
+                      isLoading: _isLoadingPrivacy,
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -611,9 +775,51 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  String buildImageUrl(String relativeUrl) {
+    if (relativeUrl.startsWith('http://') || relativeUrl.startsWith('https://')) {
+      return relativeUrl;
+    }
+    return "${Config.apiBaseUrl}$relativeUrl";
+  }
+
+  Widget buildUserAvatar(BuildContext context, String? avatarUrl, String username, {double radius = 40}) {
+    if (avatarUrl != null && avatarUrl.isNotEmpty) {
+      return CircleAvatar(
+        radius: radius,
+        backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+        backgroundImage: NetworkImage(buildImageUrl(avatarUrl)),
+        onBackgroundImageError: (exception, stackTrace) {
+          // Image failed to load, will show child as fallback
+        },
+        child: null,
+      );
+    }
+    return CircleAvatar(
+      radius: radius,
+      backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+      child: username.isNotEmpty
+          ? Text(
+              username[0].toUpperCase(),
+              style: TextStyle(
+                fontSize: radius * 0.8,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.onPrimaryContainer,
+              ),
+            )
+          : Icon(
+              Icons.person_outline_rounded,
+              size: radius,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+    );
+  }
+
   Widget _buildRecipesSection(BuildContext context) {
     final controller = _recipesController;
     if (controller == null) return const SizedBox.shrink();
+    
+    // Get recipe count from profile if available, otherwise use controller items length
+    final recipeCount = _userProfile?.recipesCount ?? controller.items.length;
 
     if (controller.isLoading && controller.items.isEmpty) {
       return const Padding(
@@ -699,7 +905,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
           child: Text(
-            "Recipes",
+            "$recipeCount Recipes",
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.w700,
                 ),
@@ -738,7 +944,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   );
                 },
-                buildImageUrl: buildImageUrl,
+                buildImageUrl: (url) => buildImageUrl(url),
               ),
             );
           },
@@ -755,10 +961,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
 
 class _StatItem extends StatelessWidget {
-  const _StatItem({required this.label, required this.value});
+  const _StatItem({
+    required this.label,
+    required this.value,
+    this.showChevron = false,
+  });
 
   final String label;
   final String value;
+  final bool showChevron;
 
   @override
   Widget build(BuildContext context) {
@@ -771,11 +982,25 @@ class _StatItem extends StatelessWidget {
               ),
         ),
         const SizedBox(height: 4),
-        Text(
-          label,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              label,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                  ),
+            ),
+            if (showChevron) ...[
+              const SizedBox(width: 4),
+              Icon(
+                Icons.chevron_right,
+                size: 16,
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
               ),
+            ],
+          ],
         ),
       ],
     );
@@ -805,11 +1030,21 @@ class _RecipeGridCard extends StatelessWidget {
         children: [
           // Background image
           if (imageUrl != null)
-            CachedNetworkImageWidget(
-              imageUrl: imageUrl,
+            Image.network(
+              imageUrl,
               width: double.infinity,
               height: double.infinity,
               fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  child: Icon(
+                    Icons.broken_image_rounded,
+                    size: 40,
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+                  ),
+                );
+              },
             )
           else
             Container(
@@ -912,6 +1147,66 @@ class _RecipeGridCard extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _PrivacySettings extends StatelessWidget {
+  const _PrivacySettings({
+    required this.privacy,
+    required this.onUpdate,
+    required this.isLoading,
+  });
+
+  final UserPrivacySettings privacy;
+  final Future<void> Function({bool? followersPrivate, bool? followingPrivate}) onUpdate;
+  final bool isLoading;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(
+              Icons.lock_outline,
+              size: 20,
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              "Privacy Settings",
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        SwitchListTile(
+          title: const Text("Private Followers"),
+          subtitle: const Text("Hide your followers list from others"),
+          value: privacy.followersPrivate,
+          onChanged: isLoading
+              ? null
+              : (value) {
+                  onUpdate(followersPrivate: value);
+                },
+          contentPadding: EdgeInsets.zero,
+        ),
+        SwitchListTile(
+          title: const Text("Private Following"),
+          subtitle: const Text("Hide your following list from others"),
+          value: privacy.followingPrivate,
+          onChanged: isLoading
+              ? null
+              : (value) {
+                  onUpdate(followingPrivate: value);
+                },
+          contentPadding: EdgeInsets.zero,
+        ),
+      ],
     );
   }
 }

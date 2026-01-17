@@ -96,6 +96,7 @@ class UserProfile {
   final int recipesCount;
   final bool viewerIsFollowing;
   final bool isViewer; // true if this is the current user's profile
+  final UserPrivacySettings? privacy; // Only visible to the user themselves
 
   UserProfile({
     required this.username,
@@ -107,11 +108,13 @@ class UserProfile {
     required this.recipesCount,
     required this.viewerIsFollowing,
     required this.isViewer,
+    this.privacy,
   });
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
     final counts = json["counts"] as Map<String, dynamic>? ?? {};
     final viewer = json["viewer"] as Map<String, dynamic>?;
+    final privacyRaw = json["privacy"] as Map<String, dynamic>?;
 
     return UserProfile(
       username: json["username"].toString(),
@@ -123,6 +126,7 @@ class UserProfile {
       recipesCount: (counts["recipes"] ?? 0) as int,
       viewerIsFollowing: viewer?["is_following"] as bool? ?? false,
       isViewer: viewer?["is_me"] as bool? ?? false,
+      privacy: privacyRaw != null ? UserPrivacySettings.fromJson(privacyRaw) : null,
     );
   }
 
@@ -136,6 +140,7 @@ class UserProfile {
     int? recipesCount,
     bool? viewerIsFollowing,
     bool? isViewer,
+    UserPrivacySettings? privacy,
   }) {
     return UserProfile(
       username: username ?? this.username,
@@ -147,6 +152,41 @@ class UserProfile {
       recipesCount: recipesCount ?? this.recipesCount,
       viewerIsFollowing: viewerIsFollowing ?? this.viewerIsFollowing,
       isViewer: isViewer ?? this.isViewer,
+      privacy: privacy ?? this.privacy,
+    );
+  }
+}
+
+class UserPrivacySettings {
+  final bool followersPrivate;
+  final bool followingPrivate;
+
+  UserPrivacySettings({
+    required this.followersPrivate,
+    required this.followingPrivate,
+  });
+
+  factory UserPrivacySettings.fromJson(Map<String, dynamic> json) {
+    return UserPrivacySettings(
+      followersPrivate: (json["followers_private"] ?? false) as bool,
+      followingPrivate: (json["following_private"] ?? false) as bool,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      "followers_private": followersPrivate,
+      "following_private": followingPrivate,
+    };
+  }
+
+  UserPrivacySettings copyWith({
+    bool? followersPrivate,
+    bool? followingPrivate,
+  }) {
+    return UserPrivacySettings(
+      followersPrivate: followersPrivate ?? this.followersPrivate,
+      followingPrivate: followingPrivate ?? this.followingPrivate,
     );
   }
 }
