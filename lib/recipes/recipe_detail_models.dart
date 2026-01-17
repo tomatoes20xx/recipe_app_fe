@@ -115,6 +115,11 @@ class RecipeDetail {
   final List<RecipeStep> steps;
   final List<RecipeImage> images;
 
+  /// Whether the current viewer has liked this recipe (from API when loaded while logged in).
+  final bool? viewerHasLiked;
+  /// Whether the current viewer has bookmarked this recipe (from API when loaded while logged in).
+  final bool? viewerHasBookmarked;
+
   RecipeDetail({
     required this.id,
     required this.title,
@@ -128,6 +133,8 @@ class RecipeDetail {
     required this.ingredients,
     required this.steps,
     required this.images,
+    this.viewerHasLiked,
+    this.viewerHasBookmarked,
   });
 
   factory RecipeDetail.fromJson(Map<String, dynamic> json) {
@@ -159,6 +166,8 @@ class RecipeDetail {
           .map((e) => RecipeStep.fromJson(Map<String, dynamic>.from(e as Map)))
           .toList(),
       images: images,
+      viewerHasLiked: json["viewer_has_liked"] is bool ? json["viewer_has_liked"] as bool : null,
+      viewerHasBookmarked: json["viewer_has_bookmarked"] is bool ? json["viewer_has_bookmarked"] as bool : null,
     );
   }
 }

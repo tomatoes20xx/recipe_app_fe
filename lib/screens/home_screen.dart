@@ -7,6 +7,7 @@ import "../auth/auth_controller.dart";
 import "../feed/feed_api.dart";
 import "../feed/feed_controller.dart";
 import "../feed/feed_models.dart";
+import "../recipes/comments_bottom_sheet.dart";
 import "../recipes/recipe_detail_screen.dart";
 import "../theme/theme_controller.dart";
 import "../utils/ui_utils.dart";
@@ -818,7 +819,13 @@ class _FeedList extends StatelessWidget {
                   feed.updateCommentCount(item.id, result);
                 }
               },
-              child: _FeedCard(item: item, sort: feed.sort, feed: feed),
+              child: _FeedCard(
+                item: item,
+                sort: feed.sort,
+                feed: feed,
+                apiClient: apiClient,
+                auth: auth,
+              ),
             ),
           ),
         );
@@ -954,10 +961,18 @@ class _FullScreenFeedListState extends State<_FullScreenFeedList> {
 
 
 class _FeedCard extends StatefulWidget {
-  const _FeedCard({required this.item, required this.sort, required this.feed});
+  const _FeedCard({
+    required this.item,
+    required this.sort,
+    required this.feed,
+    required this.apiClient,
+    required this.auth,
+  });
   final FeedItem item;
   final String sort;
   final FeedController feed;
+  final ApiClient apiClient;
+  final AuthController auth;
 
   @override
   State<_FeedCard> createState() => _FeedCardState();
@@ -1122,6 +1137,15 @@ class _FeedCardState extends State<_FeedCard> {
                         _Stat(
                           icon: Icons.chat_bubble_outline_rounded,
                           value: widget.item.comments.toString(),
+                          onTap: () {
+                            showCommentsBottomSheet(
+                              context: context,
+                              recipeId: widget.item.id,
+                              apiClient: widget.apiClient,
+                              auth: widget.auth,
+                              onCommentPosted: () => widget.feed.updateCommentCount(widget.item.id, widget.item.comments + 1),
+                            );
+                          },
                         ),
                         const SizedBox(width: 16),
                         _Stat(
@@ -1662,6 +1686,15 @@ class _FullScreenFeedCardState extends State<_FullScreenFeedCard> {
                         _FullScreenStat(
                           icon: Icons.chat_bubble_outline_rounded,
                           value: widget.item.comments.toString(),
+                          onTap: () {
+                            showCommentsBottomSheet(
+                              context: context,
+                              recipeId: widget.item.id,
+                              apiClient: widget.apiClient,
+                              auth: widget.auth,
+                              onCommentPosted: () => widget.feed.updateCommentCount(widget.item.id, widget.item.comments + 1),
+                            );
+                          },
                         ),
                         const SizedBox(width: 20),
                         _FullScreenStat(

@@ -226,4 +226,20 @@ class RecipeApi {
     }
     return Comment.fromJson(Map<String, dynamic>.from(data as Map));
   }
+
+  Future<void> like(String recipeId) async {
+    await api.put("/recipes/$recipeId/like", auth: true);
+  }
+
+  Future<void> unlike(String recipeId) async {
+    await api.delete("/recipes/$recipeId/like", auth: true);
+  }
+
+  Future<void> bookmark(String recipeId) async {
+    await api.put("/recipes/$recipeId/bookmark", auth: true);
+  }
+
+  Future<void> unbookmark(String recipeId) async {
+    await api.delete("/recipes/$recipeId/bookmark", auth: true);
+  }
 }

@@ -4,7 +4,7 @@ import "../api/api_client.dart";
 import "../auth/auth_controller.dart";
 import "../screens/create_recipe_screen.dart";
 import "../utils/ui_utils.dart";
-import "comments_controller.dart";
+import "comments_bottom_sheet.dart";
 import "recipe_api.dart";
 import "recipe_detail_controller.dart";
 import "recipe_detail_models.dart";
@@ -27,31 +27,117 @@ class RecipeDetailScreen extends StatefulWidget {
 
 class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
   late final RecipeDetailController c;
-  late final CommentsController commentsController;
+  late final RecipeApi recipeApi;
+  bool _isLiking = false;
+  bool _isBookmarking = false;
+  bool? _viewerHasLiked;
+  bool? _viewerHasBookmarked;
+  int? _localLikes;
+  int? _localBookmarks;
+  int? _localComments;
 
   @override
   void initState() {
     super.initState();
-    final recipeApi = RecipeApi(widget.apiClient);
+    recipeApi = RecipeApi(widget.apiClient);
     c = RecipeDetailController(api: recipeApi, recipeId: widget.recipeId);
-    commentsController = CommentsController(recipeApi: recipeApi, recipeId: widget.recipeId);
     c.addListener(_onChanged);
-    commentsController.addListener(_onChanged);
     c.load();
-    commentsController.load();
   }
 
   void _onChanged() {
-    if (mounted) setState(() {});
+    if (mounted) {
+      setState(() {
+        _localLikes = null;
+        _localBookmarks = null;
+        _localComments = null;
+        _viewerHasLiked = c.recipe?.viewerHasLiked;
+        _viewerHasBookmarked = c.recipe?.viewerHasBookmarked;
+      });
+    }
   }
 
   @override
   void dispose() {
     c.removeListener(_onChanged);
-    commentsController.removeListener(_onChanged);
     c.dispose();
-    commentsController.dispose();
     super.dispose();
+  }
+
+  Future<void> _toggleLike() async {
+    final r = c.recipe;
+    if (r == null || _isLiking) return;
+    if (!(widget.auth?.isLoggedIn ?? false)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please log in to like recipes")),
+      );
+      return;
+    }
+
+    setState(() => _isLiking = true);
+
+    try {
+      final wasLiked = _viewerHasLiked ?? false;
+      if (wasLiked) {
+        await recipeApi.unlike(r.id);
+      } else {
+        await recipeApi.like(r.id);
+      }
+      if (!mounted) return;
+      final base = _localLikes ?? r.counts.likes;
+      setState(() {
+        _viewerHasLiked = !wasLiked;
+        _localLikes = base + (wasLiked ? -1 : 1);
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Failed to like recipe: $e")),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLiking = false);
+      }
+    }
+  }
+
+  Future<void> _toggleBookmark() async {
+    final r = c.recipe;
+    if (r == null || _isBookmarking) return;
+    if (!(widget.auth?.isLoggedIn ?? false)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please log in to bookmark recipes")),
+      );
+      return;
+    }
+
+    setState(() => _isBookmarking = true);
+
+    try {
+      final wasBookmarked = _viewerHasBookmarked ?? false;
+      if (wasBookmarked) {
+        await recipeApi.unbookmark(r.id);
+      } else {
+        await recipeApi.bookmark(r.id);
+      }
+      if (!mounted) return;
+      final base = _localBookmarks ?? r.counts.bookmarks;
+      setState(() {
+        _viewerHasBookmarked = !wasBookmarked;
+        _localBookmarks = base + (wasBookmarked ? -1 : 1);
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Failed to bookmark recipe: $e")),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isBookmarking = false);
+      }
+    }
   }
 
   Future<void> _showDeleteConfirmation(BuildContext context, RecipeDetail recipe) async {
@@ -120,10 +206,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
           ),
           child: IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () {
-              final commentCount = commentsController.comments.length;
-              Navigator.of(context).pop(commentCount);
-            },
+            onPressed: () => Navigator.of(context).pop(),
           ),
         ),
         actions: [
@@ -185,7 +268,35 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                           // Header Image
                           if (r.images.isNotEmpty)
                             SliverToBoxAdapter(
-                              child: _ImageGallery(images: r.images),
+                              child: _ImageGallery(
+                                images: r.images,
+                                counts: RecipeCounts(
+                                  likes: _localLikes ?? r.counts.likes,
+                                  comments: _localComments ?? r.counts.comments,
+                                  bookmarks: _localBookmarks ?? r.counts.bookmarks,
+                                ),
+                                onLikeTap: _toggleLike,
+                                onBookmarkTap: _toggleBookmark,
+                                onCommentTap: () {
+                                  showCommentsBottomSheet(
+                                    context: context,
+                                    recipeId: r.id,
+                                    apiClient: widget.apiClient,
+                                    auth: widget.auth,
+                                    onCommentPosted: () {
+                                      if (mounted) {
+                                        setState(() {
+                                          _localComments = (_localComments ?? c.recipe?.counts.comments ?? 0) + 1;
+                                        });
+                                      }
+                                    },
+                                  );
+                                },
+                                viewerHasLiked: _viewerHasLiked,
+                                viewerHasBookmarked: _viewerHasBookmarked,
+                                isLiking: _isLiking,
+                                isBookmarking: _isBookmarking,
+                              ),
                             ),
                           // Content
                           SliverToBoxAdapter(
@@ -222,18 +333,10 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                                     ),
                                     const SizedBox(height: 16),
                                   ],
-                                  // Engagement Metrics
-                                  _CountsRow(counts: r.counts),
-                                  const SizedBox(height: 16),
                                   // Accordion Sections
                                   _IngredientsCard(ingredients: r.ingredients),
                                   const SizedBox(height: 12),
                                   _StepsCard(steps: r.steps),
-                                  const SizedBox(height: 12),
-                                  _CommentsCard(
-                                    commentsController: commentsController,
-                                    auth: widget.auth,
-                                  ),
                                 ],
                               ),
                             ),
@@ -241,13 +344,6 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                         ],
                       ),
                     ),
-      // Comment Input at Bottom
-      bottomNavigationBar: r != null && widget.auth?.isLoggedIn == true
-          ? _CommentInputBar(
-              commentsController: commentsController,
-              auth: widget.auth,
-            )
-          : null,
     );
   }
 }
@@ -324,62 +420,6 @@ class _HashtagPill extends StatelessWidget {
   }
 }
 
-class _CountsRow extends StatelessWidget {
-  const _CountsRow({required this.counts});
-  final RecipeCounts counts;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        border: Border.all(
-          color: Colors.black.withOpacity(0.3),
-          width: 1,
-        ),
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.2),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          _MiniStat(icon: Icons.favorite, label: "Likes", value: counts.likes),
-          const SizedBox(width: 24),
-          _MiniStat(icon: Icons.chat_bubble_outline, label: "Comments", value: counts.comments),
-          const SizedBox(width: 24),
-          _MiniStat(icon: Icons.bookmark, label: "Bookmarks", value: counts.bookmarks),
-        ],
-      ),
-    );
-  }
-}
-
-class _MiniStat extends StatelessWidget {
-  const _MiniStat({required this.icon, required this.label, required this.value});
-  final IconData icon;
-  final String label;
-  final int value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Icon(icon, size: 20, color: Theme.of(context).colorScheme.onSurface),
-        const SizedBox(width: 6),
-        Text(
-          "$value $label",
-          style: Theme.of(context).textTheme.bodyMedium,
-        ),
-      ],
-    );
-  }
-}
-
 class _IngredientsCard extends StatelessWidget {
   const _IngredientsCard({required this.ingredients});
   final List<RecipeIngredient> ingredients;
@@ -451,9 +491,158 @@ class _SectionTitle extends StatelessWidget {
 }
 
 
+class _EngagementMetricsOverlay extends StatelessWidget {
+  const _EngagementMetricsOverlay({
+    required this.counts,
+    required this.onLikeTap,
+    required this.onBookmarkTap,
+    required this.onCommentTap,
+    required this.viewerHasLiked,
+    required this.viewerHasBookmarked,
+    required this.isLiking,
+    required this.isBookmarking,
+  });
+
+  final RecipeCounts counts;
+  final VoidCallback onLikeTap;
+  final VoidCallback onBookmarkTap;
+  final VoidCallback onCommentTap;
+  final bool viewerHasLiked;
+  final bool viewerHasBookmarked;
+  final bool isLiking;
+  final bool isBookmarking;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.45),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.25),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.15),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _OverlayIconButton(
+            icon: Icons.favorite,
+            count: counts.likes,
+            isActive: viewerHasLiked,
+            isLoading: isLiking,
+            onTap: onLikeTap,
+          ),
+          const SizedBox(height: 12),
+          _OverlayIconButton(
+            icon: Icons.chat_bubble_outline,
+            count: counts.comments,
+            onTap: onCommentTap,
+          ),
+          const SizedBox(height: 12),
+          _OverlayIconButton(
+            icon: Icons.bookmark,
+            count: counts.bookmarks,
+            isActive: viewerHasBookmarked,
+            isLoading: isBookmarking,
+            onTap: onBookmarkTap,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _OverlayIconButton extends StatelessWidget {
+  const _OverlayIconButton({
+    required this.icon,
+    required this.onTap,
+    this.count,
+    this.isActive = false,
+    this.isLoading = false,
+  });
+
+  final IconData icon;
+  final VoidCallback onTap;
+  final int? count;
+  final bool isActive;
+  final bool isLoading;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: isLoading ? null : onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          child: isLoading
+              ? const SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                )
+              : Column(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      icon,
+                      color: isActive ? Colors.red : Colors.white,
+                      size: 24,
+                    ),
+                    if (count != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        "$count",
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+        ),
+      ),
+    );
+  }
+}
+
 class _ImageGallery extends StatefulWidget {
-  const _ImageGallery({required this.images});
+  const _ImageGallery({
+    required this.images,
+    required this.counts,
+    required this.onLikeTap,
+    required this.onBookmarkTap,
+    required this.onCommentTap,
+    this.viewerHasLiked,
+    this.viewerHasBookmarked,
+    this.isLiking = false,
+    this.isBookmarking = false,
+  });
   final List<RecipeImage> images;
+  final RecipeCounts counts;
+  final VoidCallback onLikeTap;
+  final VoidCallback onBookmarkTap;
+  final VoidCallback onCommentTap;
+  final bool? viewerHasLiked;
+  final bool? viewerHasBookmarked;
+  final bool isLiking;
+  final bool isBookmarking;
 
   @override
   State<_ImageGallery> createState() => _ImageGalleryState();
@@ -534,6 +723,26 @@ class _ImageGalleryState extends State<_ImageGallery> {
               );
             },
           ),
+          // Engagement metrics overlay (right, vertically centered)
+          Positioned(
+            top: 0,
+            bottom: 0,
+            right: 16,
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: _EngagementMetricsOverlay(
+                counts: widget.counts,
+                onLikeTap: widget.onLikeTap,
+                onBookmarkTap: widget.onBookmarkTap,
+                onCommentTap: widget.onCommentTap,
+                viewerHasLiked: widget.viewerHasLiked ?? false,
+                viewerHasBookmarked: widget.viewerHasBookmarked ?? false,
+                isLiking: widget.isLiking,
+                isBookmarking: widget.isBookmarking,
+              ),
+            ),
+          ),
+          // Pagination indicators
           if (widget.images.length > 1)
             Positioned(
               bottom: 16,
@@ -658,181 +867,6 @@ class _FullScreenImageViewerState extends State<_FullScreenImageViewer> {
   }
 }
 
-class _CommentsCard extends StatelessWidget {
-  const _CommentsCard({
-    required this.commentsController,
-    this.auth,
-  });
-
-  final CommentsController commentsController;
-  final AuthController? auth;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: ExpansionTile(
-        initiallyExpanded: false,
-        leading: const Text("💬", style: TextStyle(fontSize: 24)),
-        title: Text("Comments (${commentsController.comments.length})"),
-        children: [
-          const Divider(height: 1),
-          if (commentsController.isLoading)
-            const Padding(
-              padding: EdgeInsets.all(24),
-              child: Center(child: CircularProgressIndicator()),
-            )
-          else if (commentsController.error != null)
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: Text(
-                "Error loading comments: ${commentsController.error}",
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
-              ),
-            )
-          else if (commentsController.comments.isEmpty)
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: Text(
-                "No comments yet. Be the first to comment!",
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                    ),
-              ),
-            )
-          else
-            ...commentsController.comments.map((comment) {
-              final date = formatDate(comment.createdAt);
-              return ListTile(
-                dense: true,
-                title: Text(comment.content),
-                subtitle: Text(
-                  "@${comment.authorUsername} • $date",
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              );
-            }),
-          const SizedBox(height: 8),
-        ],
-      ),
-    );
-  }
-}
-
-class _CommentInputBar extends StatefulWidget {
-  const _CommentInputBar({
-    required this.commentsController,
-    this.auth,
-  });
-
-  final CommentsController commentsController;
-  final AuthController? auth;
-
-  @override
-  State<_CommentInputBar> createState() => _CommentInputBarState();
-}
-
-class _CommentInputBarState extends State<_CommentInputBar> {
-  final _commentController = TextEditingController();
-  bool _isSubmitting = false;
-
-  @override
-  void dispose() {
-    _commentController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _submitComment() async {
-    final content = _commentController.text.trim();
-    if (content.isEmpty) return;
-    if (!(widget.auth?.isLoggedIn ?? false)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please log in to comment")),
-      );
-      return;
-    }
-
-    setState(() => _isSubmitting = true);
-    try {
-      await widget.commentsController.addComment(content);
-      _commentController.clear();
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Failed to post comment: $e")),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isSubmitting = false);
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final isLoggedIn = widget.auth?.isLoggedIn ?? false;
-    if (!isLoggedIn) return const SizedBox.shrink();
-
-    final userAvatar = widget.auth?.me?["avatar_url"]?.toString();
-    final username = widget.auth?.me?["username"]?.toString() ?? "";
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 4,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        child: Row(
-          children: [
-            buildUserAvatar(
-              context,
-              userAvatar,
-              username,
-              radius: 18,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: TextField(
-                controller: _commentController,
-                maxLines: null,
-                maxLength: 2000,
-                decoration: InputDecoration(
-                  hintText: "Write a comment...",
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                  counterText: "",
-                  filled: true,
-                  fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            IconButton(
-              onPressed: _isSubmitting ? null : _submitComment,
-              icon: _isSubmitting
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.send_rounded),
-              tooltip: "Post comment",
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 class _ErrorView extends StatelessWidget {
   const _ErrorView({required this.error, required this.onRetry});
