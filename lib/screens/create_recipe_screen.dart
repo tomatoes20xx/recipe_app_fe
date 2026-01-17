@@ -945,11 +945,11 @@ class _StepField extends StatelessWidget {
           children: [
             CircleAvatar(
               radius: 16,
-              backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+              backgroundColor: Theme.of(context).colorScheme.primary,
               child: Text(
                 "$stepNumber",
                 style: TextStyle(
-                  color: Theme.of(context).colorScheme.onPrimaryContainer,
+                  color: Theme.of(context).colorScheme.onPrimary,
                   fontWeight: FontWeight.w600,
                 ),
               ),

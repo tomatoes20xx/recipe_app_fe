@@ -91,7 +91,7 @@ class _FollowersScreenState extends State<FollowersScreen> {
     if (avatarUrl != null && avatarUrl.isNotEmpty) {
       return CircleAvatar(
         radius: radius,
-        backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+        backgroundColor: Theme.of(context).colorScheme.primary,
         backgroundImage: NetworkImage(_buildImageUrl(avatarUrl)),
         onBackgroundImageError: (exception, stackTrace) {
           // Image failed to load, will show child as fallback
@@ -101,20 +101,20 @@ class _FollowersScreenState extends State<FollowersScreen> {
     }
     return CircleAvatar(
       radius: radius,
-      backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+      backgroundColor: Theme.of(context).colorScheme.primary,
       child: username.isNotEmpty
           ? Text(
               username[0].toUpperCase(),
               style: TextStyle(
                 fontSize: radius * 0.8,
                 fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.onPrimaryContainer,
+                color: Theme.of(context).colorScheme.onPrimary,
               ),
             )
           : Icon(
               Icons.person_outline_rounded,
               size: radius,
-              color: Theme.of(context).colorScheme.primary,
+              color: Theme.of(context).colorScheme.onPrimary,
             ),
     );
   }

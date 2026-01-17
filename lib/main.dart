@@ -46,16 +46,16 @@ class MyApp extends StatelessWidget {
         return MaterialApp(
           title: "Recipe App",
           debugShowCheckedModeBanner: false,
-          theme: ThemeData(useMaterial3: true),
+          theme: ThemeData(
+            useMaterial3: true,
+            colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFD93900), brightness: Brightness.light)
+                .copyWith(primary: const Color(0xFFD93900), onPrimary: Colors.white),
+          ),
           darkTheme: ThemeData(
             useMaterial3: true,
             brightness: Brightness.dark,
-            colorScheme: ColorScheme.dark(
-              primary: Colors.blue,
-              secondary: Colors.blueAccent,
-              surface: Colors.grey[900]!,
-              onSurface: Colors.white,
-            ),
+            colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFD93900), brightness: Brightness.dark)
+                .copyWith(primary: const Color(0xFFD93900), onPrimary: Colors.white, surface: Colors.grey[900]!, onSurface: Colors.white),
           ),
           themeMode: themeController.themeMode,
           home: AuthGate(

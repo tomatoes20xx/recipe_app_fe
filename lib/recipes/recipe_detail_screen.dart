@@ -600,7 +600,7 @@ class _OverlayIconButton extends StatelessWidget {
                   children: [
                     Icon(
                       icon,
-                      color: isActive ? Colors.red : Colors.white,
+                      color: isActive ? Theme.of(context).colorScheme.primary : Colors.white,
                       size: 24,
                     ),
                     if (count != null) ...[

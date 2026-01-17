@@ -1045,7 +1045,7 @@ class _FeedCardState extends State<_FeedCard> {
                         widget.item.authorAvatarUrl != null && widget.item.authorAvatarUrl!.isNotEmpty
                             ? CircleAvatar(
                                 radius: 10,
-                                backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                                backgroundColor: Theme.of(context).colorScheme.primary,
                                 backgroundImage: NetworkImage(buildImageUrl(widget.item.authorAvatarUrl!)),
                                 onBackgroundImageError: (exception, stackTrace) {
                                   // Image failed to load, will show child as fallback
@@ -1054,7 +1054,7 @@ class _FeedCardState extends State<_FeedCard> {
                               )
                             : CircleAvatar(
                                 radius: 10,
-                                backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                                backgroundColor: Theme.of(context).colorScheme.primary,
                                 child: Text(
                                   widget.item.authorUsername.isNotEmpty
                                       ? widget.item.authorUsername[0].toUpperCase()
@@ -1062,7 +1062,7 @@ class _FeedCardState extends State<_FeedCard> {
                                   style: TextStyle(
                                     fontSize: 10,
                                     fontWeight: FontWeight.bold,
-                                    color: Theme.of(context).colorScheme.onPrimaryContainer,
+                                    color: Theme.of(context).colorScheme.onPrimary,
                                   ),
                                 ),
                               ),
@@ -1365,7 +1365,7 @@ class _FullScreenExpandableDescription extends StatelessWidget {
     );
     final buttonStyle = textStyle.copyWith(
       fontWeight: FontWeight.w600,
-      color: Colors.white,
+      color: Theme.of(context).colorScheme.primary,
     );
 
     if (!needsExpansion) {
@@ -1595,22 +1595,22 @@ class _FullScreenFeedCardState extends State<_FullScreenFeedCard> {
                         widget.item.authorAvatarUrl != null && widget.item.authorAvatarUrl!.isNotEmpty
                             ? CircleAvatar(
                                 radius: 16,
-                                backgroundColor: Colors.white.withOpacity(0.2),
+                                backgroundColor: Theme.of(context).colorScheme.primary,
                                 backgroundImage: NetworkImage(buildImageUrl(widget.item.authorAvatarUrl!)),
                                 onBackgroundImageError: (exception, stackTrace) {},
                                 child: null,
                               )
                             : CircleAvatar(
                                 radius: 16,
-                                backgroundColor: Colors.white.withOpacity(0.2),
+                                backgroundColor: Theme.of(context).colorScheme.primary,
                                 child: Text(
                                   widget.item.authorUsername.isNotEmpty
                                       ? widget.item.authorUsername[0].toUpperCase()
                                       : "?",
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.bold,
-                                    color: Colors.white,
+                                    color: Theme.of(context).colorScheme.onPrimary,
                                   ),
                                 ),
                               ),
@@ -1798,7 +1798,7 @@ class _FullScreenStat extends StatelessWidget {
         Icon(
           icon,
           size: 24,
-          color: active ? Colors.red : Colors.white,
+          color: active ? Theme.of(context).colorScheme.primary : Colors.white,
         ),
         const SizedBox(width: 6),
         Text(
