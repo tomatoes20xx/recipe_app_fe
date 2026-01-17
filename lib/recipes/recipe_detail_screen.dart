@@ -108,151 +108,216 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
         widget.auth!.me?["username"]?.toString() == r.authorUsername;
 
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text("Recipe"),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            final commentCount = commentsController.comments.length;
-            Navigator.of(context).pop(commentCount);
-          },
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: Container(
+          margin: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.black.withOpacity(0.5),
+            shape: BoxShape.circle,
+          ),
+          child: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () {
+              final commentCount = commentsController.comments.length;
+              Navigator.of(context).pop(commentCount);
+            },
+          ),
         ),
         actions: [
           if (isOwner) ...[
-            IconButton(
-              icon: const Icon(Icons.edit),
-              tooltip: "Edit Recipe",
-              onPressed: () async {
-                final result = await Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => CreateRecipeScreen(
-                      apiClient: widget.apiClient,
-                      recipeId: r.id,
-                      recipe: r,
+            Container(
+              margin: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.5),
+                shape: BoxShape.circle,
+              ),
+              child: IconButton(
+                icon: const Icon(Icons.edit, color: Colors.white),
+                tooltip: "Edit Recipe",
+                onPressed: () async {
+                  final result = await Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => CreateRecipeScreen(
+                        apiClient: widget.apiClient,
+                        recipeId: r.id,
+                        recipe: r,
+                      ),
                     ),
-                  ),
-                );
-                if (result == true && mounted) {
-                  // Refresh recipe data after editing
-                  c.refresh();
-                }
-              },
+                  );
+                  if (result == true && mounted) {
+                    c.refresh();
+                  }
+                },
+              ),
             ),
-            IconButton(
-              icon: const Icon(Icons.delete_outline),
-              tooltip: "Delete Recipe",
-              onPressed: () => _showDeleteConfirmation(context, r),
+            Container(
+              margin: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.5),
+                shape: BoxShape.circle,
+              ),
+              child: IconButton(
+                icon: const Icon(Icons.delete_outline, color: Colors.white),
+                tooltip: "Delete Recipe",
+                onPressed: () => _showDeleteConfirmation(context, r),
+              ),
             ),
           ],
         ],
       ),
-        body: c.isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : c.error != null
-                ? _ErrorView(
-                    error: c.error!,
-                    onRetry: () => c.load(),
-                  )
-                    : r == null
-                    ? const Center(child: Text("Not found"))
-                    : RefreshIndicator(
-                        onRefresh: c.refresh,
-                        child: ListView(
-                          padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
-                          children: [
-                            if (r.images.isNotEmpty) ...[
-                              _ImageGallery(images: r.images),
-                              const SizedBox(height: 12),
-                            ],
-                            _Header(r: r),
-                            const SizedBox(height: 12),
-                            if (r.description != null && r.description!.trim().isNotEmpty) ...[
-                              const _SectionTitle("Description"),
-                              const SizedBox(height: 6),
-                              Text(r.description!),
-                              const SizedBox(height: 12),
-                            ],
-                            if (r.tags.isNotEmpty) ...[
-                              const _SectionTitle("Tags"),
-                              const SizedBox(height: 6),
-                              Wrap(
-                                spacing: 8,
-                                runSpacing: 8,
-                                children: r.tags.map((t) => Chip(label: Text(t))).toList(),
-                              ),
-                              const SizedBox(height: 12),
-                            ],
-                            _CountsRow(counts: r.counts),
-                            const SizedBox(height: 12),
-                            _IngredientsCard(ingredients: r.ingredients),
-                            const SizedBox(height: 12),
-                            _StepsCard(steps: r.steps),
-                            const SizedBox(height: 12),
-                            _CommentsSection(
-                              commentsController: commentsController,
-                              auth: widget.auth,
+      body: c.isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : c.error != null
+              ? _ErrorView(
+                  error: c.error!,
+                  onRetry: () => c.load(),
+                )
+              : r == null
+                  ? const Center(child: Text("Not found"))
+                  : RefreshIndicator(
+                      onRefresh: c.refresh,
+                      child: CustomScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        slivers: [
+                          // Header Image
+                          if (r.images.isNotEmpty)
+                            SliverToBoxAdapter(
+                              child: _ImageGallery(images: r.images),
                             ),
-                          ],
-                        ),
+                          // Content
+                          SliverToBoxAdapter(
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  // Title
+                                  Text(
+                                    r.title,
+                                    style: TextStyle(
+                                      fontSize: 28,
+                                      fontWeight: FontWeight.bold,
+                                      color: Theme.of(context).colorScheme.onSurface,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  // User Info Row
+                                  _UserInfoRow(r: r),
+                                  const SizedBox(height: 12),
+                                  // Hashtag
+                                  if (r.tags.isNotEmpty) ...[
+                                    _HashtagPill(tag: r.tags.first),
+                                    const SizedBox(height: 16),
+                                  ],
+                                  // Description
+                                  if (r.description != null && r.description!.trim().isNotEmpty) ...[
+                                    const _SectionTitle("Description"),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      r.description!,
+                                      style: Theme.of(context).textTheme.bodyLarge,
+                                    ),
+                                    const SizedBox(height: 16),
+                                  ],
+                                  // Engagement Metrics
+                                  _CountsRow(counts: r.counts),
+                                  const SizedBox(height: 16),
+                                  // Accordion Sections
+                                  _IngredientsCard(ingredients: r.ingredients),
+                                  const SizedBox(height: 12),
+                                  _StepsCard(steps: r.steps),
+                                  const SizedBox(height: 12),
+                                  _CommentsCard(
+                                    commentsController: commentsController,
+                                    auth: widget.auth,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
+                    ),
+      // Comment Input at Bottom
+      bottomNavigationBar: r != null && widget.auth?.isLoggedIn == true
+          ? _CommentInputBar(
+              commentsController: commentsController,
+              auth: widget.auth,
+            )
+          : null,
     );
   }
 }
 
-class _Header extends StatelessWidget {
-  const _Header({required this.r});
+class _UserInfoRow extends StatelessWidget {
+  const _UserInfoRow({required this.r});
   final RecipeDetail r;
 
   @override
   Widget build(BuildContext context) {
     final date = formatDate(r.createdAt);
-
-    final cuisine = r.cuisine; // helps avoid any nullable weirdness
+    final cuisine = r.cuisine;
     final hasCuisine = cuisine != null && cuisine.trim().isNotEmpty;
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(r.title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                r.authorAvatarUrl != null && r.authorAvatarUrl!.isNotEmpty
-                    ? CircleAvatar(
-                        radius: 12,
-                        backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                        backgroundImage: NetworkImage(buildImageUrl(r.authorAvatarUrl!)),
-                        onBackgroundImageError: (exception, stackTrace) {
-                          // Image failed to load, will show child as fallback
-                        },
-                        child: null,
-                      )
-                    : CircleAvatar(
-                        radius: 12,
-                        backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                        child: Text(
-                          r.authorUsername.isNotEmpty
-                              ? r.authorUsername[0].toUpperCase()
-                              : "?",
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.onPrimaryContainer,
-                          ),
-                        ),
-                      ),
-                const SizedBox(width: 6),
-                Text("@${r.authorUsername} • $date", style: Theme.of(context).textTheme.bodySmall),
+    return Row(
+      children: [
+        buildUserAvatar(
+          context,
+          r.authorAvatarUrl,
+          r.authorUsername,
+          radius: 16,
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Row(
+            children: [
+              Text(
+                "@${r.authorUsername}",
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              Text(
+                " • $date",
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              if (hasCuisine) ...[
+                Text(
+                  " • Cuisine: $cuisine",
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
               ],
-            ),
-            if (hasCuisine) ...[
-              const SizedBox(height: 6),
-              Text("Cuisine: $cuisine", style: Theme.of(context).textTheme.bodyMedium),
             ],
-          ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _HashtagPill extends StatelessWidget {
+  const _HashtagPill({required this.tag});
+  final String tag;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+          width: 1,
+        ),
+      ),
+      child: Text(
+        "# $tag",
+        style: TextStyle(
+          color: Theme.of(context).colorScheme.primary,
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
         ),
       ),
     );
@@ -265,18 +330,30 @@ class _CountsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        child: Row(
-          children: [
-            _MiniStat(icon: Icons.favorite, label: "Likes", value: counts.likes),
-            const SizedBox(width: 16),
-            _MiniStat(icon: Icons.chat_bubble_outline, label: "Comments", value: counts.comments),
-            const SizedBox(width: 16),
-            _MiniStat(icon: Icons.bookmark, label: "Bookmarks", value: counts.bookmarks),
-          ],
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        border: Border.all(
+          color: Colors.black.withOpacity(0.3),
+          width: 1,
         ),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          _MiniStat(icon: Icons.favorite, label: "Likes", value: counts.likes),
+          const SizedBox(width: 24),
+          _MiniStat(icon: Icons.chat_bubble_outline, label: "Comments", value: counts.comments),
+          const SizedBox(width: 24),
+          _MiniStat(icon: Icons.bookmark, label: "Bookmarks", value: counts.bookmarks),
+        ],
       ),
     );
   }
@@ -292,11 +369,12 @@ class _MiniStat extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, size: 18),
+        Icon(icon, size: 20, color: Theme.of(context).colorScheme.onSurface),
         const SizedBox(width: 6),
-        Text("$value"),
-        const SizedBox(width: 6),
-        Text(label, style: Theme.of(context).textTheme.bodySmall),
+        Text(
+          "$value $label",
+          style: Theme.of(context).textTheme.bodyMedium,
+        ),
       ],
     );
   }
@@ -310,7 +388,8 @@ class _IngredientsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       child: ExpansionTile(
-        initiallyExpanded: true,
+        initiallyExpanded: false,
+        leading: const Text("🥕", style: TextStyle(fontSize: 24)),
         title: Text("Ingredients (${ingredients.length})"),
         children: [
           const Divider(height: 1),
@@ -338,7 +417,8 @@ class _StepsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       child: ExpansionTile(
-        initiallyExpanded: true,
+        initiallyExpanded: false,
+        leading: const Text("📋", style: TextStyle(fontSize: 24)),
         title: Text("Steps (${steps.length})"),
         children: [
           const Divider(height: 1),
@@ -404,99 +484,87 @@ class _ImageGalleryState extends State<_ImageGallery> {
   Widget build(BuildContext context) {
     if (widget.images.isEmpty) return const SizedBox.shrink();
 
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(
-          color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
-          width: 1,
-        ),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: Stack(
-          children: [
-            SizedBox(
-              height: 300,
-              child: PageView.builder(
-                controller: _pageController,
-                onPageChanged: (index) {
-                  setState(() => _currentPage = index);
-                },
-                itemCount: widget.images.length,
-                itemBuilder: (context, index) {
-                  final image = widget.images[index];
-                  return GestureDetector(
-                    onTap: () => _openImageViewer(index),
-                    child: Image.network(
-                      buildImageUrl(image.url),
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                          child: Center(
-                            child: Icon(
-                              Icons.broken_image_rounded,
-                              size: 48,
-                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
-                            ),
-                          ),
-                        );
-                      },
-                      loadingBuilder: (context, child, loadingProgress) {
-                        if (loadingProgress == null) return child;
-                        return Container(
-                          color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                          child: Center(
-                            child: CircularProgressIndicator(
-                              value: loadingProgress.expectedTotalBytes != null
-                                  ? loadingProgress.cumulativeBytesLoaded /
-                                      loadingProgress.expectedTotalBytes!
-                                  : null,
-                              strokeWidth: 2,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  );
-                },
-              ),
-            ),
-            if (widget.images.length > 1)
-              Positioned(
-                bottom: 12,
-                left: 0,
-                right: 0,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(
-                    widget.images.length,
-                    (index) => Container(
-                      width: 8,
-                      height: 8,
-                      margin: const EdgeInsets.symmetric(horizontal: 4),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: _currentPage == index
-                            ? Colors.white
-                            : Colors.white.withOpacity(0.5),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.3),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
+    return SizedBox(
+      height: 350,
+      width: double.infinity,
+      child: Stack(
+        children: [
+          PageView.builder(
+            controller: _pageController,
+            onPageChanged: (index) {
+              setState(() => _currentPage = index);
+            },
+            itemCount: widget.images.length,
+            itemBuilder: (context, index) {
+              final image = widget.images[index];
+              return GestureDetector(
+                onTap: () => _openImageViewer(index),
+                child: Image.network(
+                  buildImageUrl(image.url),
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                      child: Center(
+                        child: Icon(
+                          Icons.broken_image_rounded,
+                          size: 48,
+                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+                        ),
                       ),
+                    );
+                  },
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return Container(
+                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                      child: Center(
+                        child: CircularProgressIndicator(
+                          value: loadingProgress.expectedTotalBytes != null
+                              ? loadingProgress.cumulativeBytesLoaded /
+                                  loadingProgress.expectedTotalBytes!
+                              : null,
+                          strokeWidth: 2,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              );
+            },
+          ),
+          if (widget.images.length > 1)
+            Positioned(
+              bottom: 16,
+              left: 0,
+              right: 0,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(
+                  widget.images.length,
+                  (index) => Container(
+                    width: 8,
+                    height: 8,
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: _currentPage == index
+                          ? Colors.white
+                          : Colors.white.withOpacity(0.5),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.3),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
                   ),
                 ),
               ),
-          ],
-        ),
+            ),
+        ],
       ),
     );
   }
@@ -590,8 +658,8 @@ class _FullScreenImageViewerState extends State<_FullScreenImageViewer> {
   }
 }
 
-class _CommentsSection extends StatefulWidget {
-  const _CommentsSection({
+class _CommentsCard extends StatelessWidget {
+  const _CommentsCard({
     required this.commentsController,
     this.auth,
   });
@@ -600,10 +668,70 @@ class _CommentsSection extends StatefulWidget {
   final AuthController? auth;
 
   @override
-  State<_CommentsSection> createState() => _CommentsSectionState();
+  Widget build(BuildContext context) {
+    return Card(
+      child: ExpansionTile(
+        initiallyExpanded: false,
+        leading: const Text("💬", style: TextStyle(fontSize: 24)),
+        title: Text("Comments (${commentsController.comments.length})"),
+        children: [
+          const Divider(height: 1),
+          if (commentsController.isLoading)
+            const Padding(
+              padding: EdgeInsets.all(24),
+              child: Center(child: CircularProgressIndicator()),
+            )
+          else if (commentsController.error != null)
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Text(
+                "Error loading comments: ${commentsController.error}",
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
+            )
+          else if (commentsController.comments.isEmpty)
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Text(
+                "No comments yet. Be the first to comment!",
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                    ),
+              ),
+            )
+          else
+            ...commentsController.comments.map((comment) {
+              final date = formatDate(comment.createdAt);
+              return ListTile(
+                dense: true,
+                title: Text(comment.content),
+                subtitle: Text(
+                  "@${comment.authorUsername} • $date",
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              );
+            }),
+          const SizedBox(height: 8),
+        ],
+      ),
+    );
+  }
 }
 
-class _CommentsSectionState extends State<_CommentsSection> {
+class _CommentInputBar extends StatefulWidget {
+  const _CommentInputBar({
+    required this.commentsController,
+    this.auth,
+  });
+
+  final CommentsController commentsController;
+  final AuthController? auth;
+
+  @override
+  State<_CommentInputBar> createState() => _CommentInputBarState();
+}
+
+class _CommentInputBarState extends State<_CommentInputBar> {
   final _commentController = TextEditingController();
   bool _isSubmitting = false;
 
@@ -643,103 +771,64 @@ class _CommentsSectionState extends State<_CommentsSection> {
   @override
   Widget build(BuildContext context) {
     final isLoggedIn = widget.auth?.isLoggedIn ?? false;
+    if (!isLoggedIn) return const SizedBox.shrink();
 
-    return Card(
-      child: ExpansionTile(
-        initiallyExpanded: false,
-        title: Text("Comments (${widget.commentsController.comments.length})"),
-        children: [
-          const Divider(height: 1),
-          if (isLoggedIn) ...[
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _commentController,
-                      maxLines: 3,
-                      maxLength: 2000,
-                      decoration: InputDecoration(
-                        hintText: "Write a comment...",
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        contentPadding: const EdgeInsets.all(12),
-                        counterText: "",
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  if (_isSubmitting)
-                    const Padding(
-                      padding: EdgeInsets.all(12),
-                      child: SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                    )
-                  else
-                    IconButton(
-                      onPressed: _submitComment,
-                      icon: const Icon(Icons.send_rounded),
-                      tooltip: "Post comment",
-                    ),
-                ],
-              ),
-            ),
-            const Divider(height: 1),
-          ] else ...[
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: Text(
-                "Log in to comment",
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                    ),
-              ),
-            ),
-            const Divider(height: 1),
-          ],
-          if (widget.commentsController.isLoading)
-            const Padding(
-              padding: EdgeInsets.all(24),
-              child: Center(child: CircularProgressIndicator()),
-            )
-          else if (widget.commentsController.error != null)
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: Text(
-                "Error loading comments: ${widget.commentsController.error}",
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
-              ),
-            )
-          else if (widget.commentsController.comments.isEmpty)
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: Text(
-                "No comments yet. Be the first to comment!",
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                    ),
-              ),
-            )
-          else
-            ...widget.commentsController.comments.map((comment) {
-              final date = formatDate(comment.createdAt);
-              return ListTile(
-                dense: true,
-                title: Text(comment.content),
-                subtitle: Text(
-                  "@${comment.authorUsername} • $date",
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              );
-            }),
-          const SizedBox(height: 8),
+    final userAvatar = widget.auth?.me?["avatar_url"]?.toString();
+    final username = widget.auth?.me?["username"]?.toString() ?? "";
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 4,
+            offset: const Offset(0, -2),
+          ),
         ],
+      ),
+      child: SafeArea(
+        child: Row(
+          children: [
+            buildUserAvatar(
+              context,
+              userAvatar,
+              username,
+              radius: 18,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: TextField(
+                controller: _commentController,
+                maxLines: null,
+                maxLength: 2000,
+                decoration: InputDecoration(
+                  hintText: "Write a comment...",
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  counterText: "",
+                  filled: true,
+                  fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            IconButton(
+              onPressed: _isSubmitting ? null : _submitComment,
+              icon: _isSubmitting
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.send_rounded),
+              tooltip: "Post comment",
+            ),
+          ],
+        ),
       ),
     );
   }
