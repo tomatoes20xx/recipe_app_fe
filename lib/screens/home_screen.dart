@@ -1131,12 +1131,15 @@ class _FeedCardState extends State<_FeedCard> {
   double? _leftContentHeight;
 
   void _measureLeftContent() {
+    // Only measure if we don't have a cached height
+    if (_leftContentHeight != null) return;
+    
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_leftContentKey.currentContext != null && mounted) {
+      if (_leftContentKey.currentContext != null && mounted && _leftContentHeight == null) {
         final RenderBox? box = _leftContentKey.currentContext?.findRenderObject() as RenderBox?;
         if (box != null) {
           final height = box.size.height;
-          if (_leftContentHeight != height) {
+          if (mounted) {
             setState(() {
               _leftContentHeight = height;
             });
@@ -1148,12 +1151,12 @@ class _FeedCardState extends State<_FeedCard> {
 
   @override
   Widget build(BuildContext context) {
-    // Memoize expensive computations
+    // Memoize expensive computations (only compute once per build)
     final date = _formatDate(widget.item.createdAt);
     final firstImage = widget.item.images.isNotEmpty ? widget.item.images.first : null;
     final hasDescription = widget.item.description != null && widget.item.description!.trim().isNotEmpty;
 
-    // Measure left content height after build (only once)
+    // Measure left content height after build (only once, cached)
     if (_leftContentHeight == null) {
       _measureLeftContent();
     }

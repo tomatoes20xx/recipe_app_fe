@@ -1,3 +1,5 @@
+import "dart:async";
+
 import "package:flutter/material.dart";
 
 import "../api/api_client.dart";
@@ -32,6 +34,7 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
   final ScrollController _recipeScrollController = ScrollController();
   final ScrollController _userScrollController = ScrollController();
   
+  Timer? _debounceTimer;
   int _currentTab = 0;
 
   @override
@@ -55,13 +58,17 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
     });
 
     _recipeScrollController.addListener(() {
-      if (_recipeScrollController.position.pixels > _recipeScrollController.position.maxScrollExtent - 300) {
+      if (_recipeScrollController.hasClients &&
+          _recipeScrollController.position.pixels > 
+          _recipeScrollController.position.maxScrollExtent - 300) {
         recipeSearchController.loadMore();
       }
     });
 
     _userScrollController.addListener(() {
-      if (_userScrollController.position.pixels > _userScrollController.position.maxScrollExtent - 300) {
+      if (_userScrollController.hasClients &&
+          _userScrollController.position.pixels > 
+          _userScrollController.position.maxScrollExtent - 300) {
         userSearchController.loadMore();
       }
     });
@@ -77,6 +84,7 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
 
   @override
   void dispose() {
+    _debounceTimer?.cancel();
     _searchTextController.dispose();
     _recipeScrollController.dispose();
     _userScrollController.dispose();
@@ -89,16 +97,24 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
   }
 
   void _performSearch(String query) {
-    if (query.trim().isNotEmpty) {
+    // Cancel previous timer
+    _debounceTimer?.cancel();
+    
+    // If query is empty, clear immediately
+    if (query.trim().isEmpty) {
+      recipeSearchController.clear();
+      userSearchController.clear();
+      return;
+    }
+    
+    // Debounce search by 500ms to reduce API calls
+    _debounceTimer = Timer(const Duration(milliseconds: 500), () {
       if (_currentTab == 0) {
         recipeSearchController.search(query);
       } else {
         userSearchController.search(query);
       }
-    } else {
-      recipeSearchController.clear();
-      userSearchController.clear();
-    }
+    });
   }
 
   String _buildImageUrl(String relativeUrl) {
@@ -180,8 +196,26 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
                 filled: true,
                 fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
               ),
-              onChanged: _performSearch,
-              onSubmitted: _performSearch,
+              onChanged: (value) {
+                // Update suffix icon immediately for better UX
+                setState(() {});
+                // Debounce the actual search
+                _performSearch(value);
+              },
+              onSubmitted: (value) {
+                // Cancel debounce and search immediately on submit
+                _debounceTimer?.cancel();
+                if (value.trim().isNotEmpty) {
+                  if (_currentTab == 0) {
+                    recipeSearchController.search(value);
+                  } else {
+                    userSearchController.search(value);
+                  }
+                } else {
+                  recipeSearchController.clear();
+                  userSearchController.clear();
+                }
+              },
               textInputAction: TextInputAction.search,
             ),
           ),
