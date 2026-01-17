@@ -5,9 +5,9 @@ import "package:image_picker/image_picker.dart";
 import "package:image/image.dart" as img;
 
 import "../api/api_client.dart";
-import "../config.dart";
 import "../recipes/recipe_api.dart";
 import "../recipes/recipe_detail_models.dart";
+import "../utils/ui_utils.dart";
 
 class CreateRecipeScreen extends StatefulWidget {
   const CreateRecipeScreen({
@@ -392,12 +392,6 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
     }
   }
 
-  String _buildImageUrl(String relativeUrl) {
-    if (relativeUrl.startsWith('http://') || relativeUrl.startsWith('https://')) {
-      return relativeUrl;
-    }
-    return "${Config.apiBaseUrl}$relativeUrl";
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -489,7 +483,7 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
                       ClipRRect(
                         borderRadius: BorderRadius.circular(12),
                         child: Image.network(
-                          _buildImageUrl(image.url),
+                          buildImageUrl(image.url),
                           width: 100,
                           height: 100,
                           fit: BoxFit.cover,

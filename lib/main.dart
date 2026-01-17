@@ -9,6 +9,10 @@ import "theme/theme_controller.dart";
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Clear image cache to ensure fresh images are loaded
+  imageCache.clear();
+  imageCache.clearLiveImages();
 
   final tokenStorage = TokenStorage();
   final apiClient = ApiClient(tokenStorage: tokenStorage);

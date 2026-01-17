@@ -4,12 +4,12 @@ import "package:flutter_secure_storage/flutter_secure_storage.dart";
 
 import "../api/api_client.dart";
 import "../auth/auth_controller.dart";
-import "../config.dart";
 import "../feed/feed_api.dart";
 import "../feed/feed_controller.dart";
 import "../feed/feed_models.dart";
 import "../recipes/recipe_detail_screen.dart";
 import "../theme/theme_controller.dart";
+import "../utils/ui_utils.dart";
 import "create_recipe_screen.dart";
 import "profile_screen.dart";
 import "search_screen.dart";
@@ -578,7 +578,7 @@ class _FeedScopeDrawer extends StatelessWidget {
             const Divider(),
             if (auth.isLoggedIn)
               ListTile(
-                leading: _buildUserAvatar(
+                leading: buildUserAvatar(
                   context,
                   auth.me?["avatar_url"]?.toString(),
                   auth.me?["username"]?.toString() ?? "",
@@ -952,168 +952,6 @@ class _FullScreenFeedListState extends State<_FullScreenFeedList> {
   }
 }
 
-// Memoized image URL builder - cache results to avoid repeated string operations
-String _buildImageUrl(String relativeUrl) {
-  if (relativeUrl.startsWith('http://') || relativeUrl.startsWith('https://')) {
-    return relativeUrl;
-  }
-  return "${Config.apiBaseUrl}$relativeUrl";
-}
-
-// Memoized date formatter - cache formatted dates to avoid repeated formatting
-final Map<DateTime, String> _dateCache = {};
-String _formatDate(DateTime date) {
-  // Use a normalized date (without time) as cache key
-  final normalizedDate = DateTime(date.year, date.month, date.day);
-  
-  return _dateCache.putIfAbsent(normalizedDate, () {
-    const months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
-    ];
-    final localDate = date.toLocal();
-    return '${months[localDate.month - 1]} ${localDate.day}, ${localDate.year}';
-  });
-}
-
-// Optimized image widget with proper error handling, loading states, and caching
-// Uses Flutter's built-in Image.network with cache headers for performance
-class _CachedNetworkImageWidget extends StatelessWidget {
-  const _CachedNetworkImageWidget({
-    required this.imageUrl,
-    required this.width,
-    required this.height,
-    this.fit = BoxFit.cover,
-  });
-
-  final String imageUrl;
-  final double width;
-  final double height;
-  final BoxFit fit;
-
-  @override
-  Widget build(BuildContext context) {
-    // Handle infinite dimensions - don't set cacheWidth/cacheHeight if dimensions are infinite
-    final int? cacheWidth = width.isFinite ? width.toInt() : null;
-    final int? cacheHeight = height.isFinite ? height.toInt() : null;
-    
-    return Image.network(
-      imageUrl,
-      width: width.isFinite ? width : null,
-      height: height.isFinite ? height : null,
-      fit: fit,
-      cacheWidth: cacheWidth,
-      cacheHeight: cacheHeight,
-      // Enable caching - Flutter will cache based on HTTP cache headers
-      // and use memory cache for frequently accessed images
-      frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
-        if (wasSynchronouslyLoaded || frame != null) {
-          return child;
-        }
-        // Fade in animation for loaded images
-        return AnimatedOpacity(
-          opacity: frame == null ? 0 : 1,
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeOut,
-          child: child,
-        );
-      },
-      errorBuilder: (context, error, stackTrace) {
-        final containerWidth = width.isFinite ? width : null;
-        final containerHeight = height.isFinite ? height : null;
-        final iconSize = width.isFinite && width > 100 ? 48.0 : 32.0;
-        
-        return Container(
-          width: containerWidth,
-          height: containerHeight,
-          color: Theme.of(context).colorScheme.surfaceContainerHighest,
-          child: Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.broken_image_rounded,
-                  size: iconSize,
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
-                ),
-                if (width.isFinite && width > 100) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    "Error",
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        );
-      },
-      loadingBuilder: (context, child, loadingProgress) {
-        if (loadingProgress == null) {
-          return child;
-        }
-        final containerWidth = width.isFinite ? width : null;
-        final containerHeight = height.isFinite ? height : null;
-        
-        return Container(
-          width: containerWidth,
-          height: containerHeight,
-          color: Theme.of(context).colorScheme.surfaceContainerHighest,
-          child: Center(
-            child: CircularProgressIndicator(
-              strokeWidth: 2,
-              value: loadingProgress.expectedTotalBytes != null
-                  ? loadingProgress.cumulativeBytesLoaded /
-                      loadingProgress.expectedTotalBytes!
-                  : null,
-              valueColor: AlwaysStoppedAnimation<Color>(
-                Theme.of(context).colorScheme.primary,
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
-
-// Optimized avatar widget with caching
-Widget _buildUserAvatar(BuildContext context, String? avatarUrl, String username) {
-  if (avatarUrl != null && avatarUrl.isNotEmpty) {
-    return CircleAvatar(
-      radius: 20,
-      backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-      backgroundImage: NetworkImage(
-        _buildImageUrl(avatarUrl),
-        // Enable caching - Flutter will cache based on HTTP cache headers
-      ),
-      onBackgroundImageError: (exception, stackTrace) {
-        // Image failed to load, will show child as fallback
-      },
-      child: null,
-    );
-  }
-  return CircleAvatar(
-    radius: 20,
-    backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-    child: username.isNotEmpty
-        ? Text(
-            username[0].toUpperCase(),
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).colorScheme.onPrimaryContainer,
-            ),
-          )
-        : Icon(
-            Icons.person_outline_rounded,
-            color: Theme.of(context).colorScheme.primary,
-          ),
-  );
-}
 
 class _FeedCard extends StatefulWidget {
   const _FeedCard({required this.item, required this.sort, required this.feed});
@@ -1152,7 +990,7 @@ class _FeedCardState extends State<_FeedCard> {
   @override
   Widget build(BuildContext context) {
     // Memoize expensive computations (only compute once per build)
-    final date = _formatDate(widget.item.createdAt);
+    final date = formatDate(widget.item.createdAt);
     final firstImage = widget.item.images.isNotEmpty ? widget.item.images.first : null;
     final hasDescription = widget.item.description != null && widget.item.description!.trim().isNotEmpty;
 
@@ -1193,7 +1031,7 @@ class _FeedCardState extends State<_FeedCard> {
                             ? CircleAvatar(
                                 radius: 10,
                                 backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                                backgroundImage: NetworkImage(_buildImageUrl(widget.item.authorAvatarUrl!)),
+                                backgroundImage: NetworkImage(buildImageUrl(widget.item.authorAvatarUrl!)),
                                 onBackgroundImageError: (exception, stackTrace) {
                                   // Image failed to load, will show child as fallback
                                 },
@@ -1341,8 +1179,8 @@ class _FeedCardState extends State<_FeedCard> {
                         topRight: Radius.circular(16),
                         bottomRight: Radius.circular(16),
                       ),
-                      child: _CachedNetworkImageWidget(
-                        imageUrl: _buildImageUrl(firstImage.url),
+                      child: CachedNetworkImageWidget(
+                        imageUrl: buildImageUrl(firstImage.url),
                         width: 120,
                         height: _leftContentHeight ?? 120,
                         fit: BoxFit.cover,
@@ -1624,7 +1462,7 @@ class _FullScreenFeedCardState extends State<_FullScreenFeedCard> {
 
   @override
   Widget build(BuildContext context) {
-    final date = _formatDate(widget.item.createdAt);
+    final date = formatDate(widget.item.createdAt);
     final hasMultipleImages = widget.item.images.length > 1;
 
     return Stack(
@@ -1661,8 +1499,8 @@ class _FullScreenFeedCardState extends State<_FullScreenFeedCard> {
                 },
                 itemBuilder: (context, index) {
                   final image = widget.item.images[index];
-                  return _CachedNetworkImageWidget(
-                    imageUrl: _buildImageUrl(image.url),
+                  return CachedNetworkImageWidget(
+                    imageUrl: buildImageUrl(image.url),
                     width: double.infinity,
                     height: double.infinity,
                     fit: BoxFit.cover,
@@ -1734,7 +1572,7 @@ class _FullScreenFeedCardState extends State<_FullScreenFeedCard> {
                             ? CircleAvatar(
                                 radius: 16,
                                 backgroundColor: Colors.white.withOpacity(0.2),
-                                backgroundImage: NetworkImage(_buildImageUrl(widget.item.authorAvatarUrl!)),
+                                backgroundImage: NetworkImage(buildImageUrl(widget.item.authorAvatarUrl!)),
                                 onBackgroundImageError: (exception, stackTrace) {},
                                 child: null,
                               )

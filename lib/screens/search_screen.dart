@@ -4,12 +4,12 @@ import "package:flutter/material.dart";
 
 import "../api/api_client.dart";
 import "../auth/auth_controller.dart";
-import "../config.dart";
 import "../recipes/recipe_detail_screen.dart";
 import "../search/search_api.dart";
 import "../search/search_controller.dart" as search;
 import "../users/user_api.dart";
 import "../users/user_search_controller.dart";
+import "../utils/ui_utils.dart";
 import "profile_screen.dart";
 
 class SearchScreen extends StatefulWidget {
@@ -117,44 +117,6 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
     });
   }
 
-  String _buildImageUrl(String relativeUrl) {
-    if (relativeUrl.startsWith('http://') || relativeUrl.startsWith('https://')) {
-      return relativeUrl;
-    }
-    return "${Config.apiBaseUrl}$relativeUrl";
-  }
-
-  Widget _buildUserAvatar(BuildContext context, String? avatarUrl, String username, {double radius = 12}) {
-    if (avatarUrl != null && avatarUrl.isNotEmpty) {
-      return CircleAvatar(
-        radius: radius,
-        backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-        backgroundImage: NetworkImage(_buildImageUrl(avatarUrl)),
-        onBackgroundImageError: (exception, stackTrace) {
-          // Image failed to load, will show child as fallback
-        },
-        child: null,
-      );
-    }
-    return CircleAvatar(
-      radius: radius,
-      backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-      child: username.isNotEmpty
-          ? Text(
-              username[0].toUpperCase(),
-              style: TextStyle(
-                fontSize: radius * 0.8,
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.onPrimaryContainer,
-              ),
-            )
-          : Icon(
-              Icons.person_outline_rounded,
-              size: radius,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -337,7 +299,7 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
         }
 
         final item = recipeSearchController.items[index];
-        final date = _formatDate(item.createdAt);
+        final date = formatDate(item.createdAt);
 
         return RepaintBoundary(
           child: Card(
@@ -382,7 +344,7 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
                           const SizedBox(height: 8),
                           Row(
                             children: [
-                              _buildUserAvatar(context, item.authorAvatarUrl, item.authorUsername),
+                              buildUserAvatar(context, item.authorAvatarUrl, item.authorUsername),
                               const SizedBox(width: 6),
                               Text(
                                 "@${item.authorUsername} • $date",
@@ -556,7 +518,7 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
                 padding: const EdgeInsets.all(16),
                 child: Row(
                   children: [
-                    _buildUserAvatar(context, user.avatarUrl, user.username, radius: 24),
+                    buildUserAvatar(context, user.avatarUrl, user.username, radius: 24),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
@@ -593,21 +555,6 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
     );
   }
 
-  // Memoized date formatter - cache formatted dates to avoid repeated formatting
-  static final Map<DateTime, String> _dateCache = {};
-  String _formatDate(DateTime date) {
-    // Use a normalized date (without time) as cache key
-    final normalizedDate = DateTime(date.year, date.month, date.day);
-    
-    return _dateCache.putIfAbsent(normalizedDate, () {
-      const months = [
-        'January', 'February', 'March', 'April', 'May', 'June',
-        'July', 'August', 'September', 'October', 'November', 'December'
-      ];
-      final localDate = date.toLocal();
-      return '${months[localDate.month - 1]} ${localDate.day}, ${localDate.year}';
-    });
-  }
 }
 
 class FollowButton extends StatelessWidget {

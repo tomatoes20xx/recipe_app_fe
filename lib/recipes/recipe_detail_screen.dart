@@ -2,8 +2,8 @@ import "package:flutter/material.dart";
 
 import "../api/api_client.dart";
 import "../auth/auth_controller.dart";
-import "../config.dart";
 import "../screens/create_recipe_screen.dart";
+import "../utils/ui_utils.dart";
 import "comments_controller.dart";
 import "recipe_api.dart";
 import "recipe_detail_controller.dart";
@@ -205,7 +205,7 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final date = _formatDate(r.createdAt);
+    final date = formatDate(r.createdAt);
 
     final cuisine = r.cuisine; // helps avoid any nullable weirdness
     final hasCuisine = cuisine != null && cuisine.trim().isNotEmpty;
@@ -224,7 +224,7 @@ class _Header extends StatelessWidget {
                     ? CircleAvatar(
                         radius: 12,
                         backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                        backgroundImage: NetworkImage(_buildImageUrl(r.authorAvatarUrl!)),
+                        backgroundImage: NetworkImage(buildImageUrl(r.authorAvatarUrl!)),
                         onBackgroundImageError: (exception, stackTrace) {
                           // Image failed to load, will show child as fallback
                         },
@@ -370,21 +370,6 @@ class _SectionTitle extends StatelessWidget {
   }
 }
 
-String _buildImageUrl(String relativeUrl) {
-  if (relativeUrl.startsWith('http://') || relativeUrl.startsWith('https://')) {
-    return relativeUrl;
-  }
-  return "${Config.apiBaseUrl}$relativeUrl";
-}
-
-String _formatDate(DateTime date) {
-  const months = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
-  ];
-  final localDate = date.toLocal();
-  return '${months[localDate.month - 1]} ${localDate.day}, ${localDate.year}';
-}
 
 class _ImageGallery extends StatefulWidget {
   const _ImageGallery({required this.images});
@@ -445,7 +430,7 @@ class _ImageGalleryState extends State<_ImageGallery> {
                   return GestureDetector(
                     onTap: () => _openImageViewer(index),
                     child: Image.network(
-                      _buildImageUrl(image.url),
+                      buildImageUrl(image.url),
                       width: double.infinity,
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) {
@@ -573,7 +558,7 @@ class _FullScreenImageViewerState extends State<_FullScreenImageViewer> {
             maxScale: 4.0,
             child: Center(
               child: Image.network(
-                _buildImageUrl(image.url),
+                buildImageUrl(image.url),
                 fit: BoxFit.contain,
                 errorBuilder: (context, error, stackTrace) {
                   return Center(
@@ -743,7 +728,7 @@ class _CommentsSectionState extends State<_CommentsSection> {
             )
           else
             ...widget.commentsController.comments.map((comment) {
-              final date = _formatDate(comment.createdAt);
+              final date = formatDate(comment.createdAt);
               return ListTile(
                 dense: true,
                 title: Text(comment.content),

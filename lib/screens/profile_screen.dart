@@ -7,12 +7,12 @@ import "package:image/image.dart" as img;
 import "../api/api_client.dart";
 import "../auth/auth_api.dart";
 import "../auth/auth_controller.dart";
-import "../config.dart";
 import "../feed/feed_models.dart";
 import "../recipes/recipe_detail_screen.dart";
 import "../users/user_api.dart";
 import "../users/user_models.dart";
 import "../users/user_recipes_controller.dart";
+import "../utils/ui_utils.dart";
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({
@@ -335,44 +335,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  String _buildImageUrl(String relativeUrl) {
-    if (relativeUrl.startsWith('http://') || relativeUrl.startsWith('https://')) {
-      return relativeUrl;
-    }
-    return "${Config.apiBaseUrl}$relativeUrl";
-  }
-
-  Widget _buildUserAvatar(BuildContext context, String? avatarUrl, String username, {double radius = 40}) {
-    if (avatarUrl != null && avatarUrl.isNotEmpty) {
-      return CircleAvatar(
-        radius: radius,
-        backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-        backgroundImage: NetworkImage(_buildImageUrl(avatarUrl)),
-        onBackgroundImageError: (exception, stackTrace) {
-          // Image failed to load, will show child as fallback
-        },
-        child: null,
-      );
-    }
-    return CircleAvatar(
-      radius: radius,
-      backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-      child: username.isNotEmpty
-          ? Text(
-              username[0].toUpperCase(),
-              style: TextStyle(
-                fontSize: radius * 0.8,
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.onPrimaryContainer,
-              ),
-            )
-          : Icon(
-              Icons.person_outline_rounded,
-              size: radius,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -435,7 +397,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     children: [
                       Row(
                         children: [
-                          _buildUserAvatar(
+                          buildUserAvatar(
                             context,
                             _userProfile!.avatarUrl,
                             _userProfile!.username,
@@ -553,7 +515,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               : () => _showAvatarMenu(context, avatarUrl),
                           child: Stack(
                             children: [
-                            _buildUserAvatar(context, avatarUrl, username, radius: 40),
+                            buildUserAvatar(context, avatarUrl, username, radius: 40),
                             if (_isUploading || _isDeleting)
                               Positioned.fill(
                                 child: Container(
@@ -776,7 +738,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   );
                 },
-                buildImageUrl: _buildImageUrl,
+                buildImageUrl: buildImageUrl,
               ),
             );
           },
@@ -789,107 +751,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ],
     );
   }
-
-  // Memoized date formatter - cache formatted dates to avoid repeated formatting
-  static final Map<DateTime, String> _dateCache = {};
-  String _formatDate(DateTime date) {
-    // Use a normalized date (without time) as cache key
-    final normalizedDate = DateTime(date.year, date.month, date.day);
-    
-    return _dateCache.putIfAbsent(normalizedDate, () {
-      const months = [
-        'January', 'February', 'March', 'April', 'May', 'June',
-        'July', 'August', 'September', 'October', 'November', 'December'
-      ];
-      final localDate = date.toLocal();
-      return '${months[localDate.month - 1]} ${localDate.day}, ${localDate.year}';
-    });
-  }
 }
 
-// Optimized cached image widget for profile screen
-class _ProfileCachedImageWidget extends StatelessWidget {
-  const _ProfileCachedImageWidget({
-    required this.imageUrl,
-    required this.width,
-    required this.height,
-    this.fit = BoxFit.cover,
-  });
-
-  final String imageUrl;
-  final double width;
-  final double height;
-  final BoxFit fit;
-
-  @override
-  Widget build(BuildContext context) {
-    // Handle infinite dimensions - don't set cacheWidth/cacheHeight if dimensions are infinite
-    final int? cacheWidth = width.isFinite ? width.toInt() : null;
-    final int? cacheHeight = height.isFinite ? height.toInt() : null;
-    
-    return Image.network(
-      imageUrl,
-      width: width.isFinite ? width : null,
-      height: height.isFinite ? height : null,
-      fit: fit,
-      cacheWidth: cacheWidth,
-      cacheHeight: cacheHeight,
-      frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
-        if (wasSynchronouslyLoaded || frame != null) {
-          return child;
-        }
-        return AnimatedOpacity(
-          opacity: frame == null ? 0 : 1,
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeOut,
-          child: child,
-        );
-      },
-      errorBuilder: (context, error, stackTrace) {
-        final containerWidth = width.isFinite ? width : null;
-        final containerHeight = height.isFinite ? height : null;
-        
-        return Container(
-          width: containerWidth,
-          height: containerHeight,
-          color: Theme.of(context).colorScheme.surfaceContainerHighest,
-          child: Center(
-            child: Icon(
-              Icons.broken_image_rounded,
-              size: width.isFinite && width > 100 ? 48.0 : 32.0,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
-            ),
-          ),
-        );
-      },
-      loadingBuilder: (context, child, loadingProgress) {
-        if (loadingProgress == null) {
-          return child;
-        }
-        final containerWidth = width.isFinite ? width : null;
-        final containerHeight = height.isFinite ? height : null;
-        
-        return Container(
-          width: containerWidth,
-          height: containerHeight,
-          color: Theme.of(context).colorScheme.surfaceContainerHighest,
-          child: Center(
-            child: CircularProgressIndicator(
-              strokeWidth: 2,
-              value: loadingProgress.expectedTotalBytes != null
-                  ? loadingProgress.cumulativeBytesLoaded /
-                      loadingProgress.expectedTotalBytes!
-                  : null,
-              valueColor: AlwaysStoppedAnimation<Color>(
-                Theme.of(context).colorScheme.primary,
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
 
 class _StatItem extends StatelessWidget {
   const _StatItem({required this.label, required this.value});
@@ -942,7 +805,7 @@ class _RecipeGridCard extends StatelessWidget {
         children: [
           // Background image
           if (imageUrl != null)
-            _ProfileCachedImageWidget(
+            CachedNetworkImageWidget(
               imageUrl: imageUrl,
               width: double.infinity,
               height: double.infinity,
