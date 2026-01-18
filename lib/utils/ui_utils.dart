@@ -1,4 +1,5 @@
 import "package:flutter/material.dart";
+import "package:cached_network_image/cached_network_image.dart";
 
 import "../config.dart";
 
@@ -43,10 +44,16 @@ Widget buildUserAvatar(
       : avatarUrl;
   
   if (normalizedAvatarUrl != null && normalizedAvatarUrl.isNotEmpty) {
+    final avatarSize = (radius * 2 * MediaQuery.of(context).devicePixelRatio).round();
     return CircleAvatar(
       radius: radius,
       backgroundColor: Theme.of(context).colorScheme.primary,
-      backgroundImage: NetworkImage(buildImageUrl(normalizedAvatarUrl)),
+      backgroundImage: CachedNetworkImageProvider(
+        buildImageUrl(normalizedAvatarUrl),
+        cacheKey: normalizedAvatarUrl,
+        maxWidth: avatarSize,
+        maxHeight: avatarSize,
+      ),
       onBackgroundImageError: (exception, stackTrace) {
         // Image failed to load, will show child as fallback
       },
@@ -82,115 +89,83 @@ class CachedNetworkImageWidget extends StatelessWidget {
     required this.width,
     required this.height,
     this.fit = BoxFit.cover,
+    this.cacheWidth,
+    this.cacheHeight,
   });
 
   final String imageUrl;
   final double width;
   final double height;
   final BoxFit fit;
+  final int? cacheWidth;
+  final int? cacheHeight;
 
   @override
   Widget build(BuildContext context) {
-    // Create image widget - don't set width/height directly to avoid stretching
-    // Let the SizedBox provide constraints instead
-    final imageWidget = Image.network(
-      imageUrl,
-      fit: fit, // BoxFit.cover ensures cropping, not stretching
-      frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
-        if (wasSynchronouslyLoaded || frame != null) {
-          return child;
-        }
-        // Fade in animation for loaded images
-        return AnimatedOpacity(
-          opacity: frame == null ? 0 : 1,
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeOut,
-          child: child,
-        );
-      },
-      errorBuilder: (context, error, stackTrace) {
-        final containerWidth = width.isFinite ? width : null;
-        final containerHeight = height.isFinite ? height : null;
-        final iconSize = width.isFinite && width > 100 ? 48.0 : 32.0;
-        
-        return Container(
-          width: containerWidth,
-          height: containerHeight,
+    // Calculate optimal cache dimensions if not provided
+    final int? finalCacheWidth = cacheWidth ?? (width.isFinite ? (width * MediaQuery.of(context).devicePixelRatio).round() : null);
+    final int? finalCacheHeight = cacheHeight ?? (height.isFinite ? (height * MediaQuery.of(context).devicePixelRatio).round() : null);
+
+    return SizedBox(
+      width: width.isFinite ? width : null,
+      height: height.isFinite ? height : null,
+      child: CachedNetworkImage(
+        imageUrl: imageUrl,
+        fit: fit,
+        width: width.isFinite ? width : null,
+        height: height.isFinite ? height : null,
+        memCacheWidth: finalCacheWidth,
+        memCacheHeight: finalCacheHeight,
+        fadeInDuration: const Duration(milliseconds: 200),
+        fadeOutDuration: const Duration(milliseconds: 100),
+        placeholder: (context, url) => Container(
+          width: width.isFinite ? width : null,
+          height: height.isFinite ? height : null,
           color: Theme.of(context).colorScheme.surfaceContainerHighest,
           child: Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.broken_image_rounded,
-                  size: iconSize,
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+            child: SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  Theme.of(context).colorScheme.primary.withOpacity(0.5),
                 ),
-                if (width.isFinite && width > 100) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    "Error",
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        );
-      },
-      loadingBuilder: (context, child, loadingProgress) {
-        if (loadingProgress == null) {
-          return child;
-        }
-        final containerWidth = width.isFinite ? width : null;
-        final containerHeight = height.isFinite ? height : null;
-        
-        return Container(
-          width: containerWidth,
-          height: containerHeight,
-          color: Theme.of(context).colorScheme.surfaceContainerHighest,
-          child: Center(
-            child: CircularProgressIndicator(
-              strokeWidth: 2,
-              value: loadingProgress.expectedTotalBytes != null
-                  ? loadingProgress.cumulativeBytesLoaded /
-                      loadingProgress.expectedTotalBytes!
-                  : null,
-              valueColor: AlwaysStoppedAnimation<Color>(
-                Theme.of(context).colorScheme.primary,
               ),
             ),
           ),
-        );
-      },
-    );
-    
-    // Wrap in SizedBox with explicit constraints to ensure proper cropping (not stretching)
-    if (width.isFinite && height.isFinite) {
-      return SizedBox(
-        width: width,
-        height: height,
-        child: ClipRect(
-          clipBehavior: Clip.hardEdge,
-          child: SizedBox.expand(
-            child: imageWidget,
-          ),
         ),
-      );
-    }
-    
-    // For infinite dimensions, use width/height if provided
-    if (width.isFinite || height.isFinite) {
-      return SizedBox(
-        width: width.isFinite ? width : null,
-        height: height.isFinite ? height : null,
-        child: imageWidget,
-      );
-    }
-    
-    return imageWidget;
+        errorWidget: (context, url, error) {
+          final iconSize = width.isFinite && width > 100 ? 48.0 : 32.0;
+          return Container(
+            width: width.isFinite ? width : null,
+            height: height.isFinite ? height : null,
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.broken_image_rounded,
+                    size: iconSize,
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+                  ),
+                  if (width.isFinite && width > 100) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      "Error",
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
   }
 }

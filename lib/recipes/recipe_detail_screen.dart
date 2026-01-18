@@ -1,4 +1,5 @@
 import "package:flutter/material.dart";
+import "package:cached_network_image/cached_network_image.dart";
 
 import "../api/api_client.dart";
 import "../auth/auth_controller.dart";
@@ -753,11 +754,20 @@ class _ImageGalleryState extends State<_ImageGallery> {
                 final image = widget.images[index];
                 return GestureDetector(
                   onTap: () => _openImageViewer(index),
-                  child: Image.network(
-                    buildImageUrl(image.url),
+                  child: CachedNetworkImage(
+                    imageUrl: buildImageUrl(image.url),
                     width: double.infinity,
                     fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
+                    fadeInDuration: const Duration(milliseconds: 200),
+                    placeholder: (context, url) => Container(
+                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                      child: Center(
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                        ),
+                      ),
+                    ),
+                    errorWidget: (context, url, error) {
                       return Container(
                         color: Theme.of(context).colorScheme.surfaceContainerHighest,
                         child: Center(
@@ -765,21 +775,6 @@ class _ImageGalleryState extends State<_ImageGallery> {
                             Icons.broken_image_rounded,
                             size: 48,
                             color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
-                          ),
-                        ),
-                      );
-                    },
-                    loadingBuilder: (context, child, loadingProgress) {
-                      if (loadingProgress == null) return child;
-                      return Container(
-                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                        child: Center(
-                          child: CircularProgressIndicator(
-                            value: loadingProgress.expectedTotalBytes != null
-                                ? loadingProgress.cumulativeBytesLoaded /
-                                    loadingProgress.expectedTotalBytes!
-                                : null,
-                            strokeWidth: 2,
                           ),
                         ),
                       );
@@ -910,27 +905,21 @@ class _FullScreenImageViewerState extends State<_FullScreenImageViewer> {
             minScale: 0.5,
             maxScale: 4.0,
             child: Center(
-              child: Image.network(
-                buildImageUrl(image.url),
+              child: CachedNetworkImage(
+                imageUrl: buildImageUrl(image.url),
                 fit: BoxFit.contain,
-                errorBuilder: (context, error, stackTrace) {
+                fadeInDuration: const Duration(milliseconds: 200),
+                placeholder: (context, url) => Center(
+                  child: CircularProgressIndicator(
+                    valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                ),
+                errorWidget: (context, url, error) {
                   return Center(
                     child: Icon(
                       Icons.broken_image_rounded,
                       size: 64,
                       color: Colors.white.withOpacity(0.5),
-                    ),
-                  );
-                },
-                loadingBuilder: (context, child, loadingProgress) {
-                  if (loadingProgress == null) return child;
-                  return Center(
-                    child: CircularProgressIndicator(
-                      value: loadingProgress.expectedTotalBytes != null
-                          ? loadingProgress.cumulativeBytesLoaded /
-                              loadingProgress.expectedTotalBytes!
-                          : null,
-                      valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
                     ),
                   );
                 },

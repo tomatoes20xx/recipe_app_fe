@@ -3,6 +3,7 @@ import "dart:async";
 import "package:flutter/gestures.dart";
 import "package:flutter/material.dart";
 import "package:flutter_secure_storage/flutter_secure_storage.dart";
+import "package:cached_network_image/cached_network_image.dart";
 
 import "../api/api_client.dart";
 import "../auth/auth_controller.dart";
@@ -1182,7 +1183,12 @@ class _FeedCardState extends State<_FeedCard> {
                               ? CircleAvatar(
                                   radius: 10,
                                   backgroundColor: Theme.of(context).colorScheme.primary,
-                                  backgroundImage: NetworkImage(buildImageUrl(widget.item.authorAvatarUrl!)),
+                                  backgroundImage: CachedNetworkImageProvider(
+                                    buildImageUrl(widget.item.authorAvatarUrl!),
+                                    cacheKey: widget.item.authorAvatarUrl!,
+                                    maxWidth: 40,
+                                    maxHeight: 40,
+                                  ),
                                   onBackgroundImageError: (exception, stackTrace) {
                                     // Image failed to load, will show child as fallback
                                   },
@@ -1787,7 +1793,12 @@ class _FullScreenFeedCardState extends State<_FullScreenFeedCard> {
                               ? CircleAvatar(
                                   radius: 16,
                                   backgroundColor: Theme.of(context).colorScheme.primary,
-                                  backgroundImage: NetworkImage(buildImageUrl(widget.item.authorAvatarUrl!)),
+                                  backgroundImage: CachedNetworkImageProvider(
+                                    buildImageUrl(widget.item.authorAvatarUrl!),
+                                    cacheKey: widget.item.authorAvatarUrl!,
+                                    maxWidth: 64,
+                                    maxHeight: 64,
+                                  ),
                                   onBackgroundImageError: (exception, stackTrace) {},
                                   child: null,
                                 )

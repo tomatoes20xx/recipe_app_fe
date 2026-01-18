@@ -4,6 +4,7 @@ import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:image_picker/image_picker.dart";
 import "package:image/image.dart" as img;
+import "package:cached_network_image/cached_network_image.dart";
 
 import "../api/api_client.dart";
 import "../recipes/recipe_api.dart";
@@ -686,12 +687,26 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
                     children: [
                       ClipRRect(
                         borderRadius: BorderRadius.circular(12),
-                        child: Image.network(
-                          buildImageUrl(image.url),
+                        child: CachedNetworkImage(
+                          imageUrl: buildImageUrl(image.url),
                           width: 100,
                           height: 100,
                           fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
+                          memCacheWidth: 200,
+                          memCacheHeight: 200,
+                          placeholder: (context, url) => Container(
+                            width: 100,
+                            height: 100,
+                            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                            child: const Center(
+                              child: SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              ),
+                            ),
+                          ),
+                          errorWidget: (context, url, error) {
                             return Container(
                               width: 100,
                               height: 100,

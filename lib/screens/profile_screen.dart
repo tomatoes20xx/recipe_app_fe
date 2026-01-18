@@ -3,6 +3,7 @@ import "dart:io";
 import "package:flutter/material.dart";
 import "package:image_picker/image_picker.dart";
 import "package:image/image.dart" as img;
+import "package:cached_network_image/cached_network_image.dart";
 
 import "../api/api_client.dart";
 import "../auth/auth_api.dart";
@@ -790,7 +791,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
       return CircleAvatar(
         radius: radius,
         backgroundColor: Theme.of(context).colorScheme.primary,
-        backgroundImage: NetworkImage(buildImageUrl(avatarUrl)),
+        backgroundImage: CachedNetworkImageProvider(
+          buildImageUrl(avatarUrl),
+          cacheKey: avatarUrl,
+          maxWidth: (radius * 2 * MediaQuery.of(context).devicePixelRatio).round(),
+          maxHeight: (radius * 2 * MediaQuery.of(context).devicePixelRatio).round(),
+        ),
         onBackgroundImageError: (exception, stackTrace) {
           // Image failed to load, will show child as fallback
         },
@@ -1033,12 +1039,24 @@ class _RecipeGridCard extends StatelessWidget {
         children: [
           // Background image
           if (imageUrl != null)
-            Image.network(
-              imageUrl,
+            CachedNetworkImage(
+              imageUrl: imageUrl,
               width: double.infinity,
               height: double.infinity,
               fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
+              memCacheWidth: 400,
+              memCacheHeight: 400,
+              placeholder: (context, url) => Container(
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                child: const Center(
+                  child: SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                ),
+              ),
+              errorWidget: (context, url, error) {
                 return Container(
                   color: Theme.of(context).colorScheme.surfaceContainerHighest,
                   child: Icon(

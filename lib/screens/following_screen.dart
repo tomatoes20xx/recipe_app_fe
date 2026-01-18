@@ -1,4 +1,5 @@
 import "package:flutter/material.dart";
+import "package:cached_network_image/cached_network_image.dart";
 
 import "../api/api_client.dart";
 import "../auth/auth_controller.dart";
@@ -97,7 +98,12 @@ class _FollowingScreenState extends State<FollowingScreen> {
       return CircleAvatar(
         radius: radius,
         backgroundColor: Theme.of(context).colorScheme.primary,
-        backgroundImage: NetworkImage(_buildImageUrl(avatarUrl)),
+        backgroundImage: CachedNetworkImageProvider(
+          _buildImageUrl(avatarUrl),
+          cacheKey: avatarUrl,
+          maxWidth: (radius * 2 * MediaQuery.of(context).devicePixelRatio).round(),
+          maxHeight: (radius * 2 * MediaQuery.of(context).devicePixelRatio).round(),
+        ),
         onBackgroundImageError: (exception, stackTrace) {
           // Image failed to load, will show child as fallback
         },

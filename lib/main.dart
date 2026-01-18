@@ -1,4 +1,7 @@
+import "dart:io" show Platform;
+import "package:flutter/foundation.dart" show kIsWeb;
 import "package:flutter/material.dart";
+import "package:sqflite_common_ffi/sqflite_ffi.dart";
 
 import "api/api_client.dart";
 import "auth/auth_api.dart";
@@ -7,8 +10,15 @@ import "auth/token_storage.dart";
 import "screens/auth_gate.dart";
 import "theme/theme_controller.dart";
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize sqflite_common_ffi for Windows/Linux/macOS desktop support
+  // This is required for cached_network_image to work on desktop platforms
+  if (!kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {
+    sqfliteFfiInit();
+    databaseFactory = databaseFactoryFfi;
+  }
   
   // Clear image cache to ensure fresh images are loaded
   imageCache.clear();

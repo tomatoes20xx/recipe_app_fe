@@ -34,11 +34,15 @@ dependencies:
   # For HTTP Requests
   http: ^1.6.0
   # For Secure Storage
-  flutter_secure_storage: ^9.2.2
+  flutter_secure_storage: ^10.0.0
   # For Image Picker
   image_picker: ^1.0.7
   # For Image Compression/Resizing
   image: ^4.3.0
+  # For Image Caching and Optimization
+  cached_network_image: ^3.3.1
+  # For SQLite support on Windows/Linux/macOS (required by cached_network_image)
+  sqflite_common_ffi: ^2.3.3+2
 
 dev_dependencies:
   flutter_test:
@@ -50,7 +54,7 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
-  flutter_launcher_icons: ^0.13.1
+  flutter_launcher_icons: ^0.14.4
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
