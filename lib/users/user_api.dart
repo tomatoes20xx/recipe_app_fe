@@ -1,5 +1,4 @@
 import "../api/api_client.dart";
-import "../feed/feed_models.dart";
 import "user_models.dart";
 
 class UserApi {
@@ -102,5 +101,19 @@ class UserApi {
 
     final data = await api.patch("/users/me/privacy", body: body, auth: true);
     return UserPrivacySettings.fromJson(Map<String, dynamic>.from(data as Map));
+  }
+
+  /// Get user's bookmarked recipes
+  Future<UserRecipesResponse> getBookmarkedRecipes({
+    int limit = 20,
+    String? cursor,
+  }) async {
+    final queryParams = <String, String>{
+      "limit": limit.toString(),
+      if (cursor != null) "cursor": cursor,
+    };
+
+    final data = await api.get("/users/me/bookmarks", query: queryParams, auth: true);
+    return UserRecipesResponse.fromJson(Map<String, dynamic>.from(data as Map));
   }
 }

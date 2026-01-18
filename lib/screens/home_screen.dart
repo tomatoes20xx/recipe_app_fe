@@ -13,6 +13,7 @@ import "../theme/theme_controller.dart";
 import "../utils/ui_utils.dart";
 import "create_recipe_screen.dart";
 import "profile_screen.dart";
+import "saved_recipes_screen.dart";
 import "search_screen.dart";
 
 class HomeScreen extends StatefulWidget {
@@ -577,7 +578,23 @@ class _FeedScopeDrawer extends StatelessWidget {
               },
             ),
             const Divider(),
-            if (auth.isLoggedIn)
+            if (auth.isLoggedIn) ...[
+              ListTile(
+                leading: const Icon(Icons.bookmark_outline),
+                title: const Text("Saved Recipes"),
+                subtitle: const Text("View your bookmarked recipes"),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => SavedRecipesScreen(
+                        apiClient: apiClient,
+                        auth: auth,
+                      ),
+                    ),
+                  );
+                },
+              ),
               ListTile(
                 leading: buildUserAvatar(
                   context,
@@ -602,6 +619,7 @@ class _FeedScopeDrawer extends StatelessWidget {
                   );
                 },
               ),
+            ],
           ],
         ),
       ),
