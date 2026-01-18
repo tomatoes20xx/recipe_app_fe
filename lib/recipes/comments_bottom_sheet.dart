@@ -334,8 +334,10 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
 
   List<Widget> _buildCommentList(List<_CommentNode> nodes, int depth, {String? parentCommentId}) {
     final out = <Widget>[];
-    for (final n in nodes) {
-      out.add(_buildCommentBlock(n, depth, parentCommentId: parentCommentId));
+    for (int i = 0; i < nodes.length; i++) {
+      final n = nodes[i];
+      final isLastChild = i == nodes.length - 1;
+      out.add(_buildCommentBlock(n, depth, isLastChild: isLastChild, parentCommentId: parentCommentId));
       if (n.children.isNotEmpty && !_collapsedIds.contains(n.comment.id)) {
         // Limit to 10 replies unless fully expanded
         final isFullyExpanded = _fullyExpandedIds.contains(n.comment.id);
@@ -388,7 +390,7 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
     return count;
   }
 
-  Widget _buildCommentBlock(_CommentNode node, int depth, {String? parentCommentId}) {
+  Widget _buildCommentBlock(_CommentNode node, int depth, {String? parentCommentId, bool isLastChild = false}) {
     final c = node.comment;
     final date = formatDate(c.createdAt);
     final hasReplies = node.children.isNotEmpty;
@@ -397,85 +399,84 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
     final totalReplyCount = _countAllReplies(node);
     final replyLabel = totalReplyCount == 1 ? 'reply' : 'replies';
 
-    Widget block = Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          buildUserAvatar(context, c.authorAvatarUrl, c.authorUsername, radius: 16),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  c.content,
-                  style: Theme.of(context).textTheme.bodyLarge,
+    // Build the comment content (without bottom padding)
+    Widget commentContent = Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        buildUserAvatar(context, c.authorAvatarUrl, c.authorUsername, radius: 16),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                c.content,
+                style: Theme.of(context).textTheme.bodyLarge,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                "@${c.authorUsername} • $date",
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.65),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  "@${c.authorUsername} • $date",
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.65),
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 4,
-                  children: [
-                    if (isLoggedIn)
-                      TextButton(
-                        onPressed: () => _onReply(c),
-                        style: TextButton.styleFrom(
-                          padding: EdgeInsets.zero,
-                          minimumSize: Size.zero,
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          foregroundColor: Theme.of(context).colorScheme.primary,
-                        ),
-                        child: Text("Reply", style: Theme.of(context).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600)),
+              ),
+              const SizedBox(height: 6),
+              Wrap(
+                spacing: 8,
+                runSpacing: 4,
+                children: [
+                  if (isLoggedIn)
+                    TextButton(
+                      onPressed: () => _onReply(c),
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        foregroundColor: Theme.of(context).colorScheme.primary,
                       ),
-                    if (c.viewerIsMe)
-                      TextButton(
-                        onPressed: () => _onDeleteComment(c.id),
-                        style: TextButton.styleFrom(
-                          padding: EdgeInsets.zero,
-                          minimumSize: Size.zero,
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          foregroundColor: Theme.of(context).colorScheme.error,
-                        ),
-                        child: Text("Delete", style: Theme.of(context).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600)),
+                      child: Text("Reply", style: Theme.of(context).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600)),
+                    ),
+                  if (c.viewerIsMe)
+                    TextButton(
+                      onPressed: () => _onDeleteComment(c.id),
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        foregroundColor: Theme.of(context).colorScheme.error,
                       ),
-                    if (hasReplies)
-                      TextButton.icon(
-                        onPressed: () => _onToggleCollapse(c.id),
-                        icon: Icon(
-                          isCollapsed ? Icons.expand_more : Icons.expand_less,
-                          size: 18,
+                      child: Text("Delete", style: Theme.of(context).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600)),
+                    ),
+                  if (hasReplies)
+                    TextButton.icon(
+                      onPressed: () => _onToggleCollapse(c.id),
+                      icon: Icon(
+                        isCollapsed ? Icons.expand_more : Icons.expand_less,
+                        size: 18,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      label: Text(
+                        isCollapsed ? "Show $totalReplyCount $replyLabel" : "Hide $totalReplyCount $replyLabel",
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: Theme.of(context).colorScheme.primary,
-                        ),
-                        label: Text(
-                          isCollapsed ? "Show $totalReplyCount $replyLabel" : "Hide $totalReplyCount $replyLabel",
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context).colorScheme.primary,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        style: TextButton.styleFrom(
-                          padding: EdgeInsets.zero,
-                          minimumSize: Size.zero,
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
-                  ],
-                ),
-              ],
-            ),
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                    ),
+                ],
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
 
+    // Apply border and indentation for nested comments (depth >= 1)
     if (depth >= 1) {
       // Cap indentation at 4 levels (64px) to prevent content from shrinking too much
       // Use 16px per level instead of 24px for better space efficiency
@@ -484,21 +485,51 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
       final cappedDepth = depth > maxDepth ? maxDepth : depth;
       final leftMargin = indentPerLevel * cappedDepth;
       
-      block = Container(
-        margin: EdgeInsets.only(left: leftMargin),
-        padding: const EdgeInsets.only(left: 10),
-        decoration: BoxDecoration(
-          border: Border(
-            left: BorderSide(
-              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.35),
-              width: 2,
+      // For last child: border wraps only content (ends at action buttons)
+      // For other children: border wraps content + padding (extends to bottom)
+      if (isLastChild) {
+        // Last child: apply border to content only, then wrap in padding
+        commentContent = Container(
+          margin: EdgeInsets.only(left: leftMargin),
+          padding: const EdgeInsets.only(left: 10),
+          decoration: BoxDecoration(
+            border: Border(
+              left: BorderSide(
+                color: Colors.grey.withValues(alpha: 0.4),
+                width: 1,
+              ),
             ),
           ),
-        ),
-        child: block,
-      );
+          child: commentContent,
+        );
+        // Wrap in padding for spacing between comments
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: commentContent,
+        );
+      } else {
+        // Not last child: wrap content + padding in border container
+        return Container(
+          margin: EdgeInsets.only(left: leftMargin),
+          padding: const EdgeInsets.only(left: 10, bottom: 12),
+          decoration: BoxDecoration(
+            border: Border(
+              left: BorderSide(
+                color: Colors.grey.withValues(alpha: 0.4),
+                width: 1,
+              ),
+            ),
+          ),
+          child: commentContent,
+        );
+      }
     }
-    return block;
+    
+    // For root comments (depth 0), just wrap in padding
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: commentContent,
+    );
   }
 
   Future<void> _submitComment() async {
