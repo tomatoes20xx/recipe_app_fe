@@ -28,16 +28,15 @@ class SearchScreen extends StatefulWidget {
   State<SearchScreen> createState() => _SearchScreenState();
 }
 
-class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderStateMixin {
+class _SearchScreenState extends State<SearchScreen> {
   late final search.RecipeSearchController recipeSearchController;
   late final UserSearchController userSearchController;
-  late final TabController _tabController;
   final TextEditingController _searchTextController = TextEditingController();
   final ScrollController _recipeScrollController = ScrollController();
   final ScrollController _userScrollController = ScrollController();
   
   Timer? _debounceTimer;
-  int _currentTab = 0;
+  bool _isRecipeSearch = true; // true for recipes, false for users
 
   @override
   void initState() {
@@ -51,13 +50,6 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
       userApi: UserApi(widget.apiClient),
     );
     userSearchController.addListener(_onUserSearchChanged);
-
-    _tabController = TabController(length: 2, vsync: this);
-    _tabController.addListener(() {
-      setState(() {
-        _currentTab = _tabController.index;
-      });
-    });
 
     _recipeScrollController.addListener(() {
       if (_recipeScrollController.hasClients &&
@@ -109,7 +101,6 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
     _searchTextController.dispose();
     _recipeScrollController.dispose();
     _userScrollController.dispose();
-    _tabController.dispose();
     recipeSearchController.removeListener(_onRecipeSearchChanged);
     recipeSearchController.dispose();
     userSearchController.removeListener(_onUserSearchChanged);
@@ -130,7 +121,7 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
     
     // Debounce search by 500ms to reduce API calls
     _debounceTimer = Timer(const Duration(milliseconds: 500), () {
-      if (_currentTab == 0) {
+      if (_isRecipeSearch) {
         // Update query in filters and search
         final updatedFilters = recipeSearchController.filters.copyWith(
           query: query.trim().isEmpty ? null : query.trim(),
@@ -147,100 +138,153 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Search"),
-        actions: [
-          if (_currentTab == 0)
-            IconButton(
-              icon: Stack(
+        title: Container(
+          height: 40,
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: TextField(
+            controller: _searchTextController,
+            autofocus: false,
+            style: Theme.of(context).textTheme.bodyLarge,
+            decoration: InputDecoration(
+              hintText: _isRecipeSearch
+                  ? "Search recipes, ingredients, tags..."
+                  : "Search users by username...",
+              hintStyle: TextStyle(
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+              ),
+              prefixIcon: const Icon(Icons.search, size: 20),
+              suffixIcon: Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.tune),
-                  if (recipeSearchController.filters.hasActiveFilters)
-                    Positioned(
-                      right: 0,
-                      top: 0,
-                      child: Container(
-                        width: 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.primary,
-                          shape: BoxShape.circle,
-                        ),
+                  // Clear button (appears first, to the left)
+                  if (_searchTextController.text.isNotEmpty)
+                    IconButton(
+                      icon: const Icon(Icons.clear, size: 18),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(
+                        minWidth: 32,
+                        minHeight: 32,
+                      ),
+                      onPressed: () {
+                        _searchTextController.clear();
+                        recipeSearchController.clear();
+                        userSearchController.clear();
+                        setState(() {});
+                      },
+                    ),
+                  // Search type toggle - Single button with both icons, active one highlighted (always rightmost)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 4),
+                    child: IconButton(
+                      icon: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.restaurant_menu,
+                            size: 18,
+                            color: _isRecipeSearch
+                                ? Theme.of(context).colorScheme.primary
+                                : Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                          ),
+                          const SizedBox(width: 4),
+                          Icon(
+                            Icons.people,
+                            size: 18,
+                            color: !_isRecipeSearch
+                                ? Theme.of(context).colorScheme.primary
+                                : Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                          ),
+                        ],
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _isRecipeSearch = !_isRecipeSearch;
+                          // Clear search when switching modes
+                          _searchTextController.clear();
+                          recipeSearchController.clear();
+                          userSearchController.clear();
+                        });
+                      },
+                      tooltip: _isRecipeSearch ? "Switch to Users" : "Switch to Recipes",
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      constraints: const BoxConstraints(
+                        minWidth: 48,
+                        minHeight: 32,
                       ),
                     ),
+                  ),
                 ],
               ),
-              tooltip: "Filters",
-              onPressed: () => _showFilterBottomSheet(context),
+              border: InputBorder.none,
+              enabledBorder: InputBorder.none,
+              focusedBorder: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              isDense: true,
             ),
-        ],
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: const [
-            Tab(text: "Recipes", icon: Icon(Icons.restaurant_menu)),
-            Tab(text: "Users", icon: Icon(Icons.people)),
-          ],
+            onChanged: (value) {
+              // Update suffix icon immediately for better UX
+              setState(() {});
+              // Debounce the actual search
+              _performSearch(value);
+            },
+            onSubmitted: (value) {
+              // Cancel debounce and search immediately on submit
+              _debounceTimer?.cancel();
+              if (_isRecipeSearch) {
+                final updatedFilters = recipeSearchController.filters.copyWith(
+                  query: value.trim().isEmpty ? null : value.trim(),
+                );
+                recipeSearchController.search(filters: updatedFilters);
+              } else {
+                if (value.trim().isNotEmpty) {
+                  userSearchController.search(value);
+                } else {
+                  userSearchController.clear();
+                }
+              }
+            },
+            textInputAction: TextInputAction.search,
+          ),
         ),
       ),
       body: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: TextField(
-              controller: _searchTextController,
-              decoration: InputDecoration(
-                hintText: _currentTab == 0
-                    ? "Search recipes, ingredients, tags..."
-                    : "Search users by username...",
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: _searchTextController.text.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () {
-                          _searchTextController.clear();
-                          recipeSearchController.clear();
-                          userSearchController.clear();
-                        },
-                      )
-                    : null,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+          // Filter button (only shown for recipe search, positioned below search bar)
+          if (_isRecipeSearch)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: IconButton(
+                  icon: Stack(
+                    children: [
+                      const Icon(Icons.tune),
+                      if (recipeSearchController.filters.hasActiveFilters)
+                        Positioned(
+                          right: 0,
+                          top: 0,
+                          child: Container(
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.primary,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  tooltip: "Filters",
+                  onPressed: () => _showFilterBottomSheet(context),
                 ),
-                filled: true,
-                fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
               ),
-              onChanged: (value) {
-                // Update suffix icon immediately for better UX
-                setState(() {});
-                // Debounce the actual search
-                _performSearch(value);
-              },
-              onSubmitted: (value) {
-                // Cancel debounce and search immediately on submit
-                _debounceTimer?.cancel();
-                if (_currentTab == 0) {
-                  final updatedFilters = recipeSearchController.filters.copyWith(
-                    query: value.trim().isEmpty ? null : value.trim(),
-                  );
-                  recipeSearchController.search(filters: updatedFilters);
-                } else {
-                  if (value.trim().isNotEmpty) {
-                    userSearchController.search(value);
-                  } else {
-                    userSearchController.clear();
-                  }
-                }
-              },
-              textInputAction: TextInputAction.search,
             ),
-          ),
+          // Results
           Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                _buildRecipeResults(),
-                _buildUserResults(),
-              ],
-            ),
+            child: _isRecipeSearch ? _buildRecipeResults() : _buildUserResults(),
           ),
         ],
       ),
