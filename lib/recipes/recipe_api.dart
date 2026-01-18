@@ -22,6 +22,9 @@ class RecipeApi {
     String? description,
     String? cuisine,
     List<String> tags = const [],
+    int? cookingTimeMin,
+    int? cookingTimeMax,
+    String? difficulty,
     required List<Map<String, dynamic>> ingredients,
     required List<Map<String, dynamic>> steps,
     List<File>? images,
@@ -48,6 +51,16 @@ class RecipeApi {
     }
     if (trimmedCuisine != null && trimmedCuisine.isNotEmpty) {
       fields["cuisine"] = trimmedCuisine;
+    }
+    // Only add cooking time fields if they are valid positive integers
+    if (cookingTimeMin != null && cookingTimeMin >= 0) {
+      fields["cooking_time_min"] = cookingTimeMin.toString();
+    }
+    if (cookingTimeMax != null && cookingTimeMax >= 0) {
+      fields["cooking_time_max"] = cookingTimeMax.toString();
+    }
+    if (difficulty != null && difficulty.isNotEmpty) {
+      fields["difficulty"] = difficulty;
     }
     
     // Create multipart files (empty list if no images)
@@ -86,6 +99,9 @@ class RecipeApi {
     String? description,
     String? cuisine,
     List<String>? tags,
+    int? cookingTimeMin,
+    int? cookingTimeMax,
+    String? difficulty,
     List<Map<String, dynamic>>? ingredients,
     List<Map<String, dynamic>>? steps,
   }) async {
@@ -101,15 +117,24 @@ class RecipeApi {
     if (cuisine != null) {
       body["cuisine"] = cuisine.trim();
     }
-    if (tags != null) {
-      body["tags"] = tags;
-    }
-    if (ingredients != null) {
-      body["ingredients"] = ingredients;
-    }
-    if (steps != null) {
-      body["steps"] = steps;
-    }
+      if (tags != null) {
+        body["tags"] = tags;
+      }
+      if (cookingTimeMin != null) {
+        body["cooking_time_min"] = cookingTimeMin;
+      }
+      if (cookingTimeMax != null) {
+        body["cooking_time_max"] = cookingTimeMax;
+      }
+      if (difficulty != null && difficulty.isNotEmpty) {
+        body["difficulty"] = difficulty;
+      }
+      if (ingredients != null) {
+        body["ingredients"] = ingredients;
+      }
+      if (steps != null) {
+        body["steps"] = steps;
+      }
     
     if (body.isEmpty) {
       throw Exception("At least one field must be provided for update");

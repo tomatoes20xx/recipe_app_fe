@@ -7,6 +7,7 @@ import "../auth/auth_controller.dart";
 import "../recipes/recipe_detail_screen.dart";
 import "../search/search_api.dart";
 import "../search/search_controller.dart" as search;
+import "../search/search_filters.dart";
 import "../users/user_api.dart";
 import "../users/user_models.dart";
 import "../users/user_search_controller.dart";
@@ -121,8 +122,8 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
     // Cancel previous timer
     _debounceTimer?.cancel();
     
-    // If query is empty, clear immediately
-    if (query.trim().isEmpty) {
+    // If query is empty and no filters, clear immediately
+    if (query.trim().isEmpty && !recipeSearchController.filters.hasActiveFilters) {
       recipeSearchController.clear();
       userSearchController.clear();
       return;
@@ -131,7 +132,11 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
     // Debounce search by 500ms to reduce API calls
     _debounceTimer = Timer(const Duration(milliseconds: 500), () {
       if (_currentTab == 0) {
-        recipeSearchController.search(query);
+        // Update query in filters and search
+        final updatedFilters = recipeSearchController.filters.copyWith(
+          query: query.trim().isEmpty ? null : query.trim(),
+        );
+        recipeSearchController.search(filters: updatedFilters);
       } else {
         userSearchController.search(query);
       }
@@ -144,6 +149,31 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
     return Scaffold(
       appBar: AppBar(
         title: const Text("Search"),
+        actions: [
+          if (_currentTab == 0)
+            IconButton(
+              icon: Stack(
+                children: [
+                  const Icon(Icons.tune),
+                  if (recipeSearchController.filters.hasActiveFilters)
+                    Positioned(
+                      right: 0,
+                      top: 0,
+                      child: Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.primary,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              tooltip: "Filters",
+              onPressed: () => _showFilterBottomSheet(context),
+            ),
+        ],
         bottom: TabBar(
           controller: _tabController,
           tabs: const [
@@ -188,15 +218,17 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
               onSubmitted: (value) {
                 // Cancel debounce and search immediately on submit
                 _debounceTimer?.cancel();
-                if (value.trim().isNotEmpty) {
-                  if (_currentTab == 0) {
-                    recipeSearchController.search(value);
-                  } else {
-                    userSearchController.search(value);
-                  }
+                if (_currentTab == 0) {
+                  final updatedFilters = recipeSearchController.filters.copyWith(
+                    query: value.trim().isEmpty ? null : value.trim(),
+                  );
+                  recipeSearchController.search(filters: updatedFilters);
                 } else {
-                  recipeSearchController.clear();
-                  userSearchController.clear();
+                  if (value.trim().isNotEmpty) {
+                    userSearchController.search(value);
+                  } else {
+                    userSearchController.clear();
+                  }
                 }
               },
               textInputAction: TextInputAction.search,
@@ -217,7 +249,7 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
   }
 
   Widget _buildRecipeResults() {
-    if (recipeSearchController.currentQuery == null || recipeSearchController.currentQuery!.isEmpty) {
+    if (!recipeSearchController.filters.hasActiveFilters) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -268,7 +300,9 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
             ),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: () => _performSearch(recipeSearchController.currentQuery!),
+              onPressed: () {
+                recipeSearchController.search(filters: recipeSearchController.filters);
+              },
               child: const Text("Retry"),
             ),
           ],
@@ -576,6 +610,493 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
     );
   }
 
+  void _showFilterBottomSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => _FilterBottomSheet(
+        filters: recipeSearchController.filters,
+        onApply: (filters) {
+          recipeSearchController.updateFilters(filters);
+          recipeSearchController.search(filters: filters);
+          Navigator.of(context).pop();
+        },
+        onClear: () {
+          // Clear filters but keep the sheet open
+          recipeSearchController.clear();
+        },
+      ),
+    );
+  }
+}
+
+class _FilterBottomSheet extends StatefulWidget {
+  const _FilterBottomSheet({
+    required this.filters,
+    required this.onApply,
+    required this.onClear,
+  });
+
+  final RecipeSearchFilters filters;
+  final ValueChanged<RecipeSearchFilters> onApply;
+  final VoidCallback onClear;
+
+  @override
+  State<_FilterBottomSheet> createState() => _FilterBottomSheetState();
+}
+
+
+class _FilterBottomSheetState extends State<_FilterBottomSheet> {
+  late RecipeSearchFilters _currentFilters;
+  final _cuisineController = TextEditingController();
+  final _tagController = TextEditingController();
+  final _ingredientController = TextEditingController();
+  final _cookingTimeMinController = TextEditingController();
+  final _cookingTimeMaxController = TextEditingController();
+  final List<String> _selectedTags = [];
+  final List<String> _selectedIngredients = [];
+  String? _cookingTimeError;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentFilters = widget.filters;
+    _cuisineController.text = widget.filters.cuisine ?? "";
+    _selectedTags.addAll(widget.filters.tags);
+    _selectedIngredients.addAll(widget.filters.ingredients);
+    _cookingTimeMinController.text = widget.filters.cookingTimeMin?.toString() ?? "";
+    _cookingTimeMaxController.text = widget.filters.cookingTimeMax?.toString() ?? "";
+  }
+
+  void _clearAllFilters() {
+    setState(() {
+      _currentFilters = RecipeSearchFilters();
+      _cuisineController.clear();
+      _selectedTags.clear();
+      _selectedIngredients.clear();
+      _cookingTimeMinController.clear();
+      _cookingTimeMaxController.clear();
+      _cookingTimeError = null;
+    });
+    // Also clear the search controller
+    widget.onClear();
+  }
+
+  @override
+  void dispose() {
+    _cuisineController.dispose();
+    _tagController.dispose();
+    _ingredientController.dispose();
+    _cookingTimeMinController.dispose();
+    _cookingTimeMaxController.dispose();
+    super.dispose();
+  }
+
+  void _applyFilters() {
+    // Parse cooking time from controllers
+    final cookingTimeMin = _cookingTimeMinController.text.trim().isEmpty
+        ? null
+        : int.tryParse(_cookingTimeMinController.text.trim());
+    final cookingTimeMax = _cookingTimeMaxController.text.trim().isEmpty
+        ? null
+        : int.tryParse(_cookingTimeMaxController.text.trim());
+
+    // Validate cooking time: min should not be more than max (they can be equal)
+    if (cookingTimeMin != null && cookingTimeMax != null && cookingTimeMin > cookingTimeMax) {
+      setState(() {
+        _cookingTimeError = "Minimum time cannot be greater than maximum time";
+      });
+      ErrorUtils.showError(context, "Minimum cooking time cannot be greater than maximum time");
+      return;
+    }
+
+    // Clear error if validation passes
+    setState(() {
+      _cookingTimeError = null;
+    });
+
+    // Get the current query from the search controller (preserve it)
+    final currentQuery = widget.filters.query;
+
+    final filters = RecipeSearchFilters(
+      query: currentQuery, // Preserve the search query
+      cuisine: _cuisineController.text.trim().isEmpty ? null : _cuisineController.text.trim(),
+      tags: _selectedTags,
+      ingredients: _selectedIngredients,
+      cookingTimeMin: cookingTimeMin,
+      cookingTimeMax: cookingTimeMax,
+      difficulty: _currentFilters.difficulty,
+    );
+    widget.onApply(filters);
+  }
+
+  void _addTag() {
+    final tag = _tagController.text.trim();
+    if (tag.isNotEmpty && !_selectedTags.contains(tag)) {
+      setState(() {
+        _selectedTags.add(tag);
+        _tagController.clear();
+      });
+    }
+  }
+
+  void _removeTag(String tag) {
+    setState(() {
+      _selectedTags.remove(tag);
+    });
+  }
+
+  void _addIngredient() {
+    final ingredient = _ingredientController.text.trim();
+    if (ingredient.isNotEmpty && !_selectedIngredients.contains(ingredient)) {
+      setState(() {
+        _selectedIngredients.add(ingredient);
+        _ingredientController.clear();
+      });
+    }
+  }
+
+  void _removeIngredient(String ingredient) {
+    setState(() {
+      _selectedIngredients.remove(ingredient);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return DraggableScrollableSheet(
+      initialChildSize: 0.9,
+      minChildSize: 0.5,
+      maxChildSize: 0.95,
+      expand: false,
+      builder: (context, scrollController) {
+        return Column(
+          children: [
+            // Handle bar
+            Container(
+              margin: const EdgeInsets.only(top: 12),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            // Header
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    "Filters",
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                  ),
+                  TextButton(
+                    onPressed: _clearAllFilters,
+                    child: const Text("Clear All"),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+            // Filter content
+            Expanded(
+              child: ListView(
+                controller: scrollController,
+                padding: const EdgeInsets.all(16),
+                children: [
+                  // Cuisine filter
+                  _FilterSection(
+                    title: "Cuisine",
+                    child: TextField(
+                      controller: _cuisineController,
+                      decoration: InputDecoration(
+                        hintText: "e.g., Italian, Mexican, Asian",
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        prefixIcon: const Icon(Icons.restaurant),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  // Tags filter
+                  _FilterSection(
+                    title: "Tags",
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                controller: _tagController,
+                                decoration: InputDecoration(
+                                  hintText: "Add tag",
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  prefixIcon: const Icon(Icons.label_outline),
+                                ),
+                                onSubmitted: (_) => _addTag(),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            IconButton(
+                              onPressed: _addTag,
+                              icon: const Icon(Icons.add_circle),
+                              style: IconButton.styleFrom(
+                                backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (_selectedTags.isNotEmpty) ...[
+                          const SizedBox(height: 12),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: _selectedTags.map((tag) {
+                              return Chip(
+                                label: Text(tag),
+                                onDeleted: () => _removeTag(tag),
+                                deleteIcon: const Icon(Icons.close, size: 18),
+                              );
+                            }).toList(),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  // Ingredients filter
+                  _FilterSection(
+                    title: "Ingredients",
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                controller: _ingredientController,
+                                decoration: InputDecoration(
+                                  hintText: "Add ingredient",
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  prefixIcon: const Icon(Icons.shopping_cart_outlined),
+                                ),
+                                onSubmitted: (_) => _addIngredient(),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            IconButton(
+                              onPressed: _addIngredient,
+                              icon: const Icon(Icons.add_circle),
+                              style: IconButton.styleFrom(
+                                backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (_selectedIngredients.isNotEmpty) ...[
+                          const SizedBox(height: 12),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: _selectedIngredients.map((ingredient) {
+                              return Chip(
+                                label: Text(ingredient),
+                                onDeleted: () => _removeIngredient(ingredient),
+                                deleteIcon: const Icon(Icons.close, size: 18),
+                              );
+                            }).toList(),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  // Cooking time filter
+                  _FilterSection(
+                    title: "Cooking Time (minutes)",
+                    child: Column(
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                keyboardType: TextInputType.number,
+                                decoration: InputDecoration(
+                                  labelText: "Min",
+                                  hintText: "0",
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  prefixIcon: const Icon(Icons.timer_outlined),
+                                  errorText: _cookingTimeError != null ? _cookingTimeError : null,
+                                  errorMaxLines: 2,
+                                ),
+                                onChanged: (value) {
+                                  // Clear error when user starts typing
+                                  if (_cookingTimeError != null) {
+                                    setState(() {
+                                      _cookingTimeError = null;
+                                    });
+                                  }
+                                  // Update is handled in _applyFilters, but we can update state for immediate feedback
+                                  final min = int.tryParse(value);
+                                  setState(() {
+                                    _currentFilters = _currentFilters.copyWith(
+                                      cookingTimeMin: min,
+                                    );
+                                  });
+                                  // Validate in real-time if both fields have values
+                                  final max = int.tryParse(_cookingTimeMaxController.text.trim());
+                                  if (min != null && max != null && min > max) {
+                                    setState(() {
+                                      _cookingTimeError = "Minimum time cannot be greater than maximum time";
+                                    });
+                                  }
+                                },
+                                controller: _cookingTimeMinController,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: TextField(
+                                keyboardType: TextInputType.number,
+                                decoration: InputDecoration(
+                                  labelText: "Max",
+                                  hintText: "120",
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  prefixIcon: const Icon(Icons.timer),
+                                  errorText: _cookingTimeError != null ? _cookingTimeError : null,
+                                  errorMaxLines: 2,
+                                ),
+                                onChanged: (value) {
+                                  // Clear error when user starts typing
+                                  if (_cookingTimeError != null) {
+                                    setState(() {
+                                      _cookingTimeError = null;
+                                    });
+                                  }
+                                  // Update is handled in _applyFilters, but we can update state for immediate feedback
+                                  final max = int.tryParse(value);
+                                  setState(() {
+                                    _currentFilters = _currentFilters.copyWith(
+                                      cookingTimeMax: max,
+                                    );
+                                  });
+                                  // Validate in real-time if both fields have values
+                                  final min = int.tryParse(_cookingTimeMinController.text.trim());
+                                  if (min != null && max != null && min > max) {
+                                    setState(() {
+                                      _cookingTimeError = "Minimum time cannot be greater than maximum time";
+                                    });
+                                  }
+                                },
+                                controller: _cookingTimeMaxController,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  // Difficulty filter
+                  _FilterSection(
+                    title: "Difficulty",
+                    child: SegmentedButton<String?>(
+                      segments: const [
+                        ButtonSegment(value: "easy", label: Text("Easy")),
+                        ButtonSegment(value: "medium", label: Text("Medium")),
+                        ButtonSegment(value: "hard", label: Text("Hard")),
+                      ],
+                      selected: {_currentFilters.difficulty},
+                      onSelectionChanged: (Set<String?> newSelection) {
+                        setState(() {
+                          _currentFilters = _currentFilters.copyWith(
+                            difficulty: newSelection.firstOrNull,
+                          );
+                        });
+                      },
+                      multiSelectionEnabled: false,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Apply button
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: FilledButton(
+                  onPressed: () {
+                    final filters = RecipeSearchFilters(
+                      query: _currentFilters.query,
+                      cuisine: _cuisineController.text.trim().isEmpty ? null : _cuisineController.text.trim(),
+                      tags: _selectedTags,
+                      ingredients: _selectedIngredients,
+                      cookingTimeMin: _currentFilters.cookingTimeMin,
+                      cookingTimeMax: _currentFilters.cookingTimeMax,
+                      difficulty: _currentFilters.difficulty,
+                    );
+                    if (!filters.isValid) {
+                      ErrorUtils.showError(context, "Please add at least one filter or search query");
+                      return;
+                    }
+                    _applyFilters();
+                  },
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 48),
+                  ),
+                  child: const Text("Apply Filters"),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _FilterSection extends StatelessWidget {
+  const _FilterSection({
+    required this.title,
+    required this.child,
+  });
+
+  final String title;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+        ),
+        const SizedBox(height: 12),
+        child,
+      ],
+    );
+  }
 }
 
 class FollowButton extends StatelessWidget {

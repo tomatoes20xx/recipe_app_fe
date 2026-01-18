@@ -205,6 +205,29 @@ Future<dynamic> _multipartRequest(
           final details = data["details"] as Map;
           if (details.containsKey("message")) {
             msg = details["message"].toString();
+          } else if (details.containsKey("fieldErrors")) {
+            // Handle nested fieldErrors in details: { error: "...", details: { fieldErrors: {...} } }
+            final fieldErrors = details["fieldErrors"];
+            if (fieldErrors is Map && fieldErrors.isNotEmpty) {
+              final fieldErrorList = fieldErrors.entries
+                  .map((e) {
+                    final field = e.key.toString();
+                    final value = e.value;
+                    // Handle array of error messages: ["error1", "error2"]
+                    if (value is List && value.isNotEmpty) {
+                      return "$field: ${value.first}";
+                    }
+                    return "$field: $value";
+                  })
+                  .join(", ");
+              msg = "fieldErrors: {$fieldErrorList}";
+            }
+          } else if (details.containsKey("formErrors")) {
+            // Handle nested formErrors in details
+            final formErrors = details["formErrors"];
+            if (formErrors is List && formErrors.isNotEmpty) {
+              msg = "formErrors: ${formErrors.join(", ")}";
+            }
           } else if (details.isNotEmpty) {
             // Format validation errors
             final errors = details.entries.map((e) => "${e.key}: ${e.value}").join(", ");
@@ -214,14 +237,22 @@ Future<dynamic> _multipartRequest(
           }
         }
         
-        // Check for formErrors and fieldErrors (common in validation)
+        // Check for formErrors and fieldErrors at root level (common in validation)
         if (data.containsKey("formErrors") || data.containsKey("fieldErrors")) {
           final formErrors = data["formErrors"];
           final fieldErrors = data["fieldErrors"];
           
           if (fieldErrors is Map && fieldErrors.isNotEmpty) {
             final fieldErrorList = fieldErrors.entries
-                .map((e) => "${e.key}: ${e.value}")
+                .map((e) {
+                  final field = e.key.toString();
+                  final value = e.value;
+                  // Handle array of error messages: ["error1", "error2"]
+                  if (value is List && value.isNotEmpty) {
+                    return "$field: ${value.first}";
+                  }
+                  return "$field: $value";
+                })
                 .join(", ");
             msg = "fieldErrors: {$fieldErrorList}";
           } else if (formErrors is List && formErrors.isNotEmpty) {

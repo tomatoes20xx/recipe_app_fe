@@ -6,15 +6,50 @@ class SearchApi {
   final ApiClient api;
 
   Future<SearchResponse> searchRecipes({
-    required String query,
+    String? query,
+    String? cuisine,
+    List<String>? tags,
+    List<String>? ingredients,
+    int? cookingTimeMin,
+    int? cookingTimeMax,
+    String? difficulty,
     int limit = 20,
     String? cursor,
   }) async {
     final queryParams = <String, String>{
-      "q": query,
       "limit": limit.toString(),
       if (cursor != null) "cursor": cursor,
     };
+
+    // Add query if provided
+    if (query != null && query.trim().isNotEmpty) {
+      queryParams["q"] = query.trim();
+    }
+
+    // Add filters
+    if (cuisine != null && cuisine.trim().isNotEmpty) {
+      queryParams["cuisine"] = cuisine.trim();
+    }
+
+    if (tags != null && tags.isNotEmpty) {
+      queryParams["tags"] = tags.join(",");
+    }
+
+    if (ingredients != null && ingredients.isNotEmpty) {
+      queryParams["ingredients"] = ingredients.join(",");
+    }
+
+    if (cookingTimeMin != null) {
+      queryParams["cooking_time_min"] = cookingTimeMin.toString();
+    }
+
+    if (cookingTimeMax != null) {
+      queryParams["cooking_time_max"] = cookingTimeMax.toString();
+    }
+
+    if (difficulty != null && difficulty.isNotEmpty) {
+      queryParams["difficulty"] = difficulty;
+    }
 
     final data = await api.get("/search/recipes", query: queryParams, auth: true);
     return SearchResponse.fromJson(Map<String, dynamic>.from(data as Map));

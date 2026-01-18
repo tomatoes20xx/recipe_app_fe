@@ -28,6 +28,9 @@ class FeedItem {
   final String id;
   final String title;
   final String? description;
+  final int? cookingTimeMin;
+  final int? cookingTimeMax;
+  final String? difficulty; // 'easy', 'medium', 'hard'
   final DateTime createdAt;
   final String authorUsername;
   final String? authorAvatarUrl;
@@ -48,6 +51,9 @@ class FeedItem {
     required this.id,
     required this.title,
     required this.description,
+    this.cookingTimeMin,
+    this.cookingTimeMax,
+    this.difficulty,
     required this.createdAt,
     required this.authorUsername,
     this.authorAvatarUrl,
@@ -71,6 +77,9 @@ class FeedItem {
       id: json["id"].toString(),
       title: (json["title"] ?? "").toString(),
       description: json["description"]?.toString(),
+      cookingTimeMin: json["cooking_time_min"] is int ? json["cooking_time_min"] as int : null,
+      cookingTimeMax: json["cooking_time_max"] is int ? json["cooking_time_max"] as int : null,
+      difficulty: json["difficulty"]?.toString(),
       createdAt: DateTime.parse(json["created_at"].toString()),
       authorUsername: (json["author_username"] ?? "").toString(),
       authorAvatarUrl: json["author_avatar_url"]?.toString(),
@@ -98,6 +107,9 @@ class FeedItem {
       id: id,
       title: title,
       description: description ?? this.description,
+      cookingTimeMin: cookingTimeMin,
+      cookingTimeMax: cookingTimeMax,
+      difficulty: difficulty,
       createdAt: createdAt,
       authorUsername: authorUsername,
       authorAvatarUrl: authorAvatarUrl,

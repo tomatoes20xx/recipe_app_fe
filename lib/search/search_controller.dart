@@ -1,5 +1,6 @@
 import "package:flutter/foundation.dart";
 import "search_api.dart";
+import "search_filters.dart";
 import "search_models.dart";
 
 class RecipeSearchController extends ChangeNotifier {
@@ -9,7 +10,7 @@ class RecipeSearchController extends ChangeNotifier {
 
   final List<SearchResult> items = [];
   String? nextCursor;
-  String? currentQuery;
+  RecipeSearchFilters filters = RecipeSearchFilters();
 
   bool isLoading = false;
   bool isLoadingMore = false;
@@ -17,30 +18,38 @@ class RecipeSearchController extends ChangeNotifier {
 
   int limit = 20;
 
-  Future<void> search(String query) async {
-    if (query.trim().isEmpty) {
+  Future<void> search({String? query, RecipeSearchFilters? filters}) async {
+    // Update filters
+    if (filters != null) {
+      this.filters = filters;
+    } else if (query != null) {
+      this.filters = this.filters.copyWith(query: query);
+    }
+
+    // Validate: at least one filter or query required
+    if (!this.filters.isValid) {
       items.clear();
       nextCursor = null;
-      currentQuery = null;
       error = null;
       notifyListeners();
       return;
-    }
-
-    if (query == currentQuery && items.isNotEmpty) {
-      return; // Already searched for this query
     }
 
     isLoading = true;
     error = null;
     items.clear();
     nextCursor = null;
-    currentQuery = query.trim();
     notifyListeners();
 
     try {
       final res = await searchApi.searchRecipes(
-        query: currentQuery!,
+        query: this.filters.query,
+        cuisine: this.filters.cuisine,
+        tags: this.filters.tags.isNotEmpty ? this.filters.tags : null,
+        ingredients: this.filters.ingredients.isNotEmpty ? this.filters.ingredients : null,
+        cookingTimeMin: this.filters.cookingTimeMin,
+        cookingTimeMax: this.filters.cookingTimeMax,
+        difficulty: this.filters.difficulty,
         limit: limit,
         cursor: null,
       );
@@ -56,7 +65,7 @@ class RecipeSearchController extends ChangeNotifier {
 
   Future<void> loadMore() async {
     if (isLoading || isLoadingMore) return;
-    if (nextCursor == null || currentQuery == null) return;
+    if (nextCursor == null || !filters.isValid) return;
 
     isLoadingMore = true;
     error = null;
@@ -64,7 +73,13 @@ class RecipeSearchController extends ChangeNotifier {
 
     try {
       final res = await searchApi.searchRecipes(
-        query: currentQuery!,
+        query: filters.query,
+        cuisine: filters.cuisine,
+        tags: filters.tags.isNotEmpty ? filters.tags : null,
+        ingredients: filters.ingredients.isNotEmpty ? filters.ingredients : null,
+        cookingTimeMin: filters.cookingTimeMin,
+        cookingTimeMax: filters.cookingTimeMax,
+        difficulty: filters.difficulty,
         limit: limit,
         cursor: nextCursor,
       );
@@ -81,10 +96,15 @@ class RecipeSearchController extends ChangeNotifier {
   void clear() {
     items.clear();
     nextCursor = null;
-    currentQuery = null;
+    filters = RecipeSearchFilters();
     error = null;
     isLoading = false;
     isLoadingMore = false;
+    notifyListeners();
+  }
+
+  void updateFilters(RecipeSearchFilters newFilters) {
+    filters = newFilters;
     notifyListeners();
   }
 }

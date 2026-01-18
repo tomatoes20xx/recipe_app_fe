@@ -1,6 +1,9 @@
 class SearchResult {
   final String id;
   final String title;
+  final int? cookingTimeMin;
+  final int? cookingTimeMax;
+  final String? difficulty;
   final DateTime createdAt;
   final String authorUsername;
   final String? authorAvatarUrl;
@@ -8,6 +11,9 @@ class SearchResult {
   SearchResult({
     required this.id,
     required this.title,
+    this.cookingTimeMin,
+    this.cookingTimeMax,
+    this.difficulty,
     required this.createdAt,
     required this.authorUsername,
     this.authorAvatarUrl,
@@ -17,6 +23,9 @@ class SearchResult {
     return SearchResult(
       id: json["id"].toString(),
       title: json["title"].toString(),
+      cookingTimeMin: json["cooking_time_min"] is int ? json["cooking_time_min"] as int : null,
+      cookingTimeMax: json["cooking_time_max"] is int ? json["cooking_time_max"] as int : null,
+      difficulty: json["difficulty"]?.toString(),
       createdAt: DateTime.parse(json["created_at"].toString()),
       authorUsername: json["author_username"].toString(),
       authorAvatarUrl: json["author_avatar_url"]?.toString(),

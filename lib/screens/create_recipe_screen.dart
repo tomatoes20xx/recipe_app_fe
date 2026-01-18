@@ -32,6 +32,8 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
   final _descriptionController = TextEditingController();
   final _cuisineController = TextEditingController();
   final _tagController = TextEditingController();
+  final _cookingTimeMinController = TextEditingController();
+  final _cookingTimeMaxController = TextEditingController();
 
   final List<String> _tags = [];
   final List<_IngredientItem> _ingredients = [];
@@ -39,6 +41,9 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
   final List<XFile> _selectedImages = [];
   final List<RecipeImage> _existingImages = []; // Existing images from recipe
   final ImagePicker _imagePicker = ImagePicker();
+
+  String? _selectedDifficulty; // 'easy', 'medium', 'hard'
+  String? _cookingTimeError;
 
   bool _isSubmitting = false;
   String? _error;
@@ -60,6 +65,9 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
     _cuisineController.text = recipe.cuisine ?? "";
     _tags.addAll(recipe.tags);
     _existingImages.addAll(recipe.images);
+    _cookingTimeMinController.text = recipe.cookingTimeMin?.toString() ?? "";
+    _cookingTimeMaxController.text = recipe.cookingTimeMax?.toString() ?? "";
+    _selectedDifficulty = recipe.difficulty;
 
     // Load ingredients
     for (final ing in recipe.ingredients) {
@@ -84,6 +92,8 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
     _descriptionController.dispose();
     _cuisineController.dispose();
     _tagController.dispose();
+    _cookingTimeMinController.dispose();
+    _cookingTimeMaxController.dispose();
     for (var ing in _ingredients) {
       ing.quantityController.dispose();
       ing.unitController.dispose();
@@ -253,6 +263,39 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
       }
     }
 
+    // Validate cooking time: min should not be more than max (they can be equal)
+    final cookingTimeMinText = _cookingTimeMinController.text.trim();
+    final cookingTimeMaxText = _cookingTimeMaxController.text.trim();
+    
+    // Check if fields have text but are invalid
+    if (cookingTimeMinText.isNotEmpty) {
+      final min = int.tryParse(cookingTimeMinText);
+      if (min == null) {
+        ErrorUtils.showError(context, "Minimum cooking time must be a valid number");
+        return;
+      }
+    }
+    if (cookingTimeMaxText.isNotEmpty) {
+      final max = int.tryParse(cookingTimeMaxText);
+      if (max == null) {
+        ErrorUtils.showError(context, "Maximum cooking time must be a valid number");
+        return;
+      }
+    }
+    
+    // Parse cooking time values - we already validated they're valid if text is present
+    final cookingTimeMin = cookingTimeMinText.isEmpty
+        ? null
+        : (int.tryParse(cookingTimeMinText) ?? null);
+    final cookingTimeMax = cookingTimeMaxText.isEmpty
+        ? null
+        : (int.tryParse(cookingTimeMaxText) ?? null);
+
+    if (cookingTimeMin != null && cookingTimeMax != null && cookingTimeMin > cookingTimeMax) {
+      ErrorUtils.showError(context, "Minimum cooking time cannot be greater than maximum time");
+      return;
+    }
+
     setState(() {
       _isSubmitting = true;
       _error = null;
@@ -330,6 +373,16 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
         // For ingredients and steps: only send if user wants to update them
         // For now, we'll only send metadata fields (title, description, cuisine, tags)
         // Ingredients and steps require full replace, so we'll handle them separately if needed
+        final cookingTimeMinText = _cookingTimeMinController.text.trim();
+        final cookingTimeMaxText = _cookingTimeMaxController.text.trim();
+        
+        final cookingTimeMin = cookingTimeMinText.isEmpty
+            ? null
+            : int.tryParse(cookingTimeMinText);
+        final cookingTimeMax = cookingTimeMaxText.isEmpty
+            ? null
+            : int.tryParse(cookingTimeMaxText);
+
         await api.updateRecipe(
           recipeId: widget.recipeId!,
           title: _titleController.text.trim(),
@@ -340,6 +393,9 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
               ? null
               : _cuisineController.text.trim(),
           tags: _tags.isEmpty ? null : _tags,
+          cookingTimeMin: cookingTimeMin,
+          cookingTimeMax: cookingTimeMax,
+          difficulty: _selectedDifficulty,
           // Don't send ingredients/steps unless explicitly updating them
           // This allows partial updates of just metadata
           ingredients: null,
@@ -350,6 +406,16 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
         // For now, we only update metadata via PATCH
       } else {
         // Create new recipe
+        final cookingTimeMinText = _cookingTimeMinController.text.trim();
+        final cookingTimeMaxText = _cookingTimeMaxController.text.trim();
+        
+        final cookingTimeMin = cookingTimeMinText.isEmpty
+            ? null
+            : int.tryParse(cookingTimeMinText);
+        final cookingTimeMax = cookingTimeMaxText.isEmpty
+            ? null
+            : int.tryParse(cookingTimeMaxText);
+
         await api.createRecipe(
           title: _titleController.text.trim(),
           description: _descriptionController.text.trim().isEmpty
@@ -359,6 +425,9 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
               ? null
               : _cuisineController.text.trim(),
           tags: _tags,
+          cookingTimeMin: cookingTimeMin,
+          cookingTimeMax: cookingTimeMax,
+          difficulty: _selectedDifficulty,
           ingredients: ingredients,
           steps: steps,
           images: imageFiles.isEmpty ? null : imageFiles,
@@ -459,6 +528,113 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
                 filled: true,
                 fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
               ),
+            ),
+            const SizedBox(height: 16),
+
+            // Cooking Time
+            Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _cookingTimeMinController,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      labelText: "Min Time (minutes)",
+                      hintText: "0",
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      filled: true,
+                      fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                      prefixIcon: const Icon(Icons.timer_outlined),
+                      errorText: _cookingTimeError,
+                      errorMaxLines: 2,
+                    ),
+                    onChanged: (value) {
+                      // Clear error when user starts typing
+                      if (_cookingTimeError != null) {
+                        setState(() {
+                          _cookingTimeError = null;
+                        });
+                      }
+                      // Validate in real-time if both fields have values
+                      final min = int.tryParse(value.trim());
+                      final max = _cookingTimeMaxController.text.trim().isEmpty
+                          ? null
+                          : int.tryParse(_cookingTimeMaxController.text.trim());
+                      if (min != null && max != null && min > max) {
+                        setState(() {
+                          _cookingTimeError = "Minimum time cannot be greater than maximum time";
+                        });
+                      }
+                    },
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: TextFormField(
+                    controller: _cookingTimeMaxController,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      labelText: "Max Time (minutes)",
+                      hintText: "120",
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      filled: true,
+                      fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                      prefixIcon: const Icon(Icons.timer),
+                      errorText: _cookingTimeError,
+                      errorMaxLines: 2,
+                    ),
+                    onChanged: (value) {
+                      // Clear error when user starts typing
+                      if (_cookingTimeError != null) {
+                        setState(() {
+                          _cookingTimeError = null;
+                        });
+                      }
+                      // Validate in real-time if both fields have values
+                      final max = int.tryParse(value.trim());
+                      final min = _cookingTimeMinController.text.trim().isEmpty
+                          ? null
+                          : int.tryParse(_cookingTimeMinController.text.trim());
+                      if (min != null && max != null && min > max) {
+                        setState(() {
+                          _cookingTimeError = "Minimum time cannot be greater than maximum time";
+                        });
+                      }
+                    },
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // Difficulty
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Difficulty",
+                  style: Theme.of(context).textTheme.labelLarge,
+                ),
+                const SizedBox(height: 8),
+                SegmentedButton<String?>(
+                  segments: const [
+                    ButtonSegment(value: "easy", label: Text("Easy")),
+                    ButtonSegment(value: "medium", label: Text("Medium")),
+                    ButtonSegment(value: "hard", label: Text("Hard")),
+                  ],
+                  selected: {_selectedDifficulty},
+                  onSelectionChanged: (Set<String?> newSelection) {
+                    setState(() {
+                      _selectedDifficulty = newSelection.firstOrNull;
+                    });
+                  },
+                  multiSelectionEnabled: false,
+                ),
+              ],
             ),
             const SizedBox(height: 16),
 

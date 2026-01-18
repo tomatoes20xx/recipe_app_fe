@@ -325,6 +325,55 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                                     _HashtagPill(tag: r.tags.first),
                                     const SizedBox(height: 16),
                                   ],
+                                  // Cooking time and difficulty
+                                  if (r.cookingTimeMin != null || r.cookingTimeMax != null || r.difficulty != null) ...[
+                                    Row(
+                                      children: [
+                                        if (r.cookingTimeMin != null || r.cookingTimeMax != null) ...[
+                                          Icon(
+                                            Icons.timer_outlined,
+                                            size: 16,
+                                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            r.cookingTimeMin != null && r.cookingTimeMax != null
+                                                ? "${r.cookingTimeMin}-${r.cookingTimeMax} min"
+                                                : r.cookingTimeMin != null
+                                                    ? "${r.cookingTimeMin}+ min"
+                                                    : "Up to ${r.cookingTimeMax} min",
+                                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                                                ),
+                                          ),
+                                        ],
+                                        if ((r.cookingTimeMin != null || r.cookingTimeMax != null) && r.difficulty != null)
+                                          const SizedBox(width: 16),
+                                        if (r.difficulty != null) ...[
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                            decoration: BoxDecoration(
+                                              color: context.getDifficultyColor(r.difficulty!).withOpacity(0.2),
+                                              borderRadius: BorderRadius.circular(8),
+                                              border: Border.all(
+                                                color: context.getDifficultyColor(r.difficulty!).withOpacity(0.5),
+                                                width: 1,
+                                              ),
+                                            ),
+                                            child: Text(
+                                              r.difficulty!.toUpperCase(),
+                                              style: TextStyle(
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.w600,
+                                                color: context.getDifficultyColor(r.difficulty!),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                    const SizedBox(height: 16),
+                                  ],
                                   // Description
                                   if (r.description != null && r.description!.trim().isNotEmpty) ...[
                                     const _SectionTitle("Description"),
@@ -912,5 +961,20 @@ class _ErrorView extends StatelessWidget {
         ),
       ],
     );
+  }
+}
+
+extension DifficultyColorExtension on BuildContext {
+  Color getDifficultyColor(String difficulty) {
+    switch (difficulty.toLowerCase()) {
+      case "easy":
+        return Colors.green;
+      case "medium":
+        return Colors.orange;
+      case "hard":
+        return Colors.red;
+      default:
+        return Theme.of(this).colorScheme.primary;
+    }
   }
 }

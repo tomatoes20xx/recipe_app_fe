@@ -106,6 +106,9 @@ class RecipeDetail {
   final String? description;
   final String? cuisine;
   final List<String> tags;
+  final int? cookingTimeMin;
+  final int? cookingTimeMax;
+  final String? difficulty; // 'easy', 'medium', 'hard'
   final DateTime createdAt;
   final String authorUsername;
   final String? authorAvatarUrl;
@@ -126,6 +129,9 @@ class RecipeDetail {
     required this.description,
     required this.cuisine,
     required this.tags,
+    this.cookingTimeMin,
+    this.cookingTimeMax,
+    this.difficulty,
     required this.createdAt,
     required this.authorUsername,
     this.authorAvatarUrl,
@@ -155,6 +161,9 @@ class RecipeDetail {
       description: json["description"]?.toString(),
       cuisine: json["cuisine"]?.toString(),
       tags: tagsRaw.map((e) => e.toString()).toList(),
+      cookingTimeMin: json["cooking_time_min"] is int ? json["cooking_time_min"] as int : null,
+      cookingTimeMax: json["cooking_time_max"] is int ? json["cooking_time_max"] as int : null,
+      difficulty: json["difficulty"]?.toString(),
       createdAt: DateTime.parse(json["created_at"].toString()),
       authorUsername: json["author_username"].toString(),
       authorAvatarUrl: json["author_avatar_url"]?.toString(),
