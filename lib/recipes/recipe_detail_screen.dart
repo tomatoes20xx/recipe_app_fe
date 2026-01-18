@@ -89,10 +89,6 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
         _viewerHasLiked = !wasLiked;
         _localLikes = base + (wasLiked ? -1 : 1);
       });
-      if (mounted && !wasLiked) {
-        // Only show success for liking, not unliking (less intrusive)
-        ErrorUtils.showSuccess(context, "Recipe liked");
-      }
     } catch (e) {
       if (mounted) {
         ErrorUtils.showError(context, e);
@@ -127,12 +123,6 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
         _viewerHasBookmarked = !wasBookmarked;
         _localBookmarks = base + (wasBookmarked ? -1 : 1);
       });
-      if (mounted) {
-        ErrorUtils.showSuccess(
-          context,
-          wasBookmarked ? "Recipe unsaved" : "Recipe saved",
-        );
-      }
     } catch (e) {
       if (mounted) {
         ErrorUtils.showError(context, e);
@@ -352,10 +342,10 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                                           Container(
                                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                             decoration: BoxDecoration(
-                                              color: context.getDifficultyColor(r.difficulty!).withOpacity(0.2),
+                                              color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.5),
                                               borderRadius: BorderRadius.circular(8),
                                               border: Border.all(
-                                                color: context.getDifficultyColor(r.difficulty!).withOpacity(0.5),
+                                                color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
                                                 width: 1,
                                               ),
                                             ),
@@ -364,7 +354,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                                               style: TextStyle(
                                                 fontSize: 11,
                                                 fontWeight: FontWeight.w600,
-                                                color: context.getDifficultyColor(r.difficulty!),
+                                                color: Theme.of(context).colorScheme.onSurface,
                                               ),
                                             ),
                                           ),
@@ -647,6 +637,10 @@ class _OverlayIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Fixed height to prevent flicker: icon (24) + spacing (2) + text (~14) + padding (16) = ~60px
+    // Using fixed height ensures both loading and non-loading states have identical dimensions
+    const fixedHeight = 60.0;
+    
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -654,6 +648,8 @@ class _OverlayIconButton extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          height: fixedHeight,
+          alignment: Alignment.center,
           child: isLoading
               ? const SizedBox(
                   width: 24,
@@ -680,6 +676,7 @@ class _OverlayIconButton extends StatelessWidget {
                           color: Colors.white,
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
+                          height: 1.0, // Reduce line height to minimize space
                         ),
                       ),
                     ],

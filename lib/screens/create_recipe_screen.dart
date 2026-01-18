@@ -641,19 +641,31 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
                   style: Theme.of(context).textTheme.labelLarge,
                 ),
                 const SizedBox(height: 8),
-                SegmentedButton<String?>(
-                  segments: const [
-                    ButtonSegment(value: "easy", label: Text("Easy")),
-                    ButtonSegment(value: "medium", label: Text("Medium")),
-                    ButtonSegment(value: "hard", label: Text("Hard")),
-                  ],
-                  selected: {_selectedDifficulty},
-                  onSelectionChanged: (Set<String?> newSelection) {
-                    setState(() {
-                      _selectedDifficulty = newSelection.firstOrNull;
-                    });
-                  },
-                  multiSelectionEnabled: false,
+                SizedBox(
+                  width: double.infinity,
+                  child: SegmentedButton<String?>(
+                    segments: const [
+                      ButtonSegment<String?>(value: "easy", label: Text("Easy")),
+                      ButtonSegment<String?>(value: "medium", label: Text("Medium")),
+                      ButtonSegment<String?>(value: "hard", label: Text("Hard")),
+                    ],
+                    selected: _selectedDifficulty != null ? {_selectedDifficulty} : <String?>{},
+                    onSelectionChanged: (Set<String?> newSelection) {
+                      setState(() {
+                        // Allow deselection: if clicking the same option, deselect it
+                        if (newSelection.isEmpty || newSelection.first == _selectedDifficulty) {
+                          _selectedDifficulty = null;
+                        } else {
+                          _selectedDifficulty = newSelection.firstOrNull;
+                        }
+                      });
+                    },
+                    multiSelectionEnabled: false,
+                    emptySelectionAllowed: true,
+                    style: SegmentedButton.styleFrom(
+                      fixedSize: const Size.fromHeight(40),
+                    ),
+                  ),
                 ),
               ],
             ),
