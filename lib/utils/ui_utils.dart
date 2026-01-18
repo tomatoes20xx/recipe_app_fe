@@ -35,11 +35,18 @@ Widget buildUserAvatar(
   String username, {
   double radius = 20,
 }) {
-  if (avatarUrl != null && avatarUrl.isNotEmpty) {
+  // Normalize avatarUrl: treat null, empty string, or "null" string as no avatar
+  final normalizedAvatarUrl = avatarUrl == null || 
+      avatarUrl.isEmpty || 
+      avatarUrl == "null" 
+      ? null 
+      : avatarUrl;
+  
+  if (normalizedAvatarUrl != null && normalizedAvatarUrl.isNotEmpty) {
     return CircleAvatar(
       radius: radius,
       backgroundColor: Theme.of(context).colorScheme.primary,
-      backgroundImage: NetworkImage(buildImageUrl(avatarUrl)),
+      backgroundImage: NetworkImage(buildImageUrl(normalizedAvatarUrl)),
       onBackgroundImageError: (exception, stackTrace) {
         // Image failed to load, will show child as fallback
       },

@@ -20,6 +20,11 @@ class SearchResult {
   });
 
   factory SearchResult.fromJson(Map<String, dynamic> json) {
+    final avatarUrl = json["author_avatar_url"];
+    final authorAvatarUrl = avatarUrl == null || avatarUrl == "null" || (avatarUrl is String && avatarUrl.isEmpty)
+        ? null
+        : avatarUrl.toString();
+    
     return SearchResult(
       id: json["id"].toString(),
       title: json["title"].toString(),
@@ -28,7 +33,7 @@ class SearchResult {
       difficulty: json["difficulty"]?.toString(),
       createdAt: DateTime.parse(json["created_at"].toString()),
       authorUsername: json["author_username"].toString(),
-      authorAvatarUrl: json["author_avatar_url"]?.toString(),
+      authorAvatarUrl: authorAvatarUrl,
     );
   }
 }

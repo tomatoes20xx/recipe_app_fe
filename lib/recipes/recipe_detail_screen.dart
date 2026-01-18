@@ -268,38 +268,37 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                         physics: const AlwaysScrollableScrollPhysics(),
                         slivers: [
                           // Header Image
-                          if (r.images.isNotEmpty)
-                            SliverToBoxAdapter(
-                              child: _ImageGallery(
-                                images: r.images,
-                                counts: RecipeCounts(
-                                  likes: _localLikes ?? r.counts.likes,
-                                  comments: _localComments ?? r.counts.comments,
-                                  bookmarks: _localBookmarks ?? r.counts.bookmarks,
-                                ),
-                                onLikeTap: _toggleLike,
-                                onBookmarkTap: _toggleBookmark,
-                                onCommentTap: () {
-                                  showCommentsBottomSheet(
-                                    context: context,
-                                    recipeId: r.id,
-                                    apiClient: widget.apiClient,
-                                    auth: widget.auth,
-                                    onCommentPosted: () {
-                                      if (mounted) {
-                                        setState(() {
-                                          _localComments = (_localComments ?? c.recipe?.counts.comments ?? 0) + 1;
-                                        });
-                                      }
-                                    },
-                                  );
-                                },
-                                viewerHasLiked: _viewerHasLiked,
-                                viewerHasBookmarked: _viewerHasBookmarked,
-                                isLiking: _isLiking,
-                                isBookmarking: _isBookmarking,
+                          SliverToBoxAdapter(
+                            child: _ImageGallery(
+                              images: r.images,
+                              counts: RecipeCounts(
+                                likes: _localLikes ?? r.counts.likes,
+                                comments: _localComments ?? r.counts.comments,
+                                bookmarks: _localBookmarks ?? r.counts.bookmarks,
                               ),
+                              onLikeTap: _toggleLike,
+                              onBookmarkTap: _toggleBookmark,
+                              onCommentTap: () {
+                                showCommentsBottomSheet(
+                                  context: context,
+                                  recipeId: r.id,
+                                  apiClient: widget.apiClient,
+                                  auth: widget.auth,
+                                  onCommentPosted: () {
+                                    if (mounted) {
+                                      setState(() {
+                                        _localComments = (_localComments ?? c.recipe?.counts.comments ?? 0) + 1;
+                                      });
+                                    }
+                                  },
+                                );
+                              },
+                              viewerHasLiked: _viewerHasLiked,
+                              viewerHasBookmarked: _viewerHasBookmarked,
+                              isLiking: _isLiking,
+                              isBookmarking: _isBookmarking,
                             ),
+                          ),
                           // Content
                           SliverToBoxAdapter(
                             child: Padding(
@@ -741,58 +740,68 @@ class _ImageGalleryState extends State<_ImageGallery> {
 
   @override
   Widget build(BuildContext context) {
-    if (widget.images.isEmpty) return const SizedBox.shrink();
-
     return SizedBox(
       height: 350,
       width: double.infinity,
       child: Stack(
         children: [
-          PageView.builder(
-            controller: _pageController,
-            onPageChanged: (index) {
-              setState(() => _currentPage = index);
-            },
-            itemCount: widget.images.length,
-            itemBuilder: (context, index) {
-              final image = widget.images[index];
-              return GestureDetector(
-                onTap: () => _openImageViewer(index),
-                child: Image.network(
-                  buildImageUrl(image.url),
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                      child: Center(
-                        child: Icon(
-                          Icons.broken_image_rounded,
-                          size: 48,
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+          if (widget.images.isNotEmpty)
+            PageView.builder(
+              controller: _pageController,
+              onPageChanged: (index) {
+                setState(() => _currentPage = index);
+              },
+              itemCount: widget.images.length,
+              itemBuilder: (context, index) {
+                final image = widget.images[index];
+                return GestureDetector(
+                  onTap: () => _openImageViewer(index),
+                  child: Image.network(
+                    buildImageUrl(image.url),
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                        child: Center(
+                          child: Icon(
+                            Icons.broken_image_rounded,
+                            size: 48,
+                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+                          ),
                         ),
-                      ),
-                    );
-                  },
-                  loadingBuilder: (context, child, loadingProgress) {
-                    if (loadingProgress == null) return child;
-                    return Container(
-                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                      child: Center(
-                        child: CircularProgressIndicator(
-                          value: loadingProgress.expectedTotalBytes != null
-                              ? loadingProgress.cumulativeBytesLoaded /
-                                  loadingProgress.expectedTotalBytes!
-                              : null,
-                          strokeWidth: 2,
+                      );
+                    },
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return Container(
+                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                        child: Center(
+                          child: CircularProgressIndicator(
+                            value: loadingProgress.expectedTotalBytes != null
+                                ? loadingProgress.cumulativeBytesLoaded /
+                                    loadingProgress.expectedTotalBytes!
+                                : null,
+                            strokeWidth: 2,
+                          ),
                         ),
-                      ),
-                    );
-                  },
+                      );
+                    },
+                  ),
+                );
+              },
+            )
+          else
+            Container(
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              child: Center(
+                child: Icon(
+                  Icons.image_outlined,
+                  size: 80,
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
                 ),
-              );
-            },
-          ),
+              ),
+            ),
           // Engagement metrics overlay (right, vertically centered)
           Positioned(
             top: 0,

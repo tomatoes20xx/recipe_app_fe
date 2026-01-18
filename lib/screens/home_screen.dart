@@ -1574,7 +1574,22 @@ class _FullScreenFeedCardState extends State<_FullScreenFeedCard> {
               ),
             )
         else
-          Container(
+          GestureDetector(
+            onTap: () async {
+              final result = await Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => RecipeDetailScreen(
+                    recipeId: widget.item.id,
+                    apiClient: widget.apiClient,
+                    auth: widget.auth,
+                  ),
+                ),
+              );
+              if (result != null && result is int) {
+                widget.feed.updateCommentCount(widget.item.id, result);
+              }
+            },
+            child: Container(
               color: Theme.of(context).colorScheme.surfaceContainerHighest,
               child: Center(
                 child: Icon(
@@ -1584,6 +1599,7 @@ class _FullScreenFeedCardState extends State<_FullScreenFeedCard> {
                 ),
               ),
             ),
+          ),
         // Gradient overlay at bottom
         Positioned(
             bottom: 0,
