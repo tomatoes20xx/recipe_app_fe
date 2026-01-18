@@ -1,3 +1,5 @@
+import "dart:async";
+
 import "package:flutter/gestures.dart";
 import "package:flutter/material.dart";
 import "package:flutter_secure_storage/flutter_secure_storage.dart";
@@ -11,7 +13,10 @@ import "../recipes/comments_bottom_sheet.dart";
 import "../recipes/recipe_detail_screen.dart";
 import "../theme/theme_controller.dart";
 import "../utils/ui_utils.dart";
+import "../notifications/notification_api.dart";
+import "../notifications/notification_controller.dart";
 import "create_recipe_screen.dart";
+import "notifications_screen.dart";
 import "profile_screen.dart";
 import "saved_recipes_screen.dart";
 import "search_screen.dart";
@@ -36,6 +41,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
   late final FeedController feed;
+  late final NotificationController notificationController;
   final ScrollController sc = ScrollController();
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final PageController _fullScreenPageController = PageController();
@@ -56,6 +62,15 @@ class _HomeScreenState extends State<HomeScreen> {
     feed = FeedController(feedApi: FeedApi(widget.apiClient));
     feed.addListener(_onFeedChanged);
     feed.loadInitial();
+
+    // Initialize notification controller
+    final notificationApi = NotificationApi(widget.apiClient);
+    notificationController = NotificationController(notificationApi: notificationApi);
+    notificationController.addListener(_onNotificationChanged);
+    // Load unread count on init
+    notificationController.refreshUnreadCount();
+    // Refresh unread count periodically (every 30 seconds)
+    _startNotificationPolling();
 
     sc.addListener(_onScroll);
     _loadFullScreenViewPreference();
@@ -144,7 +159,27 @@ class _HomeScreenState extends State<HomeScreen> {
     _fullScreenPageController.dispose();
     feed.removeListener(_onFeedChanged);
     feed.dispose();
+    notificationController.removeListener(_onNotificationChanged);
+    notificationController.dispose();
+    _notificationTimer?.cancel();
     super.dispose();
+  }
+
+  Timer? _notificationTimer;
+
+  void _startNotificationPolling() {
+    // Poll for new notifications every 10 seconds
+    _notificationTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
+      if (mounted && widget.auth.isLoggedIn) {
+        notificationController.refreshUnreadCount();
+      }
+    });
+  }
+
+  void _onNotificationChanged() {
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   @override
@@ -198,6 +233,61 @@ class _HomeScreenState extends State<HomeScreen> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
+                        ),
+                        // Notifications button with badge
+                        Stack(
+                          children: [
+                            IconButton(
+                              onPressed: () async {
+                                await Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => NotificationsScreen(
+                                      apiClient: widget.apiClient,
+                                      auth: widget.auth,
+                                    ),
+                                  ),
+                                );
+                                // Refresh unread count when returning from notifications
+                                if (mounted) {
+                                  notificationController.refreshUnreadCount();
+                                }
+                              },
+                              icon: const Icon(Icons.notifications_outlined),
+                              tooltip: "Notifications",
+                              style: IconButton.styleFrom(
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                            ),
+                            if (notificationController.unreadCount > 0)
+                              Positioned(
+                                right: 8,
+                                top: 8,
+                                child: Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context).colorScheme.error,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  constraints: const BoxConstraints(
+                                    minWidth: 16,
+                                    minHeight: 16,
+                                  ),
+                                  child: Text(
+                                    notificationController.unreadCount > 99
+                                        ? "99+"
+                                        : notificationController.unreadCount.toString(),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
                         IconButton(
                           onPressed: () {
@@ -368,6 +458,10 @@ class _HomeScreenState extends State<HomeScreen> {
                         onPageChanged: (index) {
                           _currentFullScreenIndex = index;
                         },
+                        onActionCompleted: () {
+                          // Refresh notification count after like/bookmark actions
+                          notificationController.refreshUnreadCount();
+                        },
                       ),
                     )
                   : _FeedList(
@@ -375,6 +469,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       controller: sc,
                       apiClient: widget.apiClient,
                       auth: widget.auth,
+                      onActionCompleted: () {
+                        // Refresh notification count after like/bookmark actions
+                        notificationController.refreshUnreadCount();
+                      },
                     ),
             ),
           ),
@@ -702,11 +800,13 @@ class _FeedList extends StatelessWidget {
     required this.controller,
     required this.apiClient,
     required this.auth,
+    this.onActionCompleted,
   });
   final FeedController feed;
   final ScrollController controller;
   final ApiClient apiClient;
   final AuthController auth;
+  final VoidCallback? onActionCompleted;
 
   @override
   Widget build(BuildContext context) {
@@ -843,6 +943,7 @@ class _FeedList extends StatelessWidget {
                 feed: feed,
                 apiClient: apiClient,
                 auth: auth,
+                onActionCompleted: onActionCompleted,
               ),
             ),
           ),
@@ -859,12 +960,14 @@ class _FullScreenFeedList extends StatefulWidget {
     required this.apiClient,
     required this.auth,
     this.onPageChanged,
+    this.onActionCompleted,
   });
   final FeedController feed;
   final PageController pageController;
   final ApiClient apiClient;
   final AuthController auth;
   final ValueChanged<int>? onPageChanged;
+  final VoidCallback? onActionCompleted;
 
   @override
   State<_FullScreenFeedList> createState() => _FullScreenFeedListState();
@@ -971,6 +1074,7 @@ class _FullScreenFeedListState extends State<_FullScreenFeedList> {
           feed: widget.feed,
           apiClient: widget.apiClient,
           auth: widget.auth,
+          onActionCompleted: widget.onActionCompleted,
         );
       },
     );
@@ -985,12 +1089,14 @@ class _FeedCard extends StatefulWidget {
     required this.feed,
     required this.apiClient,
     required this.auth,
+    this.onActionCompleted,
   });
   final FeedItem item;
   final String sort;
   final FeedController feed;
   final ApiClient apiClient;
   final AuthController auth;
+  final VoidCallback? onActionCompleted;
 
   @override
   State<_FeedCard> createState() => _FeedCardState();
@@ -1162,7 +1268,11 @@ class _FeedCardState extends State<_FeedCard> {
                           icon: Icons.favorite_rounded,
                           value: widget.item.likes.toString(),
                           active: widget.item.viewerHasLiked,
-                          onTap: () => widget.feed.toggleLike(widget.item.id),
+                          onTap: () async {
+                            await widget.feed.toggleLike(widget.item.id);
+                            // Refresh notifications after like action
+                            widget.onActionCompleted?.call();
+                          },
                         ),
                         const SizedBox(width: 16),
                         _Stat(
@@ -1174,7 +1284,13 @@ class _FeedCardState extends State<_FeedCard> {
                               recipeId: widget.item.id,
                               apiClient: widget.apiClient,
                               auth: widget.auth,
-                              onCommentPosted: () => widget.feed.updateCommentCount(widget.item.id, widget.item.comments + 1),
+                              onCommentPosted: () {
+                                widget.feed.updateCommentCount(widget.item.id, widget.item.comments + 1);
+                                // Refresh notifications after comment action (with small delay for backend processing)
+                                Future.delayed(const Duration(milliseconds: 500), () {
+                                  widget.onActionCompleted?.call();
+                                });
+                              },
                             );
                           },
                         ),
@@ -1183,7 +1299,11 @@ class _FeedCardState extends State<_FeedCard> {
                           icon: Icons.bookmark_rounded,
                           value: widget.item.bookmarks.toString(),
                           active: widget.item.viewerHasBookmarked,
-                          onTap: () => widget.feed.toggleBookmark(widget.item.id),
+                          onTap: () async {
+                            await widget.feed.toggleBookmark(widget.item.id);
+                            // Refresh notifications after bookmark action
+                            widget.onActionCompleted?.call();
+                          },
                         ),
                       ],
                     ),
@@ -1503,12 +1623,14 @@ class _FullScreenFeedCard extends StatefulWidget {
     required this.feed,
     required this.apiClient,
     required this.auth,
+    this.onActionCompleted,
   });
   final FeedItem item;
   final String sort;
   final FeedController feed;
   final ApiClient apiClient;
   final AuthController auth;
+  final VoidCallback? onActionCompleted;
 
   @override
   State<_FullScreenFeedCard> createState() => _FullScreenFeedCardState();
@@ -1750,7 +1872,13 @@ class _FullScreenFeedCardState extends State<_FullScreenFeedCard> {
                           icon: Icons.favorite_rounded,
                           value: widget.item.likes.toString(),
                           active: widget.item.viewerHasLiked,
-                          onTap: () => widget.feed.toggleLike(widget.item.id),
+                          onTap: () async {
+                            await widget.feed.toggleLike(widget.item.id);
+                            // Refresh notifications after like action (with small delay for backend processing)
+                            Future.delayed(const Duration(milliseconds: 500), () {
+                              widget.onActionCompleted?.call();
+                            });
+                          },
                         ),
                         const SizedBox(width: 20),
                         _FullScreenStat(
@@ -1762,7 +1890,13 @@ class _FullScreenFeedCardState extends State<_FullScreenFeedCard> {
                               recipeId: widget.item.id,
                               apiClient: widget.apiClient,
                               auth: widget.auth,
-                              onCommentPosted: () => widget.feed.updateCommentCount(widget.item.id, widget.item.comments + 1),
+                              onCommentPosted: () {
+                                widget.feed.updateCommentCount(widget.item.id, widget.item.comments + 1);
+                                // Refresh notifications after comment action (with small delay for backend processing)
+                                Future.delayed(const Duration(milliseconds: 500), () {
+                                  widget.onActionCompleted?.call();
+                                });
+                              },
                             );
                           },
                         ),
@@ -1771,7 +1905,13 @@ class _FullScreenFeedCardState extends State<_FullScreenFeedCard> {
                           icon: Icons.bookmark_rounded,
                           value: widget.item.bookmarks.toString(),
                           active: widget.item.viewerHasBookmarked,
-                          onTap: () => widget.feed.toggleBookmark(widget.item.id),
+                          onTap: () async {
+                            await widget.feed.toggleBookmark(widget.item.id);
+                            // Refresh notifications after bookmark action (with small delay for backend processing)
+                            Future.delayed(const Duration(milliseconds: 500), () {
+                              widget.onActionCompleted?.call();
+                            });
+                          },
                         ),
                       ],
                     ),
