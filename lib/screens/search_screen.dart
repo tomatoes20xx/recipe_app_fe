@@ -1,6 +1,8 @@
 import "dart:async";
 
 import "package:flutter/material.dart";
+import "package:flutter/services.dart";
+import "package:flutter/services.dart";
 
 import "../api/api_client.dart";
 import "../auth/auth_controller.dart";
@@ -928,12 +930,16 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                   _FilterSection(
                     title: "Cooking Time (minutes)",
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
                           children: [
                             Expanded(
                               child: TextField(
                                 keyboardType: TextInputType.number,
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.digitsOnly,
+                                ],
                                 decoration: InputDecoration(
                                   labelText: "Min",
                                   hintText: "0",
@@ -941,8 +947,6 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   prefixIcon: const Icon(Icons.timer_outlined),
-                                  errorText: _cookingTimeError != null ? _cookingTimeError : null,
-                                  errorMaxLines: 2,
                                 ),
                                 onChanged: (value) {
                                   // Clear error when user starts typing
@@ -952,14 +956,16 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                                     });
                                   }
                                   // Update is handled in _applyFilters, but we can update state for immediate feedback
-                                  final min = int.tryParse(value);
+                                  final min = value.trim().isEmpty ? null : int.tryParse(value.trim());
                                   setState(() {
                                     _currentFilters = _currentFilters.copyWith(
                                       cookingTimeMin: min,
                                     );
                                   });
                                   // Validate in real-time if both fields have values
-                                  final max = int.tryParse(_cookingTimeMaxController.text.trim());
+                                  final max = _cookingTimeMaxController.text.trim().isEmpty
+                                      ? null
+                                      : int.tryParse(_cookingTimeMaxController.text.trim());
                                   if (min != null && max != null && min > max) {
                                     setState(() {
                                       _cookingTimeError = "Minimum time cannot be greater than maximum time";
@@ -973,6 +979,9 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                             Expanded(
                               child: TextField(
                                 keyboardType: TextInputType.number,
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.digitsOnly,
+                                ],
                                 decoration: InputDecoration(
                                   labelText: "Max",
                                   hintText: "120",
@@ -980,8 +989,6 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   prefixIcon: const Icon(Icons.timer),
-                                  errorText: _cookingTimeError != null ? _cookingTimeError : null,
-                                  errorMaxLines: 2,
                                 ),
                                 onChanged: (value) {
                                   // Clear error when user starts typing
@@ -991,14 +998,16 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                                     });
                                   }
                                   // Update is handled in _applyFilters, but we can update state for immediate feedback
-                                  final max = int.tryParse(value);
+                                  final max = value.trim().isEmpty ? null : int.tryParse(value.trim());
                                   setState(() {
                                     _currentFilters = _currentFilters.copyWith(
                                       cookingTimeMax: max,
                                     );
                                   });
                                   // Validate in real-time if both fields have values
-                                  final min = int.tryParse(_cookingTimeMinController.text.trim());
+                                  final min = _cookingTimeMinController.text.trim().isEmpty
+                                      ? null
+                                      : int.tryParse(_cookingTimeMinController.text.trim());
                                   if (min != null && max != null && min > max) {
                                     setState(() {
                                       _cookingTimeError = "Minimum time cannot be greater than maximum time";
@@ -1010,6 +1019,19 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                             ),
                           ],
                         ),
+                        if (_cookingTimeError != null) ...[
+                          const SizedBox(height: 8),
+                          Padding(
+                            padding: const EdgeInsets.only(left: 12),
+                            child: Text(
+                              _cookingTimeError!,
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.error,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),

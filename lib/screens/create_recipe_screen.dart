@@ -1,6 +1,7 @@
 import "dart:io";
 
 import "package:flutter/material.dart";
+import "package:flutter/services.dart";
 import "package:image_picker/image_picker.dart";
 import "package:image/image.dart" as img;
 
@@ -532,81 +533,101 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
             const SizedBox(height: 16),
 
             // Cooking Time
-            Row(
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: _cookingTimeMinController,
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(
-                      labelText: "Min Time (minutes)",
-                      hintText: "0",
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: _cookingTimeMinController,
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                        ],
+                        decoration: InputDecoration(
+                          labelText: "Min Time (minutes)",
+                          hintText: "0",
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          filled: true,
+                          fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                          prefixIcon: const Icon(Icons.timer_outlined),
+                        ),
+                        onChanged: (value) {
+                          // Clear error when user starts typing
+                          if (_cookingTimeError != null) {
+                            setState(() {
+                              _cookingTimeError = null;
+                            });
+                          }
+                          // Validate in real-time if both fields have values
+                          final min = value.trim().isEmpty ? null : int.tryParse(value.trim());
+                          final max = _cookingTimeMaxController.text.trim().isEmpty
+                              ? null
+                              : int.tryParse(_cookingTimeMaxController.text.trim());
+                          if (min != null && max != null && min > max) {
+                            setState(() {
+                              _cookingTimeError = "Minimum time cannot be greater than maximum time";
+                            });
+                          }
+                        },
                       ),
-                      filled: true,
-                      fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
-                      prefixIcon: const Icon(Icons.timer_outlined),
-                      errorText: _cookingTimeError,
-                      errorMaxLines: 2,
                     ),
-                    onChanged: (value) {
-                      // Clear error when user starts typing
-                      if (_cookingTimeError != null) {
-                        setState(() {
-                          _cookingTimeError = null;
-                        });
-                      }
-                      // Validate in real-time if both fields have values
-                      final min = int.tryParse(value.trim());
-                      final max = _cookingTimeMaxController.text.trim().isEmpty
-                          ? null
-                          : int.tryParse(_cookingTimeMaxController.text.trim());
-                      if (min != null && max != null && min > max) {
-                        setState(() {
-                          _cookingTimeError = "Minimum time cannot be greater than maximum time";
-                        });
-                      }
-                    },
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: TextFormField(
-                    controller: _cookingTimeMaxController,
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(
-                      labelText: "Max Time (minutes)",
-                      hintText: "120",
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: TextFormField(
+                        controller: _cookingTimeMaxController,
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                        ],
+                        decoration: InputDecoration(
+                          labelText: "Max Time (minutes)",
+                          hintText: "120",
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          filled: true,
+                          fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                          prefixIcon: const Icon(Icons.timer),
+                        ),
+                        onChanged: (value) {
+                          // Clear error when user starts typing
+                          if (_cookingTimeError != null) {
+                            setState(() {
+                              _cookingTimeError = null;
+                            });
+                          }
+                          // Validate in real-time if both fields have values
+                          final max = value.trim().isEmpty ? null : int.tryParse(value.trim());
+                          final min = _cookingTimeMinController.text.trim().isEmpty
+                              ? null
+                              : int.tryParse(_cookingTimeMinController.text.trim());
+                          if (min != null && max != null && min > max) {
+                            setState(() {
+                              _cookingTimeError = "Minimum time cannot be greater than maximum time";
+                            });
+                          }
+                        },
                       ),
-                      filled: true,
-                      fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
-                      prefixIcon: const Icon(Icons.timer),
-                      errorText: _cookingTimeError,
-                      errorMaxLines: 2,
                     ),
-                    onChanged: (value) {
-                      // Clear error when user starts typing
-                      if (_cookingTimeError != null) {
-                        setState(() {
-                          _cookingTimeError = null;
-                        });
-                      }
-                      // Validate in real-time if both fields have values
-                      final max = int.tryParse(value.trim());
-                      final min = _cookingTimeMinController.text.trim().isEmpty
-                          ? null
-                          : int.tryParse(_cookingTimeMinController.text.trim());
-                      if (min != null && max != null && min > max) {
-                        setState(() {
-                          _cookingTimeError = "Minimum time cannot be greater than maximum time";
-                        });
-                      }
-                    },
-                  ),
+                  ],
                 ),
+                if (_cookingTimeError != null) ...[
+                  const SizedBox(height: 8),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 12),
+                    child: Text(
+                      _cookingTimeError!,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
             const SizedBox(height: 16),
