@@ -92,6 +92,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  /// Unified refresh method that works for both own profile and other users' profiles
+  Future<void> _refreshProfile() async {
+    if (widget.username != null) {
+      // Other user's profile: load profile data
+      await _loadUserProfile();
+    } else {
+      // Own profile: refresh auth data and load full profile
+      await widget.auth.bootstrap();
+      await _loadOwnProfile();
+    }
+    // Always refresh recipes
+    await _recipesController?.refresh();
+  }
+
   void _onRecipesChanged() {
     if (mounted) setState(() {});
   }
@@ -442,12 +456,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
           title: Text(_userProfile!.displayName ?? _userProfile!.username),
         ),
         body: RefreshIndicator(
-          onRefresh: () async {
-            await _loadUserProfile();
-            await _recipesController?.refresh();
-          },
+          onRefresh: _refreshProfile,
           child: ListView(
             controller: _recipesScrollController,
+            physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.all(16),
             children: [
               Card(
@@ -590,12 +602,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         title: const Text("Profile"),
       ),
       body: RefreshIndicator(
-        onRefresh: () async {
-          await widget.auth.bootstrap();
-          await _recipesController?.refresh();
-        },
+        onRefresh: _refreshProfile,
         child: ListView(
           controller: _recipesScrollController,
+          physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.all(16),
           children: [
             Card(
