@@ -1054,7 +1054,10 @@ class _IngredientField extends StatelessWidget {
                   fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
                   contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                 ),
-                keyboardType: TextInputType.number,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: [
+                  _DecimalNumberFormatter(),
+                ],
               ),
             ),
             const SizedBox(width: 8),
@@ -1106,6 +1109,31 @@ class _IngredientField extends StatelessWidget {
 
 class _StepItem {
   final TextEditingController instructionController = TextEditingController();
+}
+
+/// Custom formatter that allows only numeric input with optional decimal point
+class _DecimalNumberFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    // Allow empty string
+    if (newValue.text.isEmpty) {
+      return newValue;
+    }
+
+    // Check if the new value is a valid decimal number
+    // Allow: digits, single decimal point, but not multiple decimal points
+    final regex = RegExp(r'^\d+\.?\d*$');
+    
+    if (regex.hasMatch(newValue.text)) {
+      return newValue;
+    }
+
+    // If not valid, return the old value (prevent invalid input)
+    return oldValue;
+  }
 }
 
 class _StepField extends StatelessWidget {
