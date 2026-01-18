@@ -2,6 +2,7 @@ import "package:flutter/material.dart";
 
 import "../api/api_client.dart";
 import "../auth/auth_controller.dart";
+import "../utils/error_utils.dart";
 import "../utils/ui_utils.dart";
 import "comment_models.dart";
 import "comments_controller.dart";
@@ -322,12 +323,7 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
       // Scroll position will be restored in _onChanged after loading completes
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("Failed to delete comment: $e"),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
-        );
+        ErrorUtils.showError(context, e);
       }
     }
   }
@@ -558,11 +554,12 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
         _replyingToUsername = null;
       });
       widget.onCommentPosted?.call();
+      if (mounted) {
+        ErrorUtils.showSuccess(context, "Comment posted successfully");
+      }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Failed to post comment: $e")),
-        );
+        ErrorUtils.showError(context, e);
       }
     } finally {
       if (mounted) {

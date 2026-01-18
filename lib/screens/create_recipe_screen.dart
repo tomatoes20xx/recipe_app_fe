@@ -7,6 +7,7 @@ import "package:image/image.dart" as img;
 import "../api/api_client.dart";
 import "../recipes/recipe_api.dart";
 import "../recipes/recipe_detail_models.dart";
+import "../utils/error_utils.dart";
 import "../utils/ui_utils.dart";
 
 class CreateRecipeScreen extends StatefulWidget {
@@ -160,9 +161,7 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error picking image: $e")),
-        );
+        ErrorUtils.showError(context, e);
       }
     }
   }
@@ -230,24 +229,18 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     if (_ingredients.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please add at least one ingredient")),
-      );
+        ErrorUtils.showError(context, "Please add at least one ingredient");
       return;
     }
     if (_steps.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please add at least one step")),
-      );
+        ErrorUtils.showError(context, "Please add at least one step");
       return;
     }
 
     // Validate ingredients
     for (var i = 0; i < _ingredients.length; i++) {
       if (_ingredients[i].nameController.text.trim().isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Ingredient ${i + 1}: name is required")),
-        );
+        ErrorUtils.showError(context, "Ingredient ${i + 1}: name is required");
         return;
       }
     }
@@ -255,9 +248,7 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
     // Validate steps
     for (var i = 0; i < _steps.length; i++) {
       if (_steps[i].instructionController.text.trim().isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Step ${i + 1}: instruction is required")),
-        );
+        ErrorUtils.showError(context, "Step ${i + 1}: instruction is required");
         return;
       }
     }
@@ -379,12 +370,16 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
           _uploadStatus = null;
           _isSubmitting = false;
         });
+        ErrorUtils.showSuccess(
+          context,
+          _isEditMode ? "Recipe updated successfully" : "Recipe created successfully",
+        );
         Navigator.of(context).pop(true); // Return true to indicate success
       }
     } catch (e) {
       if (mounted) {
         setState(() {
-          _error = e.toString();
+          _error = ErrorUtils.getUserFriendlyMessage(e);
           _isSubmitting = false;
           _uploadStatus = null;
         });

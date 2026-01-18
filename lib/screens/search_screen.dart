@@ -8,7 +8,9 @@ import "../recipes/recipe_detail_screen.dart";
 import "../search/search_api.dart";
 import "../search/search_controller.dart" as search;
 import "../users/user_api.dart";
+import "../users/user_models.dart";
 import "../users/user_search_controller.dart";
+import "../utils/error_utils.dart";
 import "../utils/ui_utils.dart";
 import "profile_screen.dart";
 
@@ -80,6 +82,25 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
 
   void _onUserSearchChanged() {
     if (mounted) setState(() {});
+  }
+
+  Future<void> _handleFollowToggle(UserSearchResult user) async {
+    final oldFollowing = user.viewerIsFollowing;
+    final newFollowing = !oldFollowing;
+
+    try {
+      await userSearchController.toggleFollow(user.username);
+      if (mounted) {
+        ErrorUtils.showSuccess(
+          context,
+          newFollowing ? "Now following ${user.username}" : "Unfollowed ${user.username}",
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ErrorUtils.showError(context, e);
+      }
+    }
   }
 
   @override
@@ -241,7 +262,7 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
             ),
             const SizedBox(height: 16),
             Text(
-              "Error: ${recipeSearchController.error}",
+              ErrorUtils.getUserFriendlyMessage(recipeSearchController.error!),
               style: TextStyle(color: Theme.of(context).colorScheme.error),
               textAlign: TextAlign.center,
             ),
@@ -417,7 +438,7 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
             ),
             const SizedBox(height: 16),
             Text(
-              "Error: ${userSearchController.error}",
+              ErrorUtils.getUserFriendlyMessage(userSearchController.error!),
               style: TextStyle(color: Theme.of(context).colorScheme.error),
               textAlign: TextAlign.center,
             ),
@@ -543,7 +564,7 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
                     if (widget.auth?.isLoggedIn == true && !isCurrentUser)
                       FollowButton(
                         isFollowing: user.viewerIsFollowing,
-                        onTap: () => userSearchController.toggleFollow(user.username),
+                        onTap: () => _handleFollowToggle(user),
                       ),
                   ],
                 ),

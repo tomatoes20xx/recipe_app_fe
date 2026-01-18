@@ -6,6 +6,7 @@ import "../config.dart";
 import "../users/following_controller.dart";
 import "../users/user_api.dart";
 import "../users/user_models.dart";
+import "../utils/error_utils.dart";
 import "profile_screen.dart";
 
 class FollowingScreen extends StatefulWidget {
@@ -71,11 +72,15 @@ class _FollowingScreenState extends State<FollowingScreen> {
       }
       // Refresh the list to update follow status
       controller.refresh();
+      if (mounted) {
+        ErrorUtils.showSuccess(
+          context,
+          newFollowing ? "Now following ${user.username}" : "Unfollowed ${user.username}",
+        );
+      }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Failed to ${newFollowing ? 'follow' : 'unfollow'}: $e")),
-        );
+        ErrorUtils.showError(context, e);
       }
     }
   }

@@ -13,6 +13,7 @@ import "../recipes/recipe_detail_screen.dart";
 import "../users/user_api.dart";
 import "../users/user_models.dart";
 import "../users/user_recipes_controller.dart";
+import "../utils/error_utils.dart";
 import "followers_screen.dart";
 import "following_screen.dart";
 
@@ -163,6 +164,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
       } else {
         await userApi.unfollowUser(widget.username!);
       }
+      if (mounted) {
+        ErrorUtils.showSuccess(
+          context,
+          newFollowing ? "Now following ${_userProfile!.username}" : "Unfollowed ${_userProfile!.username}",
+        );
+      }
     } catch (e) {
       // Rollback on error
       setState(() {
@@ -173,9 +180,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         );
       });
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Failed to ${newFollowing ? 'follow' : 'unfollow'}: $e")),
-        );
+        ErrorUtils.showError(context, e);
       }
     }
   }
@@ -204,18 +209,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
       }
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Privacy settings updated")),
-        );
+        ErrorUtils.showSuccess(context, "Privacy settings updated");
       }
     } catch (e) {
       setState(() {
         _isLoadingPrivacy = false;
       });
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Failed to update privacy: $e")),
-        );
+        ErrorUtils.showError(context, e);
       }
     }
   }
@@ -241,15 +242,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
       await widget.auth.bootstrap();
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Avatar updated successfully")),
-        );
+        ErrorUtils.showSuccess(context, "Avatar updated successfully");
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Failed to upload avatar: $e")),
-        );
+        ErrorUtils.showError(context, e);
       }
     } finally {
       if (mounted) {
@@ -393,15 +390,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
       await widget.auth.bootstrap();
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Avatar removed successfully")),
-        );
+        ErrorUtils.showSuccess(context, "Avatar removed successfully");
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Failed to delete avatar: $e")),
-        );
+        ErrorUtils.showError(context, e);
       }
     } finally {
       if (mounted) {

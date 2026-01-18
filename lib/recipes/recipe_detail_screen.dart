@@ -4,6 +4,7 @@ import "../api/api_client.dart";
 import "../auth/auth_controller.dart";
 import "../screens/create_recipe_screen.dart";
 import "../screens/profile_screen.dart";
+import "../utils/error_utils.dart";
 import "../utils/ui_utils.dart";
 import "comments_bottom_sheet.dart";
 import "recipe_api.dart";
@@ -69,9 +70,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     final r = c.recipe;
     if (r == null || _isLiking) return;
     if (!(widget.auth?.isLoggedIn ?? false)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please log in to like recipes")),
-      );
+      ErrorUtils.showError(context, "Please log in to like recipes");
       return;
     }
 
@@ -90,11 +89,13 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
         _viewerHasLiked = !wasLiked;
         _localLikes = base + (wasLiked ? -1 : 1);
       });
+      if (mounted && !wasLiked) {
+        // Only show success for liking, not unliking (less intrusive)
+        ErrorUtils.showSuccess(context, "Recipe liked");
+      }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Failed to like recipe: $e")),
-        );
+        ErrorUtils.showError(context, e);
       }
     } finally {
       if (mounted) {
@@ -107,9 +108,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     final r = c.recipe;
     if (r == null || _isBookmarking) return;
     if (!(widget.auth?.isLoggedIn ?? false)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please log in to bookmark recipes")),
-      );
+      ErrorUtils.showError(context, "Please log in to bookmark recipes");
       return;
     }
 
@@ -128,11 +127,15 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
         _viewerHasBookmarked = !wasBookmarked;
         _localBookmarks = base + (wasBookmarked ? -1 : 1);
       });
+      if (mounted) {
+        ErrorUtils.showSuccess(
+          context,
+          wasBookmarked ? "Recipe unsaved" : "Recipe saved",
+        );
+      }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Failed to bookmark recipe: $e")),
-        );
+        ErrorUtils.showError(context, e);
       }
     } finally {
       if (mounted) {
@@ -179,9 +182,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Failed to delete recipe: $e")),
-        );
+        ErrorUtils.showError(context, e);
       }
     }
   }
@@ -366,9 +367,7 @@ class _UserInfoRow extends StatelessWidget {
         GestureDetector(
           onTap: () {
             if (auth == null) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("Log in to view profiles")),
-              );
+              ErrorUtils.showError(context, "Log in to view profiles");
               return;
             }
             Navigator.of(context).push(
