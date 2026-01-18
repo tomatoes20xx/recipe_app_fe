@@ -10,6 +10,7 @@ import "../auth/auth_controller.dart";
 import "../feed/feed_api.dart";
 import "../feed/feed_controller.dart";
 import "../feed/feed_models.dart";
+import "../recipes/recipe_api.dart";
 import "../recipes/comments_bottom_sheet.dart";
 import "../recipes/recipe_detail_screen.dart";
 import "../theme/theme_controller.dart";
@@ -21,6 +22,7 @@ import "notifications_screen.dart";
 import "profile_screen.dart";
 import "saved_recipes_screen.dart";
 import "search_screen.dart";
+import "analytics_stats_screen.dart";
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({
@@ -60,7 +62,10 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
 
-    feed = FeedController(feedApi: FeedApi(widget.apiClient));
+    feed = FeedController(
+      feedApi: FeedApi(widget.apiClient),
+      recipeApi: RecipeApi(widget.apiClient),
+    );
     feed.addListener(_onFeedChanged);
     feed.loadInitial();
 
@@ -511,11 +516,157 @@ class _Controls extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
         child: Row(
           children: [
-            // Sort dropdown
-            _SortDropdown(feed: feed),
-            const SizedBox(width: 12),
-            // Window days selector (only when sort is "top")
-            if (feed.sort == "top")
+            // Sort dropdown (only for global/following)
+            if (feed.scope == "global" || feed.scope == "following") ...[
+              _SortDropdown(feed: feed),
+              const SizedBox(width: 12),
+            ],
+            // Period selector for popular
+            if (feed.scope == "popular")
+              PopupMenuButton<String>(
+                tooltip: "Time period",
+                onSelected: (p) => feed.setPopularPeriod(p),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                itemBuilder: (_) => [
+                  PopupMenuItem(
+                    value: "all_time",
+                    child: Row(
+                      children: [
+                        if (feed.popularPeriod == "all_time")
+                          Icon(
+                            Icons.check,
+                            size: 20,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                        if (feed.popularPeriod == "all_time") const SizedBox(width: 8),
+                        const Text("All Time"),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: "30d",
+                    child: Row(
+                      children: [
+                        if (feed.popularPeriod == "30d")
+                          Icon(
+                            Icons.check,
+                            size: 20,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                        if (feed.popularPeriod == "30d") const SizedBox(width: 8),
+                        const Text("Last 30 Days"),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: "7d",
+                    child: Row(
+                      children: [
+                        if (feed.popularPeriod == "7d")
+                          Icon(
+                            Icons.check,
+                            size: 20,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                        if (feed.popularPeriod == "7d") const SizedBox(width: 8),
+                        const Text("Last 7 Days"),
+                      ],
+                    ),
+                  ),
+                ],
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        feed.popularPeriod == "all_time"
+                            ? "All Time"
+                            : feed.popularPeriod == "30d"
+                                ? "Last 30 Days"
+                                : "Last 7 Days",
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      const Icon(Icons.arrow_drop_down, size: 18),
+                    ],
+                  ),
+                ),
+              ),
+            // Days selector for trending
+            if (feed.scope == "trending")
+              PopupMenuButton<int>(
+                tooltip: "Days",
+                onSelected: (d) => feed.setTrendingDays(d),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                itemBuilder: (_) => [
+                  PopupMenuItem(
+                    value: 7,
+                    child: Row(
+                      children: [
+                        if (feed.trendingDays == 7)
+                          Icon(
+                            Icons.check,
+                            size: 20,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                        if (feed.trendingDays == 7) const SizedBox(width: 8),
+                        const Text("Last 7 Days"),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 30,
+                    child: Row(
+                      children: [
+                        if (feed.trendingDays == 30)
+                          Icon(
+                            Icons.check,
+                            size: 20,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                        if (feed.trendingDays == 30) const SizedBox(width: 8),
+                        const Text("Last 30 Days"),
+                      ],
+                    ),
+                  ),
+                ],
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        "Last ${feed.trendingDays} Days",
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      const Icon(Icons.arrow_drop_down, size: 18),
+                    ],
+                  ),
+                ),
+              ),
+            // Window days selector (only when sort is "top" and scope is global/following)
+            if ((feed.scope == "global" || feed.scope == "following") && feed.sort == "top") ...[
+              const SizedBox(width: 12),
               PopupMenuButton<int>(
                 tooltip: "Window days",
                 onSelected: (d) => feed.setWindowDays(d),
@@ -551,6 +702,7 @@ class _Controls extends StatelessWidget {
                   ),
                 ),
               ),
+            ],
             const Spacer(),
             // View toggle button
             IconButton(
@@ -676,6 +828,36 @@ class _FeedScopeDrawer extends StatelessWidget {
                 Navigator.of(context).pop();
               },
             ),
+            ListTile(
+              leading: Icon(
+                feed.scope == "popular" ? Icons.check_circle : Icons.circle_outlined,
+                color: feed.scope == "popular"
+                    ? Theme.of(context).colorScheme.primary
+                    : null,
+              ),
+              title: const Text("Popular"),
+              subtitle: const Text("Most popular recipes"),
+              selected: feed.scope == "popular",
+              onTap: () {
+                feed.setScope("popular");
+                Navigator.of(context).pop();
+              },
+            ),
+            ListTile(
+              leading: Icon(
+                feed.scope == "trending" ? Icons.check_circle : Icons.circle_outlined,
+                color: feed.scope == "trending"
+                    ? Theme.of(context).colorScheme.primary
+                    : null,
+              ),
+              title: const Text("Trending"),
+              subtitle: const Text("Trending now"),
+              selected: feed.scope == "trending",
+              onTap: () {
+                feed.setScope("trending");
+                Navigator.of(context).pop();
+              },
+            ),
             const Divider(),
             if (auth.isLoggedIn) ...[
               ListTile(
@@ -687,6 +869,23 @@ class _FeedScopeDrawer extends StatelessWidget {
                   Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (_) => SavedRecipesScreen(
+                        apiClient: apiClient,
+                        auth: auth,
+                      ),
+                    ),
+                  );
+                },
+              ),
+              const Divider(),
+              ListTile(
+                leading: const Icon(Icons.analytics_rounded),
+                title: const Text("Analytics Statistics"),
+                subtitle: const Text("View tracking statistics"),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => AnalyticsStatsScreen(
                         apiClient: apiClient,
                         auth: auth,
                       ),

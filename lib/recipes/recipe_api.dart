@@ -303,4 +303,46 @@ class RecipeApi {
   Future<void> unbookmark(String recipeId) async {
     await api.delete("/recipes/$recipeId/bookmark", auth: true);
   }
+
+  /// Get popular recipes
+  /// 
+  /// [period] - Time period: "all_time", "30d", or "7d"
+  /// [limit] - Number of items per page (default: 20)
+  /// [cursor] - Pagination cursor
+  Future<Map<String, dynamic>> getPopularRecipes({
+    String period = "all_time",
+    int limit = 20,
+    String? cursor,
+  }) async {
+    final queryParams = <String, String>{
+      "limit": limit.toString(),
+      "period": period,
+      if (cursor != null) "cursor": cursor,
+    };
+
+    // auth: true so viewer flags work; if no token, header won't be set
+    final data = await api.get("/recipes/popular", query: queryParams, auth: true);
+    return Map<String, dynamic>.from(data as Map);
+  }
+
+  /// Get trending recipes
+  /// 
+  /// [days] - Number of days to look back (1-30, default: 7)
+  /// [limit] - Number of items per page (default: 20)
+  /// [cursor] - Pagination cursor
+  Future<Map<String, dynamic>> getTrendingRecipes({
+    int days = 7,
+    int limit = 20,
+    String? cursor,
+  }) async {
+    final queryParams = <String, String>{
+      "limit": limit.toString(),
+      "days": days.toString(),
+      if (cursor != null) "cursor": cursor,
+    };
+
+    // auth: true so viewer flags work; if no token, header won't be set
+    final data = await api.get("/recipes/trending", query: queryParams, auth: true);
+    return Map<String, dynamic>.from(data as Map);
+  }
 }

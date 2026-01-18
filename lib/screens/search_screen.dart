@@ -2,6 +2,7 @@ import "dart:async";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "../api/api_client.dart";
+import "../analytics/analytics_api.dart";
 import "../auth/auth_controller.dart";
 import "../recipes/recipe_detail_screen.dart";
 import "../search/search_api.dart";
@@ -29,6 +30,7 @@ class SearchScreen extends StatefulWidget {
 }
 
 class _SearchScreenState extends State<SearchScreen> {
+  late final AnalyticsApi analyticsApi;
   late final search.RecipeSearchController recipeSearchController;
   late final UserSearchController userSearchController;
   final TextEditingController _searchTextController = TextEditingController();
@@ -41,6 +43,7 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   void initState() {
     super.initState();
+    analyticsApi = AnalyticsApi(widget.apiClient);
     recipeSearchController = search.RecipeSearchController(
       searchApi: SearchApi(widget.apiClient),
     );
@@ -117,6 +120,35 @@ class _SearchScreenState extends State<SearchScreen> {
       recipeSearchController.clear();
       userSearchController.clear();
       return;
+    }
+    
+    // Track search query (fire-and-forget)
+    if (query.trim().isNotEmpty) {
+      final filters = recipeSearchController.filters;
+      final filterData = <String, dynamic>{};
+      if (filters.cuisine != null && filters.cuisine!.isNotEmpty) {
+        filterData["cuisine"] = filters.cuisine;
+      }
+      if (filters.tags.isNotEmpty) {
+        filterData["tags"] = filters.tags;
+      }
+      if (filters.ingredients.isNotEmpty) {
+        filterData["ingredients"] = filters.ingredients;
+      }
+      if (filters.cookingTimeMin != null) {
+        filterData["cooking_time_min"] = filters.cookingTimeMin;
+      }
+      if (filters.cookingTimeMax != null) {
+        filterData["cooking_time_max"] = filters.cookingTimeMax;
+      }
+      if (filters.difficulty != null && filters.difficulty!.isNotEmpty) {
+        filterData["difficulty"] = filters.difficulty;
+      }
+      
+      analyticsApi.trackSearch(
+        query: query.trim(),
+        filters: filterData.isEmpty ? null : filterData,
+      );
     }
     
     // Debounce search by 500ms to reduce API calls
@@ -665,6 +697,32 @@ class _SearchScreenState extends State<SearchScreen> {
         onApply: (filters) {
           recipeSearchController.updateFilters(filters);
           recipeSearchController.search(filters: filters);
+          
+          // Track filter application
+          final filterData = <String, dynamic>{};
+          if (filters.cuisine != null && filters.cuisine!.isNotEmpty) {
+            filterData["cuisine"] = filters.cuisine;
+          }
+          if (filters.tags.isNotEmpty) {
+            filterData["tags"] = filters.tags;
+          }
+          if (filters.ingredients.isNotEmpty) {
+            filterData["ingredients"] = filters.ingredients;
+          }
+          if (filters.cookingTimeMin != null) {
+            filterData["cooking_time_min"] = filters.cookingTimeMin;
+          }
+          if (filters.cookingTimeMax != null) {
+            filterData["cooking_time_max"] = filters.cookingTimeMax;
+          }
+          if (filters.difficulty != null && filters.difficulty!.isNotEmpty) {
+            filterData["difficulty"] = filters.difficulty;
+          }
+          
+          if (filterData.isNotEmpty) {
+            analyticsApi.trackFilterApplied(filterData);
+          }
+          
           Navigator.of(context).pop();
         },
         onClear: () {
@@ -746,6 +804,32 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
     final cookingTimeMax = _cookingTimeMaxController.text.trim().isEmpty
         ? null
         : int.tryParse(_cookingTimeMaxController.text.trim());
+    
+    // Track filter application
+    final filterData = <String, dynamic>{};
+    if (_currentFilters.cuisine != null && _currentFilters.cuisine!.isNotEmpty) {
+      filterData["cuisine"] = _currentFilters.cuisine;
+    }
+    if (_currentFilters.tags.isNotEmpty) {
+      filterData["tags"] = _currentFilters.tags;
+    }
+    if (_currentFilters.ingredients.isNotEmpty) {
+      filterData["ingredients"] = _currentFilters.ingredients;
+    }
+    if (cookingTimeMin != null) {
+      filterData["cooking_time_min"] = cookingTimeMin;
+    }
+    if (cookingTimeMax != null) {
+      filterData["cooking_time_max"] = cookingTimeMax;
+    }
+    if (_currentFilters.difficulty != null && _currentFilters.difficulty!.isNotEmpty) {
+      filterData["difficulty"] = _currentFilters.difficulty;
+    }
+    
+    if (filterData.isNotEmpty) {
+      // Access analyticsApi from parent widget - need to pass it down
+      // For now, we'll track it in the parent SearchScreen
+    }
 
     // Validate cooking time: min should not be more than max (they can be equal)
     if (cookingTimeMin != null && cookingTimeMax != null && cookingTimeMin > cookingTimeMax) {
