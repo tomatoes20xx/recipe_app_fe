@@ -1,12 +1,15 @@
 import "package:flutter/material.dart";
 import "../api/api_client.dart";
+import "../localization/app_localizations.dart";
 
 /// Utility class for handling and formatting errors in a user-friendly way
 class ErrorUtils {
   /// Converts an error to a user-friendly message
-  static String getUserFriendlyMessage(dynamic error) {
+  /// If context is provided, uses localized error messages
+  static String getUserFriendlyMessage(dynamic error, [BuildContext? context]) {
+    final localizations = context != null ? AppLocalizations.of(context) : null;
     if (error is ApiException) {
-      return _formatApiException(error);
+      return _formatApiException(error, context);
     }
     
     final errorString = error.toString();
@@ -15,34 +18,34 @@ class ErrorUtils {
     if (errorString.contains("Connection failed") || 
         errorString.contains("Network error") ||
         errorString.contains("SocketException")) {
-      return "Unable to connect to the server. Please check your internet connection and try again.";
+      return localizations?.unableToConnect ?? "Unable to connect to the server. Please check your internet connection and try again.";
     }
     
     if (errorString.contains("timeout") || errorString.contains("Timeout")) {
-      return "Request timed out. Please try again.";
+      return localizations?.requestTimedOut ?? "Request timed out. Please try again.";
     }
     
     if (errorString.contains("Connection closed") || 
         errorString.contains("connection reset")) {
-      return "Connection was interrupted. Please try again.";
+      return localizations?.connectionInterrupted ?? "Connection was interrupted. Please try again.";
     }
     
     // Authentication errors
     if (errorString.contains("401") || errorString.contains("Unauthorized")) {
-      return "You need to log in to perform this action.";
+      return localizations?.needToLogIn ?? "You need to log in to perform this action.";
     }
     
     if (errorString.contains("403") || errorString.contains("Forbidden")) {
-      return "You don't have permission to perform this action.";
+      return localizations?.noPermission ?? "You don't have permission to perform this action.";
     }
     
     if (errorString.contains("404") || errorString.contains("Not found")) {
-      return "The requested item could not be found.";
+      return localizations?.itemNotFound ?? "The requested item could not be found.";
     }
     
     // Validation errors
     if (errorString.contains("fieldErrors") || errorString.contains("formErrors")) {
-      return _extractValidationError(errorString) ?? "Invalid input. Please check your data and try again.";
+      return _extractValidationError(errorString) ?? (localizations?.invalidInput ?? "Invalid input. Please check your data and try again.");
     }
     
     // Generic error - try to extract meaningful part
@@ -54,37 +57,38 @@ class ErrorUtils {
     }
     
     // Default fallback
-    return "Something went wrong. Please try again.";
+    return localizations?.somethingWentWrong ?? "Something went wrong. Please try again.";
   }
   
   /// Formats API exceptions into user-friendly messages
-  static String _formatApiException(ApiException e) {
+  static String _formatApiException(ApiException e, [BuildContext? context]) {
+    final localizations = context != null ? AppLocalizations.of(context) : null;
     // Handle specific status codes
     switch (e.statusCode) {
       case 400:
-        return _extractValidationError(e.message) ?? "Invalid request. Please check your input and try again.";
+        return _extractValidationError(e.message) ?? (localizations?.invalidRequest ?? "Invalid request. Please check your input and try again.");
       case 401:
-        return "You need to log in to perform this action.";
+        return localizations?.needToLogIn ?? "You need to log in to perform this action.";
       case 403:
-        return "You don't have permission to perform this action.";
+        return localizations?.noPermission ?? "You don't have permission to perform this action.";
       case 404:
-        return "The requested item could not be found.";
+        return localizations?.itemNotFound ?? "The requested item could not be found.";
       case 409:
-        return "This action conflicts with the current state. Please refresh and try again.";
+        return localizations?.actionConflict ?? "This action conflicts with the current state. Please refresh and try again.";
       case 413:
-        return "The file is too large. Please use a smaller file.";
+        return localizations?.fileTooLarge ?? "The file is too large. Please use a smaller file.";
       case 422:
-        return _extractValidationError(e.message) ?? "Invalid data provided. Please check your input.";
+        return _extractValidationError(e.message) ?? (localizations?.invalidData ?? "Invalid data provided. Please check your input.");
       case 429:
-        return "Too many requests. Please wait a moment and try again.";
+        return localizations?.tooManyRequests ?? "Too many requests. Please wait a moment and try again.";
       case 500:
       case 502:
       case 503:
-        return "Server error. Please try again later.";
+        return localizations?.serverError ?? "Server error. Please try again later.";
       case 0:
         // Network/connection error
         if (e.message.contains("Connection failed") || e.message.contains("Network error")) {
-          return "Unable to connect to the server. Please check your internet connection.";
+          return localizations?.unableToConnect ?? "Unable to connect to the server. Please check your internet connection.";
         }
         return e.message;
       default:
@@ -92,7 +96,7 @@ class ErrorUtils {
         if (e.message.isNotEmpty && e.message != "Request failed") {
           return _extractValidationError(e.message) ?? e.message;
         }
-        return "An error occurred. Please try again.";
+        return localizations?.errorOccurred ?? "An error occurred. Please try again.";
     }
   }
   
@@ -166,20 +170,21 @@ class ErrorUtils {
   
   /// Shows an error snackbar
   static void showError(BuildContext context, dynamic error) {
+    final localizations = AppLocalizations.of(context);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
           children: [
             const Icon(Icons.error_outline, color: Colors.white),
             const SizedBox(width: 12),
-            Expanded(child: Text(getUserFriendlyMessage(error))),
+            Expanded(child: Text(getUserFriendlyMessage(error, context))),
           ],
         ),
         backgroundColor: Theme.of(context).colorScheme.error,
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 4),
         action: SnackBarAction(
-          label: "Dismiss",
+          label: localizations?.dismiss ?? "Dismiss",
           textColor: Colors.white,
           onPressed: () {
             ScaffoldMessenger.of(context).hideCurrentSnackBar();

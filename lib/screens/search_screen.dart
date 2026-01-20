@@ -354,7 +354,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
     if (recipeSearchController.error != null) {
       return ErrorStateWidget(
-        message: ErrorUtils.getUserFriendlyMessage(recipeSearchController.error!),
+        message: ErrorUtils.getUserFriendlyMessage(recipeSearchController.error!, context),
         onRetry: () {
           recipeSearchController.search(filters: recipeSearchController.filters);
         },
@@ -490,7 +490,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
     if (userSearchController.error != null) {
       return ErrorStateWidget(
-        message: ErrorUtils.getUserFriendlyMessage(userSearchController.error!),
+        message: ErrorUtils.getUserFriendlyMessage(userSearchController.error!, context),
         onRetry: () => _performSearch(userSearchController.currentQuery!),
       );
     }
@@ -752,10 +752,11 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
 
     // Validate cooking time: min should not be more than max (they can be equal)
     if (cookingTimeMin != null && cookingTimeMax != null && cookingTimeMin > cookingTimeMax) {
+      final localizations = AppLocalizations.of(context);
       setState(() {
-        _cookingTimeError = "Minimum time cannot be greater than maximum time";
+        _cookingTimeError = localizations?.minTimeCannotBeGreater ?? "Minimum time cannot be greater than maximum time";
       });
-      ErrorUtils.showError(context, "Minimum cooking time cannot be greater than maximum time");
+      ErrorUtils.showError(context, localizations?.minCookingTimeCannotBeGreater ?? "Minimum cooking time cannot be greater than maximum time");
       return;
     }
 
@@ -1039,8 +1040,9 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                                       ? null
                                       : int.tryParse(_cookingTimeMaxController.text.trim());
                                   if (min != null && max != null && min > max) {
+                                    final localizations = AppLocalizations.of(context);
                                     setState(() {
-                                      _cookingTimeError = "Minimum time cannot be greater than maximum time";
+                                      _cookingTimeError = localizations?.minTimeCannotBeGreater ?? "Minimum time cannot be greater than maximum time";
                                     });
                                   }
                                 },
@@ -1081,8 +1083,9 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                                       ? null
                                       : int.tryParse(_cookingTimeMinController.text.trim());
                                   if (min != null && max != null && min > max) {
+                                    final localizations = AppLocalizations.of(context);
                                     setState(() {
-                                      _cookingTimeError = "Minimum time cannot be greater than maximum time";
+                                      _cookingTimeError = localizations?.minTimeCannotBeGreater ?? "Minimum time cannot be greater than maximum time";
                                     });
                                   }
                                 },

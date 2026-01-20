@@ -241,19 +241,20 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
+    final localizations = AppLocalizations.of(context);
     if (_ingredients.isEmpty) {
-        ErrorUtils.showError(context, "Please add at least one ingredient");
+        ErrorUtils.showError(context, localizations?.pleaseAddAtLeastOneIngredient ?? "Please add at least one ingredient");
       return;
     }
     if (_steps.isEmpty) {
-        ErrorUtils.showError(context, "Please add at least one step");
+        ErrorUtils.showError(context, localizations?.pleaseAddAtLeastOneStep ?? "Please add at least one step");
       return;
     }
 
     // Validate ingredients
     for (var i = 0; i < _ingredients.length; i++) {
       if (_ingredients[i].nameController.text.trim().isEmpty) {
-        ErrorUtils.showError(context, "Ingredient ${i + 1}: name is required");
+        ErrorUtils.showError(context, localizations?.ingredientNameRequired(i) ?? "Ingredient ${i + 1}: name is required");
         return;
       }
     }
@@ -261,7 +262,7 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
     // Validate steps
     for (var i = 0; i < _steps.length; i++) {
       if (_steps[i].instructionController.text.trim().isEmpty) {
-        ErrorUtils.showError(context, "Step ${i + 1}: instruction is required");
+        ErrorUtils.showError(context, localizations?.stepInstructionRequired(i) ?? "Step ${i + 1}: instruction is required");
         return;
       }
     }
@@ -274,14 +275,14 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
     if (cookingTimeMinText.isNotEmpty) {
       final min = int.tryParse(cookingTimeMinText);
       if (min == null) {
-        ErrorUtils.showError(context, "Minimum cooking time must be a valid number");
+        ErrorUtils.showError(context, localizations?.minCookingTimeMustBeValidNumber ?? "Minimum cooking time must be a valid number");
         return;
       }
     }
     if (cookingTimeMaxText.isNotEmpty) {
       final max = int.tryParse(cookingTimeMaxText);
       if (max == null) {
-        ErrorUtils.showError(context, "Maximum cooking time must be a valid number");
+        ErrorUtils.showError(context, localizations?.maxCookingTimeMustBeValidNumber ?? "Maximum cooking time must be a valid number");
         return;
       }
     }
@@ -295,7 +296,7 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
         : (int.tryParse(cookingTimeMaxText) ?? null);
 
     if (cookingTimeMin != null && cookingTimeMax != null && cookingTimeMin > cookingTimeMax) {
-      ErrorUtils.showError(context, "Minimum cooking time cannot be greater than maximum time");
+      ErrorUtils.showError(context, localizations?.minCookingTimeCannotBeGreater ?? "Minimum cooking time cannot be greater than maximum time");
       return;
     }
 
@@ -451,7 +452,7 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _error = ErrorUtils.getUserFriendlyMessage(e);
+          _error = ErrorUtils.getUserFriendlyMessage(e, context);
           _isSubmitting = false;
           _uploadStatus = null;
         });
@@ -593,8 +594,9 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
                               ? null
                               : int.tryParse(_cookingTimeMaxController.text.trim());
                           if (min != null && max != null && min > max) {
+                            final localizations = AppLocalizations.of(context);
                             setState(() {
-                              _cookingTimeError = "Minimum time cannot be greater than maximum time";
+                              _cookingTimeError = localizations?.minTimeCannotBeGreater ?? "Minimum time cannot be greater than maximum time";
                             });
                           }
                         },
@@ -631,8 +633,9 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
                               ? null
                               : int.tryParse(_cookingTimeMinController.text.trim());
                           if (min != null && max != null && min > max) {
+                            final localizations = AppLocalizations.of(context);
                             setState(() {
-                              _cookingTimeError = "Minimum time cannot be greater than maximum time";
+                              _cookingTimeError = localizations?.minTimeCannotBeGreater ?? "Minimum time cannot be greater than maximum time";
                             });
                           }
                         },
@@ -704,9 +707,14 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
             const SizedBox(height: 16),
 
             // Images
-            SectionTitleWidget(
-              text: "Images",
-              variant: SectionTitleVariant.large,
+            Builder(
+              builder: (context) {
+                final localizations = AppLocalizations.of(context);
+                return SectionTitleWidget(
+                  text: localizations?.images ?? "Images",
+                  variant: SectionTitleVariant.large,
+                );
+              },
             ),
             const SizedBox(height: 8),
             Wrap(
@@ -799,23 +807,28 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
                       borderRadius: BorderRadius.circular(12),
                       color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
                     ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.add_photo_alternate_rounded,
-                          size: 32,
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          "Add",
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                          ),
-                        ),
-                      ],
+                    child: Builder(
+                      builder: (context) {
+                        final localizations = AppLocalizations.of(context);
+                        return Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.add_photo_alternate_rounded,
+                              size: 32,
+                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              localizations?.add ?? "Add",
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
                     ),
                   ),
                 ),
@@ -953,11 +966,16 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
                       Padding(
                         padding: const EdgeInsets.all(16),
                         child: Center(
-                          child: Text(
-                            "No steps yet. Add one to get started!",
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-                            ),
+                          child: Builder(
+                            builder: (context) {
+                              final localizations = AppLocalizations.of(context);
+                              return Text(
+                                localizations?.noStepsYet ?? "No steps yet. Add one to get started!",
+                                style: TextStyle(
+                                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                                ),
+                              );
+                            },
                           ),
                         ),
                       ),

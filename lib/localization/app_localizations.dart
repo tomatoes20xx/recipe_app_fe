@@ -108,6 +108,29 @@ class AppLocalizations {
   String get yesterday => _localizedValues[locale.languageCode]?["yesterday"] ?? "Yesterday";
   String get daysAgo => _localizedValues[locale.languageCode]?["daysAgo"] ?? "d ago";
   String get error => _localizedValues[locale.languageCode]?["error"] ?? "Error";
+  String get dismiss => _localizedValues[locale.languageCode]?["dismiss"] ?? "Dismiss";
+  String get unableToConnect => _localizedValues[locale.languageCode]?["unableToConnect"] ?? "Unable to connect to the server. Please check your internet connection and try again.";
+  String get requestTimedOut => _localizedValues[locale.languageCode]?["requestTimedOut"] ?? "Request timed out. Please try again.";
+  String get connectionInterrupted => _localizedValues[locale.languageCode]?["connectionInterrupted"] ?? "Connection was interrupted. Please try again.";
+  String get needToLogIn => _localizedValues[locale.languageCode]?["needToLogIn"] ?? "You need to log in to perform this action.";
+  String get noPermission => _localizedValues[locale.languageCode]?["noPermission"] ?? "You don't have permission to perform this action.";
+  String get itemNotFound => _localizedValues[locale.languageCode]?["itemNotFound"] ?? "The requested item could not be found.";
+  String get invalidInput => _localizedValues[locale.languageCode]?["invalidInput"] ?? "Invalid input. Please check your data and try again.";
+  String get invalidRequest => _localizedValues[locale.languageCode]?["invalidRequest"] ?? "Invalid request. Please check your input and try again.";
+  String get actionConflict => _localizedValues[locale.languageCode]?["actionConflict"] ?? "This action conflicts with the current state. Please refresh and try again.";
+  String get fileTooLarge => _localizedValues[locale.languageCode]?["fileTooLarge"] ?? "The file is too large. Please use a smaller file.";
+  String get invalidData => _localizedValues[locale.languageCode]?["invalidData"] ?? "Invalid data provided. Please check your input.";
+  String get tooManyRequests => _localizedValues[locale.languageCode]?["tooManyRequests"] ?? "Too many requests. Please wait a moment and try again.";
+  String get serverError => _localizedValues[locale.languageCode]?["serverError"] ?? "Server error. Please try again later.";
+  String get errorOccurred => _localizedValues[locale.languageCode]?["errorOccurred"] ?? "An error occurred. Please try again.";
+  String get minTimeCannotBeGreater => _localizedValues[locale.languageCode]?["minTimeCannotBeGreater"] ?? "Minimum time cannot be greater than maximum time";
+  String get minCookingTimeCannotBeGreater => _localizedValues[locale.languageCode]?["minCookingTimeCannotBeGreater"] ?? "Minimum cooking time cannot be greater than maximum time";
+  String get minCookingTimeMustBeValidNumber => _localizedValues[locale.languageCode]?["minCookingTimeMustBeValidNumber"] ?? "Minimum cooking time must be a valid number";
+  String get maxCookingTimeMustBeValidNumber => _localizedValues[locale.languageCode]?["maxCookingTimeMustBeValidNumber"] ?? "Maximum cooking time must be a valid number";
+  String get pleaseAddAtLeastOneIngredient => _localizedValues[locale.languageCode]?["pleaseAddAtLeastOneIngredient"] ?? "Please add at least one ingredient";
+  String get pleaseAddAtLeastOneStep => _localizedValues[locale.languageCode]?["pleaseAddAtLeastOneStep"] ?? "Please add at least one step";
+  String ingredientNameRequired(int index) => _localizedValues[locale.languageCode]?["ingredientNameRequired"]?.replaceAll("{index}", "${index + 1}") ?? "Ingredient ${index + 1}: name is required";
+  String stepInstructionRequired(int index) => _localizedValues[locale.languageCode]?["stepInstructionRequired"]?.replaceAll("{index}", "${index + 1}") ?? "Step ${index + 1}: instruction is required";
 
   // Profile
   String get addAvatar => _localizedValues[locale.languageCode]?["addAvatar"] ?? "Add Avatar";
@@ -150,6 +173,7 @@ class AppLocalizations {
   String get ingredient => _localizedValues[locale.languageCode]?["ingredient"] ?? "Ingredient";
   String get ingredientExample => _localizedValues[locale.languageCode]?["ingredientExample"] ?? "e.g., flour";
   String get instruction => _localizedValues[locale.languageCode]?["instruction"] ?? "Instruction";
+  String get images => _localizedValues[locale.languageCode]?["images"] ?? "Images";
   String get describeThisStep => _localizedValues[locale.languageCode]?["describeThisStep"] ?? "Describe this step";
   String get createRecipeTitle => _localizedValues[locale.languageCode]?["createRecipeTitle"] ?? "Create Recipe";
   String get editRecipe => _localizedValues[locale.languageCode]?["editRecipe"] ?? "Edit Recipe";
@@ -194,6 +218,7 @@ class AppLocalizations {
   String get notFound => _localizedValues[locale.languageCode]?["notFound"] ?? "Not found";
   String get somethingWentWrong => _localizedValues[locale.languageCode]?["somethingWentWrong"] ?? "Something went wrong";
   String get steps => _localizedValues[locale.languageCode]?["steps"] ?? "Steps";
+  String get noStepsYet => _localizedValues[locale.languageCode]?["noStepsYet"] ?? "No steps yet. Add one to get started!";
 
   // Language
   String get english => _localizedValues[locale.languageCode]?["english"] ?? "English";
@@ -341,6 +366,7 @@ class AppLocalizations {
       "ingredientExample": "e.g., flour",
       "instruction": "Instruction",
       "describeThisStep": "Describe this step",
+      "images": "Images",
       "createRecipeTitle": "Create Recipe",
       "editRecipe": "Edit Recipe",
       "switchToUsers": "Switch to Users",
@@ -382,6 +408,7 @@ class AppLocalizations {
       "notFound": "Not found",
       "somethingWentWrong": "Something went wrong",
       "steps": "Steps",
+      "noStepsYet": "No steps yet. Add one to get started!",
       "settings": "Settings",
       "appearance": "Appearance",
       "themeMode": "Theme Mode",
@@ -400,6 +427,29 @@ class AppLocalizations {
       "termsAndPrivacy": "Terms & Privacy",
       "termsOfService": "Terms of Service",
       "privacyPolicy": "Privacy Policy",
+      "dismiss": "Dismiss",
+      "unableToConnect": "Unable to connect to the server. Please check your internet connection and try again.",
+      "requestTimedOut": "Request timed out. Please try again.",
+      "connectionInterrupted": "Connection was interrupted. Please try again.",
+      "needToLogIn": "You need to log in to perform this action.",
+      "noPermission": "You don't have permission to perform this action.",
+      "itemNotFound": "The requested item could not be found.",
+      "invalidInput": "Invalid input. Please check your data and try again.",
+      "invalidRequest": "Invalid request. Please check your input and try again.",
+      "actionConflict": "This action conflicts with the current state. Please refresh and try again.",
+      "fileTooLarge": "The file is too large. Please use a smaller file.",
+      "invalidData": "Invalid data provided. Please check your input.",
+      "tooManyRequests": "Too many requests. Please wait a moment and try again.",
+      "serverError": "Server error. Please try again later.",
+      "errorOccurred": "An error occurred. Please try again.",
+      "minTimeCannotBeGreater": "Minimum time cannot be greater than maximum time",
+      "minCookingTimeCannotBeGreater": "Minimum cooking time cannot be greater than maximum time",
+      "minCookingTimeMustBeValidNumber": "Minimum cooking time must be a valid number",
+      "maxCookingTimeMustBeValidNumber": "Maximum cooking time must be a valid number",
+      "pleaseAddAtLeastOneIngredient": "Please add at least one ingredient",
+      "pleaseAddAtLeastOneStep": "Please add at least one step",
+      "ingredientNameRequired": "Ingredient {index}: name is required",
+      "stepInstructionRequired": "Step {index}: instruction is required",
     },
     "ka": {
       "appTitle": "CookBook",
@@ -498,7 +548,7 @@ class AppLocalizations {
       "enterRecipeTitle": "შეიყვანეთ რეცეპტის სათაური",
       "description": "აღწერა",
       "describeYourRecipe": "აღწერეთ თქვენი რეცეპტი",
-      "cuisine": "კუხნა",
+      "cuisine": "სამზარეულო",
       "cuisineExample": "მაგ., იტალიური, მექსიკური, აზიური",
       "minTimeMinutes": "მინ. დრო (წუთები)",
       "maxTimeMinutes": "მაქს. დრო (წუთები)",
@@ -520,6 +570,7 @@ class AppLocalizations {
       "ingredientExample": "მაგ., ფქვილი",
       "instruction": "ინსტრუქცია",
       "describeThisStep": "აღწერეთ ეს ნაბიჯი",
+      "images": "სურათები",
       "createRecipeTitle": "რეცეპტის შექმნა",
       "editRecipe": "რეცეპტის რედაქტირება",
       "switchToUsers": "მომხმარებლებზე გადართვა",
@@ -561,6 +612,7 @@ class AppLocalizations {
       "notFound": "არ მოიძებნა",
       "somethingWentWrong": "რაღაც შეცდომა მოხდა",
       "steps": "ნაბიჯები",
+      "noStepsYet": "ნაბიჯები ჯერ არ არის. დაამატეთ ერთი დასაწყებად!",
       "settings": "პარამეტრები",
       "appearance": "გარეგნობა",
       "themeMode": "თემის რეჟიმი",
@@ -579,6 +631,29 @@ class AppLocalizations {
       "termsAndPrivacy": "წესები და კონფიდენციალურობა",
       "termsOfService": "მომსახურების წესები",
       "privacyPolicy": "კონფიდენციალურობის პოლიტიკა",
+      "dismiss": "დახურვა",
+      "unableToConnect": "სერვერთან დაკავშირება ვერ მოხერხდა. გთხოვთ შეამოწმოთ ინტერნეტ კავშირი და სცადოთ ხელახლა.",
+      "requestTimedOut": "მოთხოვნა დრო ამოიწურა. გთხოვთ სცადოთ ხელახლა.",
+      "connectionInterrupted": "კავშირი შეწყდა. გთხოვთ სცადოთ ხელახლა.",
+      "needToLogIn": "ამ ქმედების შესასრულებლად საჭიროა შესვლა.",
+      "noPermission": "ამ ქმედების შესრულების უფლება არ გაქვთ.",
+      "itemNotFound": "მოთხოვნილი ელემენტი ვერ მოიძებნა.",
+      "invalidInput": "არასწორი მონაცემები. გთხოვთ შეამოწმოთ თქვენი მონაცემები და სცადოთ ხელახლა.",
+      "invalidRequest": "არასწორი მოთხოვნა. გთხოვთ შეამოწმოთ თქვენი შეყვანილი მონაცემები და სცადოთ ხელახლა.",
+      "actionConflict": "ეს ქმედება ეწინააღმდეგება მიმდინარე მდგომარეობას. გთხოვთ განაახლოთ და სცადოთ ხელახლა.",
+      "fileTooLarge": "ფაილი ძალიან დიდია. გთხოვთ გამოიყენოთ უფრო პატარა ფაილი.",
+      "invalidData": "მოწოდებული მონაცემები არასწორია. გთხოვთ შეამოწმოთ თქვენი შეყვანილი მონაცემები.",
+      "tooManyRequests": "ძალიან ბევრი მოთხოვნა. გთხოვთ მოიცადოთ და სცადოთ ხელახლა.",
+      "serverError": "სერვერის შეცდომა. გთხოვთ სცადოთ მოგვიანებით.",
+      "errorOccurred": "შეცდომა მოხდა. გთხოვთ სცადოთ ხელახლა.",
+      "minTimeCannotBeGreater": "მინიმალური დრო არ შეიძლება იყოს მაქსიმალურზე მეტი",
+      "minCookingTimeCannotBeGreater": "მინიმალური მომზადების დრო არ შეიძლება იყოს მაქსიმალურზე მეტი",
+      "minCookingTimeMustBeValidNumber": "მინიმალური მომზადების დრო უნდა იყოს სწორი რიცხვი",
+      "maxCookingTimeMustBeValidNumber": "მაქსიმალური მომზადების დრო უნდა იყოს სწორი რიცხვი",
+      "pleaseAddAtLeastOneIngredient": "გთხოვთ დაამატოთ მინიმუმ ერთი ინგრედიენტი",
+      "pleaseAddAtLeastOneStep": "გთხოვთ დაამატოთ მინიმუმ ერთი ნაბიჯი",
+      "ingredientNameRequired": "ინგრედიენტი {index}: სახელი აუცილებელია",
+      "stepInstructionRequired": "ნაბიჯი {index}: ინსტრუქცია აუცილებელია",
     },
   };
 }

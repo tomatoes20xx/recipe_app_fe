@@ -306,7 +306,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
     if (controller.error != null && controller.items.isEmpty) {
       return ErrorStateWidget(
-        message: ErrorUtils.getUserFriendlyMessage(controller.error!),
+        message: ErrorUtils.getUserFriendlyMessage(controller.error!, context),
         onRetry: () => controller.loadInitial(unreadOnly: _showUnreadOnly),
       );
     }
