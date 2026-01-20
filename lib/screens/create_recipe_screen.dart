@@ -7,6 +7,7 @@ import "package:image/image.dart" as img;
 import "package:cached_network_image/cached_network_image.dart";
 
 import "../api/api_client.dart";
+import "../localization/app_localizations.dart";
 import "../recipes/recipe_api.dart";
 import "../recipes/recipe_detail_models.dart";
 import "../utils/error_utils.dart";
@@ -466,13 +467,18 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
       appBar: AppBar(
         elevation: 0,
         scrolledUnderElevation: 1,
-        title: Text(
-          _isEditMode ? "Edit Recipe" : "Create Recipe",
-          style: const TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.w700,
-            letterSpacing: -0.5,
-          ),
+        title: Builder(
+          builder: (context) {
+            final localizations = AppLocalizations.of(context);
+            return Text(
+              _isEditMode ? (localizations?.editRecipe ?? "Edit Recipe") : (localizations?.createRecipeTitle ?? "Create Recipe"),
+              style: const TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.5,
+              ),
+            );
+          },
         ),
       ),
       body: Form(
@@ -481,11 +487,14 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
           padding: const EdgeInsets.all(16),
           children: [
             // Title
-            TextFormField(
-              controller: _titleController,
-              decoration: InputDecoration(
-                labelText: "Title *",
-                hintText: "Enter recipe title",
+            Builder(
+              builder: (context) {
+                final localizations = AppLocalizations.of(context);
+                return TextFormField(
+                  controller: _titleController,
+                  decoration: InputDecoration(
+                    labelText: "${localizations?.title ?? "Title"} *",
+                    hintText: localizations?.enterRecipeTitle ?? "Enter recipe title",
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -493,62 +502,77 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
                 fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
               ),
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return "Title is required";
-                }
-                return null;
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return "${localizations?.title ?? "Title"} is required";
+                    }
+                    return null;
+                  },
+                );
               },
             ),
             const SizedBox(height: 16),
 
             // Description
-            TextFormField(
-              controller: _descriptionController,
-              decoration: InputDecoration(
-                labelText: "Description",
-                hintText: "Describe your recipe",
+            Builder(
+              builder: (context) {
+                final localizations = AppLocalizations.of(context);
+                return TextFormField(
+                  controller: _descriptionController,
+                  decoration: InputDecoration(
+                    labelText: localizations?.description ?? "Description",
+                    hintText: localizations?.describeYourRecipe ?? "Describe your recipe",
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
                 filled: true,
                 fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
               ),
-              maxLines: 4,
+                  maxLines: 4,
+                );
+              },
             ),
             const SizedBox(height: 16),
 
             // Cuisine
-            TextFormField(
-              controller: _cuisineController,
-              decoration: InputDecoration(
-                labelText: "Cuisine",
-                hintText: "e.g., Italian, Mexican, Asian",
+            Builder(
+              builder: (context) {
+                final localizations = AppLocalizations.of(context);
+                return TextFormField(
+                  controller: _cuisineController,
+                  decoration: InputDecoration(
+                    labelText: localizations?.cuisine ?? "Cuisine",
+                    hintText: localizations?.cuisineExample ?? "e.g., Italian, Mexican, Asian",
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
-                filled: true,
-                fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
-              ),
+                    filled: true,
+                    fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                  ),
+                );
+              },
             ),
             const SizedBox(height: 16),
 
             // Cooking Time
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+            Builder(
+              builder: (context) {
+                final localizations = AppLocalizations.of(context);
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: _cookingTimeMinController,
-                        keyboardType: TextInputType.number,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly,
-                        ],
-                        decoration: InputDecoration(
-                          labelText: "Min Time (minutes)",
-                          hintText: "0",
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            controller: _cookingTimeMinController,
+                            keyboardType: TextInputType.number,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                            ],
+                            decoration: InputDecoration(
+                              labelText: localizations?.minTimeMinutes ?? "Min Time (minutes)",
+                              hintText: "0",
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -577,16 +601,16 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
                       ),
                     ),
                     const SizedBox(width: 16),
-                    Expanded(
-                      child: TextFormField(
-                        controller: _cookingTimeMaxController,
-                        keyboardType: TextInputType.number,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly,
-                        ],
-                        decoration: InputDecoration(
-                          labelText: "Max Time (minutes)",
-                          hintText: "120",
+                        Expanded(
+                          child: TextFormField(
+                            controller: _cookingTimeMaxController,
+                            keyboardType: TextInputType.number,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                            ],
+                            decoration: InputDecoration(
+                              labelText: localizations?.maxTimeMinutes ?? "Max Time (minutes)",
+                              hintText: "120",
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -630,26 +654,31 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
                   ),
                 ],
               ],
+                );
+              },
             ),
             const SizedBox(height: 16),
 
             // Difficulty
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "Difficulty",
-                  style: Theme.of(context).textTheme.labelLarge,
-                ),
-                const SizedBox(height: 8),
-                SizedBox(
-                  width: double.infinity,
-                  child: SegmentedButton<String?>(
-                    segments: const [
-                      ButtonSegment<String?>(value: "easy", label: Text("Easy")),
-                      ButtonSegment<String?>(value: "medium", label: Text("Medium")),
-                      ButtonSegment<String?>(value: "hard", label: Text("Hard")),
-                    ],
+            Builder(
+              builder: (context) {
+                final localizations = AppLocalizations.of(context);
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      localizations?.difficulty ?? "Difficulty",
+                      style: Theme.of(context).textTheme.labelLarge,
+                    ),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      width: double.infinity,
+                      child: SegmentedButton<String?>(
+                        segments: [
+                          ButtonSegment<String?>(value: "easy", label: Text(localizations?.easy ?? "Easy")),
+                          ButtonSegment<String?>(value: "medium", label: Text(localizations?.medium ?? "Medium")),
+                          ButtonSegment<String?>(value: "hard", label: Text(localizations?.hard ?? "Hard")),
+                        ],
                     selected: _selectedDifficulty != null ? {_selectedDifficulty} : <String?>{},
                     onSelectionChanged: (Set<String?> newSelection) {
                       setState(() {
@@ -663,12 +692,14 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
                     },
                     multiSelectionEnabled: false,
                     emptySelectionAllowed: true,
-                    style: SegmentedButton.styleFrom(
-                      fixedSize: const Size.fromHeight(40),
+                        style: SegmentedButton.styleFrom(
+                          fixedSize: const Size.fromHeight(40),
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-              ],
+                  ],
+                );
+              },
             ),
             const SizedBox(height: 16),
 
@@ -812,15 +843,21 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
             const SizedBox(height: 16),
 
             // Tags
-            _SectionTitle("Tags"),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _tagController,
-                    decoration: InputDecoration(
-                      hintText: "Add a tag",
+            Builder(
+              builder: (context) {
+                final localizations = AppLocalizations.of(context);
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _SectionTitle(localizations?.tags ?? "Tags"),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _tagController,
+                            decoration: InputDecoration(
+                              hintText: localizations?.addTag ?? "Add a tag",
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -828,105 +865,117 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
                       fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     ),
-                    onSubmitted: (_) => _addTag(),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                IconButton(
-                  onPressed: _addTag,
-                  icon: const Icon(Icons.add_circle_rounded),
-                  style: IconButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                  ),
-                ),
-              ],
+                            onSubmitted: (_) => _addTag(),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        IconButton(
+                          onPressed: _addTag,
+                          icon: const Icon(Icons.add_circle_rounded),
+                          style: IconButton.styleFrom(
+                            backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (_tags.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: _tags.map((tag) {
+                          return Chip(
+                            label: Text(tag),
+                            onDeleted: () => _removeTag(tag),
+                            deleteIcon: const Icon(Icons.close, size: 18),
+                          );
+                        }).toList(),
+                      ),
+                    ],
+                    const SizedBox(height: 24),
+                  ],
+                );
+              },
             ),
-            if (_tags.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: _tags.map((tag) {
-                  return Chip(
-                    label: Text(tag),
-                    onDeleted: () => _removeTag(tag),
-                    deleteIcon: const Icon(Icons.close, size: 18),
-                  );
-                }).toList(),
-              ),
-            ],
-            const SizedBox(height: 24),
 
             // Ingredients
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _SectionTitle("Ingredients *"),
-                TextButton.icon(
-                  onPressed: _addIngredient,
-                  icon: const Icon(Icons.add_rounded),
-                  label: const Text("Add"),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            ..._ingredients.asMap().entries.map((entry) {
-              final index = entry.key;
-              final ingredient = entry.value;
-              return _IngredientField(
-                ingredient: ingredient,
-                onRemove: () => _removeIngredient(index),
-              );
-            }),
-            if (_ingredients.isEmpty)
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Center(
-                  child: Text(
-                    "No ingredients yet. Add one to get started!",
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+            Builder(
+              builder: (context) {
+                final localizations = AppLocalizations.of(context);
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _SectionTitle("${localizations?.ingredients ?? "Ingredients"} *"),
+                        TextButton.icon(
+                          onPressed: _addIngredient,
+                          icon: const Icon(Icons.add_rounded),
+                          label: Text(localizations?.add ?? "Add"),
+                        ),
+                      ],
                     ),
-                  ),
-                ),
-              ),
-            const SizedBox(height: 24),
+                    const SizedBox(height: 8),
+                    ..._ingredients.asMap().entries.map((entry) {
+                      final index = entry.key;
+                      final ingredient = entry.value;
+                      return _IngredientField(
+                        ingredient: ingredient,
+                        onRemove: () => _removeIngredient(index),
+                      );
+                    }),
+                    const SizedBox(height: 24),
+                  ],
+                );
+              },
+            ),
 
             // Steps
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _SectionTitle("Steps *"),
-                TextButton.icon(
-                  onPressed: _addStep,
-                  icon: const Icon(Icons.add_rounded),
-                  label: const Text("Add"),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            ..._steps.asMap().entries.map((entry) {
-              final index = entry.key;
-              final step = entry.value;
-              return _StepField(
-                step: step,
-                stepNumber: index + 1,
-                onRemove: () => _removeStep(index),
-              );
-            }),
-            if (_steps.isEmpty)
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Center(
-                  child: Text(
-                    "No steps yet. Add one to get started!",
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+            Builder(
+              builder: (context) {
+                final localizations = AppLocalizations.of(context);
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _SectionTitle("${localizations?.instruction ?? "Steps"} *"),
+                        TextButton.icon(
+                          onPressed: _addStep,
+                          icon: const Icon(Icons.add_rounded),
+                          label: Text(localizations?.add ?? "Add"),
+                        ),
+                      ],
                     ),
-                  ),
-                ),
-              ),
-            const SizedBox(height: 32),
+                    const SizedBox(height: 8),
+                    ..._steps.asMap().entries.map((entry) {
+                      final index = entry.key;
+                      final step = entry.value;
+                      return _StepField(
+                        step: step,
+                        stepNumber: index + 1,
+                        onRemove: () => _removeStep(index),
+                      );
+                    }),
+                    if (_steps.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Center(
+                          child: Text(
+                            "No steps yet. Add one to get started!",
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                            ),
+                          ),
+                        ),
+                      ),
+                    const SizedBox(height: 32),
+                  ],
+                );
+              },
+            ),
 
             // Error message
             if (_error != null)
@@ -1004,16 +1053,23 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              child: _isSubmitting
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Text(
-                      "Create Recipe",
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                    ),
+              child: Builder(
+                builder: (context) {
+                  final localizations = AppLocalizations.of(context);
+                  return _isSubmitting
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : Text(
+                          _isEditMode 
+                            ? (localizations?.editRecipe ?? "Edit Recipe")
+                            : (localizations?.createRecipeTitle ?? "Create Recipe"),
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                        );
+                },
+              ),
             ),
             const SizedBox(height: 32),
           ],
@@ -1069,56 +1125,71 @@ class _IngredientField extends StatelessWidget {
           children: [
             Expanded(
               flex: 2,
-              child: TextFormField(
-                controller: ingredient.quantityController,
-                decoration: InputDecoration(
-                  labelText: "Quantity",
-                  hintText: "e.g., 2",
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  filled: true,
-                  fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                ),
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                inputFormatters: [
-                  _DecimalNumberFormatter(),
-                ],
+              child: Builder(
+                builder: (context) {
+                  final localizations = AppLocalizations.of(context);
+                  return TextFormField(
+                    controller: ingredient.quantityController,
+                    decoration: InputDecoration(
+                      labelText: localizations?.quantity ?? "Quantity",
+                      hintText: localizations?.quantityExample ?? "e.g., 2",
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      filled: true,
+                      fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                    ),
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    inputFormatters: [
+                      _DecimalNumberFormatter(),
+                    ],
+                  );
+                },
               ),
             ),
             const SizedBox(width: 8),
             Expanded(
               flex: 2,
-              child: TextFormField(
-                controller: ingredient.unitController,
-                decoration: InputDecoration(
-                  labelText: "Unit",
-                  hintText: "e.g., cups",
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  filled: true,
-                  fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                ),
+              child: Builder(
+                builder: (context) {
+                  final localizations = AppLocalizations.of(context);
+                  return TextFormField(
+                    controller: ingredient.unitController,
+                    decoration: InputDecoration(
+                      labelText: localizations?.unit ?? "Unit",
+                      hintText: localizations?.unitExample ?? "e.g., cups",
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      filled: true,
+                      fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                    ),
+                  );
+                },
               ),
             ),
             const SizedBox(width: 8),
             Expanded(
               flex: 4,
-              child: TextFormField(
-                controller: ingredient.nameController,
-                decoration: InputDecoration(
-                  labelText: "Ingredient *",
-                  hintText: "e.g., flour",
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  filled: true,
-                  fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                ),
+              child: Builder(
+                builder: (context) {
+                  final localizations = AppLocalizations.of(context);
+                  return TextFormField(
+                    controller: ingredient.nameController,
+                    decoration: InputDecoration(
+                      labelText: "${localizations?.ingredient ?? "Ingredient"} *",
+                      hintText: localizations?.ingredientExample ?? "e.g., flour",
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      filled: true,
+                      fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                    ),
+                  );
+                },
               ),
             ),
             const SizedBox(width: 8),
@@ -1203,11 +1274,14 @@ class _StepField extends StatelessWidget {
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: TextFormField(
-                controller: step.instructionController,
-                decoration: InputDecoration(
-                  labelText: "Instruction *",
-                  hintText: "Describe this step",
+              child: Builder(
+                builder: (context) {
+                  final localizations = AppLocalizations.of(context);
+                  return TextFormField(
+                    controller: step.instructionController,
+                    decoration: InputDecoration(
+                      labelText: "${localizations?.instruction ?? "Instruction"} *",
+                      hintText: localizations?.describeThisStep ?? "Describe this step",
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -1216,6 +1290,8 @@ class _StepField extends StatelessWidget {
                   contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                 ),
                 maxLines: 3,
+              );
+                },
               ),
             ),
             const SizedBox(width: 8),

@@ -4,6 +4,7 @@ import "package:cached_network_image/cached_network_image.dart";
 import "../api/api_client.dart";
 import "../auth/auth_controller.dart";
 import "../config.dart";
+import "../localization/app_localizations.dart";
 import "../users/following_controller.dart";
 import "../users/user_api.dart";
 import "../users/user_models.dart";
@@ -134,7 +135,12 @@ class _FollowingScreenState extends State<FollowingScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Following"),
+        title: Builder(
+          builder: (context) {
+            final localizations = AppLocalizations.of(context);
+            return Text(localizations?.followingTitle ?? "Following");
+          },
+        ),
       ),
       body: RefreshIndicator(
         onRefresh: controller.refresh,
@@ -159,19 +165,29 @@ class _FollowingScreenState extends State<FollowingScreen> {
               color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
             ),
             const SizedBox(height: 16),
-            Text(
-              "Private",
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-                  ),
+            Builder(
+              builder: (context) {
+                final localizations = AppLocalizations.of(context);
+                return Text(
+                  localizations?.private ?? "Private",
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                      ),
+                );
+              },
             ),
             const SizedBox(height: 8),
-            Text(
-              "This user's following list is private",
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
-                  ),
-              textAlign: TextAlign.center,
+            Builder(
+              builder: (context) {
+                final localizations = AppLocalizations.of(context);
+                return Text(
+                  localizations?.thisUsersFollowingListIsPrivate ?? "This user's following list is private",
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                      ),
+                  textAlign: TextAlign.center,
+                );
+              },
             ),
           ],
         ),
@@ -189,11 +205,16 @@ class _FollowingScreenState extends State<FollowingScreen> {
               color: Theme.of(context).colorScheme.error,
             ),
             const SizedBox(height: 16),
-            Text(
-              "Error",
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.error,
-                  ),
+            Builder(
+              builder: (context) {
+                final localizations = AppLocalizations.of(context);
+                return Text(
+                  localizations?.error ?? "Error",
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                );
+              },
             ),
             const SizedBox(height: 8),
             Text(
@@ -202,9 +223,14 @@ class _FollowingScreenState extends State<FollowingScreen> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () => controller.loadInitial(),
-              child: const Text("Retry"),
+            Builder(
+              builder: (context) {
+                final localizations = AppLocalizations.of(context);
+                return ElevatedButton(
+                  onPressed: () => controller.loadInitial(),
+                  child: Text(localizations?.retry ?? "Retry"),
+                );
+              },
             ),
           ],
         ),
@@ -222,19 +248,29 @@ class _FollowingScreenState extends State<FollowingScreen> {
               color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
             ),
             const SizedBox(height: 16),
-            Text(
-              "Not following anyone",
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-                  ),
+            Builder(
+              builder: (context) {
+                final localizations = AppLocalizations.of(context);
+                return Text(
+                  localizations?.notFollowingAnyone ?? "Not following anyone",
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                      ),
+                );
+              },
             ),
             const SizedBox(height: 8),
-            Text(
-              "This user isn't following anyone yet",
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
-                  ),
-              textAlign: TextAlign.center,
+            Builder(
+              builder: (context) {
+                final localizations = AppLocalizations.of(context);
+                return Text(
+                  localizations?.thisUserIsntFollowingAnyoneYet ?? "This user isn't following anyone yet",
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                      ),
+                  textAlign: TextAlign.center,
+                );
+              },
             ),
           ],
         ),

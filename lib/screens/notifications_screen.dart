@@ -1,6 +1,7 @@
 import "package:flutter/material.dart";
 import "../api/api_client.dart";
 import "../auth/auth_controller.dart";
+import "../localization/app_localizations.dart";
 import "../notifications/notification_api.dart";
 import "../notifications/notification_controller.dart";
 import "../notifications/notification_models.dart" as notification_models;
@@ -49,22 +50,26 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     super.dispose();
   }
 
-  String _formatDate(DateTime date) {
+  String _formatDate(DateTime date, BuildContext context) {
+    final localizations = AppLocalizations.of(context);
     final now = DateTime.now();
     final difference = now.difference(date);
 
     if (difference.inDays == 0) {
       if (difference.inHours == 0) {
         if (difference.inMinutes == 0) {
-          return "Just now";
+          return localizations?.justNow ?? "Just now";
         }
-        return "${difference.inMinutes}m ago";
+        final minutesAgo = localizations?.minutesAgo ?? "m ago";
+        return "${difference.inMinutes}$minutesAgo";
       }
-      return "${difference.inHours}h ago";
+      final hoursAgo = localizations?.hoursAgo ?? "h ago";
+      return "${difference.inHours}$hoursAgo";
     } else if (difference.inDays == 1) {
-      return "Yesterday";
+      return localizations?.yesterday ?? "Yesterday";
     } else if (difference.inDays < 7) {
-      return "${difference.inDays}d ago";
+      final daysAgo = localizations?.daysAgo ?? "d ago";
+      return "${difference.inDays}$daysAgo";
     } else {
       return "${date.day}/${date.month}/${date.year}";
     }
@@ -220,7 +225,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Notifications"),
+        title: Builder(
+          builder: (context) {
+            final localizations = AppLocalizations.of(context);
+            return Text(localizations?.notifications ?? "Notifications");
+          },
+        ),
         actions: [
           if (controller.unreadCount > 0)
             TextButton.icon(
@@ -233,7 +243,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 }
               },
               icon: const Icon(Icons.done_all, size: 18),
-              label: const Text("Mark all read"),
+              label: Builder(
+                builder: (context) {
+                  final localizations = AppLocalizations.of(context);
+                  return Text(localizations?.markAllRead ?? "Mark all read");
+                },
+              ),
             ),
           PopupMenuButton<String>(
             onSelected: (value) {
@@ -242,28 +257,31 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               });
               controller.loadInitial(unreadOnly: _showUnreadOnly);
             },
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: "all",
-                child: Row(
-                  children: [
-                    Icon(Icons.list, size: 18),
-                    SizedBox(width: 8),
-                    Text("All notifications"),
-                  ],
+            itemBuilder: (context) {
+              final localizations = AppLocalizations.of(context);
+              return [
+                PopupMenuItem(
+                  value: "all",
+                  child: Row(
+                    children: [
+                      const Icon(Icons.list, size: 18),
+                      const SizedBox(width: 8),
+                      Text(localizations?.allNotifications ?? "All notifications"),
+                    ],
+                  ),
                 ),
-              ),
-              const PopupMenuItem(
-                value: "unread",
-                child: Row(
-                  children: [
-                    Icon(Icons.mark_email_unread, size: 18),
-                    SizedBox(width: 8),
-                    Text("Unread only"),
-                  ],
+                PopupMenuItem(
+                  value: "unread",
+                  child: Row(
+                    children: [
+                      const Icon(Icons.mark_email_unread, size: 18),
+                      const SizedBox(width: 8),
+                      Text(localizations?.unreadOnly ?? "Unread only"),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ];
+            },
             child: Padding(
               padding: const EdgeInsets.all(8.0),
               child: Icon(
@@ -311,9 +329,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     ),
               ),
             ),
-            ElevatedButton(
-              onPressed: () => controller.loadInitial(unreadOnly: _showUnreadOnly),
-              child: const Text("Retry"),
+            Builder(
+              builder: (context) {
+                final localizations = AppLocalizations.of(context);
+                return ElevatedButton(
+                  onPressed: () => controller.loadInitial(unreadOnly: _showUnreadOnly),
+                  child: Text(localizations?.retry ?? "Retry"),
+                );
+              },
             ),
           ],
         ),
@@ -374,7 +397,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     final icon = _getNotificationIcon(notification.type);
     final title = _getNotificationTitle(notification);
     final message = _getNotificationMessage(notification);
-    final date = _formatDate(notification.createdAt);
+    final date = _formatDate(notification.createdAt, context);
 
     return InkWell(
       onTap: () => _handleNotificationTap(notification),

@@ -10,6 +10,9 @@ import "../auth/auth_controller.dart";
 import "../feed/feed_api.dart";
 import "../feed/feed_controller.dart";
 import "../feed/feed_models.dart";
+import "../localization/app_localizations.dart";
+import "../localization/language_controller.dart";
+import "../localization/language_switcher.dart";
 import "../recipes/recipe_api.dart";
 import "../recipes/comments_bottom_sheet.dart";
 import "../recipes/recipe_detail_screen.dart";
@@ -30,10 +33,12 @@ class HomeScreen extends StatefulWidget {
     required this.auth,
     required this.apiClient,
     required this.themeController,
+    required this.languageController,
   });
   final AuthController auth;
   final ApiClient apiClient;
   final ThemeController themeController;
+  final LanguageController languageController;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -205,19 +210,29 @@ class _HomeScreenState extends State<HomeScreen> {
                   ? AppBar(
                       elevation: 0,
                       scrolledUnderElevation: 1,
-                      leading: IconButton(
-                        onPressed: () => _scaffoldKey.currentState?.openDrawer(),
-                        icon: const Icon(Icons.menu_rounded),
-                        tooltip: "Menu",
+                      leading: Builder(
+                        builder: (context) {
+                          final localizations = AppLocalizations.of(context);
+                          return IconButton(
+                            onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+                            icon: const Icon(Icons.menu_rounded),
+                            tooltip: localizations?.menu ?? "Menu",
+                          );
+                        },
                       ),
-                      title: Text(
-                        "Feed",
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: -0.5,
-                          color: Theme.of(context).colorScheme.onSurface,
-                        ),
+                      title: Builder(
+                        builder: (context) {
+                          final localizations = AppLocalizations.of(context);
+                          return Text(
+                            localizations?.feed ?? "Feed",
+                            style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: -0.5,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                          );
+                        },
                       ),
                       actions: [
                         IconButton(
@@ -233,7 +248,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             }
                           },
                           icon: const Icon(Icons.add_rounded),
-                          tooltip: "Create Recipe",
+                          tooltip: AppLocalizations.of(context)?.createRecipe ?? "Create Recipe",
                           style: IconButton.styleFrom(
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -259,7 +274,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 }
                               },
                               icon: const Icon(Icons.notifications_outlined),
-                              tooltip: "Notifications",
+                              tooltip: AppLocalizations.of(context)?.notifications ?? "Notifications",
                               style: IconButton.styleFrom(
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
@@ -307,7 +322,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             );
                           },
                           icon: const Icon(Icons.search_rounded),
-                          tooltip: "Search",
+                          tooltip: AppLocalizations.of(context)?.search ?? "Search",
                           style: IconButton.styleFrom(
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -319,13 +334,16 @@ class _HomeScreenState extends State<HomeScreen> {
                           child: IconButton(
                             onPressed: () => widget.auth.logout(),
                             icon: const Icon(Icons.logout_rounded),
-                            tooltip: "Logout",
+                            tooltip: AppLocalizations.of(context)?.logout ?? "Logout",
                             style: IconButton.styleFrom(
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
                             ),
                           ),
+                        ),
+                        LanguageSwitcher(
+                          languageController: widget.languageController,
                         ),
                       ],
                     )
@@ -337,6 +355,7 @@ class _HomeScreenState extends State<HomeScreen> {
         auth: widget.auth,
         apiClient: widget.apiClient,
         themeController: widget.themeController,
+        languageController: widget.languageController,
       ),
       body: Column(
         children: [
@@ -400,6 +419,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           }
                         });
                       },
+                      languageController: widget.languageController,
                     ),
                   )
                 : const SizedBox.shrink(),
@@ -495,10 +515,12 @@ class _Controls extends StatelessWidget {
     required this.feed,
     required this.isFullScreenView,
     required this.onViewToggle,
+    required this.languageController,
   });
   final FeedController feed;
   final bool isFullScreenView;
   final VoidCallback onViewToggle;
+  final LanguageController languageController;
 
   @override
   Widget build(BuildContext context) {
@@ -523,9 +545,12 @@ class _Controls extends StatelessWidget {
             ],
             // Period selector for popular
             if (feed.scope == "popular")
-              PopupMenuButton<String>(
-                tooltip: "Time period",
-                onSelected: (p) => feed.setPopularPeriod(p),
+              Builder(
+                builder: (context) {
+                  final localizations = AppLocalizations.of(context);
+                  return PopupMenuButton<String>(
+                    tooltip: localizations?.timePeriod ?? "Time period",
+                    onSelected: (p) => feed.setPopularPeriod(p),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -541,7 +566,7 @@ class _Controls extends StatelessWidget {
                             color: Theme.of(context).colorScheme.primary,
                           ),
                         if (feed.popularPeriod == "all_time") const SizedBox(width: 8),
-                        const Text("All Time"),
+                        Text(localizations?.allTime ?? "All Time"),
                       ],
                     ),
                   ),
@@ -556,7 +581,7 @@ class _Controls extends StatelessWidget {
                             color: Theme.of(context).colorScheme.primary,
                           ),
                         if (feed.popularPeriod == "30d") const SizedBox(width: 8),
-                        const Text("Last 30 Days"),
+                        Text(localizations?.last30Days ?? "Last 30 Days"),
                       ],
                     ),
                   ),
@@ -571,7 +596,7 @@ class _Controls extends StatelessWidget {
                             color: Theme.of(context).colorScheme.primary,
                           ),
                         if (feed.popularPeriod == "7d") const SizedBox(width: 8),
-                        const Text("Last 7 Days"),
+                        Text(localizations?.last7Days ?? "Last 7 Days"),
                       ],
                     ),
                   ),
@@ -587,10 +612,10 @@ class _Controls extends StatelessWidget {
                     children: [
                       Text(
                         feed.popularPeriod == "all_time"
-                            ? "All Time"
+                            ? (localizations?.allTime ?? "All Time")
                             : feed.popularPeriod == "30d"
-                                ? "Last 30 Days"
-                                : "Last 7 Days",
+                                ? (localizations?.last30Days ?? "Last 30 Days")
+                                : (localizations?.last7Days ?? "Last 7 Days"),
                         style: const TextStyle(
                           fontWeight: FontWeight.w600,
                           fontSize: 13,
@@ -601,11 +626,16 @@ class _Controls extends StatelessWidget {
                     ],
                   ),
                 ),
+                  );
+                },
               ),
             // Days selector for trending
             if (feed.scope == "trending")
-              PopupMenuButton<int>(
-                tooltip: "Days",
+              Builder(
+                builder: (context) {
+                  final localizations = AppLocalizations.of(context);
+                  return PopupMenuButton<int>(
+                    tooltip: localizations?.days ?? "Days",
                 onSelected: (d) => feed.setTrendingDays(d),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -622,7 +652,7 @@ class _Controls extends StatelessWidget {
                             color: Theme.of(context).colorScheme.primary,
                           ),
                         if (feed.trendingDays == 7) const SizedBox(width: 8),
-                        const Text("Last 7 Days"),
+                        Text(localizations?.last7Days ?? "Last 7 Days"),
                       ],
                     ),
                   ),
@@ -637,7 +667,7 @@ class _Controls extends StatelessWidget {
                             color: Theme.of(context).colorScheme.primary,
                           ),
                         if (feed.trendingDays == 30) const SizedBox(width: 8),
-                        const Text("Last 30 Days"),
+                        Text(localizations?.last30Days ?? "Last 30 Days"),
                       ],
                     ),
                   ),
@@ -652,7 +682,9 @@ class _Controls extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        "Last ${feed.trendingDays} Days",
+                        feed.trendingDays == 7 
+                          ? (localizations?.last7Days ?? "Last 7 Days")
+                          : (localizations?.last30Days ?? "Last 30 Days"),
                         style: const TextStyle(
                           fontWeight: FontWeight.w600,
                           fontSize: 13,
@@ -663,23 +695,28 @@ class _Controls extends StatelessWidget {
                     ],
                   ),
                 ),
+                  );
+                },
               ),
             // Window days selector (only when sort is "top" and scope is global/following)
             if ((feed.scope == "global" || feed.scope == "following") && feed.sort == "top") ...[
               const SizedBox(width: 12),
-              PopupMenuButton<int>(
-                tooltip: "Window days",
-                onSelected: (d) => feed.setWindowDays(d),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                itemBuilder: (_) => const [
-                  PopupMenuItem(value: 1, child: Text("1 day")),
-                  PopupMenuItem(value: 3, child: Text("3 days")),
-                  PopupMenuItem(value: 7, child: Text("7 days")),
-                  PopupMenuItem(value: 14, child: Text("14 days")),
-                  PopupMenuItem(value: 30, child: Text("30 days")),
-                ],
+              Builder(
+                builder: (context) {
+                  final localizations = AppLocalizations.of(context);
+                  return PopupMenuButton<int>(
+                    tooltip: localizations?.windowDays ?? "Window days",
+                    onSelected: (d) => feed.setWindowDays(d),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    itemBuilder: (_) => [
+                      PopupMenuItem(value: 1, child: Text(localizations?.oneDay ?? "1 day")),
+                      PopupMenuItem(value: 3, child: Text(localizations?.threeDays ?? "3 days")),
+                      PopupMenuItem(value: 7, child: Text(localizations?.sevenDays ?? "7 days")),
+                      PopupMenuItem(value: 14, child: Text(localizations?.fourteenDays ?? "14 days")),
+                      PopupMenuItem(value: 30, child: Text(localizations?.thirtyDays ?? "30 days")),
+                    ],
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
@@ -701,19 +738,31 @@ class _Controls extends StatelessWidget {
                     ],
                   ),
                 ),
+                  );
+                },
               ),
             ],
             const Spacer(),
             // View toggle button
-            IconButton(
-              onPressed: onViewToggle,
-              icon: Icon(isFullScreenView ? Icons.view_list_rounded : Icons.view_carousel_rounded),
-              tooltip: isFullScreenView ? "List View" : "Full Screen View",
-              style: IconButton.styleFrom(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
+            Builder(
+              builder: (context) {
+                final localizations = AppLocalizations.of(context);
+                return Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      onPressed: onViewToggle,
+                      icon: Icon(isFullScreenView ? Icons.view_list_rounded : Icons.view_carousel_rounded),
+                      tooltip: isFullScreenView ? (localizations?.listView ?? "List View") : (localizations?.fullScreenView ?? "Full Screen View"),
+                      style: IconButton.styleFrom(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
           ],
         ),
@@ -728,11 +777,13 @@ class _FeedScopeDrawer extends StatelessWidget {
     required this.auth,
     required this.apiClient,
     required this.themeController,
+    required this.languageController,
   });
   final FeedController feed;
   final AuthController auth;
   final ApiClient apiClient;
   final ThemeController themeController;
+  final LanguageController languageController;
 
   @override
   Widget build(BuildContext context) {
@@ -790,130 +841,165 @@ class _FeedScopeDrawer extends StatelessWidget {
               ),
             ),
             const Divider(),
-            ListTile(
-              leading: Icon(
-                feed.scope == "global" ? Icons.check_circle : Icons.circle_outlined,
-                color: feed.scope == "global"
-                    ? Theme.of(context).colorScheme.primary
-                    : null,
-              ),
-              title: const Text("Global"),
-              subtitle: const Text("See recipes from everyone"),
-              selected: feed.scope == "global",
-              onTap: () {
-                feed.setScope("global");
-                Navigator.of(context).pop();
+            Builder(
+              builder: (context) {
+                final localizations = AppLocalizations.of(context);
+                return ListTile(
+                  leading: Icon(
+                    feed.scope == "global" ? Icons.check_circle : Icons.circle_outlined,
+                    color: feed.scope == "global"
+                        ? Theme.of(context).colorScheme.primary
+                        : null,
+                  ),
+                  title: Text(localizations?.global ?? "Global"),
+                  subtitle: Text(localizations?.seeRecipesFromEveryone ?? "See recipes from everyone"),
+                  selected: feed.scope == "global",
+                  onTap: () {
+                    feed.setScope("global");
+                    Navigator.of(context).pop();
+                  },
+                );
               },
             ),
-            ListTile(
-              leading: Icon(
-                feed.scope == "following" ? Icons.check_circle : Icons.circle_outlined,
-                color: feed.scope == "following"
-                    ? Theme.of(context).colorScheme.primary
-                    : null,
-              ),
-              title: const Text("Following"),
-              subtitle: const Text("See recipes from people you follow"),
-              selected: feed.scope == "following",
-              enabled: auth.isLoggedIn,
-              onTap: () {
-                if (!auth.isLoggedIn) {
-                  Navigator.of(context).pop();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Log in to see Following feed")),
-                  );
-                  return;
-                }
-                feed.setScope("following");
-                Navigator.of(context).pop();
+            Builder(
+              builder: (context) {
+                final localizations = AppLocalizations.of(context);
+                return ListTile(
+                  leading: Icon(
+                    feed.scope == "following" ? Icons.check_circle : Icons.circle_outlined,
+                    color: feed.scope == "following"
+                        ? Theme.of(context).colorScheme.primary
+                        : null,
+                  ),
+                  title: Text(localizations?.following ?? "Following"),
+                  subtitle: Text(localizations?.seeRecipesFromPeopleYouFollow ?? "See recipes from people you follow"),
+                  selected: feed.scope == "following",
+                  enabled: auth.isLoggedIn,
+                  onTap: () {
+                    if (!auth.isLoggedIn) {
+                      Navigator.of(context).pop();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(localizations?.logInToSeeFollowingFeed ?? "Log in to see Following feed")),
+                      );
+                      return;
+                    }
+                    feed.setScope("following");
+                    Navigator.of(context).pop();
+                  },
+                );
               },
             ),
-            ListTile(
-              leading: Icon(
-                feed.scope == "popular" ? Icons.check_circle : Icons.circle_outlined,
-                color: feed.scope == "popular"
-                    ? Theme.of(context).colorScheme.primary
-                    : null,
-              ),
-              title: const Text("Popular"),
-              subtitle: const Text("Most popular recipes"),
-              selected: feed.scope == "popular",
-              onTap: () {
-                feed.setScope("popular");
-                Navigator.of(context).pop();
+            Builder(
+              builder: (context) {
+                final localizations = AppLocalizations.of(context);
+                return ListTile(
+                  leading: Icon(
+                    feed.scope == "popular" ? Icons.check_circle : Icons.circle_outlined,
+                    color: feed.scope == "popular"
+                        ? Theme.of(context).colorScheme.primary
+                        : null,
+                  ),
+                  title: Text(localizations?.popular ?? "Popular"),
+                  subtitle: Text(localizations?.mostPopularRecipes ?? "Most popular recipes"),
+                  selected: feed.scope == "popular",
+                  onTap: () {
+                    feed.setScope("popular");
+                    Navigator.of(context).pop();
+                  },
+                );
               },
             ),
-            ListTile(
-              leading: Icon(
-                feed.scope == "trending" ? Icons.check_circle : Icons.circle_outlined,
-                color: feed.scope == "trending"
-                    ? Theme.of(context).colorScheme.primary
-                    : null,
-              ),
-              title: const Text("Trending"),
-              subtitle: const Text("Trending now"),
-              selected: feed.scope == "trending",
-              onTap: () {
-                feed.setScope("trending");
-                Navigator.of(context).pop();
+            Builder(
+              builder: (context) {
+                final localizations = AppLocalizations.of(context);
+                return ListTile(
+                  leading: Icon(
+                    feed.scope == "trending" ? Icons.check_circle : Icons.circle_outlined,
+                    color: feed.scope == "trending"
+                        ? Theme.of(context).colorScheme.primary
+                        : null,
+                  ),
+                  title: Text(localizations?.trending ?? "Trending"),
+                  subtitle: Text(localizations?.trendingNow ?? "Trending now"),
+                  selected: feed.scope == "trending",
+                  onTap: () {
+                    feed.setScope("trending");
+                    Navigator.of(context).pop();
+                  },
+                );
               },
             ),
             const Divider(),
             if (auth.isLoggedIn) ...[
-              ListTile(
-                leading: const Icon(Icons.bookmark_outline),
-                title: const Text("Saved Recipes"),
-                subtitle: const Text("View your bookmarked recipes"),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => SavedRecipesScreen(
-                        apiClient: apiClient,
-                        auth: auth,
-                      ),
-                    ),
+              Builder(
+                builder: (context) {
+                  final localizations = AppLocalizations.of(context);
+                  return ListTile(
+                    leading: const Icon(Icons.bookmark_outline),
+                    title: Text(localizations?.savedRecipes ?? "Saved Recipes"),
+                    subtitle: Text(localizations?.viewYourBookmarkedRecipes ?? "View your bookmarked recipes"),
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => SavedRecipesScreen(
+                            apiClient: apiClient,
+                            auth: auth,
+                          ),
+                        ),
+                      );
+                    },
                   );
                 },
               ),
               const Divider(),
-              ListTile(
-                leading: const Icon(Icons.analytics_rounded),
-                title: const Text("Analytics Statistics"),
-                subtitle: const Text("View tracking statistics"),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => AnalyticsStatsScreen(
-                        apiClient: apiClient,
-                        auth: auth,
-                      ),
-                    ),
+              Builder(
+                builder: (context) {
+                  final localizations = AppLocalizations.of(context);
+                  return ListTile(
+                    leading: const Icon(Icons.analytics_rounded),
+                    title: Text(localizations?.analyticsStatistics ?? "Analytics Statistics"),
+                    subtitle: Text(localizations?.viewTrackingStatistics ?? "View tracking statistics"),
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => AnalyticsStatsScreen(
+                            apiClient: apiClient,
+                            auth: auth,
+                          ),
+                        ),
+                      );
+                    },
                   );
                 },
               ),
-              ListTile(
-                leading: buildUserAvatar(
-                  context,
-                  auth.me?["avatar_url"]?.toString(),
-                  auth.me?["username"]?.toString() ?? "",
-                ),
-                title: const Text("Profile"),
-                subtitle: Text(
-                  auth.me?["username"] != null
-                      ? "@${auth.me!["username"]}"
-                      : "View your profile",
-                ),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => ProfileScreen(
-                      auth: auth,
-                      apiClient: apiClient,
-                      ),
+              Builder(
+                builder: (context) {
+                  final localizations = AppLocalizations.of(context);
+                  return ListTile(
+                    leading: buildUserAvatar(
+                      context,
+                      auth.me?["avatar_url"]?.toString(),
+                      auth.me?["username"]?.toString() ?? "",
                     ),
+                    title: Text(localizations?.profile ?? "Profile"),
+                    subtitle: Text(
+                      auth.me?["username"] != null
+                          ? "@${auth.me!["username"]}"
+                          : (localizations?.viewProfile ?? "View your profile"),
+                    ),
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => ProfileScreen(
+                          auth: auth,
+                          apiClient: apiClient,
+                          ),
+                        ),
+                      );
+                    },
                   );
                 },
               ),
@@ -931,8 +1017,9 @@ class _SortDropdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context);
     return PopupMenuButton<String>(
-      tooltip: "Sort by",
+      tooltip: localizations?.sortBy ?? "Sort by",
       onSelected: (value) => feed.setSort(value),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
@@ -949,7 +1036,7 @@ class _SortDropdown extends StatelessWidget {
                   color: Theme.of(context).colorScheme.primary,
                 ),
               if (feed.sort == "recent") const SizedBox(width: 8),
-              const Text("Recent"),
+              Text(localizations?.recent ?? "Recent"),
             ],
           ),
         ),
@@ -964,7 +1051,7 @@ class _SortDropdown extends StatelessWidget {
                   color: Theme.of(context).colorScheme.primary,
                 ),
               if (feed.sort == "top") const SizedBox(width: 8),
-              const Text("Top"),
+              Text(localizations?.top ?? "Top"),
             ],
           ),
         ),
@@ -979,7 +1066,7 @@ class _SortDropdown extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              feed.sort == "recent" ? "Recent" : "Top",
+              feed.sort == "recent" ? (localizations?.recent ?? "Recent") : (localizations?.top ?? "Top"),
               style: TextStyle(
                 fontWeight: FontWeight.w600,
                 fontSize: 13,
@@ -1062,13 +1149,18 @@ class _FeedList extends StatelessWidget {
             ),
           ),
           Center(
-            child: FilledButton.icon(
-              onPressed: feed.loadInitial,
-              icon: const Icon(Icons.refresh_rounded),
-              label: const Text("Retry"),
-              style: FilledButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              ),
+            child: Builder(
+              builder: (context) {
+                final localizations = AppLocalizations.of(context);
+                return FilledButton.icon(
+                  onPressed: feed.loadInitial,
+                  icon: const Icon(Icons.refresh_rounded),
+                  label: Text(localizations?.retry ?? "Retry"),
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  ),
+                );
+              },
             ),
           ),
         ],
@@ -1097,13 +1189,18 @@ class _FeedList extends StatelessWidget {
           if (feed.nextCursor == null) {
             return Padding(
               padding: const EdgeInsets.all(24),
-              child: Center(
-                child: Text(
-                  "No more items",
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-                      ),
-                ),
+              child: Builder(
+                builder: (context) {
+                  final localizations = AppLocalizations.of(context);
+                  return Center(
+                    child: Text(
+                      localizations?.noMoreItems ?? "No more items",
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                          ),
+                    ),
+                  );
+                },
               ),
             );
           }
@@ -1236,13 +1333,18 @@ class _FullScreenFeedListState extends State<_FullScreenFeedList> {
                     ),
               ),
             ),
-            FilledButton.icon(
-              onPressed: widget.feed.loadInitial,
-              icon: const Icon(Icons.refresh_rounded),
-              label: const Text("Retry"),
-              style: FilledButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              ),
+            Builder(
+              builder: (context) {
+                final localizations = AppLocalizations.of(context);
+                return FilledButton.icon(
+                  onPressed: widget.feed.loadInitial,
+                  icon: const Icon(Icons.refresh_rounded),
+                  label: Text(localizations?.retry ?? "Retry"),
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  ),
+                );
+              },
             ),
           ],
         ),
@@ -1264,7 +1366,12 @@ class _FullScreenFeedListState extends State<_FullScreenFeedList> {
           if (widget.feed.isLoadingMore) {
             return const Center(child: CircularProgressIndicator());
           }
-          return const Center(child: Text("No more items"));
+          return Builder(
+            builder: (context) {
+              final localizations = AppLocalizations.of(context);
+              return Center(child: Text(localizations?.noMoreItems ?? "No more items"));
+            },
+          );
         }
 
         final item = widget.feed.items[index];

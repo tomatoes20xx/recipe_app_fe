@@ -2,6 +2,7 @@ import "package:flutter/material.dart";
 
 import "../api/api_client.dart";
 import "../auth/auth_controller.dart";
+import "../localization/app_localizations.dart";
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key, required this.auth});
@@ -49,9 +50,10 @@ class _SignupScreenState extends State<SignupScreen> {
   @override
   Widget build(BuildContext context) {
     final loading = widget.auth.isLoading;
+    final localizations = AppLocalizations.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Sign up")),
+      appBar: AppBar(title: Text(localizations?.signUp ?? "Sign up")),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: ListView(
@@ -59,23 +61,23 @@ class _SignupScreenState extends State<SignupScreen> {
             TextField(
               controller: emailCtrl,
               keyboardType: TextInputType.emailAddress,
-              decoration: const InputDecoration(labelText: "Email"),
+              decoration: InputDecoration(labelText: localizations?.email ?? "Email"),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: usernameCtrl,
-              decoration: const InputDecoration(labelText: "Username"),
+              decoration: InputDecoration(labelText: localizations?.username ?? "Username"),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: displayNameCtrl,
-              decoration: const InputDecoration(labelText: "Display name (optional)"),
+              decoration: InputDecoration(labelText: localizations?.displayName ?? "Display name (optional)"),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: passCtrl,
               obscureText: true,
-              decoration: const InputDecoration(labelText: "Password (min 8)"),
+              decoration: InputDecoration(labelText: localizations?.passwordMin ?? "Password (min 8)"),
             ),
             const SizedBox(height: 16),
             if (error != null)
@@ -87,7 +89,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 onPressed: loading ? null : onSignup,
                 child: loading
                     ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator())
-                    : const Text("Create account"),
+                    : Text(localizations?.createAccount ?? "Create account"),
               ),
             ),
           ],

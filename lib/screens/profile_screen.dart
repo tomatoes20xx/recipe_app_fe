@@ -10,6 +10,7 @@ import "../auth/auth_api.dart";
 import "../auth/auth_controller.dart";
 import "../config.dart";
 import "../feed/feed_models.dart";
+import "../localization/app_localizations.dart";
 import "../recipes/recipe_detail_screen.dart";
 import "../users/user_api.dart";
 import "../users/user_models.dart";
@@ -318,41 +319,49 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (avatarUrl == null || avatarUrl.isEmpty)
-              ListTile(
-                leading: const Icon(Icons.add_photo_alternate_outlined),
-                title: const Text("Add Avatar"),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  _uploadAvatar();
-                },
-              )
-            else ...[
-              ListTile(
-                leading: const Icon(Icons.photo_library_outlined),
-                title: const Text("Update Avatar"),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  _uploadAvatar();
-                },
-              ),
-              ListTile(
-                leading: Icon(
-                  Icons.delete_outline,
-                  color: Theme.of(context).colorScheme.error,
-                ),
-                title: Text(
-                  "Delete Avatar",
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.error,
-                  ),
-                ),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  _deleteAvatar();
-                },
-              ),
-            ],
+            Builder(
+              builder: (context) {
+                final localizations = AppLocalizations.of(context);
+                if (avatarUrl == null || avatarUrl.isEmpty)
+                  return ListTile(
+                    leading: const Icon(Icons.add_photo_alternate_outlined),
+                    title: Text(localizations?.addAvatar ?? "Add Avatar"),
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      _uploadAvatar();
+                    },
+                  );
+                else
+                  return Column(
+                    children: [
+                      ListTile(
+                        leading: const Icon(Icons.photo_library_outlined),
+                        title: Text(localizations?.updateAvatar ?? "Update Avatar"),
+                        onTap: () {
+                          Navigator.of(context).pop();
+                          _uploadAvatar();
+                        },
+                      ),
+                      ListTile(
+                        leading: Icon(
+                          Icons.delete_outline,
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                        title: Text(
+                          localizations?.deleteAvatar ?? "Delete Avatar",
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.error,
+                          ),
+                        ),
+                        onTap: () {
+                          Navigator.of(context).pop();
+                          _deleteAvatar();
+                        },
+                      ),
+                    ],
+                  );
+              },
+            ),
             const SizedBox(height: 8),
           ],
         ),
@@ -361,19 +370,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _deleteAvatar() async {
+    final localizations = AppLocalizations.of(context);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("Delete Avatar"),
-        content: const Text("Are you sure you want to remove your avatar?"),
+        title: Text(localizations?.deleteAvatar ?? "Delete Avatar"),
+        content: Text(localizations?.areYouSureDeleteAvatar ?? "Are you sure you want to remove your avatar?"),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text("Cancel"),
+            child: Text(localizations?.cancel ?? "Cancel"),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text("Delete"),
+            child: Text(localizations?.delete ?? "Delete"),
           ),
         ],
       ),
@@ -411,14 +421,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (widget.username != null) {
       if (_isLoadingProfile) {
         return Scaffold(
-          appBar: AppBar(title: const Text("Profile")),
+          appBar: AppBar(
+            title: Builder(
+              builder: (context) {
+                final localizations = AppLocalizations.of(context);
+                return Text(localizations?.profile ?? "Profile");
+              },
+            ),
+          ),
           body: const Center(child: CircularProgressIndicator()),
         );
       }
 
       if (_error != null || _userProfile == null) {
         return Scaffold(
-          appBar: AppBar(title: const Text("Profile")),
+          appBar: AppBar(
+            title: Builder(
+              builder: (context) {
+                final localizations = AppLocalizations.of(context);
+                return Text(localizations?.profile ?? "Profile");
+              },
+            ),
+          ),
           body: Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -435,9 +459,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: _loadUserProfile,
-                  child: const Text("Retry"),
+                Builder(
+                  builder: (context) {
+                    final localizations = AppLocalizations.of(context);
+                    return ElevatedButton(
+                      onPressed: _loadUserProfile,
+                      child: Text(localizations?.retry ?? "Retry"),
+                    );
+                  },
                 ),
               ],
             ),
@@ -527,10 +556,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               borderRadius: BorderRadius.circular(8),
                               child: Padding(
                                 padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-                                child: _StatItem(
-                                  label: "Followers",
-                                  value: _userProfile!.followersCount.toString(),
-                                  showChevron: true,
+                                child: Builder(
+                                  builder: (context) {
+                                    final localizations = AppLocalizations.of(context);
+                                    return _StatItem(
+                                      label: localizations?.followers ?? "Followers",
+                                      value: _userProfile!.followersCount.toString(),
+                                      showChevron: true,
+                                    );
+                                  },
                                 ),
                               ),
                             ),
@@ -551,10 +585,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               borderRadius: BorderRadius.circular(8),
                               child: Padding(
                                 padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-                                child: _StatItem(
-                                  label: "Following",
-                                  value: _userProfile!.followingCount.toString(),
-                                  showChevron: true,
+                                child: Builder(
+                                  builder: (context) {
+                                    final localizations = AppLocalizations.of(context);
+                                    return _StatItem(
+                                      label: localizations?.followingTitle ?? "Following",
+                                      value: _userProfile!.followingCount.toString(),
+                                      showChevron: true,
+                                    );
+                                  },
                                 ),
                               ),
                             ),
@@ -579,9 +618,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     if (user == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text("Profile")),
-        body: const Center(
-          child: Text("Not logged in"),
+        appBar: AppBar(
+          title: Builder(
+            builder: (context) {
+              final localizations = AppLocalizations.of(context);
+              return Text(localizations?.profile ?? "Profile");
+            },
+          ),
+        ),
+        body: Builder(
+          builder: (context) {
+            final localizations = AppLocalizations.of(context);
+            return Center(
+              child: Text(localizations?.notLoggedIn ?? "Not logged in"),
+            );
+          },
         ),
       );
     }
@@ -593,7 +644,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Profile"),
+        title: Builder(
+          builder: (context) {
+            final localizations = AppLocalizations.of(context);
+            return Text(localizations?.profile ?? "Profile");
+          },
+        ),
       ),
       body: RefreshIndicator(
         onRefresh: _refreshProfile,
@@ -862,9 +918,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () => controller.loadInitial(),
-                child: const Text("Retry"),
+              Builder(
+                builder: (context) {
+                  final localizations = AppLocalizations.of(context);
+                  return ElevatedButton(
+                    onPressed: () => controller.loadInitial(),
+                    child: Text(localizations?.retry ?? "Retry"),
+                  );
+                },
               ),
             ],
           ),

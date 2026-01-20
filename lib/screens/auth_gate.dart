@@ -2,6 +2,7 @@ import "package:flutter/material.dart";
 
 import "../api/api_client.dart";
 import "../auth/auth_controller.dart";
+import "../localization/language_controller.dart";
 import "../theme/theme_controller.dart";
 import "home_screen.dart";
 import "login_screen.dart";
@@ -12,11 +13,13 @@ class AuthGate extends StatefulWidget {
     required this.auth,
     required this.apiClient,
     required this.themeController,
+    required this.languageController,
   });
 
   final AuthController auth;
   final ApiClient apiClient;
   final ThemeController themeController;
+  final LanguageController languageController;
 
   @override
   State<AuthGate> createState() => _AuthGateState();
@@ -68,6 +71,7 @@ class _AuthGateState extends State<AuthGate> {
             auth: widget.auth,
             apiClient: widget.apiClient,
             themeController: widget.themeController,
+            languageController: widget.languageController,
           );
         }
 

@@ -1,12 +1,15 @@
 import "dart:io" show Platform;
 import "package:flutter/foundation.dart" show kIsWeb;
 import "package:flutter/material.dart";
+import "package:flutter_localizations/flutter_localizations.dart";
 import "package:sqflite_common_ffi/sqflite_ffi.dart";
 
 import "api/api_client.dart";
 import "auth/auth_api.dart";
 import "auth/auth_controller.dart";
 import "auth/token_storage.dart";
+import "localization/app_localizations.dart";
+import "localization/language_controller.dart";
 import "screens/auth_gate.dart";
 import "theme/theme_controller.dart";
 
@@ -29,11 +32,13 @@ void main() async {
   final authApi = AuthApi(apiClient);
   final authController = AuthController(authApi: authApi, tokenStorage: tokenStorage);
   final themeController = ThemeController();
+  final languageController = LanguageController();
 
   runApp(MyApp(
     authController: authController,
     apiClient: apiClient,
     themeController: themeController,
+    languageController: languageController,
   ));
 }
 
@@ -43,19 +48,29 @@ class MyApp extends StatelessWidget {
     required this.authController,
     required this.apiClient,
     required this.themeController,
+    required this.languageController,
   });
   final AuthController authController;
   final ApiClient apiClient;
   final ThemeController themeController;
+  final LanguageController languageController;
 
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: themeController,
+      animation: Listenable.merge([themeController, languageController]),
       builder: (context, _) {
         return MaterialApp(
           title: "Recipe App",
           debugShowCheckedModeBanner: false,
+          locale: languageController.locale,
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
           theme: ThemeData(
             useMaterial3: true,
             colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFD93900), brightness: Brightness.light)
@@ -72,6 +87,7 @@ class MyApp extends StatelessWidget {
             auth: authController,
             apiClient: apiClient,
             themeController: themeController,
+            languageController: languageController,
           ),
         );
       },

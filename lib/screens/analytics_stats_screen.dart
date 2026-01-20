@@ -5,6 +5,7 @@ import "../analytics/analytics_stats_controller.dart";
 import "../analytics/analytics_events_controller.dart";
 import "../api/api_client.dart";
 import "../auth/auth_controller.dart";
+import "../localization/app_localizations.dart";
 import "../recipes/recipe_detail_screen.dart";
 import "../utils/ui_utils.dart";
 
@@ -62,12 +63,27 @@ class _AnalyticsStatsScreenState extends State<AnalyticsStatsScreen> with Single
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Analytics Statistics"),
+        title: Builder(
+          builder: (context) {
+            final localizations = AppLocalizations.of(context);
+            return Text(localizations?.analyticsStatistics ?? "Analytics Statistics");
+          },
+        ),
         bottom: TabBar(
           controller: _tabController,
-          tabs: const [
-            Tab(icon: Icon(Icons.bar_chart), text: "Statistics"),
-            Tab(icon: Icon(Icons.list), text: "Events"),
+          tabs: [
+            Builder(
+              builder: (context) {
+                final localizations = AppLocalizations.of(context);
+                return Tab(icon: const Icon(Icons.bar_chart), text: localizations?.statistics ?? "Statistics");
+              },
+            ),
+            Builder(
+              builder: (context) {
+                final localizations = AppLocalizations.of(context);
+                return Tab(icon: const Icon(Icons.list), text: localizations?.events ?? "Events");
+              },
+            ),
           ],
         ),
       ),
@@ -104,11 +120,16 @@ class _AnalyticsStatsScreenState extends State<AnalyticsStatsScreen> with Single
               color: Theme.of(context).colorScheme.error,
             ),
             const SizedBox(height: 16),
-            Text(
-              "Error loading statistics",
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.error,
-                  ),
+            Builder(
+              builder: (context) {
+                final localizations = AppLocalizations.of(context);
+                return Text(
+                  localizations?.errorLoadingStatistics ?? "Error loading statistics",
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                );
+              },
             ),
             const SizedBox(height: 8),
             Padding(
@@ -119,9 +140,14 @@ class _AnalyticsStatsScreenState extends State<AnalyticsStatsScreen> with Single
                 textAlign: TextAlign.center,
               ),
             ),
-            ElevatedButton(
-              onPressed: () => statsController.loadStats(),
-              child: const Text("Retry"),
+            Builder(
+              builder: (context) {
+                final localizations = AppLocalizations.of(context);
+                return ElevatedButton(
+                  onPressed: () => statsController.loadStats(),
+                  child: Text(localizations?.retry ?? "Retry"),
+                );
+              },
             ),
           ],
         ),
@@ -129,34 +155,44 @@ class _AnalyticsStatsScreenState extends State<AnalyticsStatsScreen> with Single
     }
 
     if (statsController.stats == null) {
-      return const Center(child: Text("No statistics available"));
+      return Builder(
+        builder: (context) {
+          final localizations = AppLocalizations.of(context);
+          return Center(child: Text(localizations?.noStatisticsAvailable ?? "No statistics available"));
+        },
+      );
     }
 
     final stats = statsController.stats!;
 
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        // Overall Statistics
-        _buildSectionTitle("Overall Statistics"),
-        const SizedBox(height: 12),
-        _buildOverallStats(stats.overall),
-        const SizedBox(height: 24),
-        // Events by Type
-        _buildSectionTitle("Events by Type"),
-        const SizedBox(height: 12),
-        _buildEventsByType(stats.byType),
-        const SizedBox(height: 24),
-        // Top Recipes
-        _buildSectionTitle("Top Recipes (Last 30 Days)"),
-        const SizedBox(height: 12),
-        _buildTopRecipes(stats.topRecipes),
-        const SizedBox(height: 24),
-        // Daily Events Chart
-        _buildSectionTitle("Daily Events (Last 30 Days)"),
-        const SizedBox(height: 12),
-        _buildDailyEventsChart(stats.dailyEvents),
-      ],
+    return Builder(
+      builder: (context) {
+        final localizations = AppLocalizations.of(context);
+        return ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            // Overall Statistics
+            _buildSectionTitle(localizations?.overallStatistics ?? "Overall Statistics"),
+            const SizedBox(height: 12),
+            _buildOverallStats(stats.overall),
+            const SizedBox(height: 24),
+            // Events by Type
+            _buildSectionTitle(localizations?.eventsByType ?? "Events by Type"),
+            const SizedBox(height: 12),
+            _buildEventsByType(stats.byType),
+            const SizedBox(height: 24),
+            // Top Recipes
+            _buildSectionTitle(localizations?.topRecipesLast30Days ?? "Top Recipes (Last 30 Days)"),
+            const SizedBox(height: 12),
+            _buildTopRecipes(stats.topRecipes),
+            const SizedBox(height: 24),
+            // Daily Events Chart
+            _buildSectionTitle(localizations?.dailyEventsLast30Days ?? "Daily Events (Last 30 Days)"),
+            const SizedBox(height: 12),
+            _buildDailyEventsChart(stats.dailyEvents),
+          ],
+        );
+      },
     );
   }
 
@@ -170,25 +206,30 @@ class _AnalyticsStatsScreenState extends State<AnalyticsStatsScreen> with Single
   }
 
   Widget _buildOverallStats(OverallStats overall) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            _buildStatRow("Total Events", overall.totalEvents.toString(), Icons.event),
-            const Divider(),
-            _buildStatRow("Unique Users", overall.uniqueUsers.toString(), Icons.people),
-            const Divider(),
-            _buildStatRow("Unique Recipes", overall.uniqueRecipes.toString(), Icons.restaurant),
-            const Divider(),
-            _buildStatRow("Last 24 Hours", overall.eventsLast24h.toString(), Icons.today),
-            const Divider(),
-            _buildStatRow("Last 7 Days", overall.eventsLast7d.toString(), Icons.calendar_view_week),
-            const Divider(),
-            _buildStatRow("Last 30 Days", overall.eventsLast30d.toString(), Icons.calendar_month),
-          ],
-        ),
-      ),
+    return Builder(
+      builder: (context) {
+        final localizations = AppLocalizations.of(context);
+        return Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                _buildStatRow(localizations?.totalEvents ?? "Total Events", overall.totalEvents.toString(), Icons.event),
+                const Divider(),
+                _buildStatRow(localizations?.uniqueUsers ?? "Unique Users", overall.uniqueUsers.toString(), Icons.people),
+                const Divider(),
+                _buildStatRow(localizations?.uniqueRecipes ?? "Unique Recipes", overall.uniqueRecipes.toString(), Icons.restaurant),
+                const Divider(),
+                _buildStatRow(localizations?.last24Hours ?? "Last 24 Hours", overall.eventsLast24h.toString(), Icons.today),
+                const Divider(),
+                _buildStatRow(localizations?.last7DaysStat ?? "Last 7 Days", overall.eventsLast7d.toString(), Icons.calendar_view_week),
+                const Divider(),
+                _buildStatRow(localizations?.last30DaysStat ?? "Last 30 Days", overall.eventsLast30d.toString(), Icons.calendar_month),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -219,11 +260,16 @@ class _AnalyticsStatsScreenState extends State<AnalyticsStatsScreen> with Single
 
   Widget _buildEventsByType(List<EventByType> events) {
     if (events.isEmpty) {
-      return const Card(
-        child: Padding(
-          padding: EdgeInsets.all(16),
-          child: Center(child: Text("No event data available")),
-        ),
+      return Builder(
+        builder: (context) {
+          final localizations = AppLocalizations.of(context);
+          return Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Center(child: Text(localizations?.noEventDataAvailable ?? "No event data available")),
+            ),
+          );
+        },
       );
     }
 
@@ -242,15 +288,20 @@ class _AnalyticsStatsScreenState extends State<AnalyticsStatsScreen> with Single
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            _formatEventType(event.eventType),
+                            _formatEventType(event.eventType, context),
                             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                   fontWeight: FontWeight.w600,
                                 ),
                           ),
                           const SizedBox(height: 4),
-                          Text(
-                            "Total: ${event.total}",
-                            style: Theme.of(context).textTheme.bodySmall,
+                          Builder(
+                            builder: (context) {
+                              final localizations = AppLocalizations.of(context);
+                              return Text(
+                                "${localizations?.total ?? "Total"}: ${event.total}",
+                                style: Theme.of(context).textTheme.bodySmall,
+                              );
+                            },
                           ),
                         ],
                       ),
@@ -299,18 +350,19 @@ class _AnalyticsStatsScreenState extends State<AnalyticsStatsScreen> with Single
     );
   }
 
-  String _formatEventType(String type) {
+  String _formatEventType(String type, BuildContext context) {
+    final localizations = AppLocalizations.of(context);
     switch (type) {
       case "view":
-        return "Views";
+        return localizations?.views ?? "Views";
       case "like":
-        return "Likes";
+        return localizations?.likes ?? "Likes";
       case "bookmark":
-        return "Bookmarks";
+        return localizations?.bookmarks ?? "Bookmarks";
       case "comment":
-        return "Comments";
+        return localizations?.comments ?? "Comments";
       case "search":
-        return "Searches";
+        return localizations?.searches ?? "Searches";
       case "share":
         return "Shares";
       case "filter_applied":
@@ -322,11 +374,16 @@ class _AnalyticsStatsScreenState extends State<AnalyticsStatsScreen> with Single
 
   Widget _buildTopRecipes(List<TopRecipe> recipes) {
     if (recipes.isEmpty) {
-      return const Card(
-        child: Padding(
-          padding: EdgeInsets.all(16),
-          child: Center(child: Text("No recipe data available")),
-        ),
+      return Builder(
+        builder: (context) {
+          final localizations = AppLocalizations.of(context);
+          return Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Center(child: Text(localizations?.noRecipeDataAvailable ?? "No recipe data available")),
+            ),
+          );
+        },
       );
     }
 
@@ -371,12 +428,17 @@ class _AnalyticsStatsScreenState extends State<AnalyticsStatsScreen> with Single
                     ),
                   ],
                 ),
-                trailing: Text(
-                  "${recipe.totalEvents} events",
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.primary,
-                        fontWeight: FontWeight.w600,
-                      ),
+                trailing: Builder(
+                  builder: (context) {
+                    final localizations = AppLocalizations.of(context);
+                    return Text(
+                      "${recipe.totalEvents} ${localizations?.eventsText ?? "events"}",
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Theme.of(context).colorScheme.primary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                    );
+                  },
                 ),
                 onTap: () {
                   Navigator.of(context).push(
@@ -414,22 +476,32 @@ class _AnalyticsStatsScreenState extends State<AnalyticsStatsScreen> with Single
 
   Widget _buildDailyEventsChart(List<DailyEvent> dailyEvents) {
     if (dailyEvents.isEmpty) {
-      return const Card(
-        child: Padding(
-          padding: EdgeInsets.all(16),
-          child: Center(child: Text("No daily event data available")),
-        ),
+      return Builder(
+        builder: (context) {
+          final localizations = AppLocalizations.of(context);
+          return Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Center(child: Text(localizations?.noDailyEventDataAvailable ?? "No daily event data available")),
+            ),
+          );
+        },
       );
     }
 
     // Simple bar chart representation
     final maxValue = dailyEvents.map((e) => e.total).reduce((a, b) => a > b ? a : b);
     if (maxValue == 0) {
-      return const Card(
-        child: Padding(
-          padding: EdgeInsets.all(16),
-          child: Center(child: Text("No events recorded")),
-        ),
+      return Builder(
+        builder: (context) {
+          final localizations = AppLocalizations.of(context);
+          return Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Center(child: Text(localizations?.noEventsRecorded ?? "No events recorded")),
+            ),
+          );
+        },
       );
     }
 
@@ -439,11 +511,16 @@ class _AnalyticsStatsScreenState extends State<AnalyticsStatsScreen> with Single
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              "Event Timeline",
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+            Builder(
+              builder: (context) {
+                final localizations = AppLocalizations.of(context);
+                return Text(
+                  localizations?.eventTimeline ?? "Event Timeline",
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                );
+              },
             ),
             const SizedBox(height: 16),
             SizedBox(
@@ -523,11 +600,16 @@ class _AnalyticsStatsScreenState extends State<AnalyticsStatsScreen> with Single
               color: Theme.of(context).colorScheme.error,
             ),
             const SizedBox(height: 16),
-            Text(
-              "Error loading events",
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.error,
-                  ),
+            Builder(
+              builder: (context) {
+                final localizations = AppLocalizations.of(context);
+                return Text(
+                  localizations?.errorLoadingEvents ?? "Error loading events",
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                );
+              },
             ),
             const SizedBox(height: 8),
             Padding(
@@ -538,9 +620,14 @@ class _AnalyticsStatsScreenState extends State<AnalyticsStatsScreen> with Single
                 textAlign: TextAlign.center,
               ),
             ),
-            ElevatedButton(
-              onPressed: () => eventsController.loadInitial(),
-              child: const Text("Retry"),
+            Builder(
+              builder: (context) {
+                final localizations = AppLocalizations.of(context);
+                return ElevatedButton(
+                  onPressed: () => eventsController.loadInitial(),
+                  child: Text(localizations?.retry ?? "Retry"),
+                );
+              },
             ),
           ],
         ),
@@ -564,19 +651,29 @@ class _AnalyticsStatsScreenState extends State<AnalyticsStatsScreen> with Single
                         color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
                       ),
                       const SizedBox(height: 16),
-                      Text(
-                        "No events available",
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-                            ),
+                      Builder(
+                        builder: (context) {
+                          final localizations = AppLocalizations.of(context);
+                          return Text(
+                            localizations?.noEventsAvailable ?? "No events available",
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                                ),
+                          );
+                        },
                       ),
                       if (eventsController.eventTypeFilter != null) ...[
                         const SizedBox(height: 8),
-                        Text(
-                          "Try selecting a different filter",
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
-                              ),
+                        Builder(
+                          builder: (context) {
+                            final localizations = AppLocalizations.of(context);
+                            return Text(
+                              localizations?.trySelectingDifferentFilter ?? "Try selecting a different filter",
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                                  ),
+                            );
+                          },
                         ),
                       ],
                     ],
@@ -610,62 +707,72 @@ class _AnalyticsStatsScreenState extends State<AnalyticsStatsScreen> with Single
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              "Filters",
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                FilterChip(
-                  label: const Text("All"),
-                  selected: eventsController.eventTypeFilter == null,
-                  onSelected: (selected) {
-                    if (selected) {
-                      eventsController.loadInitial();
-                    }
-                  },
-                ),
-                FilterChip(
-                  label: const Text("Views"),
-                  selected: eventsController.eventTypeFilter == "view",
-                  onSelected: (selected) {
-                    eventsController.loadInitial(eventType: selected ? "view" : null);
-                  },
-                ),
-                FilterChip(
-                  label: const Text("Likes"),
-                  selected: eventsController.eventTypeFilter == "like",
-                  onSelected: (selected) {
-                    eventsController.loadInitial(eventType: selected ? "like" : null);
-                  },
-                ),
-                FilterChip(
-                  label: const Text("Bookmarks"),
-                  selected: eventsController.eventTypeFilter == "bookmark",
-                  onSelected: (selected) {
-                    eventsController.loadInitial(eventType: selected ? "bookmark" : null);
-                  },
-                ),
-                FilterChip(
-                  label: const Text("Comments"),
-                  selected: eventsController.eventTypeFilter == "comment",
-                  onSelected: (selected) {
-                    eventsController.loadInitial(eventType: selected ? "comment" : null);
-                  },
-                ),
-                FilterChip(
-                  label: const Text("Searches"),
-                  selected: eventsController.eventTypeFilter == "search",
-                  onSelected: (selected) {
-                    eventsController.loadInitial(eventType: selected ? "search" : null);
-                  },
-                ),
-              ],
+            Builder(
+              builder: (context) {
+                final localizations = AppLocalizations.of(context);
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      localizations?.filters ?? "Filters",
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        FilterChip(
+                          label: Text(localizations?.all ?? "All"),
+                          selected: eventsController.eventTypeFilter == null,
+                          onSelected: (selected) {
+                            if (selected) {
+                              eventsController.loadInitial();
+                            }
+                          },
+                        ),
+                        FilterChip(
+                          label: Text(localizations?.views ?? "Views"),
+                          selected: eventsController.eventTypeFilter == "view",
+                          onSelected: (selected) {
+                            eventsController.loadInitial(eventType: selected ? "view" : null);
+                          },
+                        ),
+                        FilterChip(
+                          label: Text(localizations?.likes ?? "Likes"),
+                          selected: eventsController.eventTypeFilter == "like",
+                          onSelected: (selected) {
+                            eventsController.loadInitial(eventType: selected ? "like" : null);
+                          },
+                        ),
+                        FilterChip(
+                          label: Text(localizations?.bookmarks ?? "Bookmarks"),
+                          selected: eventsController.eventTypeFilter == "bookmark",
+                          onSelected: (selected) {
+                            eventsController.loadInitial(eventType: selected ? "bookmark" : null);
+                          },
+                        ),
+                        FilterChip(
+                          label: Text(localizations?.comments ?? "Comments"),
+                          selected: eventsController.eventTypeFilter == "comment",
+                          onSelected: (selected) {
+                            eventsController.loadInitial(eventType: selected ? "comment" : null);
+                          },
+                        ),
+                        FilterChip(
+                          label: Text(localizations?.searches ?? "Searches"),
+                          selected: eventsController.eventTypeFilter == "search",
+                          onSelected: (selected) {
+                            eventsController.loadInitial(eventType: selected ? "search" : null);
+                          },
+                        ),
+                      ],
+                    ),
+                  ],
+                );
+              },
             ),
           ],
         ),
@@ -682,25 +789,30 @@ class _AnalyticsStatsScreenState extends State<AnalyticsStatsScreen> with Single
           color: _getEventColor(event.eventType),
         ),
         title: Text(
-          _formatEventType(event.eventType),
+          _formatEventType(event.eventType, context),
           style: Theme.of(context).textTheme.titleSmall?.copyWith(
                 fontWeight: FontWeight.w600,
               ),
         ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (event.userUsername != null)
-              Text("User: @${event.userUsername}"),
-            if (event.recipeTitle != null)
-              Text("Recipe: ${event.recipeTitle}"),
-            Text(
-              formatDate(event.createdAt),
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                  ),
-            ),
-          ],
+        subtitle: Builder(
+          builder: (context) {
+            final localizations = AppLocalizations.of(context);
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (event.userUsername != null)
+                  Text("${localizations?.user ?? "User"}: @${event.userUsername}"),
+                if (event.recipeTitle != null)
+                  Text("${localizations?.recipe ?? "Recipe"}: ${event.recipeTitle}"),
+                Text(
+                  formatDate(event.createdAt),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                      ),
+                ),
+              ],
+            );
+          },
         ),
         trailing: event.recipeId != null
             ? IconButton(
@@ -769,7 +881,7 @@ class _AnalyticsStatsScreenState extends State<AnalyticsStatsScreen> with Single
       case "share":
         return Colors.teal;
       default:
-        return Theme.of(context).colorScheme.primary;
+        return Colors.grey;
     }
   }
 }

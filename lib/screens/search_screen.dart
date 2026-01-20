@@ -4,6 +4,7 @@ import "package:flutter/services.dart";
 import "../api/api_client.dart";
 import "../analytics/analytics_api.dart";
 import "../auth/auth_controller.dart";
+import "../localization/app_localizations.dart";
 import "../recipes/recipe_detail_screen.dart";
 import "../search/search_api.dart";
 import "../search/search_controller.dart" as search;
@@ -168,6 +169,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
         title: Container(
@@ -182,8 +184,8 @@ class _SearchScreenState extends State<SearchScreen> {
             style: Theme.of(context).textTheme.bodyLarge,
             decoration: InputDecoration(
               hintText: _isRecipeSearch
-                  ? "Search recipes, ingredients, tags..."
-                  : "Search users by username...",
+                  ? (localizations?.searchRecipes ?? "Search recipes...")
+                  : (localizations?.searchUsers ?? "Search users..."),
               hintStyle: TextStyle(
                 color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
               ),
@@ -240,7 +242,9 @@ class _SearchScreenState extends State<SearchScreen> {
                           userSearchController.clear();
                         });
                       },
-                      tooltip: _isRecipeSearch ? "Switch to Users" : "Switch to Recipes",
+                      tooltip: _isRecipeSearch 
+                          ? (localizations?.switchToUsers ?? "Switch to Users")
+                          : (localizations?.switchToRecipes ?? "Switch to Recipes"),
                       padding: const EdgeInsets.symmetric(horizontal: 4),
                       constraints: const BoxConstraints(
                         minWidth: 48,
@@ -309,7 +313,7 @@ class _SearchScreenState extends State<SearchScreen> {
                         ),
                     ],
                   ),
-                  tooltip: "Filters",
+                  tooltip: AppLocalizations.of(context)?.filters ?? "Filters",
                   onPressed: () => _showFilterBottomSheet(context),
                 ),
               ),
@@ -335,18 +339,28 @@ class _SearchScreenState extends State<SearchScreen> {
               color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
             ),
             const SizedBox(height: 16),
-            Text(
-              "Search for recipes",
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-                  ),
+            Builder(
+              builder: (context) {
+                final localizations = AppLocalizations.of(context);
+                return Text(
+                  localizations?.searchRecipes?.replaceAll("...", "") ?? "Search for recipes",
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                      ),
+                );
+              },
             ),
             const SizedBox(height: 8),
-            Text(
-              "Try searching for ingredients, tags, or recipe names",
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
-                  ),
+            Builder(
+              builder: (context) {
+                final localizations = AppLocalizations.of(context);
+                return Text(
+                  localizations?.tryDifferentSearch ?? "Try searching for ingredients, tags, or recipe names",
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                      ),
+                );
+              },
             ),
           ],
         ),
@@ -374,11 +388,16 @@ class _SearchScreenState extends State<SearchScreen> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () {
-                recipeSearchController.search(filters: recipeSearchController.filters);
+            Builder(
+              builder: (context) {
+                final localizations = AppLocalizations.of(context);
+                return ElevatedButton(
+                  onPressed: () {
+                    recipeSearchController.search(filters: recipeSearchController.filters);
+                  },
+                  child: Text(localizations?.retry ?? "Retry"),
+                );
               },
-              child: const Text("Retry"),
             ),
           ],
         ),
@@ -396,11 +415,18 @@ class _SearchScreenState extends State<SearchScreen> {
               color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
             ),
             const SizedBox(height: 16),
-            Text(
-              "No results found",
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-                  ),
+            Builder(
+              builder: (context) {
+                final localizations = AppLocalizations.of(context);
+                return Text(
+                  _isRecipeSearch 
+                    ? (localizations?.noRecipesFound ?? "No recipes found")
+                    : (localizations?.noUsersFound ?? "No users found"),
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                      ),
+                );
+              },
             ),
             const SizedBox(height: 8),
             Text(
@@ -918,15 +944,25 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    "Filters",
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
+                  Builder(
+                    builder: (context) {
+                      final localizations = AppLocalizations.of(context);
+                      return Text(
+                        localizations?.filters ?? "Filters",
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                      );
+                    },
                   ),
-                  TextButton(
-                    onPressed: _clearAllFilters,
-                    child: const Text("Clear All"),
+                  Builder(
+                    builder: (context) {
+                      final localizations = AppLocalizations.of(context);
+                      return TextButton(
+                        onPressed: _clearAllFilters,
+                        child: Text(localizations?.clearAll ?? "Clear All"),
+                      );
+                    },
                   ),
                 ],
               ),
@@ -939,33 +975,41 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                 padding: const EdgeInsets.all(16),
                 children: [
                   // Cuisine filter
-                  _FilterSection(
-                    title: "Cuisine",
-                    child: TextField(
-                      controller: _cuisineController,
-                      decoration: InputDecoration(
-                        hintText: "e.g., Italian, Mexican, Asian",
+                  Builder(
+                    builder: (context) {
+                      final localizations = AppLocalizations.of(context);
+                      return _FilterSection(
+                        title: localizations?.cuisine ?? "Cuisine",
+                        child: TextField(
+                          controller: _cuisineController,
+                          decoration: InputDecoration(
+                            hintText: localizations?.cuisineExample ?? "e.g., Italian, Mexican, Asian",
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
                         prefixIcon: const Icon(Icons.restaurant),
                       ),
                     ),
+                  );
+                    },
                   ),
                   const SizedBox(height: 24),
                   // Tags filter
-                  _FilterSection(
-                    title: "Tags",
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
+                  Builder(
+                    builder: (context) {
+                      final localizations = AppLocalizations.of(context);
+                      return _FilterSection(
+                        title: localizations?.tags ?? "Tags",
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Expanded(
-                              child: TextField(
-                                controller: _tagController,
-                                decoration: InputDecoration(
-                                  hintText: "Add tag",
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: TextField(
+                                    controller: _tagController,
+                                    decoration: InputDecoration(
+                                      hintText: localizations?.addTag ?? "Add a tag",
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
                                   ),
@@ -997,24 +1041,29 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                               );
                             }).toList(),
                           ),
+                          ],
                         ],
-                      ],
-                    ),
+                      ),
+                    );
+                    },
                   ),
                   const SizedBox(height: 24),
                   // Ingredients filter
-                  _FilterSection(
-                    title: "Ingredients",
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
+                  Builder(
+                    builder: (context) {
+                      final localizations = AppLocalizations.of(context);
+                      return _FilterSection(
+                        title: localizations?.ingredients ?? "Ingredients",
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Expanded(
-                              child: TextField(
-                                controller: _ingredientController,
-                                decoration: InputDecoration(
-                                  hintText: "Add ingredient",
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: TextField(
+                                    controller: _ingredientController,
+                                    decoration: InputDecoration(
+                                      hintText: localizations?.addTag?.replaceAll("tag", "ingredient") ?? "Add ingredient",
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
                                   ),
@@ -1046,28 +1095,33 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                               );
                             }).toList(),
                           ),
+                          ],
                         ],
-                      ],
-                    ),
+                      ),
+                    );
+                    },
                   ),
                   const SizedBox(height: 24),
                   // Cooking time filter
-                  _FilterSection(
-                    title: "Cooking Time (minutes)",
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
+                  Builder(
+                    builder: (context) {
+                      final localizations = AppLocalizations.of(context);
+                      return _FilterSection(
+                        title: localizations?.cookingTimeMinutes ?? "Cooking Time (minutes)",
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Expanded(
-                              child: TextField(
-                                keyboardType: TextInputType.number,
-                                inputFormatters: [
-                                  FilteringTextInputFormatter.digitsOnly,
-                                ],
-                                decoration: InputDecoration(
-                                  labelText: "Min",
-                                  hintText: "0",
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: TextField(
+                                    keyboardType: TextInputType.number,
+                                    inputFormatters: [
+                                      FilteringTextInputFormatter.digitsOnly,
+                                    ],
+                                    decoration: InputDecoration(
+                                      labelText: localizations?.min ?? "Min",
+                                      hintText: "0",
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
                                   ),
@@ -1107,9 +1161,9 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                                 inputFormatters: [
                                   FilteringTextInputFormatter.digitsOnly,
                                 ],
-                                decoration: InputDecoration(
-                                  labelText: "Max",
-                                  hintText: "120",
+                                    decoration: InputDecoration(
+                                      labelText: localizations?.max ?? "Max",
+                                      hintText: "120",
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
                                   ),
@@ -1159,17 +1213,22 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                         ],
                       ],
                     ),
+                  );
+                    },
                   ),
                   const SizedBox(height: 24),
                   // Difficulty filter
-                  _FilterSection(
-                    title: "Difficulty",
-                    child: SegmentedButton<String?>(
-                      segments: const [
-                        ButtonSegment(value: "easy", label: Text("Easy")),
-                        ButtonSegment(value: "medium", label: Text("Medium")),
-                        ButtonSegment(value: "hard", label: Text("Hard")),
-                      ],
+                  Builder(
+                    builder: (context) {
+                      final localizations = AppLocalizations.of(context);
+                      return _FilterSection(
+                        title: localizations?.difficulty ?? "Difficulty",
+                        child: SegmentedButton<String?>(
+                          segments: [
+                            ButtonSegment(value: "easy", label: Text(localizations?.easy ?? "Easy")),
+                            ButtonSegment(value: "medium", label: Text(localizations?.medium ?? "Medium")),
+                            ButtonSegment(value: "hard", label: Text(localizations?.hard ?? "Hard")),
+                          ],
                       selected: {_currentFilters.difficulty},
                       onSelectionChanged: (Set<String?> newSelection) {
                         setState(() {
@@ -1180,6 +1239,8 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                       },
                       multiSelectionEnabled: false,
                     ),
+                  );
+                    },
                   ),
                 ],
               ),

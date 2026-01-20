@@ -3,6 +3,7 @@ import "package:cached_network_image/cached_network_image.dart";
 
 import "../api/api_client.dart";
 import "../auth/auth_controller.dart";
+import "../localization/app_localizations.dart";
 import "../screens/create_recipe_screen.dart";
 import "../screens/profile_screen.dart";
 import "../utils/error_utils.dart";
@@ -138,25 +139,28 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
   Future<void> _showDeleteConfirmation(BuildContext context, RecipeDetail recipe) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Delete Recipe"),
-        content: Text(
-          "Are you sure you want to delete \"${recipe.title}\"? This action cannot be undone.",
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text("Cancel"),
+      builder: (context) {
+        final localizations = AppLocalizations.of(context);
+        return AlertDialog(
+          title: Text(localizations?.deleteRecipe ?? "Delete Recipe"),
+          content: Text(
+            "${localizations?.areYouSureDeleteRecipe ?? "Are you sure you want to delete"} \"${recipe.title}\"? ${localizations?.thisActionCannotBeUndone ?? "This action cannot be undone."}",
           ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: TextButton.styleFrom(
-              foregroundColor: Theme.of(context).colorScheme.error,
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(localizations?.cancel ?? "Cancel"),
             ),
-            child: const Text("Delete"),
-          ),
-        ],
-      ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: TextButton.styleFrom(
+                foregroundColor: Theme.of(context).colorScheme.error,
+              ),
+              child: Text(localizations?.delete ?? "Delete"),
+            ),
+          ],
+        );
+      },
     );
 
     if (confirmed != true || !mounted) return;
@@ -166,8 +170,9 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
       await recipeApi.deleteRecipe(recipe.id);
 
       if (mounted) {
+        final localizations = AppLocalizations.of(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Recipe deleted successfully")),
+          SnackBar(content: Text(localizations?.recipeDeletedSuccessfully ?? "Recipe deleted successfully")),
         );
         Navigator.of(context).pop();
       }
@@ -212,7 +217,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
               ),
               child: IconButton(
                 icon: const Icon(Icons.edit, color: Colors.white),
-                tooltip: "Edit Recipe",
+                tooltip: AppLocalizations.of(context)?.editRecipe ?? "Edit Recipe",
                 onPressed: () async {
                   final result = await Navigator.of(context).push(
                     MaterialPageRoute(
@@ -237,7 +242,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
               ),
               child: IconButton(
                 icon: const Icon(Icons.delete_outline, color: Colors.white),
-                tooltip: "Delete Recipe",
+                tooltip: AppLocalizations.of(context)?.deleteRecipe ?? "Delete Recipe",
                 onPressed: () => _showDeleteConfirmation(context, r),
               ),
             ),
@@ -252,7 +257,12 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                   onRetry: () => c.load(),
                 )
               : r == null
-                  ? const Center(child: Text("Not found"))
+                  ? Builder(
+                      builder: (context) {
+                        final localizations = AppLocalizations.of(context);
+                        return Center(child: Text(localizations?.notFound ?? "Not found"));
+                      },
+                    )
                   : RefreshIndicator(
                       onRefresh: c.refresh,
                       child: CustomScrollView(
@@ -490,7 +500,12 @@ class _IngredientsCard extends StatelessWidget {
       child: ExpansionTile(
         initiallyExpanded: false,
         leading: const Text("🥕", style: TextStyle(fontSize: 24)),
-        title: Text("Ingredients (${ingredients.length})"),
+        title: Builder(
+          builder: (context) {
+            final localizations = AppLocalizations.of(context);
+            return Text("${localizations?.ingredients ?? "Ingredients"} (${ingredients.length})");
+          },
+        ),
         children: [
           const Divider(height: 1),
           ...ingredients.map((ing) {
@@ -519,7 +534,12 @@ class _StepsCard extends StatelessWidget {
       child: ExpansionTile(
         initiallyExpanded: false,
         leading: const Text("📋", style: TextStyle(fontSize: 24)),
-        title: Text("Steps (${steps.length})"),
+        title: Builder(
+          builder: (context) {
+            final localizations = AppLocalizations.of(context);
+            return Text("${localizations?.steps ?? "Steps"} (${steps.length})");
+          },
+        ),
         children: [
           const Divider(height: 1),
           ...steps.asMap().entries.map((entry) {
@@ -944,14 +964,24 @@ class _ErrorView extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       children: [
         const SizedBox(height: 80),
-        const Center(child: Text("Something went wrong")),
+        Builder(
+          builder: (context) {
+            final localizations = AppLocalizations.of(context);
+            return Center(child: Text(localizations?.somethingWentWrong ?? "Something went wrong"));
+          },
+        ),
         const SizedBox(height: 12),
         Text(error, textAlign: TextAlign.center),
         const SizedBox(height: 16),
         Center(
-          child: FilledButton(
-            onPressed: () async => onRetry(),
-            child: const Text("Retry"),
+          child: Builder(
+            builder: (context) {
+              final localizations = AppLocalizations.of(context);
+              return FilledButton(
+                onPressed: () async => onRetry(),
+                child: Text(localizations?.retry ?? "Retry"),
+              );
+            },
           ),
         ),
       ],

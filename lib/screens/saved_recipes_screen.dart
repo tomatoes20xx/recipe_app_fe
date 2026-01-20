@@ -7,6 +7,7 @@ import "../config.dart";
 import "../feed/feed_api.dart";
 import "../feed/feed_models.dart";
 import "../feed/saved_recipes_controller.dart";
+import "../localization/app_localizations.dart";
 import "../recipes/recipe_detail_screen.dart";
 import "../users/user_api.dart";
 
@@ -71,7 +72,12 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Saved Recipes"),
+        title: Builder(
+          builder: (context) {
+            final localizations = AppLocalizations.of(context);
+            return Text(localizations?.savedRecipes ?? "Saved Recipes");
+          },
+        ),
       ),
       body: RefreshIndicator(
         onRefresh: controller.refresh,
@@ -96,11 +102,16 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen> {
               color: Theme.of(context).colorScheme.error,
             ),
             const SizedBox(height: 16),
-            Text(
-              "Error",
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.error,
-                  ),
+            Builder(
+              builder: (context) {
+                final localizations = AppLocalizations.of(context);
+                return Text(
+                  localizations?.error ?? "Error",
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                );
+              },
             ),
             const SizedBox(height: 8),
             Text(
@@ -109,9 +120,14 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () => controller.loadInitial(),
-              child: const Text("Retry"),
+            Builder(
+              builder: (context) {
+                final localizations = AppLocalizations.of(context);
+                return ElevatedButton(
+                  onPressed: () => controller.loadInitial(),
+                  child: Text(localizations?.retry ?? "Retry"),
+                );
+              },
             ),
           ],
         ),
@@ -129,19 +145,29 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen> {
               color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
             ),
             const SizedBox(height: 16),
-            Text(
-              "No saved recipes",
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-                  ),
+            Builder(
+              builder: (context) {
+                final localizations = AppLocalizations.of(context);
+                return Text(
+                  localizations?.noSavedRecipes ?? "No saved recipes",
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                      ),
+                );
+              },
             ),
             const SizedBox(height: 8),
-            Text(
-              "Start bookmarking recipes to save them here",
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
-                  ),
-              textAlign: TextAlign.center,
+            Builder(
+              builder: (context) {
+                final localizations = AppLocalizations.of(context);
+                return Text(
+                  localizations?.startBookmarkingRecipes ?? "Start bookmarking recipes to save them here",
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                      ),
+                  textAlign: TextAlign.center,
+                );
+              },
             ),
           ],
         ),
