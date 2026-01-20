@@ -12,12 +12,12 @@ import "../feed/feed_controller.dart";
 import "../feed/feed_models.dart";
 import "../localization/app_localizations.dart";
 import "../localization/language_controller.dart";
-import "../localization/language_switcher.dart";
 import "../recipes/recipe_api.dart";
 import "../recipes/comments_bottom_sheet.dart";
 import "../recipes/recipe_detail_screen.dart";
 import "../theme/theme_controller.dart";
 import "../utils/ui_utils.dart";
+import "settings_screen.dart";
 import "../notifications/notification_api.dart";
 import "../notifications/notification_controller.dart";
 import "create_recipe_screen.dart";
@@ -341,9 +341,6 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                             ),
                           ),
-                        ),
-                        LanguageSwitcher(
-                          languageController: widget.languageController,
                         ),
                       ],
                     )
@@ -794,50 +791,11 @@ class _FeedScopeDrawer extends StatelessWidget {
           children: [
             Padding(
               padding: const EdgeInsets.all(16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    "Feed Scope",
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                  ),
-                  AnimatedBuilder(
-                    animation: themeController,
-                    builder: (context, _) {
-                      return Switch(
-                        value: themeController.isDarkMode,
-                        onChanged: (_) => themeController.toggleTheme(),
-                        thumbIcon: WidgetStateProperty.resolveWith<Icon?>((states) {
-                          return Icon(
-                            themeController.isDarkMode
-                                ? Icons.dark_mode_rounded
-                                : Icons.light_mode_rounded,
-                            size: 18,
-                            color: themeController.isDarkMode
-                                ? Colors.white
-                                : Colors.orange,
-                          );
-                        }),
-                        thumbColor: WidgetStateProperty.resolveWith<Color?>((states) {
-                          // Use a very light semi-transparent color instead of fully transparent
-                          // This prevents grainy rendering while keeping the icon visible
-                          return themeController.isDarkMode
-                              ? Colors.white.withOpacity(0.15)
-                              : Colors.black.withOpacity(0.08);
-                        }),
-                        trackOutlineColor: WidgetStateProperty.resolveWith<Color?>((states) {
-                          return Theme.of(context).colorScheme.outline.withOpacity(0.2);
-                        }),
-                        trackOutlineWidth: WidgetStateProperty.resolveWith<double?>((states) {
-                          return 1.0;
-                        }),
-                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      );
-                    },
-                  ),
-                ],
+              child: Text(
+                "Feed Scope",
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
               ),
             ),
             const Divider(),
@@ -966,6 +924,28 @@ class _FeedScopeDrawer extends StatelessWidget {
                         MaterialPageRoute(
                           builder: (_) => AnalyticsStatsScreen(
                             apiClient: apiClient,
+                            auth: auth,
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
+              const Divider(),
+              Builder(
+                builder: (context) {
+                  final localizations = AppLocalizations.of(context);
+                  return ListTile(
+                    leading: const Icon(Icons.settings_outlined),
+                    title: Text(localizations?.settings ?? "Settings"),
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => SettingsScreen(
+                            themeController: themeController,
+                            languageController: languageController,
                             auth: auth,
                           ),
                         ),

@@ -61,7 +61,7 @@ class MyApp extends StatelessWidget {
       animation: Listenable.merge([themeController, languageController]),
       builder: (context, _) {
         return MaterialApp(
-          title: "Recipe App",
+          title: "CookBook",
           debugShowCheckedModeBanner: false,
           locale: languageController.locale,
           supportedLocales: AppLocalizations.supportedLocales,

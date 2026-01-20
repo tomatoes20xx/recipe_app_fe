@@ -17,7 +17,7 @@ class AppLocalizations {
   ];
 
   // App title
-  String get appTitle => _localizedValues[locale.languageCode]?["appTitle"] ?? "Recipe App";
+  String get appTitle => _localizedValues[locale.languageCode]?["appTitle"] ?? "CookBook";
 
   // Auth screens
   String get login => _localizedValues[locale.languageCode]?["login"] ?? "Login";
@@ -201,9 +201,29 @@ class AppLocalizations {
   String get language => _localizedValues[locale.languageCode]?["language"] ?? "Language";
   String get changeAppLanguage => _localizedValues[locale.languageCode]?["changeAppLanguage"] ?? "Change app language";
 
+  // Settings
+  String get settings => _localizedValues[locale.languageCode]?["settings"] ?? "Settings";
+  String get appearance => _localizedValues[locale.languageCode]?["appearance"] ?? "Appearance";
+  String get themeMode => _localizedValues[locale.languageCode]?["themeMode"] ?? "Theme Mode";
+  String get system => _localizedValues[locale.languageCode]?["system"] ?? "System";
+  String get light => _localizedValues[locale.languageCode]?["light"] ?? "Light";
+  String get dark => _localizedValues[locale.languageCode]?["dark"] ?? "Dark";
+  String get account => _localizedValues[locale.languageCode]?["account"] ?? "Account";
+  String get about => _localizedValues[locale.languageCode]?["about"] ?? "About";
+  String get version => _localizedValues[locale.languageCode]?["version"] ?? "Version";
+  String get followSystemTheme => _localizedValues[locale.languageCode]?["followSystemTheme"] ?? "Follow system theme";
+  String get lightTheme => _localizedValues[locale.languageCode]?["lightTheme"] ?? "Light theme";
+  String get darkTheme => _localizedValues[locale.languageCode]?["darkTheme"] ?? "Dark theme";
+  String get englishLanguage => _localizedValues[locale.languageCode]?["englishLanguage"] ?? "English";
+  String get georgianLanguage => _localizedValues[locale.languageCode]?["georgianLanguage"] ?? "ქართული";
+  String get helpAndSupport => _localizedValues[locale.languageCode]?["helpAndSupport"] ?? "Help & Support";
+  String get termsAndPrivacy => _localizedValues[locale.languageCode]?["termsAndPrivacy"] ?? "Terms & Privacy";
+  String get termsOfService => _localizedValues[locale.languageCode]?["termsOfService"] ?? "Terms of Service";
+  String get privacyPolicy => _localizedValues[locale.languageCode]?["privacyPolicy"] ?? "Privacy Policy";
+
   static const Map<String, Map<String, String>> _localizedValues = {
     "en": {
-      "appTitle": "Recipe App",
+      "appTitle": "CookBook",
       "login": "Login",
       "signUp": "Sign up",
       "email": "Email",
@@ -362,9 +382,27 @@ class AppLocalizations {
       "notFound": "Not found",
       "somethingWentWrong": "Something went wrong",
       "steps": "Steps",
+      "settings": "Settings",
+      "appearance": "Appearance",
+      "themeMode": "Theme Mode",
+      "system": "System",
+      "light": "Light",
+      "dark": "Dark",
+      "account": "Account",
+      "about": "About",
+      "version": "Version",
+      "followSystemTheme": "Follow system theme",
+      "lightTheme": "Light theme",
+      "darkTheme": "Dark theme",
+      "englishLanguage": "English",
+      "georgianLanguage": "ქართული",
+      "helpAndSupport": "Help & Support",
+      "termsAndPrivacy": "Terms & Privacy",
+      "termsOfService": "Terms of Service",
+      "privacyPolicy": "Privacy Policy",
     },
     "ka": {
-      "appTitle": "რეცეპტების აპლიკაცია",
+      "appTitle": "CookBook",
       "login": "შესვლა",
       "signUp": "რეგისტრაცია",
       "email": "ელფოსტა",
@@ -523,6 +561,24 @@ class AppLocalizations {
       "notFound": "არ მოიძებნა",
       "somethingWentWrong": "რაღაც შეცდომა მოხდა",
       "steps": "ნაბიჯები",
+      "settings": "პარამეტრები",
+      "appearance": "გარეგნობა",
+      "themeMode": "თემის რეჟიმი",
+      "system": "სისტემა",
+      "light": "ნათელი",
+      "dark": "მუქი",
+      "account": "ანგარიში",
+      "about": "შესახებ",
+      "version": "ვერსია",
+      "followSystemTheme": "სისტემის თემის მიხედვით",
+      "lightTheme": "ნათელი თემა",
+      "darkTheme": "მუქი თემა",
+      "englishLanguage": "ინგლისური",
+      "georgianLanguage": "ქართული",
+      "helpAndSupport": "დახმარება და მხარდაჭერა",
+      "termsAndPrivacy": "წესები და კონფიდენციალურობა",
+      "termsOfService": "მომსახურების წესები",
+      "privacyPolicy": "კონფიდენციალურობის პოლიტიკა",
     },
   };
 }
