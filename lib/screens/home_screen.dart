@@ -17,6 +17,8 @@ import "../recipes/comments_bottom_sheet.dart";
 import "../recipes/recipe_detail_screen.dart";
 import "../theme/theme_controller.dart";
 import "../utils/ui_utils.dart";
+import "../widgets/engagement_stat_widget.dart";
+import "../widgets/empty_state_widget.dart";
 import "settings_screen.dart";
 import "../notifications/notification_api.dart";
 import "../notifications/notification_controller.dart";
@@ -1100,48 +1102,9 @@ class _FeedList extends StatelessWidget {
         physics: const AlwaysScrollableScrollPhysics(),
         children: [
           const SizedBox(height: 120),
-          Center(
-            child: Column(
-              children: [
-                Icon(
-                  Icons.error_outline_rounded,
-                  size: 48,
-                  color: Theme.of(context).colorScheme.error,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  "Error",
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(24),
-            child: Text(
-              feed.error!,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                  ),
-            ),
-          ),
-          Center(
-            child: Builder(
-              builder: (context) {
-                final localizations = AppLocalizations.of(context);
-                return FilledButton.icon(
-                  onPressed: feed.loadInitial,
-                  icon: const Icon(Icons.refresh_rounded),
-                  label: Text(localizations?.retry ?? "Retry"),
-                  style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  ),
-                );
-              },
-            ),
+          ErrorStateWidget(
+            message: feed.error!,
+            onRetry: feed.loadInitial,
           ),
         ],
       );
@@ -1286,48 +1249,9 @@ class _FullScreenFeedListState extends State<_FullScreenFeedList> {
     }
 
     if (widget.feed.error != null && widget.feed.items.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.error_outline_rounded,
-              size: 48,
-              color: Theme.of(context).colorScheme.error,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              "Error",
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-            ),
-            const SizedBox(height: 8),
-            Padding(
-              padding: const EdgeInsets.all(24),
-              child: Text(
-                widget.feed.error!,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                    ),
-              ),
-            ),
-            Builder(
-              builder: (context) {
-                final localizations = AppLocalizations.of(context);
-                return FilledButton.icon(
-                  onPressed: widget.feed.loadInitial,
-                  icon: const Icon(Icons.refresh_rounded),
-                  label: Text(localizations?.retry ?? "Retry"),
-                  style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  ),
-                );
-              },
-            ),
-          ],
-        ),
+      return ErrorStateWidget(
+        message: widget.feed.error!,
+        onRetry: widget.feed.loadInitial,
       );
     }
 
@@ -1556,9 +1480,9 @@ class _FeedCardState extends State<_FeedCard> {
                     const SizedBox(height: 16),
                     Row(
                       children: [
-                        _Stat(
+                        EngagementStatWidget(
                           icon: Icons.favorite_rounded,
-                          value: widget.item.likes.toString(),
+                          value: widget.item.likes,
                           active: widget.item.viewerHasLiked,
                           onTap: () async {
                             await widget.feed.toggleLike(widget.item.id);
@@ -1567,9 +1491,9 @@ class _FeedCardState extends State<_FeedCard> {
                           },
                         ),
                         const SizedBox(width: 16),
-                        _Stat(
+                        EngagementStatWidget(
                           icon: Icons.chat_bubble_outline_rounded,
-                          value: widget.item.comments.toString(),
+                          value: widget.item.comments,
                           onTap: () {
                             showCommentsBottomSheet(
                               context: context,
@@ -1587,9 +1511,9 @@ class _FeedCardState extends State<_FeedCard> {
                           },
                         ),
                         const SizedBox(width: 16),
-                        _Stat(
+                        EngagementStatWidget(
                           icon: Icons.bookmark_rounded,
-                          value: widget.item.bookmarks.toString(),
+                          value: widget.item.bookmarks,
                           active: widget.item.viewerHasBookmarked,
                           onTap: () async {
                             await widget.feed.toggleBookmark(widget.item.id);
@@ -2164,10 +2088,12 @@ class _FullScreenFeedCardState extends State<_FullScreenFeedCard> {
                     // Stats row
                     Row(
                       children: [
-                        _FullScreenStat(
+                        EngagementStatWidget(
                           icon: Icons.favorite_rounded,
-                          value: widget.item.likes.toString(),
+                          value: widget.item.likes,
                           active: widget.item.viewerHasLiked,
+                          size: EngagementStatSize.large,
+                          style: EngagementStatStyle.fullScreen,
                           onTap: () async {
                             await widget.feed.toggleLike(widget.item.id);
                             // Refresh notifications after like action (with small delay for backend processing)
@@ -2177,9 +2103,11 @@ class _FullScreenFeedCardState extends State<_FullScreenFeedCard> {
                           },
                         ),
                         const SizedBox(width: 20),
-                        _FullScreenStat(
+                        EngagementStatWidget(
                           icon: Icons.chat_bubble_outline_rounded,
-                          value: widget.item.comments.toString(),
+                          value: widget.item.comments,
+                          size: EngagementStatSize.large,
+                          style: EngagementStatStyle.fullScreen,
                           onTap: () {
                             showCommentsBottomSheet(
                               context: context,
@@ -2197,10 +2125,12 @@ class _FullScreenFeedCardState extends State<_FullScreenFeedCard> {
                           },
                         ),
                         const SizedBox(width: 20),
-                        _FullScreenStat(
+                        EngagementStatWidget(
                           icon: Icons.bookmark_rounded,
-                          value: widget.item.bookmarks.toString(),
+                          value: widget.item.bookmarks,
                           active: widget.item.viewerHasBookmarked,
+                          size: EngagementStatSize.large,
+                          style: EngagementStatStyle.fullScreen,
                           onTap: () async {
                             await widget.feed.toggleBookmark(widget.item.id);
                             // Refresh notifications after bookmark action (with small delay for backend processing)
@@ -2285,55 +2215,6 @@ class _FullScreenFeedCardState extends State<_FullScreenFeedCard> {
   }
 }
 
-class _FullScreenStat extends StatelessWidget {
-  const _FullScreenStat({
-    required this.icon,
-    required this.value,
-    this.active = false,
-    this.onTap,
-  });
-  final IconData icon;
-  final String value;
-  final bool active;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final child = Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
-          icon,
-          size: 24,
-          color: active ? Theme.of(context).colorScheme.primary : Colors.white,
-        ),
-        const SizedBox(width: 6),
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
-            shadows: [
-              Shadow(
-                offset: Offset(0, 1),
-                blurRadius: 2,
-                color: Colors.black54,
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-
-    if (onTap == null) return child;
-
-    return GestureDetector(
-      onTap: onTap,
-      child: child,
-    );
-  }
-}
 
 class _FeedCardSkeleton extends StatelessWidget {
   const _FeedCardSkeleton();
@@ -2466,57 +2347,3 @@ class _SkeletonBoxState extends State<_SkeletonBox> with SingleTickerProviderSta
   }
 }
 
-class _Stat extends StatelessWidget {
-  const _Stat({
-    required this.icon,
-    required this.value,
-    this.active = false,
-    this.onTap,
-  });
-
-  final IconData icon;
-  final String value;
-  final bool active;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final child = Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
-          icon,
-          size: 20,
-          color: active
-              ? Theme.of(context).colorScheme.primary
-              : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-        ),
-        const SizedBox(width: 6),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: active ? FontWeight.w600 : FontWeight.w500,
-            color: active
-                ? Theme.of(context).colorScheme.primary
-                : Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-          ),
-        ),
-      ],
-    );
-
-    if (onTap == null) return child;
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(10),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-          child: child,
-        ),
-      ),
-    );
-  }
-}

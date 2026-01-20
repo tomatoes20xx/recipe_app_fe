@@ -9,6 +9,7 @@ import "../recipes/recipe_detail_screen.dart";
 import "../screens/profile_screen.dart";
 import "../utils/error_utils.dart";
 import "../utils/ui_utils.dart";
+import "../widgets/empty_state_widget.dart";
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({
@@ -304,73 +305,24 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }
 
     if (controller.error != null && controller.items.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.error_outline,
-              size: 64,
-              color: Theme.of(context).colorScheme.error,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              "Error loading notifications",
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 8),
-            Padding(
-              padding: const EdgeInsets.all(24),
-              child: Text(
-                ErrorUtils.getUserFriendlyMessage(controller.error!),
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                    ),
-              ),
-            ),
-            Builder(
-              builder: (context) {
-                final localizations = AppLocalizations.of(context);
-                return ElevatedButton(
-                  onPressed: () => controller.loadInitial(unreadOnly: _showUnreadOnly),
-                  child: Text(localizations?.retry ?? "Retry"),
-                );
-              },
-            ),
-          ],
-        ),
+      return ErrorStateWidget(
+        message: ErrorUtils.getUserFriendlyMessage(controller.error!),
+        onRetry: () => controller.loadInitial(unreadOnly: _showUnreadOnly),
       );
     }
 
     if (controller.items.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              _showUnreadOnly ? Icons.mark_email_read : Icons.notifications_none,
-              size: 64,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              _showUnreadOnly ? "No unread notifications" : "No notifications",
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-                  ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              _showUnreadOnly
-                  ? "You're all caught up!"
-                  : "You'll see notifications here when someone interacts with your content",
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
-                  ),
-            ),
-          ],
+      return EmptyStateWidget(
+        icon: _showUnreadOnly ? Icons.mark_email_read : Icons.notifications_none,
+        title: _showUnreadOnly ? "No unread notifications" : "No notifications",
+        description: _showUnreadOnly
+            ? "You're all caught up!"
+            : "You'll see notifications here when someone interacts with your content",
+        titleStyle: Theme.of(context).textTheme.titleLarge?.copyWith(
+          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+        ),
+        descriptionStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
+          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
         ),
       );
     }

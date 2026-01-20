@@ -14,6 +14,7 @@ import "../localization/app_localizations.dart";
 import "../recipes/recipe_detail_screen.dart";
 import "../users/user_api.dart";
 import "../utils/ui_utils.dart";
+import "../widgets/empty_state_widget.dart";
 import "../users/user_models.dart";
 import "../users/user_recipes_controller.dart";
 import "../utils/error_utils.dart";
@@ -898,75 +899,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
       return Card(
         child: Padding(
           padding: const EdgeInsets.all(24),
-          child: Column(
-            children: [
-              Icon(
-                Icons.error_outline,
-                size: 48,
-                color: Theme.of(context).colorScheme.error,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                "Error loading recipes",
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.error,
-                    ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                controller.error!,
-                style: Theme.of(context).textTheme.bodySmall,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-              Builder(
-                builder: (context) {
-                  final localizations = AppLocalizations.of(context);
-                  return ElevatedButton(
-                    onPressed: () => controller.loadInitial(),
-                    child: Text(localizations?.retry ?? "Retry"),
-                  );
-                },
-              ),
-            ],
+          child: ErrorStateWidget(
+            message: controller.error!,
+            onRetry: () => controller.loadInitial(),
           ),
         ),
       );
     }
 
     if (controller.items.isEmpty) {
-      return Card(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Center(
-            child: Column(
-              children: [
-                Icon(
-                  Icons.restaurant_menu_outlined,
-                  size: 64,
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  "No recipes yet",
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-                      ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  widget.username == null
-                      ? "Create your first recipe!"
-                      : "This user hasn't created any recipes yet",
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
-                      ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
-          ),
-        ),
+      return EmptyStateWidget(
+        icon: Icons.restaurant_menu_outlined,
+        title: "No recipes yet",
+        description: widget.username == null
+            ? "Create your first recipe!"
+            : "This user hasn't created any recipes yet",
+        wrapInCard: true,
       );
     }
 

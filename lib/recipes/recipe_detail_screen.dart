@@ -7,6 +7,7 @@ import "../screens/create_recipe_screen.dart";
 import "../screens/profile_screen.dart";
 import "../utils/error_utils.dart";
 import "../utils/ui_utils.dart";
+import "../widgets/section_title_widget.dart";
 import "comments_bottom_sheet.dart";
 import "recipe_api.dart";
 import "recipe_detail_controller.dart";
@@ -375,7 +376,10 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                                   ],
                                   // Description
                                   if (r.description != null && r.description!.trim().isNotEmpty) ...[
-                                    const _SectionTitle("Description"),
+                                    const SectionTitleWidget(
+                                      text: "Description",
+                                      variant: SectionTitleVariant.regular,
+                                    ),
                                     const SizedBox(height: 8),
                                     Text(
                                       r.description!,
@@ -556,18 +560,6 @@ class _StepsCard extends StatelessWidget {
   }
 }
 
-class _SectionTitle extends StatelessWidget {
-  const _SectionTitle(this.text);
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      text,
-      style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-    );
-  }
-}
 
 
 class _EngagementMetricsOverlay extends StatelessWidget {

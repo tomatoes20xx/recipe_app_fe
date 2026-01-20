@@ -11,6 +11,7 @@ import "../recipes/recipe_api.dart";
 import "../recipes/recipe_detail_models.dart";
 import "../utils/error_utils.dart";
 import "../utils/ui_utils.dart";
+import "../widgets/section_title_widget.dart";
 
 class CreateRecipeScreen extends StatefulWidget {
   const CreateRecipeScreen({
@@ -703,7 +704,10 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
             const SizedBox(height: 16),
 
             // Images
-            _SectionTitle("Images"),
+            SectionTitleWidget(
+              text: "Images",
+              variant: SectionTitleVariant.large,
+            ),
             const SizedBox(height: 8),
             Wrap(
               spacing: 12,
@@ -826,7 +830,10 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _SectionTitle(localizations?.tags ?? "Tags"),
+                    SectionTitleWidget(
+                      text: localizations?.tags ?? "Tags",
+                      variant: SectionTitleVariant.large,
+                    ),
                     const SizedBox(height: 8),
                     Row(
                       children: [
@@ -885,7 +892,10 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        _SectionTitle("${localizations?.ingredients ?? "Ingredients"} *"),
+                        SectionTitleWidget(
+                          text: "${localizations?.ingredients ?? "Ingredients"} *",
+                          variant: SectionTitleVariant.large,
+                        ),
                         TextButton.icon(
                           onPressed: _addIngredient,
                           icon: const Icon(Icons.add_rounded),
@@ -918,7 +928,10 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        _SectionTitle("${localizations?.instruction ?? "Steps"} *"),
+                        SectionTitleWidget(
+                          text: "${localizations?.instruction ?? "Steps"} *",
+                          variant: SectionTitleVariant.large,
+                        ),
                         TextButton.icon(
                           onPressed: _addStep,
                           icon: const Icon(Icons.add_rounded),
@@ -1056,21 +1069,6 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
   }
 }
 
-class _SectionTitle extends StatelessWidget {
-  const _SectionTitle(this.text);
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      text,
-      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.w700,
-            letterSpacing: -0.3,
-          ),
-    );
-  }
-}
 
 class _IngredientItem {
   final TextEditingController quantityController = TextEditingController();

@@ -14,6 +14,7 @@ import "../users/user_models.dart";
 import "../users/user_search_controller.dart";
 import "../utils/error_utils.dart";
 import "../utils/ui_utils.dart";
+import "../widgets/empty_state_widget.dart";
 import "profile_screen.dart";
 
 class SearchScreen extends StatefulWidget {
@@ -329,41 +330,21 @@ class _SearchScreenState extends State<SearchScreen> {
 
   Widget _buildRecipeResults() {
     if (!recipeSearchController.filters.hasActiveFilters) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.search,
-              size: 64,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+      return Builder(
+        builder: (context) {
+          final localizations = AppLocalizations.of(context);
+          return EmptyStateWidget(
+            icon: Icons.search,
+            title: localizations?.searchRecipes?.replaceAll("...", "") ?? "Search for recipes",
+            description: localizations?.tryDifferentSearch ?? "Try searching for ingredients, tags, or recipe names",
+            titleStyle: Theme.of(context).textTheme.titleLarge?.copyWith(
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
             ),
-            const SizedBox(height: 16),
-            Builder(
-              builder: (context) {
-                final localizations = AppLocalizations.of(context);
-                return Text(
-                  localizations?.searchRecipes?.replaceAll("...", "") ?? "Search for recipes",
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-                      ),
-                );
-              },
+            descriptionStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
             ),
-            const SizedBox(height: 8),
-            Builder(
-              builder: (context) {
-                final localizations = AppLocalizations.of(context);
-                return Text(
-                  localizations?.tryDifferentSearch ?? "Try searching for ingredients, tags, or recipe names",
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
-                      ),
-                );
-              },
-            ),
-          ],
-        ),
+          );
+        },
       );
     }
 
@@ -372,71 +353,32 @@ class _SearchScreenState extends State<SearchScreen> {
     }
 
     if (recipeSearchController.error != null) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.error_outline,
-              size: 48,
-              color: Theme.of(context).colorScheme.error,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              ErrorUtils.getUserFriendlyMessage(recipeSearchController.error!),
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            Builder(
-              builder: (context) {
-                final localizations = AppLocalizations.of(context);
-                return ElevatedButton(
-                  onPressed: () {
-                    recipeSearchController.search(filters: recipeSearchController.filters);
-                  },
-                  child: Text(localizations?.retry ?? "Retry"),
-                );
-              },
-            ),
-          ],
-        ),
+      return ErrorStateWidget(
+        message: ErrorUtils.getUserFriendlyMessage(recipeSearchController.error!),
+        onRetry: () {
+          recipeSearchController.search(filters: recipeSearchController.filters);
+        },
       );
     }
 
     if (recipeSearchController.items.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.search_off,
-              size: 64,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+      return Builder(
+        builder: (context) {
+          final localizations = AppLocalizations.of(context);
+          return EmptyStateWidget(
+            icon: Icons.search_off,
+            title: _isRecipeSearch 
+              ? (localizations?.noRecipesFound ?? "No recipes found")
+              : (localizations?.noUsersFound ?? "No users found"),
+            description: "Try a different search query",
+            titleStyle: Theme.of(context).textTheme.titleLarge?.copyWith(
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
             ),
-            const SizedBox(height: 16),
-            Builder(
-              builder: (context) {
-                final localizations = AppLocalizations.of(context);
-                return Text(
-                  _isRecipeSearch 
-                    ? (localizations?.noRecipesFound ?? "No recipes found")
-                    : (localizations?.noUsersFound ?? "No users found"),
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-                      ),
-                );
-              },
+            descriptionStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
             ),
-            const SizedBox(height: 8),
-            Text(
-              "Try a different search query",
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
-                  ),
-            ),
-          ],
-        ),
+          );
+        },
       );
     }
 
@@ -529,30 +471,15 @@ class _SearchScreenState extends State<SearchScreen> {
 
   Widget _buildUserResults() {
     if (userSearchController.currentQuery == null || userSearchController.currentQuery!.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.people_outline,
-              size: 64,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              "Search for users",
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-                  ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              "Try searching by username",
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
-                  ),
-            ),
-          ],
+      return EmptyStateWidget(
+        icon: Icons.people_outline,
+        title: "Search for users",
+        description: "Try searching by username",
+        titleStyle: Theme.of(context).textTheme.titleLarge?.copyWith(
+          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+        ),
+        descriptionStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
+          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
         ),
       );
     }
@@ -562,56 +489,22 @@ class _SearchScreenState extends State<SearchScreen> {
     }
 
     if (userSearchController.error != null) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.error_outline,
-              size: 48,
-              color: Theme.of(context).colorScheme.error,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              ErrorUtils.getUserFriendlyMessage(userSearchController.error!),
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () => _performSearch(userSearchController.currentQuery!),
-              child: const Text("Retry"),
-            ),
-          ],
-        ),
+      return ErrorStateWidget(
+        message: ErrorUtils.getUserFriendlyMessage(userSearchController.error!),
+        onRetry: () => _performSearch(userSearchController.currentQuery!),
       );
     }
 
     if (userSearchController.items.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.search_off,
-              size: 64,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              "No users found",
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-                  ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              "Try a different search query",
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
-                  ),
-            ),
-          ],
+      return EmptyStateWidget(
+        icon: Icons.search_off,
+        title: "No users found",
+        description: "Try a different search query",
+        titleStyle: Theme.of(context).textTheme.titleLarge?.copyWith(
+          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+        ),
+        descriptionStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
+          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
         ),
       );
     }

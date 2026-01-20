@@ -6,6 +6,7 @@ import "../theme/theme_controller.dart";
 import "package:package_info_plus/package_info_plus.dart";
 import "theme_selection_screen.dart";
 import "language_selection_screen.dart";
+import "../widgets/section_title_widget.dart";
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({
@@ -64,7 +65,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
         padding: const EdgeInsets.all(16),
         children: [
           // Appearance Section
-          _SectionTitle(localizations?.appearance ?? "Appearance"),
+          SectionTitleWidget(
+            text: localizations?.appearance ?? "Appearance",
+            variant: SectionTitleVariant.settings,
+          ),
           const SizedBox(height: 8),
           Card(
             elevation: 0,
@@ -144,7 +148,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           // Account Section (only if logged in)
           if (widget.auth?.isLoggedIn == true) ...[
-            _SectionTitle(localizations?.account ?? "Account"),
+            SectionTitleWidget(
+              text: localizations?.account ?? "Account",
+              variant: SectionTitleVariant.settings,
+            ),
             const SizedBox(height: 8),
             Card(
               elevation: 0,
@@ -191,7 +198,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ],
 
           // About Section
-          _SectionTitle(localizations?.about ?? "About"),
+          SectionTitleWidget(
+            text: localizations?.about ?? "About",
+            variant: SectionTitleVariant.settings,
+          ),
           const SizedBox(height: 8),
           Card(
             elevation: 0,
@@ -311,22 +321,3 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 }
 
-class _SectionTitle extends StatelessWidget {
-  const _SectionTitle(this.text);
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 4),
-      child: Text(
-        text,
-        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-      ),
-    );
-  }
-}

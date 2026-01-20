@@ -10,6 +10,8 @@ import "../localization/app_localizations.dart";
 import "../recipes/recipe_detail_screen.dart";
 import "../users/user_api.dart";
 import "../utils/ui_utils.dart";
+import "../widgets/empty_state_widget.dart";
+import "../widgets/engagement_stat_widget.dart";
 
 class SavedRecipesScreen extends StatefulWidget {
   const SavedRecipesScreen({
@@ -92,85 +94,22 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen> {
     }
 
     if (controller.error != null && controller.items.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.error_outline,
-              size: 48,
-              color: Theme.of(context).colorScheme.error,
-            ),
-            const SizedBox(height: 16),
-            Builder(
-              builder: (context) {
-                final localizations = AppLocalizations.of(context);
-                return Text(
-                  localizations?.error ?? "Error",
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.error,
-                      ),
-                );
-              },
-            ),
-            const SizedBox(height: 8),
-            Text(
-              controller.error!,
-              style: Theme.of(context).textTheme.bodySmall,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            Builder(
-              builder: (context) {
-                final localizations = AppLocalizations.of(context);
-                return ElevatedButton(
-                  onPressed: () => controller.loadInitial(),
-                  child: Text(localizations?.retry ?? "Retry"),
-                );
-              },
-            ),
-          ],
-        ),
+      return ErrorStateWidget(
+        message: controller.error!,
+        onRetry: () => controller.loadInitial(),
       );
     }
 
     if (controller.items.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.bookmark_border,
-              size: 64,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
-            ),
-            const SizedBox(height: 16),
-            Builder(
-              builder: (context) {
-                final localizations = AppLocalizations.of(context);
-                return Text(
-                  localizations?.noSavedRecipes ?? "No saved recipes",
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-                      ),
-                );
-              },
-            ),
-            const SizedBox(height: 8),
-            Builder(
-              builder: (context) {
-                final localizations = AppLocalizations.of(context);
-                return Text(
-                  localizations?.startBookmarkingRecipes ?? "Start bookmarking recipes to save them here",
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
-                      ),
-                  textAlign: TextAlign.center,
-                );
-              },
-            ),
-          ],
-        ),
+      return Builder(
+        builder: (context) {
+          final localizations = AppLocalizations.of(context);
+          return EmptyStateWidget(
+            icon: Icons.bookmark_border,
+            title: localizations?.noSavedRecipes ?? "No saved recipes",
+            description: localizations?.startBookmarkingRecipes ?? "Start bookmarking recipes to save them here",
+          );
+        },
       );
     }
 
@@ -317,44 +256,20 @@ class _RecipeGridCard extends StatelessWidget {
                 // Stats row
                 Row(
                   children: [
-                    Icon(
-                      Icons.favorite,
-                      size: 12,
-                      color: Colors.white.withOpacity(0.9),
-                    ),
-                    const SizedBox(width: 2),
-                    Text(
-                      recipe.likes.toString(),
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.9),
-                        fontSize: 11,
-                        shadows: const [
-                          Shadow(
-                            color: Colors.black54,
-                            blurRadius: 4,
-                          ),
-                        ],
-                      ),
+                    EngagementStatWidget(
+                      icon: Icons.favorite,
+                      value: recipe.likes,
+                      size: EngagementStatSize.small,
+                      style: EngagementStatStyle.overlay,
+                      showShadows: true,
                     ),
                     const SizedBox(width: 8),
-                    Icon(
-                      Icons.chat_bubble,
-                      size: 12,
-                      color: Colors.white.withOpacity(0.9),
-                    ),
-                    const SizedBox(width: 2),
-                    Text(
-                      recipe.comments.toString(),
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.9),
-                        fontSize: 11,
-                        shadows: const [
-                          Shadow(
-                            color: Colors.black54,
-                            blurRadius: 4,
-                          ),
-                        ],
-                      ),
+                    EngagementStatWidget(
+                      icon: Icons.chat_bubble,
+                      value: recipe.comments,
+                      size: EngagementStatSize.small,
+                      style: EngagementStatStyle.overlay,
+                      showShadows: true,
                     ),
                   ],
                 ),

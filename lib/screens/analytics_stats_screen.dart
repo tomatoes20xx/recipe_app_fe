@@ -8,6 +8,8 @@ import "../auth/auth_controller.dart";
 import "../localization/app_localizations.dart";
 import "../recipes/recipe_detail_screen.dart";
 import "../utils/ui_utils.dart";
+import "../widgets/engagement_stat_widget.dart";
+import "../widgets/section_title_widget.dart";
 
 class AnalyticsStatsScreen extends StatefulWidget {
   const AnalyticsStatsScreen({
@@ -172,22 +174,30 @@ class _AnalyticsStatsScreenState extends State<AnalyticsStatsScreen> with Single
           padding: const EdgeInsets.all(16),
           children: [
             // Overall Statistics
-            _buildSectionTitle(localizations?.overallStatistics ?? "Overall Statistics"),
+            SectionTitleWidget(
+              text: localizations?.overallStatistics ?? "Overall Statistics",
+            ),
             const SizedBox(height: 12),
             _buildOverallStats(stats.overall),
             const SizedBox(height: 24),
             // Events by Type
-            _buildSectionTitle(localizations?.eventsByType ?? "Events by Type"),
+            SectionTitleWidget(
+              text: localizations?.eventsByType ?? "Events by Type",
+            ),
             const SizedBox(height: 12),
             _buildEventsByType(stats.byType),
             const SizedBox(height: 24),
             // Top Recipes
-            _buildSectionTitle(localizations?.topRecipesLast30Days ?? "Top Recipes (Last 30 Days)"),
+            SectionTitleWidget(
+              text: localizations?.topRecipesLast30Days ?? "Top Recipes (Last 30 Days)",
+            ),
             const SizedBox(height: 12),
             _buildTopRecipes(stats.topRecipes),
             const SizedBox(height: 24),
             // Daily Events Chart
-            _buildSectionTitle(localizations?.dailyEventsLast30Days ?? "Daily Events (Last 30 Days)"),
+            SectionTitleWidget(
+              text: localizations?.dailyEventsLast30Days ?? "Daily Events (Last 30 Days)",
+            ),
             const SizedBox(height: 12),
             _buildDailyEventsChart(stats.dailyEvents),
           ],
@@ -196,14 +206,6 @@ class _AnalyticsStatsScreenState extends State<AnalyticsStatsScreen> with Single
     );
   }
 
-  Widget _buildSectionTitle(String title) {
-    return Text(
-      title,
-      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
-    );
-  }
 
   Widget _buildOverallStats(OverallStats overall) {
     return Builder(
@@ -420,10 +422,26 @@ class _AnalyticsStatsScreenState extends State<AnalyticsStatsScreen> with Single
                     Wrap(
                       spacing: 12,
                       children: [
-                        _buildMiniStat(Icons.visibility, recipe.views),
-                        _buildMiniStat(Icons.favorite, recipe.likes),
-                        _buildMiniStat(Icons.bookmark, recipe.bookmarks),
-                        _buildMiniStat(Icons.comment, recipe.comments),
+                        EngagementStatWidget(
+                          icon: Icons.visibility,
+                          value: recipe.views,
+                          style: EngagementStatStyle.mini,
+                        ),
+                        EngagementStatWidget(
+                          icon: Icons.favorite,
+                          value: recipe.likes,
+                          style: EngagementStatStyle.mini,
+                        ),
+                        EngagementStatWidget(
+                          icon: Icons.bookmark,
+                          value: recipe.bookmarks,
+                          style: EngagementStatStyle.mini,
+                        ),
+                        EngagementStatWidget(
+                          icon: Icons.comment,
+                          value: recipe.comments,
+                          style: EngagementStatStyle.mini,
+                        ),
                       ],
                     ),
                   ],
@@ -460,19 +478,6 @@ class _AnalyticsStatsScreenState extends State<AnalyticsStatsScreen> with Single
     );
   }
 
-  Widget _buildMiniStat(IconData icon, int value) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 14, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
-        const SizedBox(width: 4),
-        Text(
-          value.toString(),
-          style: Theme.of(context).textTheme.bodySmall,
-        ),
-      ],
-    );
-  }
 
   Widget _buildDailyEventsChart(List<DailyEvent> dailyEvents) {
     if (dailyEvents.isEmpty) {

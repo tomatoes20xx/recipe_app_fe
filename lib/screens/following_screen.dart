@@ -9,6 +9,7 @@ import "../users/following_controller.dart";
 import "../users/user_api.dart";
 import "../users/user_models.dart";
 import "../utils/error_utils.dart";
+import "../widgets/empty_state_widget.dart";
 import "profile_screen.dart";
 
 class FollowingScreen extends StatefulWidget {
@@ -195,85 +196,22 @@ class _FollowingScreenState extends State<FollowingScreen> {
     }
 
     if (controller.error != null && controller.items.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.error_outline,
-              size: 48,
-              color: Theme.of(context).colorScheme.error,
-            ),
-            const SizedBox(height: 16),
-            Builder(
-              builder: (context) {
-                final localizations = AppLocalizations.of(context);
-                return Text(
-                  localizations?.error ?? "Error",
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.error,
-                      ),
-                );
-              },
-            ),
-            const SizedBox(height: 8),
-            Text(
-              controller.error!,
-              style: Theme.of(context).textTheme.bodySmall,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            Builder(
-              builder: (context) {
-                final localizations = AppLocalizations.of(context);
-                return ElevatedButton(
-                  onPressed: () => controller.loadInitial(),
-                  child: Text(localizations?.retry ?? "Retry"),
-                );
-              },
-            ),
-          ],
-        ),
+      return ErrorStateWidget(
+        message: controller.error!,
+        onRetry: () => controller.loadInitial(),
       );
     }
 
     if (controller.items.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.person_outline,
-              size: 64,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
-            ),
-            const SizedBox(height: 16),
-            Builder(
-              builder: (context) {
-                final localizations = AppLocalizations.of(context);
-                return Text(
-                  localizations?.notFollowingAnyone ?? "Not following anyone",
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-                      ),
-                );
-              },
-            ),
-            const SizedBox(height: 8),
-            Builder(
-              builder: (context) {
-                final localizations = AppLocalizations.of(context);
-                return Text(
-                  localizations?.thisUserIsntFollowingAnyoneYet ?? "This user isn't following anyone yet",
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
-                      ),
-                  textAlign: TextAlign.center,
-                );
-              },
-            ),
-          ],
-        ),
+      return Builder(
+        builder: (context) {
+          final localizations = AppLocalizations.of(context);
+          return EmptyStateWidget(
+            icon: Icons.person_outline,
+            title: localizations?.notFollowingAnyone ?? "Not following anyone",
+            description: localizations?.thisUserIsntFollowingAnyoneYet ?? "This user isn't following anyone yet",
+          );
+        },
       );
     }
 
