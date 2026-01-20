@@ -443,9 +443,12 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
           _uploadStatus = null;
           _isSubmitting = false;
         });
+        final localizations = AppLocalizations.of(context);
         ErrorUtils.showSuccess(
           context,
-          _isEditMode ? "Recipe updated successfully" : "Recipe created successfully",
+          _isEditMode 
+            ? (localizations?.recipeUpdatedSuccessfully ?? "Recipe updated successfully")
+            : (localizations?.recipeCreatedSuccessfully ?? "Recipe created successfully"),
         );
         Navigator.of(context).pop(true); // Return true to indicate success
       }
