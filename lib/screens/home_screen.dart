@@ -1623,8 +1623,8 @@ class _FeedCardState extends State<_FeedCard> {
                               topRight: Radius.circular(16),
                               bottomRight: Radius.circular(16),
                             ),
-                            child: CachedNetworkImageWidget(
-                              imageUrl: buildImageUrl(firstImage.url),
+                            child: RecipeImageWidget(
+                              imageUrl: firstImage.url,
                               width: 120,
                               height: _leftContentHeight ?? 120,
                               fit: BoxFit.cover,
@@ -1633,11 +1633,15 @@ class _FeedCardState extends State<_FeedCard> {
                         )
                       else
                         Positioned.fill(
-                          child: Center(
-                            child: Icon(
-                              Icons.image_outlined,
-                              size: 40,
-                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+                          child: ClipRRect(
+                            borderRadius: const BorderRadius.only(
+                              topRight: Radius.circular(16),
+                              bottomRight: Radius.circular(16),
+                            ),
+                            child: RecipeFallbackImage(
+                              width: 120,
+                              height: _leftContentHeight ?? 120,
+                              iconSize: 40,
                             ),
                           ),
                         ),
@@ -1978,8 +1982,8 @@ class _FullScreenFeedCardState extends State<_FullScreenFeedCard> {
                 },
                 itemBuilder: (context, index) {
                   final image = widget.item.images[index];
-                  return CachedNetworkImageWidget(
-                    imageUrl: buildImageUrl(image.url),
+                  return RecipeImageWidget(
+                    imageUrl: image.url,
                     width: double.infinity,
                     height: double.infinity,
                     fit: BoxFit.cover,
@@ -2003,15 +2007,10 @@ class _FullScreenFeedCardState extends State<_FullScreenFeedCard> {
                 widget.feed.updateCommentCount(widget.item.id, result);
               }
             },
-            child: Container(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-              child: Center(
-                child: Icon(
-                  Icons.image_outlined,
-                  size: 80,
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
-                ),
-              ),
+            child: const RecipeFallbackImage(
+              width: double.infinity,
+              height: double.infinity,
+              iconSize: 200, // Larger size for full screen
             ),
           ),
         // Gradient overlay at bottom

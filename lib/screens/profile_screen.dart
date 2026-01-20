@@ -13,6 +13,7 @@ import "../feed/feed_models.dart";
 import "../localization/app_localizations.dart";
 import "../recipes/recipe_detail_screen.dart";
 import "../users/user_api.dart";
+import "../utils/ui_utils.dart";
 import "../users/user_models.dart";
 import "../users/user_recipes_controller.dart";
 import "../utils/error_utils.dart";
@@ -1091,7 +1092,6 @@ class _RecipeGridCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final firstImage = recipe.images.isNotEmpty ? recipe.images.first : null;
-    final imageUrl = firstImage != null ? buildImageUrl(firstImage.url) : null;
 
     return GestureDetector(
       onTap: onTap,
@@ -1099,43 +1099,20 @@ class _RecipeGridCard extends StatelessWidget {
         fit: StackFit.expand,
         children: [
           // Background image
-          if (imageUrl != null)
-            CachedNetworkImage(
-              imageUrl: imageUrl,
+          if (firstImage != null)
+            RecipeImageWidget(
+              imageUrl: firstImage.url,
               width: double.infinity,
               height: double.infinity,
               fit: BoxFit.cover,
-              memCacheWidth: 400,
-              memCacheHeight: 400,
-              placeholder: (context, url) => Container(
-                color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                child: const Center(
-                  child: SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                ),
-              ),
-              errorWidget: (context, url, error) {
-                return Container(
-                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                  child: Icon(
-                    Icons.broken_image_rounded,
-                    size: 40,
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
-                  ),
-                );
-              },
+              cacheWidth: 400,
+              cacheHeight: 400,
             )
           else
-            Container(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-              child: Icon(
-                Icons.restaurant_menu_outlined,
-                size: 40,
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
-              ),
+            const RecipeFallbackImage(
+              width: double.infinity,
+              height: double.infinity,
+              iconSize: 40,
             ),
           // Gradient overlay for better text readability
           Positioned.fill(

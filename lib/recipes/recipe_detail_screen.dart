@@ -1,5 +1,4 @@
 import "package:flutter/material.dart";
-import "package:cached_network_image/cached_network_image.dart";
 
 import "../api/api_client.dart";
 import "../auth/auth_controller.dart";
@@ -774,45 +773,19 @@ class _ImageGalleryState extends State<_ImageGallery> {
                 final image = widget.images[index];
                 return GestureDetector(
                   onTap: () => _openImageViewer(index),
-                  child: CachedNetworkImage(
-                    imageUrl: buildImageUrl(image.url),
+                  child: RecipeImageWidget(
+                    imageUrl: image.url,
                     width: double.infinity,
                     fit: BoxFit.cover,
-                    fadeInDuration: const Duration(milliseconds: 200),
-                    placeholder: (context, url) => Container(
-                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                      child: Center(
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                        ),
-                      ),
-                    ),
-                    errorWidget: (context, url, error) {
-                      return Container(
-                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                        child: Center(
-                          child: Icon(
-                            Icons.broken_image_rounded,
-                            size: 48,
-                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
-                          ),
-                        ),
-                      );
-                    },
                   ),
                 );
               },
             )
           else
-            Container(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-              child: Center(
-                child: Icon(
-                  Icons.image_outlined,
-                  size: 80,
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
-                ),
-              ),
+            const RecipeFallbackImage(
+              width: double.infinity,
+              height: double.infinity,
+              iconSize: 200, // Larger size for full screen
             ),
           // Engagement metrics overlay (right, vertically centered)
           Positioned(
@@ -925,24 +898,10 @@ class _FullScreenImageViewerState extends State<_FullScreenImageViewer> {
             minScale: 0.5,
             maxScale: 4.0,
             child: Center(
-              child: CachedNetworkImage(
-                imageUrl: buildImageUrl(image.url),
+              child: RecipeImageWidget(
+                imageUrl: image.url,
                 fit: BoxFit.contain,
-                fadeInDuration: const Duration(milliseconds: 200),
-                placeholder: (context, url) => Center(
-                  child: CircularProgressIndicator(
-                    valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
-                  ),
-                ),
-                errorWidget: (context, url, error) {
-                  return Center(
-                    child: Icon(
-                      Icons.broken_image_rounded,
-                      size: 64,
-                      color: Colors.white.withOpacity(0.5),
-                    ),
-                  );
-                },
+                placeholderSize: 32,
               ),
             ),
           );
