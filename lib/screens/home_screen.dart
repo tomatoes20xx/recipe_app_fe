@@ -20,6 +20,7 @@ import "../utils/ui_utils.dart";
 import "../widgets/engagement_stat_widget.dart";
 import "../widgets/empty_state_widget.dart";
 import "../widgets/native_ad_card_widget.dart";
+import "../widgets/native_ad_manager.dart";
 import "settings_screen.dart";
 import "../notifications/notification_api.dart";
 import "../notifications/notification_controller.dart";
@@ -426,7 +427,11 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           Expanded(
             child: RefreshIndicator(
-              onRefresh: feed.refresh,
+              onRefresh: () async {
+                // Refresh feed and ads
+                await feed.refresh();
+                NativeAdManager().refreshAllAds();
+              },
               color: Theme.of(context).colorScheme.primary,
               child: _isFullScreenView
                   ? NotificationListener<ScrollUpdateNotification>(
@@ -1142,7 +1147,7 @@ class _FeedList extends StatelessWidget {
       controller: controller,
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.only(bottom: 16),
-      cacheExtent: 500, // Cache 500px worth of items off-screen for smoother scrolling
+      cacheExtent: 100, // Further reduced to minimize simultaneous ad loading
       itemCount: totalItemCount,
       itemBuilder: (context, i) {
         // Footer
@@ -1188,7 +1193,7 @@ class _FeedList extends StatelessWidget {
               top: i == 0 ? 16 : 8,
               bottom: 8,
             ),
-            child: const NativeAdCardWidget(),
+            child: NativeAdCardWidget(adIndex: i),
           );
         }
 
@@ -1355,7 +1360,7 @@ class _FullScreenFeedListState extends State<_FullScreenFeedList> {
 
         // Check if this index should show an ad
         if (_isAdIndex(index)) {
-          return const NativeAdFullScreenWidget();
+          return NativeAdFullScreenWidget(adIndex: index);
         }
 
         // Get the actual recipe index

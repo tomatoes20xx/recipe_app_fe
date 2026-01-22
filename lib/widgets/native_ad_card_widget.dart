@@ -1,13 +1,18 @@
 import "package:flutter/material.dart";
 import "package:google_mobile_ads/google_mobile_ads.dart";
+import "native_ad_manager.dart";
 
 /// Native ad card widget that matches recipe card design
 /// For regular card feed view
 class NativeAdCardWidget extends StatefulWidget {
   const NativeAdCardWidget({
     super.key,
+    required this.adIndex,
     this.adUnitId,
   });
+
+  /// Ad index position in the feed (used for caching)
+  final int adIndex;
 
   /// Ad Unit ID - defaults to production native ad unit
   final String? adUnitId;
@@ -18,83 +23,84 @@ class NativeAdCardWidget extends StatefulWidget {
 
 class _NativeAdCardWidgetState extends State<NativeAdCardWidget> {
   NativeAd? _nativeAd;
-  bool _isAdLoaded = false;
+  ValueNotifier<bool>? _loadedNotifier;
+  bool _adInitialized = false;
+  final _adManager = NativeAdManager();
 
   @override
-  void initState() {
-    super.initState();
-    _loadAd();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Load ad after we have access to context/theme
+    // Use a small delay to avoid loading during initial build phase
+    if (!_adInitialized) {
+      _adInitialized = true;
+      // Defer loading to next frame to avoid blocking initial render
+      Future.delayed(const Duration(milliseconds: 50), () {
+        if (mounted) {
+          _loadAd();
+        }
+      });
+    }
   }
 
   void _loadAd() {
-    // Use production ad unit ID or the provided one
-    // IMPORTANT: You need to create a NATIVE AD UNIT in AdMob (not banner)
-    // The current ID is a banner ad unit - replace with your native ad unit ID
-    // To create: AdMob Console > Apps > Ad units > Create ad unit > Native
-    final adUnitId = widget.adUnitId ?? "ca-app-pub-5283215754482121/4569843853";
-    
-    _nativeAd = NativeAd(
-      adUnitId: adUnitId,
-      request: const AdRequest(),
-      listener: NativeAdListener(
-        onAdLoaded: (_) {
-          setState(() {
-            _isAdLoaded = true;
-          });
-        },
-        onAdFailedToLoad: (ad, error) {
-          ad.dispose();
-          debugPrint("Native ad failed to load: $error");
-        },
-        onAdClicked: (_) {
-          debugPrint("Native ad clicked");
-        },
-        onAdImpression: (_) {
-          debugPrint("Native ad impression");
-        },
-      ),
-      nativeTemplateStyle: NativeTemplateStyle(
-        templateType: TemplateType.medium,
-        mainBackgroundColor: Theme.of(context).colorScheme.surface,
-        cornerRadius: 16,
-        callToActionTextStyle: NativeTemplateTextStyle(
-          textColor: Colors.white,
-          style: NativeTemplateFontStyle.bold,
-        ),
-        primaryTextStyle: NativeTemplateTextStyle(
-          textColor: Theme.of(context).colorScheme.onSurface,
-          style: NativeTemplateFontStyle.bold,
-        ),
-        secondaryTextStyle: NativeTemplateTextStyle(
-          textColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-        ),
-        tertiaryTextStyle: NativeTemplateTextStyle(
-          textColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-        ),
-      ),
-    );
+    // Use post-frame callback to avoid loading during build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      
+      // Get cached ad or create new one
+      final result = _adManager.getCardAd(widget.adIndex, context, widget.adUnitId);
+      _nativeAd = result.ad;
+      _loadedNotifier = result.loadedNotifier;
+      
+      // Listen to loaded state changes
+      _loadedNotifier?.removeListener(_onLoadedStateChanged); // Remove old listener if any
+      _loadedNotifier?.addListener(_onLoadedStateChanged);
+      
+      // Check initial state
+      if (_loadedNotifier?.value == true && mounted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            setState(() {});
+          }
+        });
+      }
+    });
+  }
 
-    _nativeAd?.load();
+  void _onLoadedStateChanged() {
+    if (mounted) {
+      // Use post-frame callback to avoid setState during build
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {});
+        }
+      });
+    }
   }
 
   @override
   void dispose() {
-    _nativeAd?.dispose();
+    _loadedNotifier?.removeListener(_onLoadedStateChanged);
+    // Don't dispose the ad - let the manager handle it
+    // This allows the ad to be reused when switching views
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    if (!_isAdLoaded || _nativeAd == null) {
+    if (_nativeAd == null || _loadedNotifier?.value != true) {
       return const SizedBox.shrink();
     }
 
-    return Card(
+    // Use RepaintBoundary to isolate ad rendering and prevent unnecessary repaints
+    return RepaintBoundary(
+      child: Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
         side: BorderSide(
-          color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
+          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
           width: 1,
         ),
       ),
@@ -103,32 +109,39 @@ class _NativeAdCardWidgetState extends State<NativeAdCardWidget> {
           borderRadius: BorderRadius.circular(16),
           color: Theme.of(context).colorScheme.surface,
         ),
-        child: Stack(
-          children: [
-            // Native ad content (template handles the UI)
-            AdWidget(ad: _nativeAd!),
-            // "Ad" tag in top-right corner
-            Positioned(
-              top: 8,
-              right: 8,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primary.withOpacity(0.9),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  "Ad",
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                    color: Theme.of(context).colorScheme.onPrimary,
+        child: SizedBox(
+          height: 200,
+          child: Stack(
+            children: [
+              // Native ad content (template handles the UI)
+              // Constrain the ad widget to prevent infinite height
+              Positioned.fill(
+                child: AdWidget(ad: _nativeAd!),
+              ),
+              // "Ad" tag in top-right corner
+              Positioned(
+                top: 8,
+                right: 8,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.9),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    "Ad",
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: Theme.of(context).colorScheme.onPrimary,
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
+      ),
       ),
     );
   }
@@ -138,8 +151,12 @@ class _NativeAdCardWidgetState extends State<NativeAdCardWidget> {
 class NativeAdFullScreenWidget extends StatefulWidget {
   const NativeAdFullScreenWidget({
     super.key,
+    required this.adIndex,
     this.adUnitId,
   });
+
+  /// Ad index position in the feed (used for caching)
+  final int adIndex;
 
   /// Ad Unit ID - defaults to production native ad unit
   final String? adUnitId;
@@ -150,76 +167,79 @@ class NativeAdFullScreenWidget extends StatefulWidget {
 
 class _NativeAdFullScreenWidgetState extends State<NativeAdFullScreenWidget> {
   NativeAd? _nativeAd;
-  bool _isAdLoaded = false;
+  ValueNotifier<bool>? _loadedNotifier;
+  bool _adInitialized = false;
+  final _adManager = NativeAdManager();
 
   @override
-  void initState() {
-    super.initState();
-    _loadAd();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Load ad after we have access to context/theme
+    // Use a small delay to avoid loading during initial build phase
+    if (!_adInitialized) {
+      _adInitialized = true;
+      // Defer loading to next frame to avoid blocking initial render
+      Future.delayed(const Duration(milliseconds: 50), () {
+        if (mounted) {
+          _loadAd();
+        }
+      });
+    }
   }
 
   void _loadAd() {
-    // IMPORTANT: You need to create a NATIVE AD UNIT in AdMob (not banner)
-    // The current ID is a banner ad unit - replace with your native ad unit ID
-    final adUnitId = widget.adUnitId ?? "ca-app-pub-5283215754482121/4569843853";
-    
-    _nativeAd = NativeAd(
-      adUnitId: adUnitId,
-      request: const AdRequest(),
-      listener: NativeAdListener(
-        onAdLoaded: (_) {
-          setState(() {
-            _isAdLoaded = true;
-          });
-        },
-        onAdFailedToLoad: (ad, error) {
-          ad.dispose();
-          debugPrint("Native ad failed to load: $error");
-        },
-        onAdClicked: (_) {
-          debugPrint("Native ad clicked");
-        },
-        onAdImpression: (_) {
-          debugPrint("Native ad impression");
-        },
-      ),
-      nativeTemplateStyle: NativeTemplateStyle(
-        templateType: TemplateType.medium,
-        mainBackgroundColor: Colors.transparent,
-        cornerRadius: 16,
-        callToActionTextStyle: NativeTemplateTextStyle(
-          textColor: Colors.white,
-          style: NativeTemplateFontStyle.bold,
-        ),
-        primaryTextStyle: NativeTemplateTextStyle(
-          textColor: Colors.white,
-          style: NativeTemplateFontStyle.bold,
-        ),
-        secondaryTextStyle: NativeTemplateTextStyle(
-          textColor: Colors.white.withOpacity(0.9),
-        ),
-        tertiaryTextStyle: NativeTemplateTextStyle(
-          textColor: Colors.white.withOpacity(0.8),
-        ),
-      ),
-    );
+    // Use post-frame callback to avoid loading during build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      
+      // Get cached ad or create new one
+      final result = _adManager.getFullscreenAd(widget.adIndex, context, widget.adUnitId);
+      _nativeAd = result.ad;
+      _loadedNotifier = result.loadedNotifier;
+      
+      // Listen to loaded state changes
+      _loadedNotifier?.removeListener(_onLoadedStateChanged); // Remove old listener if any
+      _loadedNotifier?.addListener(_onLoadedStateChanged);
+      
+      // Check initial state
+      if (_loadedNotifier?.value == true && mounted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            setState(() {});
+          }
+        });
+      }
+    });
+  }
 
-    _nativeAd?.load();
+  void _onLoadedStateChanged() {
+    if (mounted) {
+      // Use post-frame callback to avoid setState during build
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {});
+        }
+      });
+    }
   }
 
   @override
   void dispose() {
-    _nativeAd?.dispose();
+    _loadedNotifier?.removeListener(_onLoadedStateChanged);
+    // Don't dispose the ad - let the manager handle it
+    // This allows the ad to be reused when switching views
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    if (!_isAdLoaded || _nativeAd == null) {
+    if (_nativeAd == null || _loadedNotifier?.value != true) {
       return const SizedBox.shrink();
     }
 
-    return Stack(
+    // Use RepaintBoundary to isolate ad rendering and prevent unnecessary repaints
+    return RepaintBoundary(
+      child: Stack(
       fit: StackFit.expand,
       children: [
         // Native ad content with gradient background
@@ -244,7 +264,7 @@ class _NativeAdFullScreenWidgetState extends State<NativeAdFullScreenWidget> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary.withOpacity(0.9),
+                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.9),
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Text(
@@ -259,6 +279,7 @@ class _NativeAdFullScreenWidgetState extends State<NativeAdFullScreenWidget> {
           ),
         ),
       ],
+      ),
     );
   }
 }

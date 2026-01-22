@@ -95,6 +95,32 @@ class AuthController extends ChangeNotifier {
     }
   }
 
+  Future<void> verifyEmail(String token) async {
+    isLoading = true;
+    notifyListeners();
+
+    try {
+      await authApi.verifyEmail(token);
+      // Refresh user data to get updated emailVerified status
+      me = await authApi.me();
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> resendVerificationEmail() async {
+    isLoading = true;
+    notifyListeners();
+
+    try {
+      await authApi.resendVerificationEmail();
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
+  }
+
   Future<void> logout() async {
     token = null;
     me = null;

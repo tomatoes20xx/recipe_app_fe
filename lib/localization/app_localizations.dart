@@ -289,6 +289,17 @@ class AppLocalizations {
   String get termsSummary => _localizedValues[locale.languageCode]?["termsSummary"] ?? "Key points: You are responsible for your account, you retain ownership of your content, and you agree not to use the service for prohibited purposes.";
   String get privacySummary => _localizedValues[locale.languageCode]?["privacySummary"] ?? "We collect information you provide, usage data, and device information. We use this to provide and improve our services, personalize your experience, and ensure security. We do not sell your personal information.";
   String get privacyRightsSummary => _localizedValues[locale.languageCode]?["privacyRightsSummary"] ?? "You have the right to access, correct, delete, and export your data. You can opt-out of certain data processing.";
+  
+  // Email Verification
+  String get verifyEmail => _localizedValues[locale.languageCode]?["verifyEmail"] ?? "Verify Email";
+  String get verifyEmailTitle => _localizedValues[locale.languageCode]?["verifyEmailTitle"] ?? "Verify Your Email";
+  String verifyEmailMessage(String email) => _localizedValues[locale.languageCode]?["verifyEmailMessage"]?.replaceAll("{email}", email) ?? "We've sent a verification code to $email. Please enter it below to verify your email address.";
+  String get verificationCode => _localizedValues[locale.languageCode]?["verificationCode"] ?? "Verification Code";
+  String get enterVerificationCode => _localizedValues[locale.languageCode]?["enterVerificationCode"] ?? "Enter the code from your email";
+  String get verify => _localizedValues[locale.languageCode]?["verify"] ?? "Verify";
+  String get resendVerificationCode => _localizedValues[locale.languageCode]?["resendVerificationCode"] ?? "Resend Code";
+  String get verificationEmailSent => _localizedValues[locale.languageCode]?["verificationEmailSent"] ?? "Verification email sent!";
+  String get pleaseEnterVerificationCode => _localizedValues[locale.languageCode]?["pleaseEnterVerificationCode"] ?? "Please enter the verification code";
 
   static const Map<String, Map<String, String>> _localizedValues = {
     "en": {
@@ -511,6 +522,15 @@ class AppLocalizations {
       "termsSummary": "Key points: You are responsible for your account, you retain ownership of your content, and you agree not to use the service for prohibited purposes.",
       "privacySummary": "We collect information you provide, usage data, and device information. We use this to provide and improve our services, personalize your experience, and ensure security. We do not sell your personal information.",
       "privacyRightsSummary": "You have the right to access, correct, delete, and export your data. You can opt-out of certain data processing.",
+      "verifyEmail": "Verify Email",
+      "verifyEmailTitle": "Verify Your Email",
+      "verifyEmailMessage": "We've sent a verification code to {email}. Please enter it below to verify your email address.",
+      "verificationCode": "Verification Code",
+      "enterVerificationCode": "Enter the code from your email",
+      "verify": "Verify",
+      "resendVerificationCode": "Resend Code",
+      "verificationEmailSent": "Verification email sent!",
+      "pleaseEnterVerificationCode": "Please enter the verification code",
       "dismiss": "Dismiss",
       "unableToConnect": "Unable to connect to the server. Please check your internet connection and try again.",
       "requestTimedOut": "Request timed out. Please try again.",
@@ -755,6 +775,15 @@ class AppLocalizations {
       "termsSummary": "მთავარი პუნქტები: თქვენ პასუხისმგებელი ხართ თქვენი ანგარიშისთვის, თქვენ რჩებით თქვენი კონტენტის მფლობელად და თქვენ ეთანხმებით, რომ არ გამოიყენებთ სერვისს აკრძალული მიზნებისთვის.",
       "privacySummary": "ჩვენ ვაგროვებთ თქვენ მიერ მოწოდებულ ინფორმაციას, გამოყენების მონაცემებსა და მოწყობილობის ინფორმაციას. ჩვენ ვიყენებთ ამას ჩვენი სერვისების მიწოდებისა და გაუმჯობესებისთვის, თქვენი გამოცდილების პერსონალიზაციისა და უსაფრთხოების უზრუნველსაყოფად. ჩვენ არ ვყიდით თქვენს პირად ინფორმაციას.",
       "privacyRightsSummary": "თქვენ გაქვთ უფლება წვდომა, შესწორება, წაშლა და ექსპორტი თქვენი მონაცემების. თქვენ შეგიძლიათ უარი თქვათ ზოგიერთი მონაცემების დამუშავებიდან.",
+      "verifyEmail": "ელფოსტის დადასტურება",
+      "verifyEmailTitle": "დაადასტურეთ თქვენი ელფოსტა",
+      "verifyEmailMessage": "ჩვენ გავაგზავნეთ დადასტურების კოდი {email}-ზე. გთხოვთ შეიყვანოთ იგი ქვემოთ თქვენი ელფოსტის მისამართის დასადასტურებლად.",
+      "verificationCode": "დადასტურების კოდი",
+      "enterVerificationCode": "შეიყვანეთ კოდი თქვენი ელფოსტიდან",
+      "verify": "დადასტურება",
+      "resendVerificationCode": "კოდის ხელახლა გაგზავნა",
+      "verificationEmailSent": "დადასტურების ელფოსტა გაიგზავნა!",
+      "pleaseEnterVerificationCode": "გთხოვთ შეიყვანოთ დადასტურების კოდი",
       "dismiss": "დახურვა",
       "unableToConnect": "სერვერთან დაკავშირება ვერ მოხერხდა. გთხოვთ შეამოწმოთ ინტერნეტ-კავშირი და სცადოთ ხელახლა.",
       "requestTimedOut": "მოთხოვნის დრო ამოიწურა. გთხოვთ სცადოთ ხელახლა.",

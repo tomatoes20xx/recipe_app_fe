@@ -5,6 +5,7 @@ import "../api/api_client.dart";
 import "../auth/auth_controller.dart";
 import "../localization/app_localizations.dart";
 import "terms_and_privacy_screen.dart";
+import "email_verification_screen.dart";
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key, required this.auth});
@@ -42,7 +43,22 @@ class _SignupScreenState extends State<SignupScreen> {
         displayName: displayNameCtrl.text.trim().isEmpty ? null : displayNameCtrl.text.trim(),
       );
 
-      if (mounted) Navigator.of(context).pop(); // go back to login gate -> becomes logged in
+      // Navigate to email verification screen
+      if (mounted) {
+        final verified = await Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => EmailVerificationScreen(
+              auth: widget.auth,
+              email: emailCtrl.text.trim(),
+            ),
+          ),
+        );
+
+        // If email was verified, go back to login (user will be logged in)
+        if (verified == true && mounted) {
+          Navigator.of(context).pop();
+        }
+      }
     } on ApiException catch (e) {
       setState(() => error = e.message);
     } catch (_) {

@@ -28,6 +28,30 @@ class AuthApi {
     return token;
   }
 
+  /// Verify email with verification token
+  Future<void> verifyEmail(String token) async {
+    await api.post("/auth/verify-email", body: {
+      "token": token,
+    });
+  }
+
+  /// Resend verification email
+  Future<void> resendVerificationEmail() async {
+    await api.post("/auth/resend-verification", auth: true);
+  }
+
+  /// Check if current user's email is verified
+  Future<bool> isEmailVerified() async {
+    try {
+      final data = await api.get("/me", auth: true);
+      if (data == null) return false;
+      final user = Map<String, dynamic>.from(data as Map);
+      return user["emailVerified"] == true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   Future<String> login({
     required String email,
     required String password,
