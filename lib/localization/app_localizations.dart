@@ -247,6 +247,48 @@ class AppLocalizations {
   String get termsAndPrivacy => _localizedValues[locale.languageCode]?["termsAndPrivacy"] ?? "Terms & Privacy";
   String get termsOfService => _localizedValues[locale.languageCode]?["termsOfService"] ?? "Terms of Service";
   String get privacyPolicy => _localizedValues[locale.languageCode]?["privacyPolicy"] ?? "Privacy Policy";
+  
+  // Terms of Service sections
+  String get termsAcceptanceTitle => _localizedValues[locale.languageCode]?["termsAcceptanceTitle"] ?? "1. Acceptance of Terms";
+  String get termsAcceptanceContent => _localizedValues[locale.languageCode]?["termsAcceptanceContent"] ?? "By accessing and using CookBook, you accept and agree to be bound by the terms and provision of this agreement.";
+  String get termsLicenseTitle => _localizedValues[locale.languageCode]?["termsLicenseTitle"] ?? "2. Use License";
+  String get termsLicenseContent => _localizedValues[locale.languageCode]?["termsLicenseContent"] ?? "Permission is granted to temporarily use CookBook for personal, non-commercial purposes. This license does not include:\n\n• Reselling or sublicensing the service\n• Using the service for any commercial purpose\n• Removing any copyright or proprietary notations";
+  String get termsAccountsTitle => _localizedValues[locale.languageCode]?["termsAccountsTitle"] ?? "3. User Accounts";
+  String get termsAccountsContent => _localizedValues[locale.languageCode]?["termsAccountsContent"] ?? "You are responsible for maintaining the confidentiality of your account credentials. You agree to:\n\n• Provide accurate and complete information\n• Keep your password secure\n• Notify us immediately of any unauthorized use";
+  String get termsContentTitle => _localizedValues[locale.languageCode]?["termsContentTitle"] ?? "4. User Content";
+  String get termsContentContent => _localizedValues[locale.languageCode]?["termsContentContent"] ?? "You retain ownership of content you post on CookBook. By posting content, you grant us a license to use, modify, and display your content on the platform.";
+  String get termsProhibitedTitle => _localizedValues[locale.languageCode]?["termsProhibitedTitle"] ?? "5. Prohibited Uses";
+  String get termsProhibitedContent => _localizedValues[locale.languageCode]?["termsProhibitedContent"] ?? "You may not use CookBook to:\n\n• Violate any laws or regulations\n• Infringe on intellectual property rights\n• Post harmful, offensive, or illegal content\n• Spam or harass other users";
+  String get termsTerminationTitle => _localizedValues[locale.languageCode]?["termsTerminationTitle"] ?? "6. Termination";
+  String get termsTerminationContent => _localizedValues[locale.languageCode]?["termsTerminationContent"] ?? "We reserve the right to terminate or suspend your account at any time for violations of these terms.";
+  String get termsChangesTitle => _localizedValues[locale.languageCode]?["termsChangesTitle"] ?? "7. Changes to Terms";
+  String get termsChangesContent => _localizedValues[locale.languageCode]?["termsChangesContent"] ?? "We reserve the right to modify these terms at any time. Continued use of the service after changes constitutes acceptance of the new terms.";
+  
+  // Privacy Policy sections
+  String get privacyCollectTitle => _localizedValues[locale.languageCode]?["privacyCollectTitle"] ?? "1. Information We Collect";
+  String get privacyCollectContent => _localizedValues[locale.languageCode]?["privacyCollectContent"] ?? "We collect information that you provide directly to us, including:\n\n• Account information (username, email, display name)\n• Content you create (recipes, comments, images)\n• Usage data and analytics\n• Device information and identifiers";
+  String get privacyUseTitle => _localizedValues[locale.languageCode]?["privacyUseTitle"] ?? "2. How We Use Your Information";
+  String get privacyUseContent => _localizedValues[locale.languageCode]?["privacyUseContent"] ?? "We use the information we collect to:\n\n• Provide and improve our services\n• Personalize your experience\n• Communicate with you about your account\n• Analyze usage patterns and trends\n• Ensure security and prevent fraud";
+  String get privacySharingTitle => _localizedValues[locale.languageCode]?["privacySharingTitle"] ?? "3. Information Sharing";
+  String get privacySharingContent => _localizedValues[locale.languageCode]?["privacySharingContent"] ?? "We do not sell your personal information. We may share your information only:\n\n• With your consent\n• To comply with legal obligations\n• To protect our rights and safety\n• With service providers who assist us (under strict confidentiality agreements)";
+  String get privacySecurityTitle => _localizedValues[locale.languageCode]?["privacySecurityTitle"] ?? "4. Data Security";
+  String get privacySecurityContent => _localizedValues[locale.languageCode]?["privacySecurityContent"] ?? "We implement appropriate technical and organizational measures to protect your personal information. However, no method of transmission over the internet is 100% secure.";
+  String get privacyRightsTitle => _localizedValues[locale.languageCode]?["privacyRightsTitle"] ?? "5. Your Rights";
+  String get privacyRightsContent => _localizedValues[locale.languageCode]?["privacyRightsContent"] ?? "You have the right to:\n\n• Access your personal information\n• Correct inaccurate information\n• Delete your account and data\n• Opt-out of certain data processing\n• Export your data";
+  String get privacyCookiesTitle => _localizedValues[locale.languageCode]?["privacyCookiesTitle"] ?? "6. Cookies and Tracking";
+  String get privacyCookiesContent => _localizedValues[locale.languageCode]?["privacyCookiesContent"] ?? "We use cookies and similar technologies to enhance your experience, analyze usage, and assist with marketing efforts. You can control cookies through your browser settings.";
+  String get privacyChildrenTitle => _localizedValues[locale.languageCode]?["privacyChildrenTitle"] ?? "7. Children's Privacy";
+  String get privacyChildrenContent => _localizedValues[locale.languageCode]?["privacyChildrenContent"] ?? "CookBook is not intended for users under the age of 13. We do not knowingly collect personal information from children under 13.";
+  String get privacyChangesTitle => _localizedValues[locale.languageCode]?["privacyChangesTitle"] ?? "8. Changes to Privacy Policy";
+  String get privacyChangesContent => _localizedValues[locale.languageCode]?["privacyChangesContent"] ?? "We may update this privacy policy from time to time. We will notify you of any material changes by posting the new policy on this page.";
+  String get privacyContactTitle => _localizedValues[locale.languageCode]?["privacyContactTitle"] ?? "9. Contact Us";
+  String get privacyContactContent => _localizedValues[locale.languageCode]?["privacyContactContent"] ?? "If you have questions about this privacy policy, please contact us through the app settings or support channels.";
+  String get acceptTermsText => _localizedValues[locale.languageCode]?["acceptTermsText"] ?? "I accept the ";
+  String get acceptTermsFull => _localizedValues[locale.languageCode]?["acceptTermsFull"] ?? "I have read and accept the Terms & Privacy Policy";
+  String get viewFullTerms => _localizedValues[locale.languageCode]?["viewFullTerms"] ?? "View Full Terms & Privacy Policy";
+  String get termsSummary => _localizedValues[locale.languageCode]?["termsSummary"] ?? "Key points: You are responsible for your account, you retain ownership of your content, and you agree not to use the service for prohibited purposes.";
+  String get privacySummary => _localizedValues[locale.languageCode]?["privacySummary"] ?? "We collect information you provide, usage data, and device information. We use this to provide and improve our services, personalize your experience, and ensure security. We do not sell your personal information.";
+  String get privacyRightsSummary => _localizedValues[locale.languageCode]?["privacyRightsSummary"] ?? "You have the right to access, correct, delete, and export your data. You can opt-out of certain data processing.";
 
   static const Map<String, Map<String, String>> _localizedValues = {
     "en": {
@@ -431,6 +473,44 @@ class AppLocalizations {
       "termsAndPrivacy": "Terms & Privacy",
       "termsOfService": "Terms of Service",
       "privacyPolicy": "Privacy Policy",
+      "termsAcceptanceTitle": "1. Acceptance of Terms",
+      "termsAcceptanceContent": "By accessing and using CookBook, you accept and agree to be bound by the terms and provision of this agreement.",
+      "termsLicenseTitle": "2. Use License",
+      "termsLicenseContent": "Permission is granted to temporarily use CookBook for personal, non-commercial purposes. This license does not include:\n\n• Reselling or sublicensing the service\n• Using the service for any commercial purpose\n• Removing any copyright or proprietary notations",
+      "termsAccountsTitle": "3. User Accounts",
+      "termsAccountsContent": "You are responsible for maintaining the confidentiality of your account credentials. You agree to:\n\n• Provide accurate and complete information\n• Keep your password secure\n• Notify us immediately of any unauthorized use",
+      "termsContentTitle": "4. User Content",
+      "termsContentContent": "You retain ownership of content you post on CookBook. By posting content, you grant us a license to use, modify, and display your content on the platform.",
+      "termsProhibitedTitle": "5. Prohibited Uses",
+      "termsProhibitedContent": "You may not use CookBook to:\n\n• Violate any laws or regulations\n• Infringe on intellectual property rights\n• Post harmful, offensive, or illegal content\n• Spam or harass other users",
+      "termsTerminationTitle": "6. Termination",
+      "termsTerminationContent": "We reserve the right to terminate or suspend your account at any time for violations of these terms.",
+      "termsChangesTitle": "7. Changes to Terms",
+      "termsChangesContent": "We reserve the right to modify these terms at any time. Continued use of the service after changes constitutes acceptance of the new terms.",
+      "privacyCollectTitle": "1. Information We Collect",
+      "privacyCollectContent": "We collect information that you provide directly to us, including:\n\n• Account information (username, email, display name)\n• Content you create (recipes, comments, images)\n• Usage data and analytics\n• Device information and identifiers",
+      "privacyUseTitle": "2. How We Use Your Information",
+      "privacyUseContent": "We use the information we collect to:\n\n• Provide and improve our services\n• Personalize your experience\n• Communicate with you about your account\n• Analyze usage patterns and trends\n• Ensure security and prevent fraud",
+      "privacySharingTitle": "3. Information Sharing",
+      "privacySharingContent": "We do not sell your personal information. We may share your information only:\n\n• With your consent\n• To comply with legal obligations\n• To protect our rights and safety\n• With service providers who assist us (under strict confidentiality agreements)",
+      "privacySecurityTitle": "4. Data Security",
+      "privacySecurityContent": "We implement appropriate technical and organizational measures to protect your personal information. However, no method of transmission over the internet is 100% secure.",
+      "privacyRightsTitle": "5. Your Rights",
+      "privacyRightsContent": "You have the right to:\n\n• Access your personal information\n• Correct inaccurate information\n• Delete your account and data\n• Opt-out of certain data processing\n• Export your data",
+      "privacyCookiesTitle": "6. Cookies and Tracking",
+      "privacyCookiesContent": "We use cookies and similar technologies to enhance your experience, analyze usage, and assist with marketing efforts. You can control cookies through your browser settings.",
+      "privacyChildrenTitle": "7. Children's Privacy",
+      "privacyChildrenContent": "CookBook is not intended for users under the age of 13. We do not knowingly collect personal information from children under 13.",
+      "privacyChangesTitle": "8. Changes to Privacy Policy",
+      "privacyChangesContent": "We may update this privacy policy from time to time. We will notify you of any material changes by posting the new policy on this page.",
+      "privacyContactTitle": "9. Contact Us",
+      "privacyContactContent": "If you have questions about this privacy policy, please contact us through the app settings or support channels.",
+      "acceptTermsText": "I accept the ",
+      "acceptTermsFull": "I have read and accept the Terms & Privacy Policy",
+      "viewFullTerms": "View Full Terms & Privacy Policy",
+      "termsSummary": "Key points: You are responsible for your account, you retain ownership of your content, and you agree not to use the service for prohibited purposes.",
+      "privacySummary": "We collect information you provide, usage data, and device information. We use this to provide and improve our services, personalize your experience, and ensure security. We do not sell your personal information.",
+      "privacyRightsSummary": "You have the right to access, correct, delete, and export your data. You can opt-out of certain data processing.",
       "dismiss": "Dismiss",
       "unableToConnect": "Unable to connect to the server. Please check your internet connection and try again.",
       "requestTimedOut": "Request timed out. Please try again.",
@@ -637,6 +717,44 @@ class AppLocalizations {
       "termsAndPrivacy": "წესები და კონფიდენციალურობა",
       "termsOfService": "მომსახურების წესები",
       "privacyPolicy": "კონფიდენციალურობის პოლიტიკა",
+      "termsAcceptanceTitle": "1. წესების მიღება",
+      "termsAcceptanceContent": "CookBook-ის გამოყენებით თქვენ ეთანხმებით და მიგიღიათ ამ შეთანხმების წესები და დებულებები.",
+      "termsLicenseTitle": "2. გამოყენების ლიცენზია",
+      "termsLicenseContent": "ნებართვა გაქვთ CookBook-ის დროებით გამოყენება პირადი, არაკომერციული მიზნებისთვის. ეს ლიცენზია არ მოიცავს:\n\n• სერვისის გადაყიდვას ან ქვე-ლიცენზირებას\n• სერვისის გამოყენებას ნებისმიერი კომერციული მიზნით\n• საავტორო უფლებების ან საკუთრებითი აღნიშვნების მოხსნას",
+      "termsAccountsTitle": "3. მომხმარებლის ანგარიშები",
+      "termsAccountsContent": "თქვენ პასუხისმგებელი ხართ თქვენი ანგარიშის მონაცემების კონფიდენციალურობის შენარჩუნებაზე. თქვენ ეთანხმებით:\n\n• ზუსტი და სრული ინფორმაციის მიწოდებას\n• პაროლის უსაფრთხო შენარჩუნებას\n• ნებისმიერი არაავტორიზებული გამოყენების შესახებ დაუყოვნებლივ შეტყობინებას",
+      "termsContentTitle": "4. მომხმარებლის კონტენტი",
+      "termsContentContent": "თქვენ რჩებით CookBook-ზე გამოქვეყნებული კონტენტის მფლობელად. კონტენტის გამოქვეყნებით, თქვენ გვაძლევთ ლიცენზიას კონტენტის გამოყენების, შეცვლისა და პლატფორმაზე ჩვენებისთვის.",
+      "termsProhibitedTitle": "5. აკრძალული გამოყენება",
+      "termsProhibitedContent": "თქვენ არ შეგიძლიათ CookBook-ის გამოყენება:\n\n• ნებისმიერი კანონის ან რეგულაციის დარღვევისთვის\n• ინტელექტუალური საკუთრების უფლებების დარღვევისთვის\n• მავნე, შეურაცხმყოფელი ან უკანონო კონტენტის გამოსაქვეყნებლად\n• სპამის ან სხვა მომხმარებლების შევიწროებისთვის",
+      "termsTerminationTitle": "6. შეწყვეტა",
+      "termsTerminationContent": "ჩვენ ვიტოვებთ უფლებას, დავხუროთ ან შევაჩეროთ თქვენი ანგარიში ნებისმიერ დროს ამ წესების დარღვევის შემთხვევაში.",
+      "termsChangesTitle": "7. წესების ცვლილებები",
+      "termsChangesContent": "ჩვენ ვიტოვებთ უფლებას, შევცვალოთ ეს წესები ნებისმიერ დროს. სერვისის გამოყენების გაგრძელება ცვლილებების შემდეგ ნიშნავს ახალი წესების მიღებას.",
+      "privacyCollectTitle": "1. ინფორმაცია, რომელსაც ვაგროვებთ",
+      "privacyCollectContent": "ჩვენ ვაგროვებთ ინფორმაციას, რომელსაც პირდაპირ გვაწვდით, მათ შორის:\n\n• ანგარიშის ინფორმაცია (მომხმარებლის სახელი, ელფოსტა, საჩვენებელი სახელი)\n• თქვენ მიერ შექმნილი კონტენტი (რეცეპტები, კომენტარები, სურათები)\n• გამოყენების მონაცემები და ანალიტიკა\n• მოწყობილობის ინფორმაცია და იდენტიფიკატორები",
+      "privacyUseTitle": "2. როგორ ვიყენებთ თქვენს ინფორმაციას",
+      "privacyUseContent": "ჩვენ ვიყენებთ შეგროვებულ ინფორმაციას:\n\n• ჩვენი სერვისების მიწოდებისა და გაუმჯობესებისთვის\n• თქვენი გამოცდილების პერსონალიზაციისთვის\n• თქვენი ანგარიშის შესახებ კომუნიკაციისთვის\n• გამოყენების ნიმუშებისა და ტენდენციების ანალიზისთვის\n• უსაფრთხოების უზრუნველსაყოფად და თაღლითობის თავიდან ასაცილებლად",
+      "privacySharingTitle": "3. ინფორმაციის გაზიარება",
+      "privacySharingContent": "ჩვენ არ ვყიდით თქვენს პირად ინფორმაციას. ჩვენ შეიძლება გავაზიაროთ თქვენი ინფორმაცია მხოლოდ:\n\n• თქვენი თანხმობით\n• კანონიერი ვალდებულებების შესასრულებლად\n• ჩვენი უფლებებისა და უსაფრთხოების დასაცავად\n• სერვისების მიმწოდებლებთან, რომლებიც გვეხმარებიან (მკაცრი კონფიდენციალურობის შეთანხმებებით)",
+      "privacySecurityTitle": "4. მონაცემების უსაფრთხოება",
+      "privacySecurityContent": "ჩვენ ვიყენებთ შესაბამის ტექნიკურ და ორგანიზაციულ ზომებს თქვენი პირადი ინფორმაციის დასაცავად. თუმცა, ინტერნეტით გადაცემის არცერთი მეთოდი არ არის 100% უსაფრთხო.",
+      "privacyRightsTitle": "5. თქვენი უფლებები",
+      "privacyRightsContent": "თქვენ გაქვთ უფლება:\n\n• წვდომა თქვენს პირად ინფორმაციაზე\n• არასწორი ინფორმაციის შესწორება\n• თქვენი ანგარიშისა და მონაცემების წაშლა\n• ზოგიერთი მონაცემების დამუშავებიდან უარის თქმა\n• თქვენი მონაცემების ექსპორტი",
+      "privacyCookiesTitle": "6. ფაილები და თრეკინგი",
+      "privacyCookiesContent": "ჩვენ ვიყენებთ ფაილებსა და მსგავს ტექნოლოგიებს თქვენი გამოცდილების გასაუმჯობესებლად, გამოყენების ანალიზისა და მარკეტინგული ძალისხმევის დასახმარებლად. თქვენ შეგიძლიათ გააკონტროლოთ ფაილები თქვენი ბრაუზერის პარამეტრებით.",
+      "privacyChildrenTitle": "7. ბავშვების კონფიდენციალურობა",
+      "privacyChildrenContent": "CookBook არ არის განკუთვნილი 13 წლამდე მომხმარებლებისთვის. ჩვენ შეგნებულად არ ვაგროვებთ პირად ინფორმაციას 13 წლამდე ბავშვებისგან.",
+      "privacyChangesTitle": "8. კონფიდენციალურობის პოლიტიკის ცვლილებები",
+      "privacyChangesContent": "ჩვენ შეიძლება დროდადრო განვაახლოთ ეს კონფიდენციალურობის პოლიტიკა. ჩვენ შეგატყობინებთ ნებისმიერი მნიშვნელოვანი ცვლილების შესახებ ახალი პოლიტიკის ამ გვერდზე განთავსებით.",
+      "privacyContactTitle": "9. დაგვიკავშირდით",
+      "privacyContactContent": "თუ გაქვთ კითხვები ამ კონფიდენციალურობის პოლიტიკის შესახებ, გთხოვთ დაგვიკავშირდეთ აპლიკაციის პარამეტრებით ან მხარდაჭერის არხებით.",
+      "acceptTermsText": "ვეთანხმები ",
+      "acceptTermsFull": "მე წავიკითხე და ვეთანხმები წესებსა და კონფიდენციალურობის პოლიტიკას",
+      "viewFullTerms": "წესებისა და კონფიდენციალურობის პოლიტიკის სრული ნახვა",
+      "termsSummary": "მთავარი პუნქტები: თქვენ პასუხისმგებელი ხართ თქვენი ანგარიშისთვის, თქვენ რჩებით თქვენი კონტენტის მფლობელად და თქვენ ეთანხმებით, რომ არ გამოიყენებთ სერვისს აკრძალული მიზნებისთვის.",
+      "privacySummary": "ჩვენ ვაგროვებთ თქვენ მიერ მოწოდებულ ინფორმაციას, გამოყენების მონაცემებსა და მოწყობილობის ინფორმაციას. ჩვენ ვიყენებთ ამას ჩვენი სერვისების მიწოდებისა და გაუმჯობესებისთვის, თქვენი გამოცდილების პერსონალიზაციისა და უსაფრთხოების უზრუნველსაყოფად. ჩვენ არ ვყიდით თქვენს პირად ინფორმაციას.",
+      "privacyRightsSummary": "თქვენ გაქვთ უფლება წვდომა, შესწორება, წაშლა და ექსპორტი თქვენი მონაცემების. თქვენ შეგიძლიათ უარი თქვათ ზოგიერთი მონაცემების დამუშავებიდან.",
       "dismiss": "დახურვა",
       "unableToConnect": "სერვერთან დაკავშირება ვერ მოხერხდა. გთხოვთ შეამოწმოთ ინტერნეტ-კავშირი და სცადოთ ხელახლა.",
       "requestTimedOut": "მოთხოვნის დრო ამოიწურა. გთხოვთ სცადოთ ხელახლა.",

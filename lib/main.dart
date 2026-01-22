@@ -2,6 +2,7 @@ import "dart:io" show Platform;
 import "package:flutter/foundation.dart" show kIsWeb;
 import "package:flutter/material.dart";
 import "package:flutter_localizations/flutter_localizations.dart";
+import "package:google_mobile_ads/google_mobile_ads.dart";
 import "package:sqflite_common_ffi/sqflite_ffi.dart";
 
 import "api/api_client.dart";
@@ -15,6 +16,10 @@ import "theme/theme_controller.dart";
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize Google Mobile Ads SDK
+  // App ID: ca-app-pub-5283215754482121~9547688424
+  MobileAds.instance.initialize();
   
   // Initialize sqflite_common_ffi for Windows/Linux/macOS desktop support
   // This is required for cached_network_image to work on desktop platforms

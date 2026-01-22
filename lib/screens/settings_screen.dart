@@ -6,6 +6,7 @@ import "../theme/theme_controller.dart";
 import "package:package_info_plus/package_info_plus.dart";
 import "theme_selection_screen.dart";
 import "language_selection_screen.dart";
+import "terms_and_privacy_screen.dart";
 import "../widgets/section_title_widget.dart";
 
 class SettingsScreen extends StatefulWidget {
@@ -278,10 +279,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                       ),
                       onTap: () {
-                        // TODO: Navigate to terms & privacy screen or show dialog
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(localizations?.termsAndPrivacy ?? "Terms & Privacy"),
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const TermsAndPrivacyScreen(),
                           ),
                         );
                       },

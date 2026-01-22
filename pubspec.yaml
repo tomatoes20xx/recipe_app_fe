@@ -48,6 +48,8 @@ dependencies:
   sqflite_common_ffi: ^2.3.3+2
   # For app version info
   package_info_plus: ^8.1.1
+  # For Google AdMob
+  google_mobile_ads: ^5.1.0
 
 dev_dependencies:
   flutter_test:

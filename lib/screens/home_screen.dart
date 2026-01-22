@@ -19,6 +19,7 @@ import "../theme/theme_controller.dart";
 import "../utils/ui_utils.dart";
 import "../widgets/engagement_stat_widget.dart";
 import "../widgets/empty_state_widget.dart";
+import "../widgets/native_ad_card_widget.dart";
 import "settings_screen.dart";
 import "../notifications/notification_api.dart";
 import "../notifications/notification_controller.dart";
@@ -1110,14 +1111,42 @@ class _FeedList extends StatelessWidget {
       );
     }
 
+    // Calculate total items including ads (show ad every 5 items, starting after 3rd item)
+    final adInterval = 5;
+    final adStartIndex = 3;
+    int _getAdCount(int totalItems) {
+      if (totalItems < adStartIndex) return 0;
+      return ((totalItems - adStartIndex) / adInterval).floor() + 1;
+    }
+    
+    final totalAdCount = _getAdCount(feed.items.length);
+    final totalItemCount = feed.items.length + totalAdCount + 1; // + footer
+    
+    bool _isAdIndex(int index) {
+      if (index < adStartIndex) return false;
+      final adjustedIndex = index - adStartIndex;
+      return adjustedIndex % (adInterval + 1) == 0;
+    }
+    
+    int _getRecipeIndex(int displayIndex) {
+      int recipeIndex = 0;
+      for (int i = 0; i < displayIndex; i++) {
+        if (!_isAdIndex(i)) {
+          recipeIndex++;
+        }
+      }
+      return recipeIndex;
+    }
+
     return ListView.builder(
       controller: controller,
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.only(bottom: 16),
       cacheExtent: 500, // Cache 500px worth of items off-screen for smoother scrolling
-      itemCount: feed.items.length + 1, // + footer
+      itemCount: totalItemCount,
       itemBuilder: (context, i) {
-        if (i == feed.items.length) {
+        // Footer
+        if (i >= feed.items.length + totalAdCount) {
           if (feed.isLoadingMore) {
             return Padding(
               padding: const EdgeInsets.all(24),
@@ -1150,13 +1179,32 @@ class _FeedList extends StatelessWidget {
           return const SizedBox(height: 60);
         }
 
-        final item = feed.items[i];
+        // Check if this index should show an ad
+        if (_isAdIndex(i)) {
+          return Padding(
+            padding: EdgeInsets.only(
+              left: 16,
+              right: 16,
+              top: i == 0 ? 16 : 8,
+              bottom: 8,
+            ),
+            child: const NativeAdCardWidget(),
+          );
+        }
+
+        // Get the actual recipe index
+        final recipeIndex = _getRecipeIndex(i);
+        if (recipeIndex >= feed.items.length) {
+          return const SizedBox.shrink();
+        }
+
+        final item = feed.items[recipeIndex];
         return Padding(
           padding: EdgeInsets.only(
             left: 16,
             right: 16,
             top: i == 0 ? 16 : 8,
-            bottom: i == feed.items.length - 1 ? 0 : 0,
+            bottom: i == totalItemCount - 2 ? 0 : 0,
           ),
           child: Material(
             color: Colors.transparent,
@@ -1255,18 +1303,45 @@ class _FullScreenFeedListState extends State<_FullScreenFeedList> {
       );
     }
 
+    // Calculate total items including ads (show ad every 5 items, starting after 3rd item)
+    final adInterval = 5;
+    final adStartIndex = 3;
+    int _getAdCount(int totalItems) {
+      if (totalItems < adStartIndex) return 0;
+      return ((totalItems - adStartIndex) / adInterval).floor() + 1;
+    }
+    
+    final totalAdCount = _getAdCount(widget.feed.items.length);
+    final totalItemCount = widget.feed.items.length + totalAdCount + (widget.feed.nextCursor != null ? 1 : 0);
+    
+    bool _isAdIndex(int index) {
+      if (index < adStartIndex) return false;
+      final adjustedIndex = index - adStartIndex;
+      return adjustedIndex % (adInterval + 1) == 0;
+    }
+    
+    int _getRecipeIndex(int displayIndex) {
+      int recipeIndex = 0;
+      for (int i = 0; i < displayIndex; i++) {
+        if (!_isAdIndex(i)) {
+          recipeIndex++;
+        }
+      }
+      return recipeIndex;
+    }
+
     return PageView.builder(
       controller: widget.pageController,
       scrollDirection: Axis.vertical,
       physics: const PageScrollPhysics(),
-      itemCount: widget.feed.items.length + (widget.feed.nextCursor != null ? 1 : 0),
+      itemCount: totalItemCount,
       allowImplicitScrolling: false, // Disable pre-rendering for better performance
       onPageChanged: (index) {
         widget.onPageChanged?.call(index);
       },
       itemBuilder: (context, index) {
-        if (index >= widget.feed.items.length) {
-          // Loading indicator at the end
+        // Loading indicator at the end
+        if (index >= widget.feed.items.length + totalAdCount) {
           if (widget.feed.isLoadingMore) {
             return const Center(child: CircularProgressIndicator());
           }
@@ -1278,7 +1353,18 @@ class _FullScreenFeedListState extends State<_FullScreenFeedList> {
           );
         }
 
-        final item = widget.feed.items[index];
+        // Check if this index should show an ad
+        if (_isAdIndex(index)) {
+          return const NativeAdFullScreenWidget();
+        }
+
+        // Get the actual recipe index
+        final recipeIndex = _getRecipeIndex(index);
+        if (recipeIndex >= widget.feed.items.length) {
+          return const SizedBox.shrink();
+        }
+
+        final item = widget.feed.items[recipeIndex];
         return _FullScreenFeedCard(
           item: item,
           sort: widget.feed.sort,

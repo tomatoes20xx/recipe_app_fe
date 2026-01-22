@@ -1,8 +1,10 @@
+import "package:flutter/gestures.dart";
 import "package:flutter/material.dart";
 
 import "../api/api_client.dart";
 import "../auth/auth_controller.dart";
 import "../localization/app_localizations.dart";
+import "terms_and_privacy_screen.dart";
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key, required this.auth});
@@ -18,6 +20,7 @@ class _SignupScreenState extends State<SignupScreen> {
   final usernameCtrl = TextEditingController();
   final displayNameCtrl = TextEditingController();
   String? error;
+  bool _termsAccepted = false;
 
   @override
   void dispose() {
@@ -58,6 +61,7 @@ class _SignupScreenState extends State<SignupScreen> {
         padding: const EdgeInsets.all(16),
         child: ListView(
           children: [
+            // Form Fields
             TextField(
               controller: emailCtrl,
               keyboardType: TextInputType.emailAddress,
@@ -83,10 +87,61 @@ class _SignupScreenState extends State<SignupScreen> {
             if (error != null)
               Text(error!, style: const TextStyle(color: Colors.red)),
             const SizedBox(height: 16),
+            
+            // Link to Terms and Privacy
+            Center(
+              child: TextButton(
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const TermsAndPrivacyScreen(),
+                    ),
+                  );
+                },
+                child: Text(
+                  localizations?.viewFullTerms ?? "View Terms & Privacy Policy",
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            
+            // Acceptance Checkbox
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Checkbox(
+                  value: _termsAccepted,
+                  onChanged: (value) {
+                    setState(() {
+                      _termsAccepted = value ?? false;
+                    });
+                  },
+                ),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _termsAccepted = !_termsAccepted;
+                      });
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 12),
+                      child: Text(
+                        localizations?.acceptTermsFull ?? "I have read and accept the Terms & Privacy Policy",
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            
+            // Signup Button
             SizedBox(
               width: double.infinity,
               child: FilledButton(
-                onPressed: loading ? null : onSignup,
+                onPressed: (loading || !_termsAccepted) ? null : onSignup,
                 child: loading
                     ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator())
                     : Text(localizations?.createAccount ?? "Create account"),
