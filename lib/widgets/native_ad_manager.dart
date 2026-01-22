@@ -56,13 +56,6 @@ class NativeAdManager {
         onAdFailedToLoad: (ad, error) {
           ad.dispose();
           _cardAds.remove(adIndex);
-          debugPrint("Native ad failed to load: $error");
-        },
-        onAdClicked: (_) {
-          debugPrint("Native ad clicked");
-        },
-        onAdImpression: (_) {
-          debugPrint("Native ad impression");
         },
       ),
       nativeTemplateStyle: NativeTemplateStyle(
@@ -132,13 +125,6 @@ class NativeAdManager {
         onAdFailedToLoad: (ad, error) {
           ad.dispose();
           _fullscreenAds.remove(adIndex);
-          debugPrint("Native ad failed to load: $error");
-        },
-        onAdClicked: (_) {
-          debugPrint("Native ad clicked");
-        },
-        onAdImpression: (_) {
-          debugPrint("Native ad impression");
         },
       ),
       nativeTemplateStyle: NativeTemplateStyle(

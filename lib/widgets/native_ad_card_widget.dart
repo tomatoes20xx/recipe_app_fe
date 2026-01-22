@@ -25,17 +25,21 @@ class _NativeAdCardWidgetState extends State<NativeAdCardWidget> {
   NativeAd? _nativeAd;
   ValueNotifier<bool>? _loadedNotifier;
   bool _adInitialized = false;
+  bool _isLoading = false;
   final _adManager = NativeAdManager();
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     // Load ad after we have access to context/theme
-    // Use a small delay to avoid loading during initial build phase
+    // Use a minimal delay to avoid loading during initial build phase
     if (!_adInitialized) {
       _adInitialized = true;
-      // Defer loading to next frame to avoid blocking initial render
-      Future.delayed(const Duration(milliseconds: 50), () {
+      setState(() {
+        _isLoading = true;
+      });
+      // Use post-frame callback instead of delay for faster loading
+      WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           _loadAd();
         }
@@ -44,28 +48,28 @@ class _NativeAdCardWidgetState extends State<NativeAdCardWidget> {
   }
 
   void _loadAd() {
-    // Use post-frame callback to avoid loading during build
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      
-      // Get cached ad or create new one
-      final result = _adManager.getCardAd(widget.adIndex, context, widget.adUnitId);
-      _nativeAd = result.ad;
-      _loadedNotifier = result.loadedNotifier;
-      
-      // Listen to loaded state changes
-      _loadedNotifier?.removeListener(_onLoadedStateChanged); // Remove old listener if any
-      _loadedNotifier?.addListener(_onLoadedStateChanged);
-      
-      // Check initial state
-      if (_loadedNotifier?.value == true && mounted) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) {
-            setState(() {});
-          }
-        });
-      }
-    });
+    // Load immediately since we're already in post-frame callback
+    if (!mounted) return;
+    
+    // Get cached ad or create new one
+    final result = _adManager.getCardAd(widget.adIndex, context, widget.adUnitId);
+    _nativeAd = result.ad;
+    _loadedNotifier = result.loadedNotifier;
+    
+    // Listen to loaded state changes
+    _loadedNotifier?.removeListener(_onLoadedStateChanged); // Remove old listener if any
+    _loadedNotifier?.addListener(_onLoadedStateChanged);
+    
+    // Check initial state
+    if (_loadedNotifier?.value == true && mounted) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
+      });
+    }
   }
 
   void _onLoadedStateChanged() {
@@ -73,7 +77,9 @@ class _NativeAdCardWidgetState extends State<NativeAdCardWidget> {
       // Use post-frame callback to avoid setState during build
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
-          setState(() {});
+          setState(() {
+            _isLoading = false;
+          });
         }
       });
     }
@@ -89,7 +95,38 @@ class _NativeAdCardWidgetState extends State<NativeAdCardWidget> {
 
   @override
   Widget build(BuildContext context) {
+    // Show loading indicator while ad is loading
     if (_nativeAd == null || _loadedNotifier?.value != true) {
+      if (_isLoading) {
+        // Show a subtle loading placeholder so users know something is happening
+        return Card(
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(
+              color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
+              width: 1,
+            ),
+          ),
+          child: Container(
+            height: 200,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+            ),
+            child: Center(
+              child: SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5),
+                ),
+              ),
+            ),
+          ),
+        );
+      }
       return const SizedBox.shrink();
     }
 
@@ -169,17 +206,21 @@ class _NativeAdFullScreenWidgetState extends State<NativeAdFullScreenWidget> {
   NativeAd? _nativeAd;
   ValueNotifier<bool>? _loadedNotifier;
   bool _adInitialized = false;
+  bool _isLoading = false;
   final _adManager = NativeAdManager();
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     // Load ad after we have access to context/theme
-    // Use a small delay to avoid loading during initial build phase
+    // Use a minimal delay to avoid loading during initial build phase
     if (!_adInitialized) {
       _adInitialized = true;
-      // Defer loading to next frame to avoid blocking initial render
-      Future.delayed(const Duration(milliseconds: 50), () {
+      setState(() {
+        _isLoading = true;
+      });
+      // Use post-frame callback instead of delay for faster loading
+      WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           _loadAd();
         }
@@ -188,28 +229,28 @@ class _NativeAdFullScreenWidgetState extends State<NativeAdFullScreenWidget> {
   }
 
   void _loadAd() {
-    // Use post-frame callback to avoid loading during build
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      
-      // Get cached ad or create new one
-      final result = _adManager.getFullscreenAd(widget.adIndex, context, widget.adUnitId);
-      _nativeAd = result.ad;
-      _loadedNotifier = result.loadedNotifier;
-      
-      // Listen to loaded state changes
-      _loadedNotifier?.removeListener(_onLoadedStateChanged); // Remove old listener if any
-      _loadedNotifier?.addListener(_onLoadedStateChanged);
-      
-      // Check initial state
-      if (_loadedNotifier?.value == true && mounted) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) {
-            setState(() {});
-          }
-        });
-      }
-    });
+    // Load immediately since we're already in post-frame callback
+    if (!mounted) return;
+    
+    // Get cached ad or create new one
+    final result = _adManager.getFullscreenAd(widget.adIndex, context, widget.adUnitId);
+    _nativeAd = result.ad;
+    _loadedNotifier = result.loadedNotifier;
+    
+    // Listen to loaded state changes
+    _loadedNotifier?.removeListener(_onLoadedStateChanged); // Remove old listener if any
+    _loadedNotifier?.addListener(_onLoadedStateChanged);
+    
+    // Check initial state
+    if (_loadedNotifier?.value == true && mounted) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
+      });
+    }
   }
 
   void _onLoadedStateChanged() {
@@ -217,7 +258,9 @@ class _NativeAdFullScreenWidgetState extends State<NativeAdFullScreenWidget> {
       // Use post-frame callback to avoid setState during build
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
-          setState(() {});
+          setState(() {
+            _isLoading = false;
+          });
         }
       });
     }
@@ -233,7 +276,29 @@ class _NativeAdFullScreenWidgetState extends State<NativeAdFullScreenWidget> {
 
   @override
   Widget build(BuildContext context) {
+    // Show loading indicator while ad is loading
     if (_nativeAd == null || _loadedNotifier?.value != true) {
+      if (_isLoading) {
+        // Show a subtle loading placeholder for fullscreen view
+        return Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Theme.of(context).colorScheme.surface,
+                Theme.of(context).colorScheme.surfaceContainerHighest,
+              ],
+            ),
+          ),
+          child: Center(
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5),
+            ),
+          ),
+        );
+      }
       return const SizedBox.shrink();
     }
 
