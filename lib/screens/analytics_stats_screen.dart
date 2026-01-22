@@ -653,7 +653,7 @@ class _AnalyticsStatsScreenState extends State<AnalyticsStatsScreen> with Single
                       Icon(
                         Icons.event_note_outlined,
                         size: 64,
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
                       ),
                       const SizedBox(height: 16),
                       Builder(
@@ -662,7 +662,7 @@ class _AnalyticsStatsScreenState extends State<AnalyticsStatsScreen> with Single
                           return Text(
                             localizations?.noEventsAvailable ?? "No events available",
                             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
                                 ),
                           );
                         },
@@ -675,7 +675,7 @@ class _AnalyticsStatsScreenState extends State<AnalyticsStatsScreen> with Single
                             return Text(
                               localizations?.trySelectingDifferentFilter ?? "Try selecting a different filter",
                               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
                                   ),
                             );
                           },
@@ -812,7 +812,7 @@ class _AnalyticsStatsScreenState extends State<AnalyticsStatsScreen> with Single
                 Text(
                   formatDate(event.createdAt),
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                       ),
                 ),
               ],

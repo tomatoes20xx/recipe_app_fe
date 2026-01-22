@@ -75,7 +75,7 @@ class _LanguageOption extends StatelessWidget {
         side: BorderSide(
           color: isSelected
               ? Theme.of(context).colorScheme.primary
-              : Theme.of(context).colorScheme.outline.withOpacity(0.1),
+              : Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
           width: isSelected ? 2 : 1,
         ),
       ),
@@ -84,7 +84,7 @@ class _LanguageOption extends StatelessWidget {
           Icons.language,
           color: isSelected
               ? Theme.of(context).colorScheme.primary
-              : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
         ),
         title: Text(title),
         trailing: isSelected

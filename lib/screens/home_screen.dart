@@ -531,10 +531,10 @@ class _Controls extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+        color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
         border: Border(
           bottom: BorderSide(
-            color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
+            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
             width: 1,
           ),
         ),
@@ -1119,24 +1119,24 @@ class _FeedList extends StatelessWidget {
     // Calculate total items including ads (show ad every 5 items, starting after 3rd item)
     final adInterval = 5;
     final adStartIndex = 3;
-    int _getAdCount(int totalItems) {
+    int getAdCount(int totalItems) {
       if (totalItems < adStartIndex) return 0;
       return ((totalItems - adStartIndex) / adInterval).floor() + 1;
     }
     
-    final totalAdCount = _getAdCount(feed.items.length);
+    final totalAdCount = getAdCount(feed.items.length);
     final totalItemCount = feed.items.length + totalAdCount + 1; // + footer
     
-    bool _isAdIndex(int index) {
+    bool isAdIndex(int index) {
       if (index < adStartIndex) return false;
       final adjustedIndex = index - adStartIndex;
       return adjustedIndex % (adInterval + 1) == 0;
     }
     
-    int _getRecipeIndex(int displayIndex) {
+    int getRecipeIndex(int displayIndex) {
       int recipeIndex = 0;
       for (int i = 0; i < displayIndex; i++) {
-        if (!_isAdIndex(i)) {
+        if (!isAdIndex(i)) {
           recipeIndex++;
         }
       }
@@ -1173,7 +1173,7 @@ class _FeedList extends StatelessWidget {
                     child: Text(
                       localizations?.noMoreItems ?? "No more items",
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
                           ),
                     ),
                   );
@@ -1185,7 +1185,7 @@ class _FeedList extends StatelessWidget {
         }
 
         // Check if this index should show an ad
-        if (_isAdIndex(i)) {
+        if (isAdIndex(i)) {
           return Padding(
             padding: EdgeInsets.only(
               left: 16,
@@ -1198,7 +1198,7 @@ class _FeedList extends StatelessWidget {
         }
 
         // Get the actual recipe index
-        final recipeIndex = _getRecipeIndex(i);
+        final recipeIndex = getRecipeIndex(i);
         if (recipeIndex >= feed.items.length) {
           return const SizedBox.shrink();
         }
@@ -1311,24 +1311,24 @@ class _FullScreenFeedListState extends State<_FullScreenFeedList> {
     // Calculate total items including ads (show ad every 5 items, starting after 3rd item)
     final adInterval = 5;
     final adStartIndex = 3;
-    int _getAdCount(int totalItems) {
+    int getAdCount(int totalItems) {
       if (totalItems < adStartIndex) return 0;
       return ((totalItems - adStartIndex) / adInterval).floor() + 1;
     }
     
-    final totalAdCount = _getAdCount(widget.feed.items.length);
+    final totalAdCount = getAdCount(widget.feed.items.length);
     final totalItemCount = widget.feed.items.length + totalAdCount + (widget.feed.nextCursor != null ? 1 : 0);
     
-    bool _isAdIndex(int index) {
+    bool isAdIndex(int index) {
       if (index < adStartIndex) return false;
       final adjustedIndex = index - adStartIndex;
       return adjustedIndex % (adInterval + 1) == 0;
     }
     
-    int _getRecipeIndex(int displayIndex) {
+    int getRecipeIndex(int displayIndex) {
       int recipeIndex = 0;
       for (int i = 0; i < displayIndex; i++) {
-        if (!_isAdIndex(i)) {
+        if (!isAdIndex(i)) {
           recipeIndex++;
         }
       }
@@ -1359,12 +1359,12 @@ class _FullScreenFeedListState extends State<_FullScreenFeedList> {
         }
 
         // Check if this index should show an ad
-        if (_isAdIndex(index)) {
+        if (isAdIndex(index)) {
           return NativeAdFullScreenWidget(adIndex: index);
         }
 
         // Get the actual recipe index
-        final recipeIndex = _getRecipeIndex(index);
+        final recipeIndex = getRecipeIndex(index);
         if (recipeIndex >= widget.feed.items.length) {
           return const SizedBox.shrink();
         }
@@ -1445,7 +1445,7 @@ class _FeedCardState extends State<_FeedCard> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
         side: BorderSide(
-          color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
+          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
           width: 1,
         ),
       ),
@@ -1516,7 +1516,7 @@ class _FeedCardState extends State<_FeedCard> {
                             "@${widget.item.authorUsername}",
                             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                   fontWeight: FontWeight.w500,
-                                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                                 ),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -1526,7 +1526,7 @@ class _FeedCardState extends State<_FeedCard> {
                           child: Text(
                             "•",
                             style: TextStyle(
-                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
                             ),
                           ),
                         ),
@@ -1534,7 +1534,7 @@ class _FeedCardState extends State<_FeedCard> {
                           child: Text(
                             date,
                             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                                 ),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -1667,7 +1667,7 @@ class _FeedCardState extends State<_FeedCard> {
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
-                              color: Colors.black.withOpacity(0.45),
+                              color: Colors.black.withValues(alpha: 0.45),
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Row(
@@ -1713,7 +1713,7 @@ class _ExpandableDescription extends StatelessWidget {
     // Simple heuristic: if description is longer than ~100 chars, it likely needs expansion
     final needsExpansion = description.length > 100;
     final textStyle = Theme.of(context).textTheme.bodyMedium?.copyWith(
-          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
           height: 1.4,
         ) ?? const TextStyle();
     final buttonStyle = textStyle.copyWith(
@@ -1824,7 +1824,7 @@ class _FullScreenExpandableDescription extends StatelessWidget {
     // Simple heuristic: if description is longer than ~100 chars, it likely needs expansion
     final needsExpansion = description.length > 100;
     final textStyle = TextStyle(
-      color: Colors.white.withOpacity(0.9),
+      color: Colors.white.withValues(alpha: 0.9),
       fontSize: 14,
       height: 1.4,
       shadows: const [
@@ -2041,7 +2041,7 @@ class _FullScreenFeedCardState extends State<_FullScreenFeedCard> {
                   end: Alignment.bottomCenter,
                   colors: [
                     Colors.transparent,
-                    Colors.black.withOpacity(0.7),
+                    Colors.black.withValues(alpha: 0.7),
                   ],
                 ),
               ),
@@ -2134,7 +2134,7 @@ class _FullScreenFeedCardState extends State<_FullScreenFeedCard> {
                               Text(
                                 date,
                                 style: TextStyle(
-                                  color: Colors.white.withOpacity(0.8),
+                                  color: Colors.white.withValues(alpha: 0.8),
                                   fontSize: 12,
                                 ),
                               ),
@@ -2246,7 +2246,7 @@ class _FullScreenFeedCardState extends State<_FullScreenFeedCard> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.45),
+                color: Colors.black.withValues(alpha: 0.45),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
@@ -2277,7 +2277,7 @@ class _FullScreenFeedCardState extends State<_FullScreenFeedCard> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.3),
+                    color: Colors.black.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Row(
@@ -2292,7 +2292,7 @@ class _FullScreenFeedCardState extends State<_FullScreenFeedCard> {
                           shape: BoxShape.circle,
                           color: index == _currentImageIndex
                               ? Colors.white
-                              : Colors.white.withOpacity(0.5),
+                              : Colors.white.withValues(alpha: 0.5),
                         ),
                       ),
                     ),
@@ -2317,7 +2317,7 @@ class _FeedCardSkeleton extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
         side: BorderSide(
-          color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
+          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
           width: 1,
         ),
       ),

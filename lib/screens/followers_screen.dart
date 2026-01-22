@@ -163,7 +163,7 @@ class _FollowersScreenState extends State<FollowersScreen> {
             Icon(
               Icons.lock_outline,
               size: 64,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
             ),
             const SizedBox(height: 16),
             Builder(
@@ -172,7 +172,7 @@ class _FollowersScreenState extends State<FollowersScreen> {
                 return Text(
                   localizations?.private ?? "Private",
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
                       ),
                 );
               },
@@ -184,7 +184,7 @@ class _FollowersScreenState extends State<FollowersScreen> {
                 return Text(
                   localizations?.thisUsersFollowersListIsPrivate ?? "This user's followers list is private",
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
                       ),
                   textAlign: TextAlign.center,
                 );
@@ -238,7 +238,7 @@ class _FollowersScreenState extends State<FollowersScreen> {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
               side: BorderSide(
-                color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
+                color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
                 width: 1,
               ),
             ),
@@ -259,7 +259,7 @@ class _FollowersScreenState extends State<FollowersScreen> {
               subtitle: Text(
                 "@${user.username}",
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                     ),
               ),
               trailing: user.viewerIsMe

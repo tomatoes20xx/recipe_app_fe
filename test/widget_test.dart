@@ -9,11 +9,30 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:recipe_app_fe/main.dart';
+import 'package:recipe_app_fe/api/api_client.dart';
+import 'package:recipe_app_fe/auth/auth_api.dart';
+import 'package:recipe_app_fe/auth/auth_controller.dart';
+import 'package:recipe_app_fe/auth/token_storage.dart';
+import 'package:recipe_app_fe/theme/theme_controller.dart';
+import 'package:recipe_app_fe/localization/language_controller.dart';
 
 void main() {
   testWidgets('Counter increments smoke test', (WidgetTester tester) async {
+    // Create mock dependencies for testing
+    final tokenStorage = TokenStorage();
+    final apiClient = ApiClient(tokenStorage: tokenStorage);
+    final authApi = AuthApi(apiClient);
+    final authController = AuthController(authApi: authApi, tokenStorage: tokenStorage);
+    final themeController = ThemeController();
+    final languageController = LanguageController();
+    
     // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+    await tester.pumpWidget(MyApp(
+      authController: authController,
+      apiClient: apiClient,
+      themeController: themeController,
+      languageController: languageController,
+    ));
 
     // Verify that our counter starts at 0.
     expect(find.text('0'), findsOneWidget);

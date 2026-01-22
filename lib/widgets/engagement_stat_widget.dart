@@ -109,10 +109,10 @@ class EngagementStatWidget extends StatelessWidget {
         return _StatData(
           iconSize: _getIconSize(),
           spacing: 2,
-          iconColor: Colors.white.withOpacity(0.9),
+          iconColor: Colors.white.withValues(alpha: 0.9),
           textStyle: TextStyle(
             fontSize: _getFontSize(),
-            color: Colors.white.withOpacity(0.9),
+            color: Colors.white.withValues(alpha: 0.9),
             shadows: showShadows ? const [
               Shadow(
                 color: Colors.black54,
@@ -126,7 +126,7 @@ class EngagementStatWidget extends StatelessWidget {
         return _StatData(
           iconSize: 14,
           spacing: 4,
-          iconColor: theme.colorScheme.onSurface.withOpacity(0.6),
+          iconColor: theme.colorScheme.onSurface.withValues(alpha: 0.6),
           textStyle: theme.textTheme.bodySmall ?? const TextStyle(),
         );
       
@@ -136,13 +136,13 @@ class EngagementStatWidget extends StatelessWidget {
           spacing: 6,
           iconColor: active
               ? theme.colorScheme.primary
-              : theme.colorScheme.onSurface.withOpacity(0.6),
+              : theme.colorScheme.onSurface.withValues(alpha: 0.6),
           textStyle: TextStyle(
             fontSize: _getFontSize(),
             fontWeight: active ? FontWeight.w600 : FontWeight.w500,
             color: active
                 ? theme.colorScheme.primary
-                : theme.colorScheme.onSurface.withOpacity(0.7),
+                : theme.colorScheme.onSurface.withValues(alpha: 0.7),
           ),
         );
     }

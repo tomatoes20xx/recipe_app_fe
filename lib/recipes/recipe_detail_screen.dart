@@ -169,17 +169,16 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
       final recipeApi = RecipeApi(widget.apiClient);
       await recipeApi.deleteRecipe(recipe.id);
 
-      if (mounted) {
-        final localizations = AppLocalizations.of(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(localizations?.recipeDeletedSuccessfully ?? "Recipe deleted successfully")),
-        );
-        Navigator.of(context).pop();
-      }
+      if (!mounted) return;
+      final localizations = AppLocalizations.of(this.context);
+      ScaffoldMessenger.of(this.context).showSnackBar(
+        SnackBar(content: Text(localizations?.recipeDeletedSuccessfully ?? "Recipe deleted successfully")),
+      );
+      if (!mounted) return;
+      Navigator.of(this.context).pop();
     } catch (e) {
-      if (mounted) {
-        ErrorUtils.showError(context, e);
-      }
+      if (!mounted) return;
+      ErrorUtils.showError(this.context, e);
     }
   }
 
@@ -199,7 +198,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
         leading: Container(
           margin: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: Colors.black.withOpacity(0.5),
+            color: Colors.black.withValues(alpha: 0.5),
             shape: BoxShape.circle,
           ),
           child: IconButton(
@@ -212,7 +211,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
             Container(
               margin: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.5),
+                color: Colors.black.withValues(alpha: 0.5),
                 shape: BoxShape.circle,
               ),
               child: IconButton(
@@ -237,7 +236,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
             Container(
               margin: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.5),
+                color: Colors.black.withValues(alpha: 0.5),
                 shape: BoxShape.circle,
               ),
               child: IconButton(
@@ -333,7 +332,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                                           Icon(
                                             Icons.timer_outlined,
                                             size: 16,
-                                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                                           ),
                                           const SizedBox(width: 4),
                                           Text(
@@ -343,7 +342,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                                                     ? "${r.cookingTimeMin}+ min"
                                                     : "Up to ${r.cookingTimeMax} min",
                                             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                                                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                                                 ),
                                           ),
                                         ],
@@ -353,10 +352,10 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                                           Container(
                                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                             decoration: BoxDecoration(
-                                              color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.5),
+                                              color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
                                               borderRadius: BorderRadius.circular(8),
                                               border: Border.all(
-                                                color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
+                                                color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
                                                 width: 1,
                                               ),
                                             ),
@@ -474,10 +473,10 @@ class _HashtagPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3),
+        color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
           width: 1,
         ),
       ),
@@ -816,10 +815,10 @@ class _ImageGalleryState extends State<_ImageGallery> {
                       shape: BoxShape.circle,
                       color: _currentPage == index
                           ? Colors.white
-                          : Colors.white.withOpacity(0.5),
+                          : Colors.white.withValues(alpha: 0.5),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.3),
+                          color: Colors.black.withValues(alpha: 0.3),
                           blurRadius: 4,
                           offset: const Offset(0, 2),
                         ),

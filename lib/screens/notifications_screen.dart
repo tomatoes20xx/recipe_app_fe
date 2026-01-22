@@ -165,12 +165,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       try {
         await controller.markAsRead(notification.id);
       } catch (e) {
+        if (!mounted) return;
         ErrorUtils.showError(context, e);
         return;
       }
     }
 
     // Navigate based on notification type
+    if (!mounted) return;
     switch (notification.type) {
       case notification_models.NotificationType.follow:
         if (notification.actorUsername != null) {
@@ -238,9 +240,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               onPressed: () async {
                 try {
                   await controller.markAllAsRead();
-                  ErrorUtils.showSuccess(context, "All notifications marked as read");
+                  if (!mounted) return;
+                  ErrorUtils.showSuccess(this.context, "All notifications marked as read");
                 } catch (e) {
-                  ErrorUtils.showError(context, e);
+                  if (!mounted) return;
+                  ErrorUtils.showError(this.context, e);
                 }
               },
               icon: const Icon(Icons.done_all, size: 18),
@@ -319,10 +323,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             ? "You're all caught up!"
             : "You'll see notifications here when someone interacts with your content",
         titleStyle: Theme.of(context).textTheme.titleLarge?.copyWith(
-          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
         ),
         descriptionStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
-          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
         ),
       );
     }
@@ -358,7 +362,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         decoration: BoxDecoration(
           color: notification.isRead
               ? Theme.of(context).colorScheme.surface
-              : Theme.of(context).colorScheme.primaryContainer.withOpacity(0.15),
+              : Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.15),
           border: Border(
             left: BorderSide(
               color: notification.isRead
@@ -384,7 +388,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: iconColor.withOpacity(0.2),
+                  color: iconColor.withValues(alpha: 0.2),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -411,7 +415,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     Text(
                       message,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                           ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -421,7 +425,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   Text(
                     date,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
                           fontSize: 11,
                         ),
                   ),

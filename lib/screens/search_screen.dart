@@ -188,7 +188,7 @@ class _SearchScreenState extends State<SearchScreen> {
                   ? (localizations?.searchRecipes ?? "Search recipes...")
                   : (localizations?.searchUsers ?? "Search users..."),
               hintStyle: TextStyle(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
               ),
               prefixIcon: const Icon(Icons.search, size: 20),
               suffixIcon: Row(
@@ -222,7 +222,7 @@ class _SearchScreenState extends State<SearchScreen> {
                             size: 18,
                             color: _isRecipeSearch
                                 ? Theme.of(context).colorScheme.primary
-                                : Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                                : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
                           ),
                           const SizedBox(width: 4),
                           Icon(
@@ -230,7 +230,7 @@ class _SearchScreenState extends State<SearchScreen> {
                             size: 18,
                             color: !_isRecipeSearch
                                 ? Theme.of(context).colorScheme.primary
-                                : Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                                : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
                           ),
                         ],
                       ),
@@ -335,13 +335,13 @@ class _SearchScreenState extends State<SearchScreen> {
           final localizations = AppLocalizations.of(context);
           return EmptyStateWidget(
             icon: Icons.search,
-            title: localizations?.searchRecipes?.replaceAll("...", "") ?? "Search for recipes",
+            title: localizations?.searchRecipes.replaceAll("...", "") ?? "Search for recipes",
             description: localizations?.tryDifferentSearch ?? "Try searching for ingredients, tags, or recipe names",
             titleStyle: Theme.of(context).textTheme.titleLarge?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
             ),
             descriptionStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
             ),
           );
         },
@@ -372,10 +372,10 @@ class _SearchScreenState extends State<SearchScreen> {
               : (localizations?.noUsersFound ?? "No users found"),
             description: "Try a different search query",
             titleStyle: Theme.of(context).textTheme.titleLarge?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
             ),
             descriptionStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
             ),
           );
         },
@@ -406,7 +406,7 @@ class _SearchScreenState extends State<SearchScreen> {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
               side: BorderSide(
-                color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
+                color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
                 width: 1,
               ),
             ),
@@ -447,7 +447,7 @@ class _SearchScreenState extends State<SearchScreen> {
                               Text(
                                 "@${item.authorUsername} • $date",
                                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                                     ),
                               ),
                             ],
@@ -457,7 +457,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     ),
                     Icon(
                       Icons.chevron_right,
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
                     ),
                   ],
                 ),
@@ -476,10 +476,10 @@ class _SearchScreenState extends State<SearchScreen> {
         title: "Search for users",
         description: "Try searching by username",
         titleStyle: Theme.of(context).textTheme.titleLarge?.copyWith(
-          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
         ),
         descriptionStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
-          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
         ),
       );
     }
@@ -499,12 +499,12 @@ class _SearchScreenState extends State<SearchScreen> {
       return EmptyStateWidget(
         icon: Icons.search_off,
         title: "No users found",
-        description: "Try a different search query",
-        titleStyle: Theme.of(context).textTheme.titleLarge?.copyWith(
-          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-        ),
-        descriptionStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
-          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+            description: "Try a different search query",
+            titleStyle: Theme.of(context).textTheme.titleLarge?.copyWith(
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+            ),
+            descriptionStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
         ),
       );
     }
@@ -533,7 +533,7 @@ class _SearchScreenState extends State<SearchScreen> {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
               side: BorderSide(
-                color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
+                color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
                 width: 1,
               ),
             ),
@@ -583,7 +583,7 @@ class _SearchScreenState extends State<SearchScreen> {
                           Text(
                             "@${user.username}",
                             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                                 ),
                           ),
                         ],
@@ -828,7 +828,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -957,7 +957,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                                   child: TextField(
                                     controller: _ingredientController,
                                     decoration: InputDecoration(
-                                      hintText: localizations?.addTag?.replaceAll("tag", "ingredient") ?? "Add ingredient",
+                                      hintText: localizations?.addTag.replaceAll("tag", "ingredient") ?? "Add ingredient",
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
                                   ),

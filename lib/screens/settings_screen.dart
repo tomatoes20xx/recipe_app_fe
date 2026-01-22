@@ -76,7 +76,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
               side: BorderSide(
-                color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
+                color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
                 width: 1,
               ),
             ),
@@ -98,7 +98,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           subtitle: Text(_getThemeModeLabel(context)),
                           trailing: Icon(
                             Icons.chevron_right,
-                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                           ),
                           onTap: () {
                             Navigator.of(context).push(
@@ -128,7 +128,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       subtitle: Text(_getLanguageLabel(context)),
                       trailing: Icon(
                         Icons.chevron_right,
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                       ),
                       onTap: () {
                         Navigator.of(context).push(
@@ -159,7 +159,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
                 side: BorderSide(
-                  color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
+                  color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
                   width: 1,
                 ),
               ),
@@ -209,7 +209,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
               side: BorderSide(
-                color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
+                color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
                 width: 1,
               ),
             ),
@@ -251,7 +251,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       title: Text(localizations?.helpAndSupport ?? "Help & Support"),
                       trailing: Icon(
                         Icons.chevron_right,
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                       ),
                       onTap: () {
                         // TODO: Navigate to help & support screen or show dialog
@@ -276,7 +276,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       title: Text(localizations?.termsAndPrivacy ?? "Terms & Privacy"),
                       trailing: Icon(
                         Icons.chevron_right,
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                       ),
                       onTap: () {
                         Navigator.of(context).push(

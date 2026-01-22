@@ -1,4 +1,4 @@
-/// Analytics statistics models
+// Analytics statistics models
 
 class AnalyticsStats {
   final OverallStats overall;

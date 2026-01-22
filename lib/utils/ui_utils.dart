@@ -104,8 +104,8 @@ class RecipeFallbackImage extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3),
-            Theme.of(context).colorScheme.secondaryContainer.withOpacity(0.2),
+            Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.3),
+            Theme.of(context).colorScheme.secondaryContainer.withValues(alpha: 0.2),
           ],
         ),
       ),
@@ -163,7 +163,7 @@ class RecipeFallbackImage extends StatelessWidget {
         Icon(
           Icons.restaurant_menu_rounded,
           size: iconSize,
-          color: Theme.of(context).colorScheme.primary.withOpacity(0.4),
+          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.4),
         ),
         const SizedBox(height: 8),
         Text(
@@ -171,7 +171,7 @@ class RecipeFallbackImage extends StatelessWidget {
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w500,
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
           ),
         ),
       ],
@@ -269,7 +269,7 @@ class RecipeImageWidget extends StatelessWidget {
               child: CircularProgressIndicator(
                 strokeWidth: 2,
                 valueColor: AlwaysStoppedAnimation<Color>(
-                  Theme.of(context).colorScheme.primary.withOpacity(0.5),
+                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.5),
                 ),
               ),
             ),

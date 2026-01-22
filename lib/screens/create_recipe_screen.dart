@@ -290,10 +290,10 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
     // Parse cooking time values - we already validated they're valid if text is present
     final cookingTimeMin = cookingTimeMinText.isEmpty
         ? null
-        : (int.tryParse(cookingTimeMinText) ?? null);
+        : int.tryParse(cookingTimeMinText);
     final cookingTimeMax = cookingTimeMaxText.isEmpty
         ? null
-        : (int.tryParse(cookingTimeMaxText) ?? null);
+        : int.tryParse(cookingTimeMaxText);
 
     if (cookingTimeMin != null && cookingTimeMax != null && cookingTimeMin > cookingTimeMax) {
       ErrorUtils.showError(context, localizations?.minCookingTimeCannotBeGreater ?? "Minimum cooking time cannot be greater than maximum time");
@@ -503,7 +503,7 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 filled: true,
-                fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
               ),
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                   validator: (value) {
@@ -530,7 +530,7 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 filled: true,
-                fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
               ),
                   maxLines: 4,
                 );
@@ -551,7 +551,7 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                     filled: true,
-                    fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                    fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                   ),
                 );
               },
@@ -581,7 +581,7 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
                             borderRadius: BorderRadius.circular(12),
                           ),
                           filled: true,
-                          fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                          fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                           prefixIcon: const Icon(Icons.timer_outlined),
                         ),
                         onChanged: (value) {
@@ -620,7 +620,7 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
                             borderRadius: BorderRadius.circular(12),
                           ),
                           filled: true,
-                          fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                          fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                           prefixIcon: const Icon(Icons.timer),
                         ),
                         onChanged: (value) {
@@ -803,12 +803,12 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
                     height: 100,
                     decoration: BoxDecoration(
                       border: Border.all(
-                        color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
+                        color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
                         width: 2,
                         style: BorderStyle.solid,
                       ),
                       borderRadius: BorderRadius.circular(12),
-                      color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                      color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                     ),
                     child: Builder(
                       builder: (context) {
@@ -819,14 +819,14 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
                             Icon(
                               Icons.add_photo_alternate_rounded,
                               size: 32,
-                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                             ),
                             const SizedBox(height: 4),
                             Text(
                               localizations?.add ?? "Add",
                               style: TextStyle(
                                 fontSize: 12,
-                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                               ),
                             ),
                           ],
@@ -862,7 +862,7 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       filled: true,
-                      fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                      fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     ),
                             onSubmitted: (_) => _addTag(),
@@ -975,7 +975,7 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
                               return Text(
                                 localizations?.noStepsYet ?? "No steps yet. Add one to get started!",
                                 style: TextStyle(
-                                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
                                 ),
                               );
                             },
@@ -1110,7 +1110,7 @@ class _IngredientField extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
-          color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
+          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
           width: 1,
         ),
       ),
@@ -1133,7 +1133,7 @@ class _IngredientField extends StatelessWidget {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       filled: true,
-                      fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                      fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                     ),
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -1159,7 +1159,7 @@ class _IngredientField extends StatelessWidget {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       filled: true,
-                      fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                      fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                     ),
                   );
@@ -1181,7 +1181,7 @@ class _IngredientField extends StatelessWidget {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       filled: true,
-                      fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                      fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                     ),
                   );
@@ -1248,7 +1248,7 @@ class _StepField extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
-          color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
+          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
           width: 1,
         ),
       ),
@@ -1282,7 +1282,7 @@ class _StepField extends StatelessWidget {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   filled: true,
-                  fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                  fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                   contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                 ),
                 maxLines: 3,

@@ -324,7 +324,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Builder(
               builder: (context) {
                 final localizations = AppLocalizations.of(context);
-                if (avatarUrl == null || avatarUrl.isEmpty)
+                if (avatarUrl == null || avatarUrl.isEmpty) {
                   return ListTile(
                     leading: const Icon(Icons.add_photo_alternate_outlined),
                     title: Text(localizations?.addAvatar ?? "Add Avatar"),
@@ -333,7 +333,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       _uploadAvatar();
                     },
                   );
-                else
+                } else {
                   return Column(
                     children: [
                       ListTile(
@@ -362,6 +362,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     ],
                   );
+                }
               },
             ),
             const SizedBox(height: 8),
@@ -516,7 +517,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 Text(
                                   "@${_userProfile!.username}",
                                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                                       ),
                                 ),
                               ],
@@ -679,7 +680,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               Positioned.fill(
                                 child: Container(
                                   decoration: BoxDecoration(
-                                    color: Colors.black.withOpacity(0.5),
+                                    color: Colors.black.withValues(alpha: 0.5),
                                     shape: BoxShape.circle,
                                   ),
                                   child: const Center(
@@ -730,7 +731,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             Text(
                               "@$username",
                               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                                   ),
                             ),
                           ],
@@ -747,7 +748,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         Icon(
                           Icons.email_outlined,
                           size: 20,
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                         ),
                         const SizedBox(width: 8),
                         Text(
@@ -1008,7 +1009,7 @@ class _StatItem extends StatelessWidget {
             Text(
               label,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
             ),
             if (showChevron) ...[
@@ -1016,7 +1017,7 @@ class _StatItem extends StatelessWidget {
               Icon(
                 Icons.chevron_right,
                 size: 16,
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
               ),
             ],
           ],
@@ -1071,7 +1072,7 @@ class _RecipeGridCard extends StatelessWidget {
                   end: Alignment.bottomCenter,
                   colors: [
                     Colors.transparent,
-                    Colors.black.withOpacity(0.7),
+                    Colors.black.withValues(alpha: 0.7),
                   ],
                   stops: const [0.4, 1.0],
                 ),
@@ -1111,13 +1112,13 @@ class _RecipeGridCard extends StatelessWidget {
                     Icon(
                       Icons.favorite,
                       size: 12,
-                      color: Colors.white.withOpacity(0.9),
+                      color: Colors.white.withValues(alpha: 0.9),
                     ),
                     const SizedBox(width: 2),
                     Text(
                       recipe.likes.toString(),
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.9),
+                        color: Colors.white.withValues(alpha: 0.9),
                         fontSize: 11,
                         shadows: const [
                           Shadow(
@@ -1131,13 +1132,13 @@ class _RecipeGridCard extends StatelessWidget {
                     Icon(
                       Icons.chat_bubble,
                       size: 12,
-                      color: Colors.white.withOpacity(0.9),
+                      color: Colors.white.withValues(alpha: 0.9),
                     ),
                     const SizedBox(width: 2),
                     Text(
                       recipe.comments.toString(),
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.9),
+                        color: Colors.white.withValues(alpha: 0.9),
                         fontSize: 11,
                         shadows: const [
                           Shadow(
@@ -1179,7 +1180,7 @@ class _PrivacySettings extends StatelessWidget {
             Icon(
               Icons.lock_outline,
               size: 20,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
             ),
             const SizedBox(width: 8),
             Text(
