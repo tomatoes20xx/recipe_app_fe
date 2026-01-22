@@ -245,6 +245,39 @@ class AppLocalizations {
   String get georgianLanguage => _localizedValues[locale.languageCode]?["georgianLanguage"] ?? "ქართული";
   String get helpAndSupport => _localizedValues[locale.languageCode]?["helpAndSupport"] ?? "Help & Support";
   String get termsAndPrivacy => _localizedValues[locale.languageCode]?["termsAndPrivacy"] ?? "Terms & Privacy";
+  
+  // Help & Support
+  String get helpWelcomeTitle => _localizedValues[locale.languageCode]?["helpWelcomeTitle"] ?? "Welcome to Help & Support";
+  String get helpWelcomeMessage => _localizedValues[locale.languageCode]?["helpWelcomeMessage"] ?? "I'm a solo developer working on CookBook. While I don't have a dedicated support team, I'm here to help! Please check the FAQs below first, and if you still need assistance, feel free to reach out.";
+  String get faq => _localizedValues[locale.languageCode]?["faq"] ?? "Frequently Asked Questions";
+  String get faqHowToCreateRecipe => _localizedValues[locale.languageCode]?["faqHowToCreateRecipe"] ?? "How do I create a recipe?";
+  String get faqHowToCreateRecipeAnswer => _localizedValues[locale.languageCode]?["faqHowToCreateRecipeAnswer"] ?? "Tap the '+' button in the navigation bar or use the 'Create Recipe' option from the menu. Fill in the recipe details including title, description, ingredients, steps, and images, then save.";
+  String get faqHowToSaveRecipe => _localizedValues[locale.languageCode]?["faqHowToSaveRecipe"] ?? "How do I save a recipe?";
+  String get faqHowToSaveRecipeAnswer => _localizedValues[locale.languageCode]?["faqHowToSaveRecipeAnswer"] ?? "When viewing a recipe, tap the bookmark icon to save it. You can view all your saved recipes from the menu under 'Saved Recipes'.";
+  String get faqHowToSearch => _localizedValues[locale.languageCode]?["faqHowToSearch"] ?? "How do I search for recipes?";
+  String get faqHowToSearchAnswer => _localizedValues[locale.languageCode]?["faqHowToSearchAnswer"] ?? "Use the search icon in the navigation bar. You can search by recipe name, ingredients, or cuisine type. Use filters to narrow down your search results.";
+  String get faqHowToFollowUser => _localizedValues[locale.languageCode]?["faqHowToFollowUser"] ?? "How do I follow other users?";
+  String get faqHowToFollowUserAnswer => _localizedValues[locale.languageCode]?["faqHowToFollowUserAnswer"] ?? "Visit a user's profile and tap the 'Follow' button. You'll see their recipes in your 'Following' feed.";
+  String get faqAccountIssues => _localizedValues[locale.languageCode]?["faqAccountIssues"] ?? "I'm having trouble with my account. What should I do?";
+  String get faqAccountIssuesAnswer => _localizedValues[locale.languageCode]?["faqAccountIssuesAnswer"] ?? "Try logging out and logging back in. If you've forgotten your password, use the password reset option on the login screen. If issues persist, contact us using the information below.";
+  String get faqAppNotWorking => _localizedValues[locale.languageCode]?["faqAppNotWorking"] ?? "The app isn't working properly. What can I do?";
+  String get faqAppNotWorkingAnswer => _localizedValues[locale.languageCode]?["faqAppNotWorkingAnswer"] ?? "First, try closing and reopening the app. If that doesn't help, try restarting your device. Make sure you have a stable internet connection. If the problem continues, please report it using the bug reporting section below.";
+  String get reportIssues => _localizedValues[locale.languageCode]?["reportIssues"] ?? "Report Issues & Bugs";
+  String get reportIssuesInstructions => _localizedValues[locale.languageCode]?["reportIssuesInstructions"] ?? "When reporting a bug or issue, please include:";
+  String get reportIssuesAppVersion => _localizedValues[locale.languageCode]?["reportIssuesAppVersion"] ?? "App version (shown below)";
+  String get reportIssuesDeviceInfo => _localizedValues[locale.languageCode]?["reportIssuesDeviceInfo"] ?? "Your device type and OS version";
+  String get reportIssuesStepsToReproduce => _localizedValues[locale.languageCode]?["reportIssuesStepsToReproduce"] ?? "Steps to reproduce the issue";
+  String get reportIssuesScreenshots => _localizedValues[locale.languageCode]?["reportIssuesScreenshots"] ?? "Screenshots if possible";
+  String get reportIssuesExpectedBehavior => _localizedValues[locale.languageCode]?["reportIssuesExpectedBehavior"] ?? "What you expected to happen";
+  String get reportIssuesNote => _localizedValues[locale.languageCode]?["reportIssuesNote"] ?? "Note: As a solo developer, I may not be able to respond immediately, but I review all reports and work on fixes in order of priority.";
+  String get contactUs => _localizedValues[locale.languageCode]?["contactUs"] ?? "Contact Us";
+  String get contactEmail => _localizedValues[locale.languageCode]?["contactEmail"] ?? "Email Support";
+  String get copyEmailAddress => _localizedValues[locale.languageCode]?["copyEmailAddress"] ?? "Copy Email Address";
+  String get copyEmailAddressSubtitle => _localizedValues[locale.languageCode]?["copyEmailAddressSubtitle"] ?? "Copy the support email to your clipboard";
+  String get emailCopiedToClipboard => _localizedValues[locale.languageCode]?["emailCopiedToClipboard"] ?? "Email address copied to clipboard";
+  String get appInformation => _localizedValues[locale.languageCode]?["appInformation"] ?? "App Information";
+  String get appDescription => _localizedValues[locale.languageCode]?["appDescription"] ?? "Your personal recipe collection and sharing platform";
+  String get versionCopiedToClipboard => _localizedValues[locale.languageCode]?["versionCopiedToClipboard"] ?? "Version copied to clipboard";
   String get termsOfService => _localizedValues[locale.languageCode]?["termsOfService"] ?? "Terms of Service";
   String get privacyPolicy => _localizedValues[locale.languageCode]?["privacyPolicy"] ?? "Privacy Policy";
   
@@ -554,6 +587,37 @@ class AppLocalizations {
       "pleaseAddAtLeastOneStep": "Please add at least one step",
       "ingredientNameRequired": "Ingredient {index}: name is required",
       "stepInstructionRequired": "Step {index}: instruction is required",
+      "helpWelcomeTitle": "Welcome to Help & Support",
+      "helpWelcomeMessage": "I'm a solo developer working on CookBook. While I don't have a dedicated support team, I'm here to help! Please check the FAQs below first, and if you still need assistance, feel free to reach out.",
+      "faq": "Frequently Asked Questions",
+      "faqHowToCreateRecipe": "How do I create a recipe?",
+      "faqHowToCreateRecipeAnswer": "Tap the '+' button in the navigation bar or use the 'Create Recipe' option from the menu. Fill in the recipe details including title, description, ingredients, steps, and images, then save.",
+      "faqHowToSaveRecipe": "How do I save a recipe?",
+      "faqHowToSaveRecipeAnswer": "When viewing a recipe, tap the bookmark icon to save it. You can view all your saved recipes from the menu under 'Saved Recipes'.",
+      "faqHowToSearch": "How do I search for recipes?",
+      "faqHowToSearchAnswer": "Use the search icon in the navigation bar. You can search by recipe name, ingredients, or cuisine type. Use filters to narrow down your search results.",
+      "faqHowToFollowUser": "How do I follow other users?",
+      "faqHowToFollowUserAnswer": "Visit a user's profile and tap the 'Follow' button. You'll see their recipes in your 'Following' feed.",
+      "faqAccountIssues": "I'm having trouble with my account. What should I do?",
+      "faqAccountIssuesAnswer": "Try logging out and logging back in. If you've forgotten your password, use the password reset option on the login screen. If issues persist, contact us using the information below.",
+      "faqAppNotWorking": "The app isn't working properly. What can I do?",
+      "faqAppNotWorkingAnswer": "First, try closing and reopening the app. If that doesn't help, try restarting your device. Make sure you have a stable internet connection. If the problem continues, please report it using the bug reporting section below.",
+      "reportIssues": "Report Issues & Bugs",
+      "reportIssuesInstructions": "When reporting a bug or issue, please include:",
+      "reportIssuesAppVersion": "App version (shown below)",
+      "reportIssuesDeviceInfo": "Your device type and OS version",
+      "reportIssuesStepsToReproduce": "Steps to reproduce the issue",
+      "reportIssuesScreenshots": "Screenshots if possible",
+      "reportIssuesExpectedBehavior": "What you expected to happen",
+      "reportIssuesNote": "Note: As a solo developer, I may not be able to respond immediately, but I review all reports and work on fixes in order of priority.",
+      "contactUs": "Contact Us",
+      "contactEmail": "Email Support",
+      "copyEmailAddress": "Copy Email Address",
+      "copyEmailAddressSubtitle": "Copy the support email to your clipboard",
+      "emailCopiedToClipboard": "Email address copied to clipboard",
+      "appInformation": "App Information",
+      "appDescription": "Your personal recipe collection and sharing platform",
+      "versionCopiedToClipboard": "Version copied to clipboard",
     },
     "ka": {
       "appTitle": "CookBook",
@@ -807,6 +871,37 @@ class AppLocalizations {
       "pleaseAddAtLeastOneStep": "გთხოვთ დაამატოთ მინიმუმ ერთი ნაბიჯი",
       "ingredientNameRequired": "ინგრედიენტი {index}: სახელი აუცილებელია",
       "stepInstructionRequired": "ნაბიჯი {index}: ინსტრუქცია აუცილებელია",
+      "helpWelcomeTitle": "კეთილი იყოს თქვენი მობრძანება დახმარებასა და მხარდაჭერაში",
+      "helpWelcomeMessage": "მე ვარ მარტო დეველოპერი, რომელიც მუშაობს CookBook-ზე. მიუხედავად იმისა, რომ არ მაქვს გამოყოფილი მხარდაჭერის გუნდი, მე აქ ვარ დასახმარებლად! გთხოვთ ჯერ გადახედოთ ხშირად დასმულ კითხვებს ქვემოთ, და თუ კვლავ გჭირდებათ დახმარება, თავისუფლად დაგვიკავშირდით.",
+      "faq": "ხშირად დასმული კითხვები",
+      "faqHowToCreateRecipe": "როგორ შევქმნა რეცეპტი?",
+      "faqHowToCreateRecipeAnswer": "დააჭირეთ '+' ღილაკს ნავიგაციის ზოლში ან გამოიყენეთ 'რეცეპტის შექმნა' ოფცია მენიუდან. შეავსეთ რეცეპტის დეტალები, მათ შორის სათაური, აღწერა, ინგრედიენტები, ნაბიჯები და სურათები, შემდეგ შეინახეთ.",
+      "faqHowToSaveRecipe": "როგორ შევინახო რეცეპტი?",
+      "faqHowToSaveRecipeAnswer": "რეცეპტის ნახვისას, დააჭირეთ სანიშნის ხატულას მის შესანახად. თქვენ შეგიძლიათ ნახოთ ყველა თქვენი შენახული რეცეპტი მენიუდან 'შენახული რეცეპტები' ქვეშ.",
+      "faqHowToSearch": "როგორ ვიპოვო რეცეპტები?",
+      "faqHowToSearchAnswer": "გამოიყენეთ ძიების ხატულა ნავიგაციის ზოლში. თქვენ შეგიძლიათ ძიება რეცეპტის სახელით, ინგრედიენტებით ან სამზარეულოს ტიპით. გამოიყენეთ ფილტრები შედეგების შესამცირებლად.",
+      "faqHowToFollowUser": "როგორ გავიყოლო სხვა მომხმარებლები?",
+      "faqHowToFollowUserAnswer": "ეწვიეთ მომხმარებლის პროფილს და დააჭირეთ 'გამოწერა' ღილაკს. თქვენ ნახავთ მათ რეცეპტებს თქვენს 'გამოწერილი' არხში.",
+      "faqAccountIssues": "პრობლემა მაქვს ჩემს ანგარიშთან. რა უნდა გავაკეთო?",
+      "faqAccountIssuesAnswer": "სცადეთ გასვლა და ხელახლა შესვლა. თუ დაგავიწყდათ პაროლი, გამოიყენეთ პაროლის აღდგენის ოფცია შესვლის ეკრანზე. თუ პრობლემა გრძელდება, დაგვიკავშირდით ქვემოთ მოცემული ინფორმაციის გამოყენებით.",
+      "faqAppNotWorking": "აპლიკაცია სწორად არ მუშაობს. რა შემიძლია გავაკეთო?",
+      "faqAppNotWorkingAnswer": "ჯერ სცადეთ აპლიკაციის დახურვა და ხელახლა გახსნა. თუ ეს არ დაეხმარება, სცადეთ მოწყობილობის გადატვირთვა. დარწმუნდით, რომ გაქვთ სტაბილური ინტერნეტ-კავშირი. თუ პრობლემა გრძელდება, გთხოვთ შეატყობინოთ ამის შესახებ შეცდომების შეტყობინების განყოფილების გამოყენებით.",
+      "reportIssues": "პრობლემებისა და შეცდომების შეტყობინება",
+      "reportIssuesInstructions": "შეცდომის ან პრობლემის შეტყობინებისას, გთხოვთ შეიცავდეს:",
+      "reportIssuesAppVersion": "აპლიკაციის ვერსია (ნაჩვენებია ქვემოთ)",
+      "reportIssuesDeviceInfo": "თქვენი მოწყობილობის ტიპი და OS ვერსია",
+      "reportIssuesStepsToReproduce": "ნაბიჯები პრობლემის გამოწვევისთვის",
+      "reportIssuesScreenshots": "სკრინშოტები, თუ შესაძლებელია",
+      "reportIssuesExpectedBehavior": "რა მოელოდით რომ მოხდებოდა",
+      "reportIssuesNote": "შენიშვნა: როგორც მარტო დეველოპერს, შეიძლება არ შემეძლოს დაუყოვნებლივ პასუხის გაცემა, მაგრამ მე ვიხილავ ყველა შეტყობინებას და ვმუშაობ გამოსწორებებზე პრიორიტეტის მიხედვით.",
+      "contactUs": "დაგვიკავშირდით",
+      "contactEmail": "ელფოსტის მხარდაჭერა",
+      "copyEmailAddress": "ელფოსტის მისამართის კოპირება",
+      "copyEmailAddressSubtitle": "დააკოპირეთ მხარდაჭერის ელფოსტა თქვენს ბუფერში",
+      "emailCopiedToClipboard": "ელფოსტის მისამართი დაკოპირდა ბუფერში",
+      "appInformation": "აპლიკაციის ინფორმაცია",
+      "appDescription": "თქვენი პერსონალური რეცეპტების კოლექცია და გაზიარების პლატფორმა",
+      "versionCopiedToClipboard": "ვერსია დაკოპირდა ბუფერში",
     },
   };
 }

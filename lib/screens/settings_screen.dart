@@ -7,6 +7,7 @@ import "package:package_info_plus/package_info_plus.dart";
 import "theme_selection_screen.dart";
 import "language_selection_screen.dart";
 import "terms_and_privacy_screen.dart";
+import "help_and_support_screen.dart";
 import "../widgets/section_title_widget.dart";
 
 class SettingsScreen extends StatefulWidget {
@@ -254,10 +255,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                       ),
                       onTap: () {
-                        // TODO: Navigate to help & support screen or show dialog
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(localizations?.helpAndSupport ?? "Help & Support"),
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const HelpAndSupportScreen(),
                           ),
                         );
                       },
