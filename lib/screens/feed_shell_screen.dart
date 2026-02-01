@@ -409,41 +409,86 @@ class _FeedShellDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Drawer(
+      backgroundColor: Theme.of(context).colorScheme.surface,
       child: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: ListView(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                "Menu",
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
+            // Profile section
+            if (auth.isLoggedIn) ...[
+              _DrawerCard(
+                onTap: () {
+                  Navigator.of(context).pop();
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => ProfileScreen(
+                        auth: auth,
+                        apiClient: apiClient,
+                      ),
                     ),
+                  );
+                },
+                child: Row(
+                  children: [
+                    buildUserAvatar(
+                      context,
+                      auth.me?["avatar_url"]?.toString(),
+                      auth.me?["username"]?.toString() ?? "",
+                      radius: 24,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "@${auth.me?["username"] ?? ""}",
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            AppLocalizations.of(context)?.viewProfile ?? "View your profile",
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(
+                      Icons.chevron_right_rounded,
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const Divider(),
-            ListTile(
-              leading: Icon(
-                feed.scope == "global" ? Icons.check_circle : Icons.circle_outlined,
-                color: feed.scope == "global" ? Theme.of(context).colorScheme.primary : null,
-              ),
-              title: Text(AppLocalizations.of(context)?.global ?? "Global"),
-              subtitle: Text(AppLocalizations.of(context)?.seeRecipesFromEveryone ?? "See recipes from everyone"),
-              selected: feed.scope == "global",
+              const SizedBox(height: 24),
+            ],
+
+            // Feed Preferences section
+            _SectionHeader(title: AppLocalizations.of(context)?.feedPreferences ?? "FEED PREFERENCES"),
+            const SizedBox(height: 8),
+            _FeedOptionCard(
+              icon: Icons.public_rounded,
+              title: AppLocalizations.of(context)?.global ?? "Global",
+              subtitle: AppLocalizations.of(context)?.seeRecipesFromEveryone ?? "See recipes from everyone",
+              isSelected: feed.scope == "global",
               onTap: () {
                 Navigator.of(context).pop();
                 onScopeSelected("global");
               },
             ),
-            ListTile(
-              leading: Icon(
-                feed.scope == "following" ? Icons.check_circle : Icons.circle_outlined,
-                color: feed.scope == "following" ? Theme.of(context).colorScheme.primary : null,
-              ),
-              title: Text(AppLocalizations.of(context)?.following ?? "Following"),
-              subtitle: Text(AppLocalizations.of(context)?.seeRecipesFromPeopleYouFollow ?? "See recipes from people you follow"),
-              selected: feed.scope == "following",
+            const SizedBox(height: 8),
+            _FeedOptionCard(
+              icon: Icons.people_alt_outlined,
+              title: AppLocalizations.of(context)?.following ?? "Following",
+              subtitle: AppLocalizations.of(context)?.seeRecipesFromPeopleYouFollow ?? "See recipes from people you follow",
+              isSelected: feed.scope == "following",
               enabled: auth.isLoggedIn,
               onTap: () {
                 if (!auth.isLoggedIn) {
@@ -461,38 +506,38 @@ class _FeedShellDrawer extends StatelessWidget {
                 onScopeSelected("following");
               },
             ),
-            ListTile(
-              leading: Icon(
-                feed.scope == "popular" ? Icons.check_circle : Icons.circle_outlined,
-                color: feed.scope == "popular" ? Theme.of(context).colorScheme.primary : null,
-              ),
-              title: Text(AppLocalizations.of(context)?.popular ?? "Popular"),
-              subtitle: Text(AppLocalizations.of(context)?.mostPopularRecipes ?? "Most popular recipes"),
-              selected: feed.scope == "popular",
+            const SizedBox(height: 8),
+            _FeedOptionCard(
+              icon: Icons.local_fire_department_outlined,
+              title: AppLocalizations.of(context)?.popular ?? "Popular",
+              subtitle: AppLocalizations.of(context)?.mostPopularRecipes ?? "Most popular recipes",
+              isSelected: feed.scope == "popular",
               onTap: () {
                 Navigator.of(context).pop();
                 onScopeSelected("popular");
               },
             ),
-            ListTile(
-              leading: Icon(
-                feed.scope == "trending" ? Icons.check_circle : Icons.circle_outlined,
-                color: feed.scope == "trending" ? Theme.of(context).colorScheme.primary : null,
-              ),
-              title: Text(AppLocalizations.of(context)?.trending ?? "Trending"),
-              subtitle: Text(AppLocalizations.of(context)?.trendingNow ?? "Trending now"),
-              selected: feed.scope == "trending",
+            const SizedBox(height: 8),
+            _FeedOptionCard(
+              icon: Icons.trending_up_rounded,
+              title: AppLocalizations.of(context)?.trending ?? "Trending",
+              subtitle: AppLocalizations.of(context)?.trendingNow ?? "Trending now",
+              isSelected: feed.scope == "trending",
               onTap: () {
                 Navigator.of(context).pop();
                 onScopeSelected("trending");
               },
             ),
-            const Divider(),
+
+            // Quick Access section
             if (auth.isLoggedIn) ...[
-              ListTile(
-                leading: const Icon(Icons.bookmark_outline),
-                title: Text(AppLocalizations.of(context)?.savedRecipes ?? "Saved Recipes"),
-                subtitle: Text(AppLocalizations.of(context)?.viewYourBookmarkedRecipes ?? "View your bookmarked recipes"),
+              const SizedBox(height: 24),
+              _SectionHeader(title: AppLocalizations.of(context)?.quickAccess ?? "QUICK ACCESS"),
+              const SizedBox(height: 8),
+              _QuickAccessCard(
+                icon: Icons.bookmark_outline_rounded,
+                title: AppLocalizations.of(context)?.savedRecipes ?? "Saved Recipes",
+                subtitle: AppLocalizations.of(context)?.viewYourBookmarkedRecipes ?? "View your bookmarked recipes",
                 onTap: () {
                   Navigator.of(context).pop();
                   Navigator.of(context).push(
@@ -505,11 +550,11 @@ class _FeedShellDrawer extends StatelessWidget {
                   );
                 },
               ),
-              const Divider(),
-              ListTile(
-                leading: const Icon(Icons.analytics_rounded),
-                title: Text(AppLocalizations.of(context)?.analyticsStatistics ?? "Analytics Statistics"),
-                subtitle: Text(AppLocalizations.of(context)?.viewTrackingStatistics ?? "View tracking statistics"),
+              const SizedBox(height: 8),
+              _QuickAccessCard(
+                icon: Icons.bar_chart_rounded,
+                title: AppLocalizations.of(context)?.analyticsStatistics ?? "Analytics Statistics",
+                subtitle: AppLocalizations.of(context)?.viewTrackingStatistics ?? "View tracking statistics",
                 onTap: () {
                   Navigator.of(context).pop();
                   Navigator.of(context).push(
@@ -522,10 +567,11 @@ class _FeedShellDrawer extends StatelessWidget {
                   );
                 },
               ),
-              const Divider(),
-              ListTile(
-                leading: const Icon(Icons.settings_outlined),
-                title: Text(AppLocalizations.of(context)?.settings ?? "Settings"),
+              const SizedBox(height: 8),
+              _QuickAccessCard(
+                icon: Icons.settings_outlined,
+                title: AppLocalizations.of(context)?.settings ?? "Settings",
+                subtitle: AppLocalizations.of(context)?.appPreferences ?? "App preferences",
                 onTap: () {
                   Navigator.of(context).pop();
                   Navigator.of(context).push(
@@ -539,41 +585,345 @@ class _FeedShellDrawer extends StatelessWidget {
                   );
                 },
               ),
-              ListTile(
-                leading: buildUserAvatar(
-                  context,
-                  auth.me?["avatar_url"]?.toString(),
-                  auth.me?["username"]?.toString() ?? "",
-                ),
-                title: Text(AppLocalizations.of(context)?.profile ?? "Profile"),
-                subtitle: Text(
-                  auth.me?["username"] != null
-                      ? "@${auth.me!["username"]}"
-                      : (AppLocalizations.of(context)?.viewProfile ?? "View your profile"),
-                ),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => ProfileScreen(
-                        auth: auth,
-                        apiClient: apiClient,
-                      ),
-                    ),
-                  );
-                },
-              ),
-              const Divider(),
             ],
-            ListTile(
-              leading: const Icon(Icons.logout_rounded),
-              title: Text(AppLocalizations.of(context)?.logout ?? "Logout"),
+
+            // Logout button
+            const SizedBox(height: 24),
+            _DrawerCard(
+              isDestructive: true,
               onTap: () {
                 Navigator.of(context).pop();
                 auth.logout();
               },
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.logout_rounded,
+                    color: Theme.of(context).colorScheme.error,
+                    size: 22,
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    AppLocalizations.of(context)?.logout ?? "Logout",
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({required this.title});
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4),
+      child: Text(
+        title.toUpperCase(),
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0.5,
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+        ),
+      ),
+    );
+  }
+}
+
+class _DrawerCard extends StatefulWidget {
+  const _DrawerCard({
+    required this.child,
+    required this.onTap,
+    this.isDestructive = false,
+  });
+
+  final Widget child;
+  final VoidCallback onTap;
+  final bool isDestructive;
+
+  @override
+  State<_DrawerCard> createState() => _DrawerCardState();
+}
+
+class _DrawerCardState extends State<_DrawerCard> {
+  bool _isHovered = false;
+  bool _isPressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final baseColor = Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5);
+    final hoverColor = widget.isDestructive
+        ? Theme.of(context).colorScheme.error.withValues(alpha: 0.1)
+        : Theme.of(context).colorScheme.primary.withValues(alpha: 0.1);
+    final pressedColor = widget.isDestructive
+        ? Theme.of(context).colorScheme.error.withValues(alpha: 0.15)
+        : Theme.of(context).colorScheme.primary.withValues(alpha: 0.15);
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: GestureDetector(
+        onTapDown: (_) => setState(() => _isPressed = true),
+        onTapUp: (_) => setState(() => _isPressed = false),
+        onTapCancel: () => setState(() => _isPressed = false),
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          curve: Curves.easeOut,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            color: _isPressed ? pressedColor : (_isHovered ? hoverColor : baseColor),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: widget.child,
+        ),
+      ),
+    );
+  }
+}
+
+class _FeedOptionCard extends StatefulWidget {
+  const _FeedOptionCard({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.isSelected,
+    required this.onTap,
+    this.enabled = true,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final bool isSelected;
+  final VoidCallback onTap;
+  final bool enabled;
+
+  @override
+  State<_FeedOptionCard> createState() => _FeedOptionCardState();
+}
+
+class _FeedOptionCardState extends State<_FeedOptionCard> {
+  bool _isHovered = false;
+  bool _isPressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final primaryColor = Theme.of(context).colorScheme.primary;
+    final disabledAlpha = widget.enabled ? 1.0 : 0.5;
+    final baseColor = Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5);
+    final hoverColor = primaryColor.withValues(alpha: 0.1);
+    final pressedColor = primaryColor.withValues(alpha: 0.15);
+    final selectedColor = primaryColor.withValues(alpha: 0.12);
+
+    Color bgColor;
+    if (widget.isSelected) {
+      bgColor = selectedColor;
+    } else if (_isPressed) {
+      bgColor = pressedColor;
+    } else if (_isHovered) {
+      bgColor = hoverColor;
+    } else {
+      bgColor = baseColor;
+    }
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: GestureDetector(
+        onTapDown: (_) => setState(() => _isPressed = true),
+        onTapUp: (_) => setState(() => _isPressed = false),
+        onTapCancel: () => setState(() => _isPressed = false),
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          curve: Curves.easeOut,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: bgColor,
+            borderRadius: BorderRadius.circular(12),
+            border: widget.isSelected
+                ? Border.all(color: primaryColor.withValues(alpha: 0.3), width: 1)
+                : null,
+          ),
+          child: Row(
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: widget.isSelected ? primaryColor.withValues(alpha: 0.15) : Colors.transparent,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  widget.icon,
+                  size: 22,
+                  color: widget.isSelected
+                      ? primaryColor
+                      : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7 * disabledAlpha),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.title,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: widget.isSelected ? FontWeight.w600 : FontWeight.w500,
+                        color: widget.isSelected
+                            ? primaryColor
+                            : Theme.of(context).colorScheme.onSurface.withValues(alpha: disabledAlpha),
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      widget.subtitle,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5 * disabledAlpha),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 200),
+                transitionBuilder: (child, animation) => ScaleTransition(
+                  scale: animation,
+                  child: child,
+                ),
+                child: Icon(
+                  widget.isSelected ? Icons.check_circle_rounded : Icons.circle_outlined,
+                  key: ValueKey(widget.isSelected),
+                  size: 22,
+                  color: widget.isSelected
+                      ? primaryColor
+                      : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _QuickAccessCard extends StatefulWidget {
+  const _QuickAccessCard({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  @override
+  State<_QuickAccessCard> createState() => _QuickAccessCardState();
+}
+
+class _QuickAccessCardState extends State<_QuickAccessCard> {
+  bool _isHovered = false;
+  bool _isPressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final primaryColor = Theme.of(context).colorScheme.primary;
+    final baseColor = Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5);
+    final hoverColor = primaryColor.withValues(alpha: 0.08);
+    final pressedColor = primaryColor.withValues(alpha: 0.12);
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: GestureDetector(
+        onTapDown: (_) => setState(() => _isPressed = true),
+        onTapUp: (_) => setState(() => _isPressed = false),
+        onTapCancel: () => setState(() => _isPressed = false),
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          curve: Curves.easeOut,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: _isPressed ? pressedColor : (_isHovered ? hoverColor : baseColor),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: _isHovered || _isPressed
+                      ? primaryColor.withValues(alpha: 0.25)
+                      : primaryColor.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  widget.icon,
+                  size: 20,
+                  color: primaryColor,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.title,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      widget.subtitle,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              AnimatedSlide(
+                duration: const Duration(milliseconds: 150),
+                offset: _isHovered ? const Offset(0.1, 0) : Offset.zero,
+                child: Icon(
+                  Icons.chevron_right_rounded,
+                  size: 22,
+                  color: _isHovered
+                      ? primaryColor.withValues(alpha: 0.7)
+                      : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

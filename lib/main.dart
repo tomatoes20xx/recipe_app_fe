@@ -81,16 +81,16 @@ class MyApp extends StatelessWidget {
             useMaterial3: true,
             textTheme: GoogleFonts.nunitoTextTheme(),
             fontFamilyFallback: const ["Noto Sans Georgian", "Noto Sans"],
-            colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFD93900), brightness: Brightness.light)
-                .copyWith(primary: const Color(0xFFD93900), onPrimary: Colors.white),
+            colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFFF7F0F), brightness: Brightness.light)
+                .copyWith(primary: const Color(0xFFFF7F0F), onPrimary: Colors.white),
           ),
           darkTheme: ThemeData(
             useMaterial3: true,
             brightness: Brightness.dark,
             textTheme: GoogleFonts.nunitoTextTheme(ThemeData(brightness: Brightness.dark).textTheme),
             fontFamilyFallback: const ["Noto Sans Georgian", "Noto Sans"],
-            colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFD93900), brightness: Brightness.dark)
-                .copyWith(primary: const Color(0xFFD93900), onPrimary: Colors.white, surface: Colors.grey[900]!, onSurface: Colors.white),
+            colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFFF7F0F), brightness: Brightness.dark)
+                .copyWith(primary: const Color(0xFFFF7F0F), onPrimary: Colors.white, surface: Colors.grey[900]!, onSurface: Colors.white),
           ),
           themeMode: themeController.themeMode,
           home: AuthGate(

@@ -246,7 +246,10 @@ class _HomeScreenState extends State<HomeScreen> {
     // No need to wrap in AnimatedBuilder for theme - only wrap specific widgets
     // that need custom animations on theme change.
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: Color.alphaBlend(
+        Theme.of(context).colorScheme.secondaryContainer.withValues(alpha: 0.15),
+        Theme.of(context).colorScheme.surface,
+      ),
       body: Column(
         children: [
           _buildControlsSection(feed),

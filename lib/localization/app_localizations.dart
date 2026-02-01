@@ -238,6 +238,9 @@ class AppLocalizations {
 
   // Settings
   String get settings => _localizedValues[locale.languageCode]?["settings"] ?? "Settings";
+  String get appPreferences => _localizedValues[locale.languageCode]?["appPreferences"] ?? "App preferences";
+  String get feedPreferences => _localizedValues[locale.languageCode]?["feedPreferences"] ?? "Feed Preferences";
+  String get quickAccess => _localizedValues[locale.languageCode]?["quickAccess"] ?? "Quick Access";
   String get appearance => _localizedValues[locale.languageCode]?["appearance"] ?? "Appearance";
   String get themeMode => _localizedValues[locale.languageCode]?["themeMode"] ?? "Theme Mode";
   String get system => _localizedValues[locale.languageCode]?["system"] ?? "System";
@@ -508,6 +511,9 @@ class AppLocalizations {
       "steps": "Steps",
       "noStepsYet": "No steps yet. Add one to get started!",
       "settings": "Settings",
+      "appPreferences": "App preferences",
+      "feedPreferences": "Feed Preferences",
+      "quickAccess": "Quick Access",
       "appearance": "Appearance",
       "themeMode": "Theme Mode",
       "system": "System",
@@ -792,6 +798,9 @@ class AppLocalizations {
       "steps": "ნაბიჯები",
       "noStepsYet": "ნაბიჯი ჯერ არ არის. დაამატეთ დასაწყებად!",
       "settings": "პარამეტრები",
+      "appPreferences": "აპის პარამეტრები",
+      "feedPreferences": "ფიდის პარამეტრები",
+      "quickAccess": "სწრაფი წვდომა",
       "appearance": "გაფორმება",
       "themeMode": "გაფორმების რეჟიმი",
       "system": "სისტემა",
