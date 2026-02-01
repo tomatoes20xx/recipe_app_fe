@@ -332,7 +332,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.fromLTRB(0, 8, 0, 120),
       itemCount: controller.items.length + (controller.isLoadingMore ? 1 : 0),
       itemBuilder: (context, index) {
         if (index >= controller.items.length) {

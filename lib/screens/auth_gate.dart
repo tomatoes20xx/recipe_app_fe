@@ -4,7 +4,7 @@ import "../api/api_client.dart";
 import "../auth/auth_controller.dart";
 import "../localization/language_controller.dart";
 import "../theme/theme_controller.dart";
-import "home_screen.dart";
+import "feed_shell_screen.dart";
 import "login_screen.dart";
 
 class AuthGate extends StatefulWidget {
@@ -69,7 +69,7 @@ class _AuthGateState extends State<AuthGate> {
       animation: widget.auth,
       builder: (context, _) {
         if (widget.auth.isLoggedIn) {
-          return HomeScreen(
+          return FeedShellScreen(
             auth: widget.auth,
             apiClient: widget.apiClient,
             themeController: widget.themeController,

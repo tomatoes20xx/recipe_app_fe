@@ -6,6 +6,7 @@ class NotificationController extends ChangeNotifier {
   NotificationController({required this.notificationApi});
 
   final NotificationApi notificationApi;
+  bool _isDisposed = false;
 
   final List<notification_models.Notification> items = [];
   String? nextCursor;
@@ -23,7 +24,7 @@ class NotificationController extends ChangeNotifier {
     error = null;
     items.clear();
     nextCursor = null;
-    notifyListeners();
+    _notify();
 
     try {
       final res = await notificationApi.getNotifications(
@@ -38,7 +39,7 @@ class NotificationController extends ChangeNotifier {
       error = e.toString();
     } finally {
       isLoading = false;
-      notifyListeners();
+      _notify();
     }
   }
 
@@ -49,7 +50,7 @@ class NotificationController extends ChangeNotifier {
 
     isLoadingMore = true;
     error = null;
-    notifyListeners();
+    _notify();
 
     try {
       final res = await notificationApi.getNotifications(
@@ -64,7 +65,7 @@ class NotificationController extends ChangeNotifier {
       error = e.toString();
     } finally {
       isLoadingMore = false;
-      notifyListeners();
+      _notify();
     }
   }
 
@@ -86,7 +87,7 @@ class NotificationController extends ChangeNotifier {
     if (unreadCount > 0) {
       unreadCount--;
     }
-    notifyListeners();
+    _notify();
 
     try {
       await notificationApi.markAsRead(notificationId);
@@ -96,7 +97,7 @@ class NotificationController extends ChangeNotifier {
       if (unreadCount >= 0) {
         unreadCount++;
       }
-      notifyListeners();
+      _notify();
       rethrow;
     }
   }
@@ -112,7 +113,7 @@ class NotificationController extends ChangeNotifier {
     }
     final previousUnreadCount = unreadCount;
     unreadCount = 0;
-    notifyListeners();
+    _notify();
 
     try {
       await notificationApi.markAllAsRead();
@@ -125,7 +126,7 @@ class NotificationController extends ChangeNotifier {
         }
       }
       unreadCount = previousUnreadCount;
-      notifyListeners();
+      _notify();
       rethrow;
     }
   }
@@ -134,7 +135,7 @@ class NotificationController extends ChangeNotifier {
   Future<void> refreshUnreadCount() async {
     try {
       unreadCount = await notificationApi.getUnreadCount();
-      notifyListeners();
+      _notify();
     } catch (e) {
       // Silently fail - don't update UI
     }
@@ -148,6 +149,17 @@ class NotificationController extends ChangeNotifier {
     error = null;
     isLoading = false;
     isLoadingMore = false;
+    _notify();
+  }
+
+  @override
+  void dispose() {
+    _isDisposed = true;
+    super.dispose();
+  }
+
+  void _notify() {
+    if (_isDisposed) return;
     notifyListeners();
   }
 }

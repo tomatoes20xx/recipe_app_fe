@@ -385,7 +385,7 @@ class _SearchScreenState extends State<SearchScreen> {
     return ListView.builder(
       controller: _recipeScrollController,
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 120),
       cacheExtent: 500, // Cache 500px worth of items off-screen for smoother scrolling
       itemCount: recipeSearchController.items.length + (recipeSearchController.isLoadingMore ? 1 : 0),
       itemBuilder: (context, index) {
@@ -512,7 +512,7 @@ class _SearchScreenState extends State<SearchScreen> {
     return ListView.builder(
       controller: _userScrollController,
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 120),
       cacheExtent: 500, // Cache 500px worth of items off-screen for smoother scrolling
       itemCount: userSearchController.items.length + (userSearchController.isLoadingMore ? 1 : 0),
       itemBuilder: (context, index) {

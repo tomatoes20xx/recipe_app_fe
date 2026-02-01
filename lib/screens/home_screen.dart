@@ -1,5 +1,3 @@
-import "dart:async";
-
 import "package:flutter/gestures.dart";
 import "package:flutter/material.dart";
 import "package:flutter_secure_storage/flutter_secure_storage.dart";
@@ -7,12 +5,10 @@ import "package:cached_network_image/cached_network_image.dart";
 
 import "../api/api_client.dart";
 import "../auth/auth_controller.dart";
-import "../feed/feed_api.dart";
 import "../feed/feed_controller.dart";
 import "../feed/feed_models.dart";
 import "../localization/app_localizations.dart";
 import "../localization/language_controller.dart";
-import "../recipes/recipe_api.dart";
 import "../recipes/comments_bottom_sheet.dart";
 import "../recipes/recipe_detail_screen.dart";
 import "../theme/theme_controller.dart";
@@ -21,15 +17,7 @@ import "../widgets/engagement_stat_widget.dart";
 import "../widgets/empty_state_widget.dart";
 import "../widgets/native_ad_card_widget.dart";
 import "../widgets/native_ad_manager.dart";
-import "settings_screen.dart";
-import "../notifications/notification_api.dart";
-import "../notifications/notification_controller.dart";
-import "create_recipe_screen.dart";
-import "notifications_screen.dart";
 import "profile_screen.dart";
-import "saved_recipes_screen.dart";
-import "search_screen.dart";
-import "analytics_stats_screen.dart";
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({
@@ -38,11 +26,15 @@ class HomeScreen extends StatefulWidget {
     required this.apiClient,
     required this.themeController,
     required this.languageController,
+    required this.feed,
+    this.onNotificationRefresh,
   });
   final AuthController auth;
   final ApiClient apiClient;
   final ThemeController themeController;
   final LanguageController languageController;
+  final FeedController feed;
+  final VoidCallback? onNotificationRefresh;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -52,10 +44,7 @@ class _HomeScreenState extends State<HomeScreen> {
   static const _kFullScreenViewKey = "full_screen_view";
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
-  late final FeedController feed;
-  late final NotificationController notificationController;
   final ScrollController sc = ScrollController();
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final PageController _fullScreenPageController = PageController();
   bool _isFullScreenView = false;
   bool _showControls = true;
@@ -70,22 +59,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-
-    feed = FeedController(
-      feedApi: FeedApi(widget.apiClient),
-      recipeApi: RecipeApi(widget.apiClient),
-    );
-    feed.addListener(_onFeedChanged);
-    feed.loadInitial();
-
-    // Initialize notification controller
-    final notificationApi = NotificationApi(widget.apiClient);
-    notificationController = NotificationController(notificationApi: notificationApi);
-    notificationController.addListener(_onNotificationChanged);
-    // Load unread count on init
-    notificationController.refreshUnreadCount();
-    // Refresh unread count periodically (every 30 seconds)
-    _startNotificationPolling();
+    widget.feed.addListener(_onFeedChanged);
 
     sc.addListener(_onScroll);
     _loadFullScreenViewPreference();
@@ -121,7 +95,7 @@ class _HomeScreenState extends State<HomeScreen> {
     
     // when 300px close to bottom, load more
     if (currentOffset > sc.position.maxScrollExtent - 300) {
-      feed.loadMore();
+      widget.feed.loadMore();
     }
 
     // Always show controls when at the top
@@ -172,194 +146,24 @@ class _HomeScreenState extends State<HomeScreen> {
   void dispose() {
     sc.dispose();
     _fullScreenPageController.dispose();
-    feed.removeListener(_onFeedChanged);
-    feed.dispose();
-    notificationController.removeListener(_onNotificationChanged);
-    notificationController.dispose();
-    _notificationTimer?.cancel();
+    widget.feed.removeListener(_onFeedChanged);
     super.dispose();
-  }
-
-  Timer? _notificationTimer;
-
-  void _startNotificationPolling() {
-    // Poll for new notifications every 10 seconds
-    _notificationTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
-      if (mounted && widget.auth.isLoggedIn) {
-        notificationController.refreshUnreadCount();
-      }
-    });
-  }
-
-  void _onNotificationChanged() {
-    if (mounted) {
-      setState(() {});
-    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final feed = widget.feed;
     return AnimatedBuilder(
       animation: widget.themeController,
       builder: (context, _) {
         return Scaffold(
-          key: _scaffoldKey,
           backgroundColor: Theme.of(context).colorScheme.surface,
-          appBar: PreferredSize(
-            preferredSize: const Size.fromHeight(kToolbarHeight),
-            child: AnimatedSize(
-              duration: const Duration(milliseconds: 200),
-              curve: Curves.easeInOut,
-              child: _showControls
-                  ? AppBar(
-                      elevation: 0,
-                      scrolledUnderElevation: 1,
-                      leading: Builder(
-                        builder: (context) {
-                          final localizations = AppLocalizations.of(context);
-                          return IconButton(
-                            onPressed: () => _scaffoldKey.currentState?.openDrawer(),
-                            icon: const Icon(Icons.menu_rounded),
-                            tooltip: localizations?.menu ?? "Menu",
-                          );
-                        },
-                      ),
-                      title: Builder(
-                        builder: (context) {
-                          final localizations = AppLocalizations.of(context);
-                          return Text(
-                            localizations?.feed ?? "Feed",
-                            style: TextStyle(
-                              fontSize: 28,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: -0.5,
-                              color: Theme.of(context).colorScheme.onSurface,
-                            ),
-                          );
-                        },
-                      ),
-                      actions: [
-                        IconButton(
-                          onPressed: () async {
-                            final result = await Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => CreateRecipeScreen(apiClient: widget.apiClient),
-                              ),
-                            );
-                            if (result == true) {
-                              // Recipe created successfully, refresh feed
-                              feed.refresh();
-                            }
-                          },
-                          icon: const Icon(Icons.add_rounded),
-                          tooltip: AppLocalizations.of(context)?.createRecipe ?? "Create Recipe",
-                          style: IconButton.styleFrom(
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        ),
-                        // Notifications button with badge
-                        Stack(
-                          children: [
-                            IconButton(
-                              onPressed: () async {
-                                await Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (_) => NotificationsScreen(
-                                      apiClient: widget.apiClient,
-                                      auth: widget.auth,
-                                    ),
-                                  ),
-                                );
-                                // Refresh unread count when returning from notifications
-                                if (mounted) {
-                                  notificationController.refreshUnreadCount();
-                                }
-                              },
-                              icon: const Icon(Icons.notifications_outlined),
-                              tooltip: AppLocalizations.of(context)?.notifications ?? "Notifications",
-                              style: IconButton.styleFrom(
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                            ),
-                            if (notificationController.unreadCount > 0)
-                              Positioned(
-                                right: 8,
-                                top: 8,
-                                child: Container(
-                                  padding: const EdgeInsets.all(4),
-                                  decoration: BoxDecoration(
-                                    color: Theme.of(context).colorScheme.error,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  constraints: const BoxConstraints(
-                                    minWidth: 16,
-                                    minHeight: 16,
-                                  ),
-                                  child: Text(
-                                    notificationController.unreadCount > 99
-                                        ? "99+"
-                                        : notificationController.unreadCount.toString(),
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                        IconButton(
-                          onPressed: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => SearchScreen(
-                                  apiClient: widget.apiClient,
-                                  auth: widget.auth,
-                                ),
-                              ),
-                            );
-                          },
-                          icon: const Icon(Icons.search_rounded),
-                          tooltip: AppLocalizations.of(context)?.search ?? "Search",
-                          style: IconButton.styleFrom(
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: IconButton(
-                            onPressed: () => widget.auth.logout(),
-                            icon: const Icon(Icons.logout_rounded),
-                            tooltip: AppLocalizations.of(context)?.logout ?? "Logout",
-                            style: IconButton.styleFrom(
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    )
-                  : const SizedBox.shrink(),
-            ),
-          ),
-      drawer: _FeedScopeDrawer(
-        feed: feed,
-        auth: widget.auth,
-        apiClient: widget.apiClient,
-        themeController: widget.themeController,
-        languageController: widget.languageController,
-      ),
-      body: Column(
+          appBar: null,
+      drawer: null,
+      body: Stack(
         children: [
+          Column(
+            children: [
           AnimatedSize(
             duration: const Duration(milliseconds: 200),
             curve: Curves.easeInOut,
@@ -368,59 +172,62 @@ class _HomeScreenState extends State<HomeScreen> {
                     duration: const Duration(milliseconds: 200),
                     curve: Curves.easeInOut,
                     offset: Offset.zero,
-                    child: _Controls(
-                      feed: feed,
-                      isFullScreenView: _isFullScreenView,
-                      onViewToggle: () async {
-                        final newValue = !_isFullScreenView;
-                        
-                        // Save current position before switching
-                        if (_isFullScreenView) {
-                          // Switching from full screen to list - save current page index
-                          _savedListIndex = _currentFullScreenIndex;
-                        } else {
-                          // Switching from list to full screen - save current scroll position
-                          if (sc.hasClients && feed.items.isNotEmpty) {
-                            // Estimate which item is currently visible based on scroll position
-                            // Approximate: each card is roughly 200px tall
-                            const estimatedCardHeight = 200.0;
-                            final scrollOffset = sc.position.pixels;
-                            final estimatedIndex = (scrollOffset / estimatedCardHeight).floor();
-                            _currentFullScreenIndex = estimatedIndex.clamp(0, feed.items.length - 1);
-                          }
-                        }
-                        
-                        setState(() {
-                          _isFullScreenView = newValue;
-                        });
-                        await _saveFullScreenViewPreference(newValue);
-                        
-                        // Restore position after switching (with a small delay to ensure widget is built)
-                        WidgetsBinding.instance.addPostFrameCallback((_) {
-                          if (!mounted) return;
+                    child: SafeArea(
+                      bottom: false,
+                      child: _Controls(
+                        feed: feed,
+                        isFullScreenView: _isFullScreenView,
+                        onViewToggle: () async {
+                          final newValue = !_isFullScreenView;
                           
-                          if (newValue && _currentFullScreenIndex >= 0) {
-                            // Switching to full screen - restore page index
-                            if (_fullScreenPageController.hasClients && 
-                                _currentFullScreenIndex < feed.items.length) {
-                              _fullScreenPageController.jumpToPage(_currentFullScreenIndex);
-                            }
-                          } else if (!newValue && _savedListIndex != null) {
-                            // Switching to list - restore scroll position, centered in viewport
-                            if (sc.hasClients) {
+                          // Save current position before switching
+                          if (_isFullScreenView) {
+                            // Switching from full screen to list - save current page index
+                            _savedListIndex = _currentFullScreenIndex;
+                          } else {
+                            // Switching from list to full screen - save current scroll position
+                            if (sc.hasClients && feed.items.isNotEmpty) {
+                              // Estimate which item is currently visible based on scroll position
+                              // Approximate: each card is roughly 200px tall
                               const estimatedCardHeight = 200.0;
-                              // Calculate target offset to center the item in the viewport
-                              final viewportHeight = MediaQuery.of(context).size.height;
-                              final targetItemOffset = _savedListIndex! * estimatedCardHeight;
-                              // Center the item by subtracting half the viewport height
-                              final targetOffset = (targetItemOffset - (viewportHeight / 2) + (estimatedCardHeight / 2))
-                                  .clamp(0.0, sc.position.maxScrollExtent);
-                              sc.jumpTo(targetOffset);
+                              final scrollOffset = sc.position.pixels;
+                              final estimatedIndex = (scrollOffset / estimatedCardHeight).floor();
+                              _currentFullScreenIndex = estimatedIndex.clamp(0, feed.items.length - 1);
                             }
                           }
-                        });
-                      },
-                      languageController: widget.languageController,
+                          
+                          setState(() {
+                            _isFullScreenView = newValue;
+                          });
+                          await _saveFullScreenViewPreference(newValue);
+                          
+                          // Restore position after switching (with a small delay to ensure widget is built)
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            if (!mounted) return;
+                            
+                            if (newValue && _currentFullScreenIndex >= 0) {
+                              // Switching to full screen - restore page index
+                              if (_fullScreenPageController.hasClients && 
+                                  _currentFullScreenIndex < feed.items.length) {
+                                _fullScreenPageController.jumpToPage(_currentFullScreenIndex);
+                              }
+                            } else if (!newValue && _savedListIndex != null) {
+                              // Switching to list - restore scroll position, centered in viewport
+                              if (sc.hasClients) {
+                                const estimatedCardHeight = 200.0;
+                                // Calculate target offset to center the item in the viewport
+                                final viewportHeight = MediaQuery.of(context).size.height;
+                                final targetItemOffset = _savedListIndex! * estimatedCardHeight;
+                                // Center the item by subtracting half the viewport height
+                                final targetOffset = (targetItemOffset - (viewportHeight / 2) + (estimatedCardHeight / 2))
+                                    .clamp(0.0, sc.position.maxScrollExtent);
+                                sc.jumpTo(targetOffset);
+                              }
+                            }
+                          });
+                        },
+                        languageController: widget.languageController,
+                      ),
                     ),
                   )
                 : const SizedBox.shrink(),
@@ -490,8 +297,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           _currentFullScreenIndex = index;
                         },
                         onActionCompleted: () {
-                          // Refresh notification count after like/bookmark actions
-                          notificationController.refreshUnreadCount();
+                          widget.onNotificationRefresh?.call();
                         },
                       ),
                     )
@@ -501,11 +307,12 @@ class _HomeScreenState extends State<HomeScreen> {
                       apiClient: widget.apiClient,
                       auth: widget.auth,
                       onActionCompleted: () {
-                        // Refresh notification count after like/bookmark actions
-                        notificationController.refreshUnreadCount();
+                        widget.onNotificationRefresh?.call();
                       },
                     ),
             ),
+          ),
+            ],
           ),
         ],
       ),
@@ -776,228 +583,6 @@ class _Controls extends StatelessWidget {
   }
 }
 
-class _FeedScopeDrawer extends StatelessWidget {
-  const _FeedScopeDrawer({
-    required this.feed,
-    required this.auth,
-    required this.apiClient,
-    required this.themeController,
-    required this.languageController,
-  });
-  final FeedController feed;
-  final AuthController auth;
-  final ApiClient apiClient;
-  final ThemeController themeController;
-  final LanguageController languageController;
-
-  @override
-  Widget build(BuildContext context) {
-    return Drawer(
-      child: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                "Feed Scope",
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-              ),
-            ),
-            const Divider(),
-            Builder(
-              builder: (context) {
-                final localizations = AppLocalizations.of(context);
-                return ListTile(
-                  leading: Icon(
-                    feed.scope == "global" ? Icons.check_circle : Icons.circle_outlined,
-                    color: feed.scope == "global"
-                        ? Theme.of(context).colorScheme.primary
-                        : null,
-                  ),
-                  title: Text(localizations?.global ?? "Global"),
-                  subtitle: Text(localizations?.seeRecipesFromEveryone ?? "See recipes from everyone"),
-                  selected: feed.scope == "global",
-                  onTap: () {
-                    feed.setScope("global");
-                    Navigator.of(context).pop();
-                  },
-                );
-              },
-            ),
-            Builder(
-              builder: (context) {
-                final localizations = AppLocalizations.of(context);
-                return ListTile(
-                  leading: Icon(
-                    feed.scope == "following" ? Icons.check_circle : Icons.circle_outlined,
-                    color: feed.scope == "following"
-                        ? Theme.of(context).colorScheme.primary
-                        : null,
-                  ),
-                  title: Text(localizations?.following ?? "Following"),
-                  subtitle: Text(localizations?.seeRecipesFromPeopleYouFollow ?? "See recipes from people you follow"),
-                  selected: feed.scope == "following",
-                  enabled: auth.isLoggedIn,
-                  onTap: () {
-                    if (!auth.isLoggedIn) {
-                      Navigator.of(context).pop();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(localizations?.logInToSeeFollowingFeed ?? "Log in to see Following feed")),
-                      );
-                      return;
-                    }
-                    feed.setScope("following");
-                    Navigator.of(context).pop();
-                  },
-                );
-              },
-            ),
-            Builder(
-              builder: (context) {
-                final localizations = AppLocalizations.of(context);
-                return ListTile(
-                  leading: Icon(
-                    feed.scope == "popular" ? Icons.check_circle : Icons.circle_outlined,
-                    color: feed.scope == "popular"
-                        ? Theme.of(context).colorScheme.primary
-                        : null,
-                  ),
-                  title: Text(localizations?.popular ?? "Popular"),
-                  subtitle: Text(localizations?.mostPopularRecipes ?? "Most popular recipes"),
-                  selected: feed.scope == "popular",
-                  onTap: () {
-                    feed.setScope("popular");
-                    Navigator.of(context).pop();
-                  },
-                );
-              },
-            ),
-            Builder(
-              builder: (context) {
-                final localizations = AppLocalizations.of(context);
-                return ListTile(
-                  leading: Icon(
-                    feed.scope == "trending" ? Icons.check_circle : Icons.circle_outlined,
-                    color: feed.scope == "trending"
-                        ? Theme.of(context).colorScheme.primary
-                        : null,
-                  ),
-                  title: Text(localizations?.trending ?? "Trending"),
-                  subtitle: Text(localizations?.trendingNow ?? "Trending now"),
-                  selected: feed.scope == "trending",
-                  onTap: () {
-                    feed.setScope("trending");
-                    Navigator.of(context).pop();
-                  },
-                );
-              },
-            ),
-            const Divider(),
-            if (auth.isLoggedIn) ...[
-              Builder(
-                builder: (context) {
-                  final localizations = AppLocalizations.of(context);
-                  return ListTile(
-                    leading: const Icon(Icons.bookmark_outline),
-                    title: Text(localizations?.savedRecipes ?? "Saved Recipes"),
-                    subtitle: Text(localizations?.viewYourBookmarkedRecipes ?? "View your bookmarked recipes"),
-                    onTap: () {
-                      Navigator.of(context).pop();
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => SavedRecipesScreen(
-                            apiClient: apiClient,
-                            auth: auth,
-                          ),
-                        ),
-                      );
-                    },
-                  );
-                },
-              ),
-              const Divider(),
-              Builder(
-                builder: (context) {
-                  final localizations = AppLocalizations.of(context);
-                  return ListTile(
-                    leading: const Icon(Icons.analytics_rounded),
-                    title: Text(localizations?.analyticsStatistics ?? "Analytics Statistics"),
-                    subtitle: Text(localizations?.viewTrackingStatistics ?? "View tracking statistics"),
-                    onTap: () {
-                      Navigator.of(context).pop();
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => AnalyticsStatsScreen(
-                            apiClient: apiClient,
-                            auth: auth,
-                          ),
-                        ),
-                      );
-                    },
-                  );
-                },
-              ),
-              const Divider(),
-              Builder(
-                builder: (context) {
-                  final localizations = AppLocalizations.of(context);
-                  return ListTile(
-                    leading: const Icon(Icons.settings_outlined),
-                    title: Text(localizations?.settings ?? "Settings"),
-                    onTap: () {
-                      Navigator.of(context).pop();
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => SettingsScreen(
-                            themeController: themeController,
-                            languageController: languageController,
-                            auth: auth,
-                          ),
-                        ),
-                      );
-                    },
-                  );
-                },
-              ),
-              Builder(
-                builder: (context) {
-                  final localizations = AppLocalizations.of(context);
-                  return ListTile(
-                    leading: buildUserAvatar(
-                      context,
-                      auth.me?["avatar_url"]?.toString(),
-                      auth.me?["username"]?.toString() ?? "",
-                    ),
-                    title: Text(localizations?.profile ?? "Profile"),
-                    subtitle: Text(
-                      auth.me?["username"] != null
-                          ? "@${auth.me!["username"]}"
-                          : (localizations?.viewProfile ?? "View your profile"),
-                    ),
-                    onTap: () {
-                      Navigator.of(context).pop();
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => ProfileScreen(
-                          auth: auth,
-                          apiClient: apiClient,
-                          ),
-                        ),
-                      );
-                    },
-                  );
-                },
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 class _SortDropdown extends StatelessWidget {
   const _SortDropdown({required this.feed});
@@ -1088,7 +673,7 @@ class _FeedList extends StatelessWidget {
     if (feed.isLoading) {
       return ListView.builder(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.only(bottom: 120),
         itemCount: 5, // Show 5 skeleton cards
         itemBuilder: (context, i) {
           return Padding(
@@ -1106,6 +691,7 @@ class _FeedList extends StatelessWidget {
     if (feed.error != null && feed.items.isEmpty) {
       return ListView(
         physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.only(bottom: 120),
         children: [
           const SizedBox(height: 120),
           ErrorStateWidget(
@@ -1146,7 +732,7 @@ class _FeedList extends StatelessWidget {
     return ListView.builder(
       controller: controller,
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.only(bottom: 120),
       cacheExtent: 100, // Further reduced to minimize simultaneous ad loading
       itemCount: totalItemCount,
       itemBuilder: (context, i) {
@@ -2069,7 +1655,7 @@ class _FullScreenFeedCardState extends State<_FullScreenFeedCard> {
               },
               child: SafeArea(
                 child: Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
                   child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
