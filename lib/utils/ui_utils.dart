@@ -208,40 +208,44 @@ class RecipeImageWidget extends StatelessWidget {
     this.placeholderSize = 24,
     this.fadeInDuration = const Duration(milliseconds: 200),
     this.fadeOutDuration = const Duration(milliseconds: 100),
+    this.showProgressIndicator = false,
   });
 
   /// Image URL (can be relative or absolute - will be built automatically)
   final String imageUrl;
-  
+
   /// Width of the image container (null for unbounded)
   final double? width;
-  
+
   /// Height of the image container (null for unbounded)
   final double? height;
-  
+
   /// How the image should be fitted (default: BoxFit.cover)
   final BoxFit fit;
-  
+
   /// Optional explicit cache width (auto-calculated if not provided)
   final int? cacheWidth;
-  
+
   /// Optional explicit cache height (auto-calculated if not provided)
   final int? cacheHeight;
-  
+
   /// Size of the loading placeholder spinner (default: 24)
   final double placeholderSize;
-  
+
   /// Fade in duration (default: 200ms)
   final Duration fadeInDuration;
-  
+
   /// Fade out duration (default: 100ms)
   final Duration fadeOutDuration;
+
+  /// Show download progress indicator (default: false, uses shimmer placeholder)
+  final bool showProgressIndicator;
 
   @override
   Widget build(BuildContext context) {
     // Build full URL from relative or absolute URL
     final fullImageUrl = buildImageUrl(imageUrl);
-    
+
     // Calculate optimal cache dimensions if not provided
     final int? finalCacheWidth = cacheWidth ?? _calculateCacheDimension(width, context);
     final int? finalCacheHeight = cacheHeight ?? _calculateCacheDimension(height, context);
@@ -258,23 +262,19 @@ class RecipeImageWidget extends StatelessWidget {
         memCacheHeight: finalCacheHeight,
         fadeInDuration: fadeInDuration,
         fadeOutDuration: fadeOutDuration,
-        placeholder: (context, url) => Container(
-          width: width?.isFinite == true ? width : null,
-          height: height?.isFinite == true ? height : null,
-          color: Theme.of(context).colorScheme.surfaceContainerHighest,
-          child: Center(
-            child: SizedBox(
-              width: placeholderSize,
-              height: placeholderSize,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.5),
-                ),
-              ),
-            ),
-          ),
+        // Use shimmer placeholder for better progressive loading UX
+        placeholder: (context, url) => _ImageShimmerPlaceholder(
+          width: width,
+          height: height,
         ),
+        // Show download progress for large images when enabled
+        progressIndicatorBuilder: showProgressIndicator
+            ? (context, url, progress) => _ImageShimmerPlaceholder(
+                  width: width,
+                  height: height,
+                  progress: progress.progress,
+                )
+            : null,
         errorWidget: (context, url, error) {
           // Use fallback image for broken images
           final iconSize = _calculateIconSize(width, height);
@@ -306,6 +306,109 @@ class RecipeImageWidget extends StatelessWidget {
       return 32.0;
     }
     return 40.0; // Default
+  }
+}
+
+/// Shimmer placeholder for progressive image loading
+/// Creates a smooth animated loading effect while images download
+class _ImageShimmerPlaceholder extends StatefulWidget {
+  const _ImageShimmerPlaceholder({
+    this.width,
+    this.height,
+    this.progress,
+  });
+
+  final double? width;
+  final double? height;
+  final double? progress;
+
+  @override
+  State<_ImageShimmerPlaceholder> createState() => _ImageShimmerPlaceholderState();
+}
+
+class _ImageShimmerPlaceholderState extends State<_ImageShimmerPlaceholder>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    )..repeat();
+    _animation = Tween<double>(begin: -1.0, end: 2.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final baseColor = Theme.of(context).colorScheme.surfaceContainerHighest;
+    final highlightColor = Theme.of(context).colorScheme.surface;
+
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, child) {
+        return Container(
+          width: widget.width?.isFinite == true ? widget.width : null,
+          height: widget.height?.isFinite == true ? widget.height : null,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+              colors: [
+                baseColor,
+                highlightColor,
+                baseColor,
+              ],
+              stops: [
+                (_animation.value - 0.3).clamp(0.0, 1.0),
+                _animation.value.clamp(0.0, 1.0),
+                (_animation.value + 0.3).clamp(0.0, 1.0),
+              ],
+            ),
+          ),
+          child: widget.progress != null
+              ? Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(
+                        width: 32,
+                        height: 32,
+                        child: CircularProgressIndicator(
+                          value: widget.progress,
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Theme.of(context).colorScheme.primary.withValues(alpha: 0.7),
+                          ),
+                        ),
+                      ),
+                      if (widget.progress != null && widget.progress! > 0) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          "${(widget.progress! * 100).toInt()}%",
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                )
+              : null,
+        );
+      },
+    );
   }
 }
 

@@ -61,7 +61,9 @@ class _FeedShellScreenState extends State<FeedShellScreen> {
 
     final notificationApi = NotificationApi(widget.apiClient);
     _notificationController = NotificationController(notificationApi: notificationApi);
-    _notificationController.addListener(_onNotificationChanged);
+    // Note: We don't add a listener that calls setState here.
+    // Instead, we use ListenableBuilder in the widget tree to only rebuild
+    // the notification badge, not the entire screen.
     _notificationController.refreshUnreadCount();
     _startNotificationPolling();
   }
@@ -69,16 +71,9 @@ class _FeedShellScreenState extends State<FeedShellScreen> {
   @override
   void dispose() {
     feed.dispose();
-    _notificationController.removeListener(_onNotificationChanged);
     _notificationController.dispose();
     _notificationTimer?.cancel();
     super.dispose();
-  }
-
-  void _onNotificationChanged() {
-    if (mounted) {
-      setState(() {});
-    }
   }
 
   void _startNotificationPolling() {
@@ -170,23 +165,30 @@ class _FeedShellScreenState extends State<FeedShellScreen> {
             bottom: 12,
             child: SafeArea(
               top: false,
-              child: _BottomShellNavBar(
-                currentIndex: _currentIndex,
-                unreadCount: _notificationController.unreadCount,
-                onHomeTap: () => _setPage(0),
-                onNotificationsTap: () => _setPage(1),
-                onAddRecipeTap: () async {
-                  final result = await Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => CreateRecipeScreen(apiClient: widget.apiClient),
-                    ),
+              // Use ListenableBuilder to only rebuild the nav bar when notification count changes,
+              // not the entire FeedShellScreen. This prevents expensive rebuilds of all pages.
+              child: ListenableBuilder(
+                listenable: _notificationController,
+                builder: (context, _) {
+                  return _BottomShellNavBar(
+                    currentIndex: _currentIndex,
+                    unreadCount: _notificationController.unreadCount,
+                    onHomeTap: () => _setPage(0),
+                    onNotificationsTap: () => _setPage(1),
+                    onAddRecipeTap: () async {
+                      final result = await Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => CreateRecipeScreen(apiClient: widget.apiClient),
+                        ),
+                      );
+                      if (result == true) {
+                        _notificationController.refreshUnreadCount();
+                      }
+                    },
+                    onSearchTap: () => _setPage(2),
+                    onMenuTap: () => _scaffoldKey.currentState?.openDrawer(),
                   );
-                  if (result == true) {
-                    _notificationController.refreshUnreadCount();
-                  }
                 },
-                onSearchTap: () => _setPage(2),
-                onMenuTap: () => _scaffoldKey.currentState?.openDrawer(),
               ),
             ),
           ),

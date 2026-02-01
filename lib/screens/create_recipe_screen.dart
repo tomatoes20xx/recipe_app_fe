@@ -152,27 +152,81 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
     });
   }
 
+  // Max file size after compression: 5MB (good balance for mobile uploads)
+  static const int _maxFileSizeBytes = 5 * 1024 * 1024;
+  // Max dimension for images (reduced from 1920 for faster uploads)
+  static const int _maxImageDimension = 1440;
+  // JPEG quality (reduced slightly for smaller file sizes)
+  static const int _jpegQuality = 80;
+
   Future<void> _pickImage() async {
+    final localizations = AppLocalizations.of(context);
     try {
       final XFile? image = await _imagePicker.pickImage(
         source: ImageSource.gallery,
         imageQuality: 85,
       );
       if (image != null) {
-        // Compress and resize the image before adding it for faster uploads
-        final compressedFile = await _compressImage(File(image.path));
-        if (compressedFile != null) {
+        // Check original file size before processing
+        final originalSize = await File(image.path).length();
+        final originalSizeMB = originalSize / (1024 * 1024);
+
+        // Show processing indicator for large files
+        if (originalSizeMB > 2) {
           setState(() {
-            _selectedImages.add(XFile(compressedFile.path));
+            _uploadStatus = localizations?.processingImage ?? "Processing image...";
+          });
+        }
+
+        // Compress and resize the image before adding it for faster uploads
+        final result = await _compressImage(File(image.path));
+
+        setState(() {
+          _uploadStatus = null;
+        });
+
+        if (result != null) {
+          final compressedSize = await result.length();
+
+          // Validate file size after compression
+          if (compressedSize > _maxFileSizeBytes) {
+            final sizeMB = (compressedSize / (1024 * 1024)).toStringAsFixed(1);
+            final maxMB = (_maxFileSizeBytes / (1024 * 1024)).toStringAsFixed(0);
+            if (mounted) {
+              ErrorUtils.showError(
+                context,
+                localizations?.imageTooLarge(sizeMB, maxMB) ??
+                    "Image is too large (${sizeMB}MB). Maximum size is ${maxMB}MB. Please choose a smaller image.",
+              );
+            }
+            return;
+          }
+
+          setState(() {
+            _selectedImages.add(XFile(result.path));
           });
         } else {
-          // If compression fails, use original
-          setState(() {
-            _selectedImages.add(image);
-          });
+          // If compression fails, check if original is within size limit
+          if (originalSize <= _maxFileSizeBytes) {
+            setState(() {
+              _selectedImages.add(image);
+            });
+          } else {
+            if (mounted) {
+              final maxMB = (_maxFileSizeBytes / (1024 * 1024)).toStringAsFixed(0);
+              ErrorUtils.showError(
+                context,
+                localizations?.imageCompressionFailed(maxMB) ??
+                    "Could not process image. Please choose an image smaller than ${maxMB}MB.",
+              );
+            }
+          }
         }
       }
     } catch (e) {
+      setState(() {
+        _uploadStatus = null;
+      });
       if (mounted) {
         ErrorUtils.showError(context, e);
       }
@@ -180,26 +234,27 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
   }
 
   /// Compresses and resizes an image to reduce file size
-  /// Max dimensions: 1920x1920, Quality: 85% (balanced for quality and speed)
+  /// Max dimensions: 1440x1440 (reduced for faster uploads)
+  /// Quality: 80% JPEG (balanced for quality and file size)
+  /// If still too large after first pass, applies more aggressive compression
   Future<File?> _compressImage(File imageFile) async {
     try {
       final bytes = await imageFile.readAsBytes();
       final originalImage = img.decodeImage(bytes);
-      
+
       if (originalImage == null) return null;
 
-      // Calculate new dimensions (max 1920px on longest side)
+      // Calculate new dimensions (max on longest side)
       int width = originalImage.width;
       int height = originalImage.height;
-      const maxDimension = 1920;
-      
-      if (width > maxDimension || height > maxDimension) {
+
+      if (width > _maxImageDimension || height > _maxImageDimension) {
         if (width > height) {
-          height = (height * maxDimension / width).round();
-          width = maxDimension;
+          height = (height * _maxImageDimension / width).round();
+          width = _maxImageDimension;
         } else {
-          width = (width * maxDimension / height).round();
-          height = maxDimension;
+          width = (width * _maxImageDimension / height).round();
+          height = _maxImageDimension;
         }
       }
 
@@ -211,15 +266,32 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
         interpolation: img.Interpolation.linear,
       );
 
-      // Convert to JPEG with 85% quality
-      final jpegBytes = img.encodeJpg(resizedImage, quality: 85);
-      
+      // First pass: Convert to JPEG with standard quality
+      var jpegBytes = img.encodeJpg(resizedImage, quality: _jpegQuality);
+
+      // If still too large, apply more aggressive compression
+      if (jpegBytes.length > _maxFileSizeBytes) {
+        // Try lower quality
+        jpegBytes = img.encodeJpg(resizedImage, quality: 60);
+      }
+
+      // If STILL too large, reduce dimensions further
+      if (jpegBytes.length > _maxFileSizeBytes) {
+        final smallerImage = img.copyResize(
+          resizedImage,
+          width: (width * 0.7).round(),
+          height: (height * 0.7).round(),
+          interpolation: img.Interpolation.linear,
+        );
+        jpegBytes = img.encodeJpg(smallerImage, quality: 70);
+      }
+
       // Save to a temporary file
       final tempDir = Directory.systemTemp;
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       final compressedFile = File('${tempDir.path}/compressed_$timestamp.jpg');
       await compressedFile.writeAsBytes(jpegBytes);
-      
+
       return compressedFile;
     } catch (e) {
       // If compression fails, return null to use original

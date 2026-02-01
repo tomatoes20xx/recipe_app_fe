@@ -174,6 +174,14 @@ class AppLocalizations {
   String get ingredientExample => _localizedValues[locale.languageCode]?["ingredientExample"] ?? "e.g., flour";
   String get instruction => _localizedValues[locale.languageCode]?["instruction"] ?? "Instruction";
   String get images => _localizedValues[locale.languageCode]?["images"] ?? "Images";
+  String get processingImage => _localizedValues[locale.languageCode]?["processingImage"] ?? "Processing image...";
+  String imageTooLarge(String sizeMB, String maxMB) =>
+      (_localizedValues[locale.languageCode]?["imageTooLarge"] ?? "Image is too large ({sizeMB}MB). Maximum size is {maxMB}MB. Please choose a smaller image.")
+          .replaceAll("{sizeMB}", sizeMB)
+          .replaceAll("{maxMB}", maxMB);
+  String imageCompressionFailed(String maxMB) =>
+      (_localizedValues[locale.languageCode]?["imageCompressionFailed"] ?? "Could not process image. Please choose an image smaller than {maxMB}MB.")
+          .replaceAll("{maxMB}", maxMB);
   String get describeThisStep => _localizedValues[locale.languageCode]?["describeThisStep"] ?? "Describe this step";
   String get createRecipeTitle => _localizedValues[locale.languageCode]?["createRecipeTitle"] ?? "Create Recipe";
   String get editRecipe => _localizedValues[locale.languageCode]?["editRecipe"] ?? "Edit Recipe";
