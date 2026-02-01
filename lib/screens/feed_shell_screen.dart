@@ -244,27 +244,32 @@ class _BottomShellNavBar extends StatelessWidget {
             children: [
               _BottomNavAction(
                 icon: Icons.home_rounded,
+                label: "Home",
                 isActive: currentIndex == 0,
                 onTap: onHomeTap,
               ),
               _BottomNavAction(
                 icon: Icons.notifications_outlined,
+                label: "Notifications",
                 isActive: currentIndex == 1,
                 badgeCount: unreadCount,
                 onTap: onNotificationsTap,
               ),
               _BottomNavAction(
                 icon: Icons.add_rounded,
+                label: "Add",
                 isActive: false,
                 onTap: onAddRecipeTap,
               ),
               _BottomNavAction(
                 icon: Icons.search_rounded,
+                label: "Search",
                 isActive: currentIndex == 2,
                 onTap: onSearchTap,
               ),
               _BottomNavAction(
                 icon: Icons.menu_rounded,
+                label: "Menu",
                 isActive: false,
                 onTap: onMenuTap,
               ),
@@ -279,12 +284,14 @@ class _BottomShellNavBar extends StatelessWidget {
 class _BottomNavAction extends StatelessWidget {
   const _BottomNavAction({
     required this.icon,
+    required this.label,
     required this.onTap,
     required this.isActive,
     this.badgeCount = 0,
   });
 
   final IconData icon;
+  final String label;
   final VoidCallback onTap;
   final bool isActive;
   final int badgeCount;
@@ -295,36 +302,86 @@ class _BottomNavAction extends StatelessWidget {
     final inactiveColor = Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8);
     final iconColor = isActive ? activeColor : inactiveColor;
 
-    return InkResponse(
-      onTap: onTap,
-      radius: 24,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Icon(icon, size: 26, color: iconColor),
-          if (badgeCount > 0)
-            Positioned(
-              right: -4,
-              top: -6,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.error,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                constraints: const BoxConstraints(minWidth: 16),
-                child: Text(
-                  badgeCount > 99 ? "99+" : badgeCount.toString(),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
+    final borderColor = Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2);
+
+    return Expanded(
+      flex: isActive ? 2 : 1,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return InkResponse(
+            onTap: onTap,
+            radius: 28,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Align(
+                  alignment: Alignment.center,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: isActive ? constraints.maxWidth : constraints.maxWidth,
+                    ),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      curve: Curves.easeOut,
+                      padding: EdgeInsets.symmetric(horizontal: isActive ? 12 : 8, vertical: 6),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(999),
+                        border: isActive ? Border.all(color: borderColor, width: 1) : null,
+                      ),
+                      child: IntrinsicWidth(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(icon, size: 26, color: iconColor),
+                            if (isActive) ...[
+                              const SizedBox(width: 6),
+                              Flexible(
+                                child: Text(
+                                  label,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: iconColor,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    height: 1.0,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
-                  textAlign: TextAlign.center,
                 ),
-              ),
+                if (badgeCount > 0)
+                  Positioned(
+                    right: -4,
+                    top: -6,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.error,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      constraints: const BoxConstraints(minWidth: 16),
+                      child: Text(
+                        badgeCount > 99 ? "99+" : badgeCount.toString(),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+              ],
             ),
-        ],
+          );
+        },
       ),
     );
   }
