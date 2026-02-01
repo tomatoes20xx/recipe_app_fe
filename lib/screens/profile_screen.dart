@@ -1130,7 +1130,7 @@ class _RecipeGridCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                     Icon(
-                      Icons.chat_bubble,
+                      Icons.comment_outlined,
                       size: 12,
                       color: Colors.white.withValues(alpha: 0.9),
                     ),

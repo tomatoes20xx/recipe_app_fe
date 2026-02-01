@@ -427,7 +427,7 @@ class _EngagementOverlay extends StatelessWidget {
             ),
             const SizedBox(height: 28),
             EngagementStatWidget(
-              icon: Icons.bookmark_outlined,
+              icon: item.viewerHasBookmarked ? Icons.bookmark_rounded : Icons.bookmark_outline_rounded,
               value: item.bookmarks,
               active: item.viewerHasBookmarked,
               size: EngagementStatSize.large,

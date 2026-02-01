@@ -265,7 +265,7 @@ class _RecipeGridCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                     EngagementStatWidget(
-                      icon: Icons.chat_bubble,
+                      icon: Icons.comment_outlined,
                       value: recipe.comments,
                       size: EngagementStatSize.small,
                       style: EngagementStatStyle.overlay,

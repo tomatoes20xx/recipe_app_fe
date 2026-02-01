@@ -613,13 +613,13 @@ class _EngagementMetricsOverlay extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           _OverlayIconButton(
-            icon: Icons.chat_bubble_outline,
+            icon: Icons.comment_outlined,
             count: counts.comments,
             onTap: onCommentTap,
           ),
           const SizedBox(height: 12),
           _OverlayIconButton(
-            icon: Icons.bookmark,
+            icon: viewerHasBookmarked ? Icons.bookmark_rounded : Icons.bookmark_outline_rounded,
             count: counts.bookmarks,
             isActive: viewerHasBookmarked,
             isLoading: isBookmarking,
