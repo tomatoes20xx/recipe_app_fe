@@ -2,6 +2,7 @@ import "dart:io" show Platform;
 import "package:flutter/foundation.dart" show kIsWeb;
 import "package:flutter/material.dart";
 import "package:flutter_localizations/flutter_localizations.dart";
+import "package:google_fonts/google_fonts.dart";
 import "package:google_mobile_ads/google_mobile_ads.dart";
 import "package:sqflite_common_ffi/sqflite_ffi.dart";
 
@@ -78,12 +79,16 @@ class MyApp extends StatelessWidget {
           ],
           theme: ThemeData(
             useMaterial3: true,
+            textTheme: GoogleFonts.nunitoTextTheme(),
+            fontFamilyFallback: const ["Noto Sans Georgian", "Noto Sans"],
             colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFD93900), brightness: Brightness.light)
                 .copyWith(primary: const Color(0xFFD93900), onPrimary: Colors.white),
           ),
           darkTheme: ThemeData(
             useMaterial3: true,
             brightness: Brightness.dark,
+            textTheme: GoogleFonts.nunitoTextTheme(ThemeData(brightness: Brightness.dark).textTheme),
+            fontFamilyFallback: const ["Noto Sans Georgian", "Noto Sans"],
             colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFD93900), brightness: Brightness.dark)
                 .copyWith(primary: const Color(0xFFD93900), onPrimary: Colors.white, surface: Colors.grey[900]!, onSurface: Colors.white),
           ),

@@ -2175,69 +2175,84 @@ class _FullScreenFeedCardState extends State<_FullScreenFeedCard> {
                         },
                       ),
                     ],
-                    const SizedBox(height: 16),
-                    // Stats row
-                    Row(
-                      children: [
-                        EngagementStatWidget(
-                          icon: Icons.favorite_rounded,
-                          value: widget.item.likes,
-                          active: widget.item.viewerHasLiked,
-                          size: EngagementStatSize.large,
-                          style: EngagementStatStyle.fullScreen,
-                          onTap: () async {
-                            await widget.feed.toggleLike(widget.item.id);
-                            // Refresh notifications after like action (with small delay for backend processing)
-                            Future.delayed(const Duration(milliseconds: 500), () {
-                              widget.onActionCompleted?.call();
-                            });
-                          },
-                        ),
-                        const SizedBox(width: 20),
-                        EngagementStatWidget(
-                          icon: Icons.chat_bubble_outline_rounded,
-                          value: widget.item.comments,
-                          size: EngagementStatSize.large,
-                          style: EngagementStatStyle.fullScreen,
-                          onTap: () {
-                            showCommentsBottomSheet(
-                              context: context,
-                              recipeId: widget.item.id,
-                              apiClient: widget.apiClient,
-                              auth: widget.auth,
-                              onCommentPosted: () {
-                                widget.feed.updateCommentCount(widget.item.id, widget.item.comments + 1);
-                                // Refresh notifications after comment action (with small delay for backend processing)
-                                Future.delayed(const Duration(milliseconds: 500), () {
-                                  widget.onActionCompleted?.call();
-                                });
-                              },
-                            );
-                          },
-                        ),
-                        const SizedBox(width: 20),
-                        EngagementStatWidget(
-                          icon: Icons.bookmark_rounded,
-                          value: widget.item.bookmarks,
-                          active: widget.item.viewerHasBookmarked,
-                          size: EngagementStatSize.large,
-                          style: EngagementStatStyle.fullScreen,
-                          onTap: () async {
-                            await widget.feed.toggleBookmark(widget.item.id);
-                            // Refresh notifications after bookmark action (with small delay for backend processing)
-                            Future.delayed(const Duration(milliseconds: 500), () {
-                              widget.onActionCompleted?.call();
-                            });
-                          },
-                        ),
-                      ],
-                    ),
                   ],
                 ),
                 )
               ),
             ),
           ),
+        // Engagement actions overlay (right side)
+        Positioned(
+          right: 16,
+          bottom: 180,
+          child: SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                EngagementStatWidget(
+                  icon: Icons.favorite_rounded,
+                  value: widget.item.likes,
+                  active: widget.item.viewerHasLiked,
+                  size: EngagementStatSize.large,
+                  style: EngagementStatStyle.fullScreen,
+                  vertical: true,
+                  iconSize: 26,
+                  textSize: 14,
+                  onTap: () async {
+                    await widget.feed.toggleLike(widget.item.id);
+                    // Refresh notifications after like action (with small delay for backend processing)
+                    Future.delayed(const Duration(milliseconds: 500), () {
+                      widget.onActionCompleted?.call();
+                    });
+                  },
+                ),
+                const SizedBox(height: 28),
+                EngagementStatWidget(
+                  icon: Icons.comment_outlined,
+                  value: widget.item.comments,
+                  size: EngagementStatSize.large,
+                  style: EngagementStatStyle.fullScreen,
+                  vertical: true,
+                  iconSize: 26,
+                  textSize: 14,
+                  onTap: () {
+                    showCommentsBottomSheet(
+                      context: context,
+                      recipeId: widget.item.id,
+                      apiClient: widget.apiClient,
+                      auth: widget.auth,
+                      onCommentPosted: () {
+                        widget.feed.updateCommentCount(widget.item.id, widget.item.comments + 1);
+                        // Refresh notifications after comment action (with small delay for backend processing)
+                        Future.delayed(const Duration(milliseconds: 500), () {
+                          widget.onActionCompleted?.call();
+                        });
+                      },
+                    );
+                  },
+                ),
+                const SizedBox(height: 28),
+                EngagementStatWidget(
+                  icon: Icons.bookmark_outlined,
+                  value: widget.item.bookmarks,
+                  active: widget.item.viewerHasBookmarked,
+                  size: EngagementStatSize.large,
+                  style: EngagementStatStyle.fullScreen,
+                  vertical: true,
+                  iconSize: 26,
+                  textSize: 14,
+                  onTap: () async {
+                    await widget.feed.toggleBookmark(widget.item.id);
+                    // Refresh notifications after bookmark action (with small delay for backend processing)
+                    Future.delayed(const Duration(milliseconds: 500), () {
+                      widget.onActionCompleted?.call();
+                    });
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
         // Fire badge (top sort) - top right of image
         if (widget.sort == "top" && widget.item.likesWindow != null)
           Positioned(

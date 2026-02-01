@@ -12,6 +12,9 @@ class EngagementStatWidget extends StatelessWidget {
     this.size = EngagementStatSize.medium,
     this.style = EngagementStatStyle.regular,
     this.showShadows = false,
+    this.vertical = false,
+    this.iconSize,
+    this.textSize,
   });
 
   /// The icon to display
@@ -34,26 +37,48 @@ class EngagementStatWidget extends StatelessWidget {
   
   /// Whether to show text shadows (useful for overlay styles)
   final bool showShadows;
+  
+  /// Whether to stack icon above the value
+  final bool vertical;
+  
+  /// Optional override for icon size
+  final double? iconSize;
+  
+  /// Optional override for text size
+  final double? textSize;
 
   @override
   Widget build(BuildContext context) {
     final statData = _getStatData(context);
     
-    final child = Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
-          icon,
-          size: statData.iconSize,
-          color: statData.iconColor,
-        ),
-        SizedBox(width: statData.spacing),
-        Text(
-          value.toString(),
-          style: statData.textStyle,
-        ),
-      ],
+    final iconWidget = Icon(
+      icon,
+      size: iconSize ?? statData.iconSize,
+      color: statData.iconColor,
     );
+    final textWidget = Text(
+      value.toString(),
+      style: statData.textStyle.copyWith(
+        fontSize: textSize ?? statData.textStyle.fontSize,
+      ),
+    );
+    final child = vertical
+        ? Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              iconWidget,
+              SizedBox(height: statData.spacing),
+              textWidget,
+            ],
+          )
+        : Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              iconWidget,
+              SizedBox(width: statData.spacing),
+              textWidget,
+            ],
+          );
 
     // If not tappable, return the child directly
     if (onTap == null) return child;
@@ -88,14 +113,14 @@ class EngagementStatWidget extends StatelessWidget {
     switch (style) {
       case EngagementStatStyle.fullScreen:
         return _StatData(
-          iconSize: 24,
-          spacing: 6,
+          iconSize: _getIconSize(),
+          spacing: 4,
           iconColor: active ? theme.colorScheme.primary : Colors.white,
-          textStyle: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
+          textStyle: TextStyle(
+            fontSize: _getFontSize(),
+            fontWeight: FontWeight.w400,
             color: Colors.white,
-            shadows: [
+            shadows: const [
               Shadow(
                 offset: Offset(0, 1),
                 blurRadius: 2,
@@ -175,7 +200,7 @@ class EngagementStatWidget extends StatelessWidget {
 enum EngagementStatSize {
   small,   // 12px icon, 11px text (grid overlays)
   medium,  // 20px icon, 14px text (regular feed)
-  large,   // 24px icon, 16px text (full-screen)
+  large,   // 24px icon, 17px text (full-screen)
 }
 
 /// Style variants for engagement stats
