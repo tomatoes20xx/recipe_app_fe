@@ -93,7 +93,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         return ListTile(
                           leading: Icon(
                             Icons.palette_outlined,
-                            color: Theme.of(context).colorScheme.primary,
+                            color: Theme.of(context).colorScheme.onSurface,
                           ),
                           title: Text(localizations?.themeMode ?? "Theme Mode"),
                           subtitle: Text(_getThemeModeLabel(context)),
@@ -123,7 +123,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     return ListTile(
                       leading: Icon(
                         Icons.language,
-                        color: Theme.of(context).colorScheme.primary,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                       title: Text(localizations?.language ?? "Language"),
                       subtitle: Text(_getLanguageLabel(context)),
@@ -176,7 +176,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ListTile(
                           leading: Icon(
                             Icons.person_outline,
-                            color: Theme.of(context).colorScheme.primary,
+                            color: Theme.of(context).colorScheme.onSurface,
                           ),
                           title: Text(localizations?.username ?? "Username"),
                           subtitle: Text("@$username"),
@@ -186,7 +186,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ListTile(
                           leading: Icon(
                             Icons.email_outlined,
-                            color: Theme.of(context).colorScheme.primary,
+                            color: Theme.of(context).colorScheme.onSurface,
                           ),
                           title: Text(localizations?.email ?? "Email"),
                           subtitle: Text(email),
@@ -233,7 +233,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     return ListTile(
                       leading: Icon(
                         Icons.info_outline,
-                        color: Theme.of(context).colorScheme.primary,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                       title: const Text("CookBook"),
                       subtitle: versionText != null ? Text(versionText) : null,
@@ -247,7 +247,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     return ListTile(
                       leading: Icon(
                         Icons.help_outline,
-                        color: Theme.of(context).colorScheme.primary,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                       title: Text(localizations?.helpAndSupport ?? "Help & Support"),
                       trailing: Icon(
@@ -271,7 +271,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     return ListTile(
                       leading: Icon(
                         Icons.description_outlined,
-                        color: Theme.of(context).colorScheme.primary,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                       title: Text(localizations?.termsAndPrivacy ?? "Terms & Privacy"),
                       trailing: Icon(

@@ -73,7 +73,7 @@ class SectionTitleWidget extends StatelessWidget {
       case SectionTitleVariant.settings:
         return theme.textTheme.titleMedium?.copyWith(
           fontWeight: FontWeight.w600,
-          color: theme.colorScheme.primary,
+          color: theme.colorScheme.onSurface,
         );
     }
   }
