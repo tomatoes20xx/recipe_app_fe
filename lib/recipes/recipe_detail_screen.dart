@@ -584,24 +584,7 @@ class _EngagementMetricsOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.45),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.25),
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.15),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
+    return Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           _OverlayIconButton(
@@ -626,8 +609,7 @@ class _EngagementMetricsOverlay extends StatelessWidget {
             onTap: onBookmarkTap,
           ),
         ],
-      ),
-    );
+      );
   }
 }
 
