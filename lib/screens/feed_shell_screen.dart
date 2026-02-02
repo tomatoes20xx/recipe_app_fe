@@ -144,55 +144,41 @@ class _FeedShellScreenState extends State<FeedShellScreen> {
         languageController: widget.languageController,
         onScopeSelected: _changeFeedScope,
       ),
-      body: Stack(
-        children: [
-          PageTransitionSwitcher(
-            duration: const Duration(milliseconds: 280),
-            reverse: _currentIndex < _previousIndex,
-            transitionBuilder: (child, animation, secondaryAnimation) {
-              return SharedAxisTransition(
-                animation: animation,
-                secondaryAnimation: secondaryAnimation,
-                transitionType: SharedAxisTransitionType.horizontal,
-                child: child,
+      body: PageTransitionSwitcher(
+        duration: const Duration(milliseconds: 280),
+        reverse: _currentIndex < _previousIndex,
+        transitionBuilder: (child, animation, secondaryAnimation) {
+          return SharedAxisTransition(
+            animation: animation,
+            secondaryAnimation: secondaryAnimation,
+            transitionType: SharedAxisTransitionType.horizontal,
+            child: child,
+          );
+        },
+        child: _buildPage(_currentIndex),
+      ),
+      bottomNavigationBar: ListenableBuilder(
+        listenable: _notificationController,
+        builder: (context, _) {
+          return _BottomShellNavBar(
+            currentIndex: _currentIndex,
+            unreadCount: _notificationController.unreadCount,
+            onHomeTap: () => _setPage(0),
+            onNotificationsTap: () => _setPage(1),
+            onAddRecipeTap: () async {
+              final result = await Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => CreateRecipeScreen(apiClient: widget.apiClient),
+                ),
               );
+              if (result == true) {
+                _notificationController.refreshUnreadCount();
+              }
             },
-            child: _buildPage(_currentIndex),
-          ),
-          Positioned(
-            left: 16,
-            right: 16,
-            bottom: 12,
-            child: SafeArea(
-              top: false,
-              // Use ListenableBuilder to only rebuild the nav bar when notification count changes,
-              // not the entire FeedShellScreen. This prevents expensive rebuilds of all pages.
-              child: ListenableBuilder(
-                listenable: _notificationController,
-                builder: (context, _) {
-                  return _BottomShellNavBar(
-                    currentIndex: _currentIndex,
-                    unreadCount: _notificationController.unreadCount,
-                    onHomeTap: () => _setPage(0),
-                    onNotificationsTap: () => _setPage(1),
-                    onAddRecipeTap: () async {
-                      final result = await Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => CreateRecipeScreen(apiClient: widget.apiClient),
-                        ),
-                      );
-                      if (result == true) {
-                        _notificationController.refreshUnreadCount();
-                      }
-                    },
-                    onSearchTap: () => _setPage(2),
-                    onMenuTap: () => _scaffoldKey.currentState?.openDrawer(),
-                  );
-                },
-              ),
-            ),
-          ),
-        ],
+            onSearchTap: () => _setPage(2),
+            onMenuTap: () => _scaffoldKey.currentState?.openDrawer(),
+          );
+        },
       ),
     );
   }
@@ -222,25 +208,15 @@ class _BottomShellNavBar extends StatelessWidget {
     final surfaceColor = Theme.of(context).colorScheme.surface;
     final borderColor = Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08);
 
-    return Material(
-      color: Colors.transparent,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(26),
-        child: Container(
-          height: 52,
-          padding: EdgeInsets.zero,
-          decoration: BoxDecoration(
-            color: surfaceColor.withValues(alpha: 0.9),
-            borderRadius: BorderRadius.circular(26),
-            border: Border.all(color: borderColor),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.15),
-                blurRadius: 18,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
+    return Container(
+      decoration: BoxDecoration(
+        color: surfaceColor,
+        border: Border(top: BorderSide(color: borderColor)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: SizedBox(
+          height: 56,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
