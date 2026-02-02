@@ -1,3 +1,5 @@
+import "../users/user_models.dart";
+
 class SearchResult {
   final String id;
   final String title;
@@ -49,6 +51,52 @@ class SearchResponse {
     return SearchResponse(
       items: rawItems.map((e) => SearchResult.fromJson(Map<String, dynamic>.from(e))).toList(),
       nextCursor: json["nextCursor"]?.toString(),
+    );
+  }
+}
+
+class UnifiedSearchTypeResult<T> {
+  final List<T> items;
+  final String? nextCursor;
+  final bool hasMore;
+
+  UnifiedSearchTypeResult({
+    required this.items,
+    this.nextCursor,
+    required this.hasMore,
+  });
+}
+
+class UnifiedSearchResponse {
+  final UnifiedSearchTypeResult<SearchResult> recipes;
+  final UnifiedSearchTypeResult<UserSearchResult> users;
+
+  UnifiedSearchResponse({
+    required this.recipes,
+    required this.users,
+  });
+
+  factory UnifiedSearchResponse.fromJson(Map<String, dynamic> json) {
+    final results = json["results"] as Map<String, dynamic>;
+
+    final recipesData = results["recipes"] as Map<String, dynamic>? ?? {};
+    final usersData = results["users"] as Map<String, dynamic>? ?? {};
+
+    return UnifiedSearchResponse(
+      recipes: UnifiedSearchTypeResult<SearchResult>(
+        items: (recipesData["items"] as List<dynamic>? ?? [])
+            .map((e) => SearchResult.fromJson(Map<String, dynamic>.from(e)))
+            .toList(),
+        nextCursor: recipesData["nextCursor"]?.toString(),
+        hasMore: recipesData["hasMore"] as bool? ?? false,
+      ),
+      users: UnifiedSearchTypeResult<UserSearchResult>(
+        items: (usersData["items"] as List<dynamic>? ?? [])
+            .map((e) => UserSearchResult.fromJson(Map<String, dynamic>.from(e)))
+            .toList(),
+        nextCursor: usersData["nextCursor"]?.toString(),
+        hasMore: usersData["hasMore"] as bool? ?? false,
+      ),
     );
   }
 }

@@ -50,6 +50,11 @@ class _FeedShellScreenState extends State<FeedShellScreen> {
   late final NotificationController _notificationController;
   Timer? _notificationTimer;
 
+  // Search expansion state
+  final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
+  bool _isSearchExpanded = false;
+
   @override
   void initState() {
     super.initState();
@@ -66,6 +71,8 @@ class _FeedShellScreenState extends State<FeedShellScreen> {
     // the notification badge, not the entire screen.
     _notificationController.refreshUnreadCount();
     _startNotificationPolling();
+
+    _searchController.addListener(_onSearchTextChanged);
   }
 
   @override
@@ -73,6 +80,9 @@ class _FeedShellScreenState extends State<FeedShellScreen> {
     feed.dispose();
     _notificationController.dispose();
     _notificationTimer?.cancel();
+    _searchController.removeListener(_onSearchTextChanged);
+    _searchController.dispose();
+    _searchFocusNode.dispose();
     super.dispose();
   }
 
@@ -89,7 +99,39 @@ class _FeedShellScreenState extends State<FeedShellScreen> {
     setState(() {
       _previousIndex = _currentIndex;
       _currentIndex = index;
+      // Collapse search when navigating away from search page
+      if (index != 2 && _isSearchExpanded) {
+        _isSearchExpanded = false;
+        _searchController.clear();
+        _searchFocusNode.unfocus();
+      }
     });
+  }
+
+  void _expandSearch() {
+    setState(() {
+      _isSearchExpanded = true;
+    });
+    _setPage(2);
+    Future.microtask(() {
+      _searchFocusNode.requestFocus();
+    });
+  }
+
+  void _collapseSearch() {
+    setState(() {
+      _isSearchExpanded = false;
+      _searchController.clear();
+    });
+    _searchFocusNode.unfocus();
+    if (_currentIndex == 2) {
+      _setPage(0);
+    }
+  }
+
+  void _onSearchTextChanged() {
+    // Trigger rebuild to pass updated text to SearchScreen
+    setState(() {});
   }
 
   void _changeFeedScope(String scope) {
@@ -125,6 +167,7 @@ class _FeedShellScreenState extends State<FeedShellScreen> {
           key: const ValueKey("search"),
           apiClient: widget.apiClient,
           auth: widget.auth,
+          searchQuery: _searchController.text,
         );
       default:
         return const SizedBox.shrink();
@@ -175,8 +218,12 @@ class _FeedShellScreenState extends State<FeedShellScreen> {
                 _notificationController.refreshUnreadCount();
               }
             },
-            onSearchTap: () => _setPage(2),
+            onSearchTap: _expandSearch,
             onMenuTap: () => _scaffoldKey.currentState?.openDrawer(),
+            isSearchExpanded: _isSearchExpanded || _currentIndex == 2,
+            searchController: _searchController,
+            searchFocusNode: _searchFocusNode,
+            onSearchCollapse: _collapseSearch,
           );
         },
       ),
@@ -193,6 +240,10 @@ class _BottomShellNavBar extends StatelessWidget {
     required this.onAddRecipeTap,
     required this.onSearchTap,
     required this.onMenuTap,
+    required this.isSearchExpanded,
+    required this.searchController,
+    required this.searchFocusNode,
+    required this.onSearchCollapse,
   });
 
   final int currentIndex;
@@ -202,6 +253,10 @@ class _BottomShellNavBar extends StatelessWidget {
   final VoidCallback onAddRecipeTap;
   final VoidCallback onSearchTap;
   final VoidCallback onMenuTap;
+  final bool isSearchExpanded;
+  final TextEditingController searchController;
+  final FocusNode searchFocusNode;
+  final VoidCallback onSearchCollapse;
 
   @override
   Widget build(BuildContext context) {
@@ -223,13 +278,13 @@ class _BottomShellNavBar extends StatelessWidget {
               _BottomNavAction(
                 icon: Icons.home_rounded,
                 label: "Home",
-                isActive: currentIndex == 0,
+                isActive: currentIndex == 0 && !isSearchExpanded,
                 onTap: onHomeTap,
               ),
               _BottomNavAction(
                 icon: Icons.notifications_outlined,
                 label: "Notifications",
-                isActive: currentIndex == 1,
+                isActive: currentIndex == 1 && !isSearchExpanded,
                 badgeCount: unreadCount,
                 onTap: onNotificationsTap,
               ),
@@ -239,12 +294,19 @@ class _BottomShellNavBar extends StatelessWidget {
                 isActive: false,
                 onTap: onAddRecipeTap,
               ),
-              _BottomNavAction(
-                icon: Icons.search_rounded,
-                label: "Search",
-                isActive: currentIndex == 2,
-                onTap: onSearchTap,
-              ),
+              if (isSearchExpanded)
+                _ExpandableSearchField(
+                  controller: searchController,
+                  focusNode: searchFocusNode,
+                  onClose: onSearchCollapse,
+                )
+              else
+                _BottomNavAction(
+                  icon: Icons.search_rounded,
+                  label: "Search",
+                  isActive: currentIndex == 2,
+                  onTap: onSearchTap,
+                ),
               _BottomNavAction(
                 icon: Icons.menu_rounded,
                 label: "Menu",
@@ -357,6 +419,79 @@ class _BottomNavAction extends StatelessWidget {
                     ),
                   ),
               ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _ExpandableSearchField extends StatelessWidget {
+  const _ExpandableSearchField({
+    required this.controller,
+    required this.focusNode,
+    required this.onClose,
+  });
+
+  final TextEditingController controller;
+  final FocusNode focusNode;
+  final VoidCallback onClose;
+
+  @override
+  Widget build(BuildContext context) {
+    final primaryColor = Theme.of(context).colorScheme.primary;
+    final borderColor = Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2);
+
+    return Expanded(
+      flex: 2,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return Align(
+            alignment: Alignment.center,
+            child: Container(
+              height: 36,
+              constraints: BoxConstraints(maxWidth: constraints.maxWidth),
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(999),
+                border: Border.all(color: borderColor, width: 1),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.search_rounded, size: 20, color: primaryColor),
+                  const SizedBox(width: 4),
+                  Flexible(
+                    child: TextField(
+                      controller: controller,
+                      focusNode: focusNode,
+                      autofocus: false,
+                      style: TextStyle(
+                        color: primaryColor,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      decoration: InputDecoration(
+                        hintText: AppLocalizations.of(context)?.search ?? "Search...",
+                        hintStyle: TextStyle(
+                          color: primaryColor.withValues(alpha: 0.6),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        border: InputBorder.none,
+                        contentPadding: EdgeInsets.zero,
+                        isDense: true,
+                      ),
+                      textInputAction: TextInputAction.search,
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: onClose,
+                    child: Icon(Icons.close, size: 16, color: primaryColor),
+                  ),
+                ],
+              ),
             ),
           );
         },

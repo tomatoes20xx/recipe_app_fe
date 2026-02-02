@@ -93,6 +93,13 @@ class AppLocalizations {
   String get noRecipesFound => _localizedValues[locale.languageCode]?["noRecipesFound"] ?? "No recipes found";
   String get tryDifferentSearch => _localizedValues[locale.languageCode]?["tryDifferentSearch"] ?? "Try a different search term";
   String get noUsersFound => _localizedValues[locale.languageCode]?["noUsersFound"] ?? "No users found";
+  String get noResultsFound => _localizedValues[locale.languageCode]?["noResultsFound"] ?? "No results found";
+  String get noRecentSearches => _localizedValues[locale.languageCode]?["noRecentSearches"] ?? "No recent searches";
+  String get searchHistoryWillAppear => _localizedValues[locale.languageCode]?["searchHistoryWillAppear"] ?? "Your search history will appear here";
+  String get recentSearches => _localizedValues[locale.languageCode]?["recentSearches"] ?? "Recent Searches";
+  String get users => _localizedValues[locale.languageCode]?["users"] ?? "Users";
+  String get recipes => _localizedValues[locale.languageCode]?["recipes"] ?? "Recipes";
+  String get seeAll => _localizedValues[locale.languageCode]?["seeAll"] ?? "See all";
   String get notLoggedIn => _localizedValues[locale.languageCode]?["notLoggedIn"] ?? "Not logged in";
   String get errorLoadingStatistics => _localizedValues[locale.languageCode]?["errorLoadingStatistics"] ?? "Error loading statistics";
   String get noEventDataAvailable => _localizedValues[locale.languageCode]?["noEventDataAvailable"] ?? "No event data available";
@@ -411,6 +418,13 @@ class AppLocalizations {
       "noRecipesFound": "No recipes found",
       "tryDifferentSearch": "Try a different search term",
       "noUsersFound": "No users found",
+      "noResultsFound": "No results found",
+      "noRecentSearches": "No recent searches",
+      "searchHistoryWillAppear": "Your search history will appear here",
+      "recentSearches": "Recent Searches",
+      "users": "Users",
+      "recipes": "Recipes",
+      "seeAll": "See all",
       "notLoggedIn": "Not logged in",
       "errorLoadingStatistics": "Error loading statistics",
       "noEventDataAvailable": "No event data available",
@@ -698,6 +712,13 @@ class AppLocalizations {
       "noRecipesFound": "რეცეპტი არ მოიძებნა",
       "tryDifferentSearch": "სცადეთ სხვა საძიებო სიტყვა",
       "noUsersFound": "მომხმარებელი არ მოიძებნა",
+      "noResultsFound": "შედეგები არ მოიძებნა",
+      "noRecentSearches": "ბოლო ძიებები არ არის",
+      "searchHistoryWillAppear": "თქვენი ძიების ისტორია აქ გამოჩნდება",
+      "recentSearches": "ბოლო ძიებები",
+      "users": "მომხმარებლები",
+      "recipes": "რეცეპტები",
+      "seeAll": "ყველას ნახვა",
       "notLoggedIn": "არ ხართ შესული",
       "errorLoadingStatistics": "სტატისტიკის ჩატვირთვის შეცდომა",
       "noEventDataAvailable": "მოვლენების მონაცემები მიუწვდომელია",
