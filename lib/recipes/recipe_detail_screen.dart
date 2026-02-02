@@ -39,6 +39,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
   int? _localLikes;
   int? _localBookmarks;
   int? _localComments;
+  final Set<String> _checkedIngredients = {};
 
   @override
   void initState() {
@@ -66,6 +67,16 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     c.removeListener(_onChanged);
     c.dispose();
     super.dispose();
+  }
+
+  void _toggleIngredient(String id) {
+    setState(() {
+      if (_checkedIngredients.contains(id)) {
+        _checkedIngredients.remove(id);
+      } else {
+        _checkedIngredients.add(id);
+      }
+    });
   }
 
   Future<void> _toggleLike() async {
@@ -262,145 +273,760 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                         return Center(child: Text(localizations?.notFound ?? "Not found"));
                       },
                     )
-                  : RefreshIndicator(
-                      onRefresh: c.refresh,
-                      child: CustomScrollView(
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        slivers: [
-                          // Header Image
-                          SliverToBoxAdapter(
-                            child: _ImageGallery(
-                              images: r.images,
-                              counts: RecipeCounts(
-                                likes: _localLikes ?? r.counts.likes,
-                                comments: _localComments ?? r.counts.comments,
-                                bookmarks: _localBookmarks ?? r.counts.bookmarks,
-                              ),
-                              onLikeTap: _toggleLike,
-                              onBookmarkTap: _toggleBookmark,
-                              onCommentTap: () {
-                                showCommentsBottomSheet(
-                                  context: context,
-                                  recipeId: r.id,
-                                  apiClient: widget.apiClient,
-                                  auth: widget.auth,
-                                  onCommentPosted: () {
-                                    if (mounted) {
-                                      setState(() {
-                                        _localComments = (_localComments ?? c.recipe?.counts.comments ?? 0) + 1;
-                                      });
-                                    }
-                                  },
-                                );
-                              },
-                              viewerHasLiked: _viewerHasLiked,
-                              viewerHasBookmarked: _viewerHasBookmarked,
-                              isLiking: _isLiking,
-                              isBookmarking: _isBookmarking,
-                            ),
-                          ),
-                          // Content
-                          SliverToBoxAdapter(
-                            child: Padding(
-                              padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  // Title
-                                  Text(
-                                    r.title,
-                                    style: TextStyle(
-                                      fontSize: 28,
-                                      fontWeight: FontWeight.bold,
-                                      color: Theme.of(context).colorScheme.onSurface,
-                                    ),
+                  : Stack(
+                      children: [
+                        // Hero image section (top 60%)
+                        _HeroImageSection(
+                          images: r.images,
+                          onImageTap: (index) => _openImageViewer(index, r.images),
+                        ),
+                        // Draggable content sheet
+                        DraggableScrollableSheet(
+                          initialChildSize: 0.55,
+                          minChildSize: 0.55,
+                          maxChildSize: 0.95,
+                          snap: true,
+                          snapSizes: const [0.55, 0.95],
+                          builder: (context, scrollController) {
+                            return Container(
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.surface,
+                                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.1),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, -2),
                                   ),
-                                  const SizedBox(height: 12),
-                                  // User Info Row
-                                  _UserInfoRow(r: r, apiClient: widget.apiClient, auth: widget.auth),
-                                  const SizedBox(height: 12),
-                                  // Hashtag
-                                  if (r.tags.isNotEmpty) ...[
-                                    _HashtagPill(tag: r.tags.first),
-                                    const SizedBox(height: 16),
-                                  ],
-                                  // Cooking time and difficulty
-                                  if (r.cookingTimeMin != null || r.cookingTimeMax != null || r.difficulty != null) ...[
-                                    Row(
-                                      children: [
-                                        if (r.cookingTimeMin != null || r.cookingTimeMax != null) ...[
-                                          Icon(
-                                            Icons.timer_outlined,
-                                            size: 16,
-                                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-                                          ),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            r.cookingTimeMin != null && r.cookingTimeMax != null
-                                                ? "${r.cookingTimeMin}-${r.cookingTimeMax} min"
-                                                : r.cookingTimeMin != null
-                                                    ? "${r.cookingTimeMin}+ min"
-                                                    : "Up to ${r.cookingTimeMax} min",
-                                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
-                                                ),
-                                          ),
-                                        ],
-                                        if ((r.cookingTimeMin != null || r.cookingTimeMax != null) && r.difficulty != null)
-                                          const SizedBox(width: 16),
-                                        if (r.difficulty != null) ...[
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                            decoration: BoxDecoration(
-                                              color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                                              borderRadius: BorderRadius.circular(8),
-                                              border: Border.all(
-                                                color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
-                                                width: 1,
-                                              ),
-                                            ),
-                                            child: Text(
-                                              r.difficulty!.toUpperCase(),
-                                              style: TextStyle(
-                                                fontSize: 11,
-                                                fontWeight: FontWeight.w600,
-                                                color: Theme.of(context).colorScheme.onSurface,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ],
-                                    ),
-                                    const SizedBox(height: 16),
-                                  ],
-                                  // Description
-                                  if (r.description != null && r.description!.trim().isNotEmpty) ...[
-                                    const SectionTitleWidget(
-                                      text: "Description",
-                                      variant: SectionTitleVariant.regular,
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      r.description!,
-                                      style: Theme.of(context).textTheme.bodyLarge,
-                                    ),
-                                    const SizedBox(height: 16),
-                                  ],
-                                  // Accordion Sections
-                                  _IngredientsCard(ingredients: r.ingredients),
-                                  const SizedBox(height: 12),
-                                  _StepsCard(steps: r.steps),
                                 ],
                               ),
-                            ),
-                          ),
-                        ],
-                      ),
+                              child: RefreshIndicator(
+                                onRefresh: c.refresh,
+                                child: SingleChildScrollView(
+                                  controller: scrollController,
+                                  physics: const AlwaysScrollableScrollPhysics(),
+                                  child: _ContentBody(
+                                    recipe: r,
+                                    apiClient: widget.apiClient,
+                                    auth: widget.auth,
+                                    counts: RecipeCounts(
+                                      likes: _localLikes ?? r.counts.likes,
+                                      comments: _localComments ?? r.counts.comments,
+                                      bookmarks: _localBookmarks ?? r.counts.bookmarks,
+                                    ),
+                                    viewerHasLiked: _viewerHasLiked ?? false,
+                                    viewerHasBookmarked: _viewerHasBookmarked ?? false,
+                                    isLiking: _isLiking,
+                                    isBookmarking: _isBookmarking,
+                                    onLikeTap: _toggleLike,
+                                    onBookmarkTap: _toggleBookmark,
+                                    onCommentTap: () {
+                                      showCommentsBottomSheet(
+                                        context: context,
+                                        recipeId: r.id,
+                                        apiClient: widget.apiClient,
+                                        auth: widget.auth,
+                                        onCommentPosted: () {
+                                          if (mounted) {
+                                            setState(() {
+                                              _localComments = (_localComments ?? c.recipe?.counts.comments ?? 0) + 1;
+                                            });
+                                          }
+                                        },
+                                      );
+                                    },
+                                    checkedIngredients: _checkedIngredients,
+                                    onToggleIngredient: _toggleIngredient,
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ],
                     ),
+    );
+  }
+
+  void _openImageViewer(int initialIndex, List<RecipeImage> images) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => _FullScreenImageViewer(
+          images: images,
+          initialIndex: initialIndex,
+        ),
+      ),
     );
   }
 }
 
+// Hero Image Section with gradient overlay
+class _HeroImageSection extends StatefulWidget {
+  const _HeroImageSection({
+    required this.images,
+    required this.onImageTap,
+  });
+
+  final List<RecipeImage> images;
+  final Function(int) onImageTap;
+
+  @override
+  State<_HeroImageSection> createState() => _HeroImageSectionState();
+}
+
+class _HeroImageSectionState extends State<_HeroImageSection> {
+  final PageController _pageController = PageController();
+  int _currentPage = 0;
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final height = MediaQuery.of(context).size.height * 0.6;
+
+    return SizedBox(
+      height: height,
+      width: double.infinity,
+      child: Stack(
+        children: [
+          // Image gallery
+          if (widget.images.isNotEmpty)
+            PageView.builder(
+              controller: _pageController,
+              onPageChanged: (index) => setState(() => _currentPage = index),
+              itemCount: widget.images.length,
+              itemBuilder: (context, index) {
+                final image = widget.images[index];
+                return GestureDetector(
+                  onTap: () => widget.onImageTap(index),
+                  child: RecipeImageWidget(
+                    imageUrl: image.url,
+                    width: double.infinity,
+                    height: height,
+                    fit: BoxFit.cover,
+                  ),
+                );
+              },
+            )
+          else
+            const RecipeFallbackImage(
+              width: double.infinity,
+              height: double.infinity,
+              iconSize: 120,
+            ),
+
+          // Gradient overlay at bottom
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              height: 150,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.transparent,
+                    Colors.black.withValues(alpha: 0.6),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          // Page indicators
+          if (widget.images.length > 1)
+            Positioned(
+              bottom: 80,
+              left: 0,
+              right: 0,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(
+                  widget.images.length,
+                  (index) => Container(
+                    width: 8,
+                    height: 8,
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: _currentPage == index
+                          ? Colors.white
+                          : Colors.white.withValues(alpha: 0.5),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.3),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+// Content Body widget
+class _ContentBody extends StatelessWidget {
+  const _ContentBody({
+    required this.recipe,
+    required this.apiClient,
+    this.auth,
+    required this.counts,
+    required this.viewerHasLiked,
+    required this.viewerHasBookmarked,
+    required this.isLiking,
+    required this.isBookmarking,
+    required this.onLikeTap,
+    required this.onBookmarkTap,
+    required this.onCommentTap,
+    required this.checkedIngredients,
+    required this.onToggleIngredient,
+  });
+
+  final RecipeDetail recipe;
+  final ApiClient apiClient;
+  final AuthController? auth;
+  final RecipeCounts counts;
+  final bool viewerHasLiked;
+  final bool viewerHasBookmarked;
+  final bool isLiking;
+  final bool isBookmarking;
+  final VoidCallback onLikeTap;
+  final VoidCallback onBookmarkTap;
+  final VoidCallback onCommentTap;
+  final Set<String> checkedIngredients;
+  final Function(String) onToggleIngredient;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Drag handle
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // Title
+          Text(
+            recipe.title,
+            style: TextStyle(
+              fontSize: 26,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.onSurface,
+              height: 1.2,
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // User Info Row
+          _UserInfoRow(r: recipe, apiClient: apiClient, auth: auth),
+          const SizedBox(height: 16),
+
+          // Quick Info Bar
+          if (recipe.cookingTimeMin != null || recipe.cookingTimeMax != null || recipe.difficulty != null) ...[
+            _QuickInfoBar(
+              cookingTimeMin: recipe.cookingTimeMin,
+              cookingTimeMax: recipe.cookingTimeMax,
+              difficulty: recipe.difficulty,
+            ),
+            const SizedBox(height: 16),
+          ],
+
+          // Engagement Bar
+          _EngagementBar(
+            counts: counts,
+            viewerHasLiked: viewerHasLiked,
+            viewerHasBookmarked: viewerHasBookmarked,
+            isLiking: isLiking,
+            isBookmarking: isBookmarking,
+            onLikeTap: onLikeTap,
+            onBookmarkTap: onBookmarkTap,
+            onCommentTap: onCommentTap,
+          ),
+          const SizedBox(height: 16),
+
+          // Tags
+          if (recipe.tags.isNotEmpty) ...[
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: recipe.tags.map((tag) => _HashtagPill(tag: tag)).toList(),
+            ),
+            const SizedBox(height: 16),
+          ],
+
+          // Description
+          if (recipe.description != null && recipe.description!.trim().isNotEmpty) ...[
+            Text(
+              recipe.description!,
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    height: 1.6,
+                  ),
+            ),
+            const SizedBox(height: 24),
+          ],
+
+          // Ingredients Section
+          if (recipe.ingredients.isNotEmpty) ...[
+            _IngredientsSection(
+              ingredients: recipe.ingredients,
+              checkedIds: checkedIngredients,
+              onToggle: onToggleIngredient,
+            ),
+            const SizedBox(height: 24),
+          ],
+
+          // Steps Section
+          if (recipe.steps.isNotEmpty)
+            _StepsSection(steps: recipe.steps),
+        ],
+      ),
+    );
+  }
+}
+
+// Quick Info Bar widget
+class _QuickInfoBar extends StatelessWidget {
+  const _QuickInfoBar({
+    this.cookingTimeMin,
+    this.cookingTimeMax,
+    this.difficulty,
+  });
+
+  final int? cookingTimeMin;
+  final int? cookingTimeMax;
+  final String? difficulty;
+
+  String _formatCookingTime() {
+    if (cookingTimeMin != null && cookingTimeMax != null) {
+      return "$cookingTimeMin-$cookingTimeMax min";
+    } else if (cookingTimeMin != null) {
+      return "$cookingTimeMin+ min";
+    } else {
+      return "Up to $cookingTimeMax min";
+    }
+  }
+
+  Color _getDifficultyColor(BuildContext context) {
+    switch (difficulty?.toLowerCase()) {
+      case "easy":
+        return Colors.green;
+      case "medium":
+        return Colors.orange;
+      case "hard":
+        return Colors.red;
+      default:
+        return Theme.of(context).colorScheme.primary;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 12,
+      runSpacing: 8,
+      children: [
+        if (cookingTimeMin != null || cookingTimeMax != null)
+          _InfoChip(
+            icon: Icons.timer_outlined,
+            label: _formatCookingTime(),
+          ),
+        if (difficulty != null)
+          _InfoChip(
+            icon: Icons.signal_cellular_alt,
+            label: difficulty!,
+            color: _getDifficultyColor(context),
+          ),
+      ],
+    );
+  }
+}
+
+class _InfoChip extends StatelessWidget {
+  const _InfoChip({
+    required this.icon,
+    required this.label,
+    this.color,
+  });
+
+  final IconData icon;
+  final String label;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    final chipColor = color ?? Theme.of(context).colorScheme.primary;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: chipColor.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: chipColor.withValues(alpha: 0.3),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: chipColor),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: chipColor,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// Horizontal Engagement Bar widget
+class _EngagementBar extends StatelessWidget {
+  const _EngagementBar({
+    required this.counts,
+    required this.viewerHasLiked,
+    required this.viewerHasBookmarked,
+    required this.isLiking,
+    required this.isBookmarking,
+    required this.onLikeTap,
+    required this.onBookmarkTap,
+    required this.onCommentTap,
+  });
+
+  final RecipeCounts counts;
+  final bool viewerHasLiked;
+  final bool viewerHasBookmarked;
+  final bool isLiking;
+  final bool isBookmarking;
+  final VoidCallback onLikeTap;
+  final VoidCallback onBookmarkTap;
+  final VoidCallback onCommentTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _EngagementButton(
+              icon: viewerHasLiked ? Icons.favorite : Icons.favorite_border,
+              count: counts.likes,
+              isActive: viewerHasLiked,
+              isLoading: isLiking,
+              onTap: onLikeTap,
+              activeColor: Theme.of(context).colorScheme.primary,
+            ),
+          ),
+          _VerticalDivider(),
+          Expanded(
+            child: _EngagementButton(
+              icon: Icons.chat_bubble_outline,
+              count: counts.comments,
+              onTap: onCommentTap,
+            ),
+          ),
+          _VerticalDivider(),
+          Expanded(
+            child: _EngagementButton(
+              icon: viewerHasBookmarked ? Icons.bookmark : Icons.bookmark_border,
+              count: counts.bookmarks,
+              isActive: viewerHasBookmarked,
+              isLoading: isBookmarking,
+              onTap: onBookmarkTap,
+              activeColor: Theme.of(context).colorScheme.primary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _EngagementButton extends StatelessWidget {
+  const _EngagementButton({
+    required this.icon,
+    required this.count,
+    required this.onTap,
+    this.isActive = false,
+    this.isLoading = false,
+    this.activeColor,
+  });
+
+  final IconData icon;
+  final int count;
+  final VoidCallback onTap;
+  final bool isActive;
+  final bool isLoading;
+  final Color? activeColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = isActive
+        ? (activeColor ?? Theme.of(context).colorScheme.primary)
+        : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7);
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: isLoading ? null : onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (isLoading)
+                SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(color),
+                  ),
+                )
+              else
+                Icon(icon, size: 22, color: color),
+              const SizedBox(width: 6),
+              Text(
+                "$count",
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: color,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _VerticalDivider extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 24,
+      width: 1,
+      color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+    );
+  }
+}
+
+// Ingredients Section widget
+class _IngredientsSection extends StatelessWidget {
+  const _IngredientsSection({
+    required this.ingredients,
+    required this.checkedIds,
+    required this.onToggle,
+  });
+
+  final List<RecipeIngredient> ingredients;
+  final Set<String> checkedIds;
+  final Function(String) onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SectionTitleWidget(
+          text: "${localizations?.ingredients ?? "Ingredients"} (${ingredients.length})",
+          variant: SectionTitleVariant.regular,
+        ),
+        const SizedBox(height: 12),
+        ...ingredients.map((ing) => _IngredientTile(
+          ingredient: ing,
+          isChecked: checkedIds.contains(ing.id),
+          onToggle: () => onToggle(ing.id),
+        )),
+      ],
+    );
+  }
+}
+
+class _IngredientTile extends StatelessWidget {
+  const _IngredientTile({
+    required this.ingredient,
+    required this.isChecked,
+    required this.onToggle,
+  });
+
+  final RecipeIngredient ingredient;
+  final bool isChecked;
+  final VoidCallback onToggle;
+
+  String _formatIngredient() {
+    final qty = ingredient.quantity == null ? "" : "${ingredient.quantity}";
+    final unit = ingredient.unit == null ? "" : " ${ingredient.unit}";
+    final prefix = (qty.isEmpty && unit.isEmpty) ? "" : "$qty$unit ";
+    return "$prefix${ingredient.displayName}";
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onToggle,
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 24,
+              height: 24,
+              child: Checkbox(
+                value: isChecked,
+                onChanged: (_) => onToggle(),
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                visualDensity: VisualDensity.compact,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                _formatIngredient(),
+                style: TextStyle(
+                  fontSize: 15,
+                  height: 1.4,
+                  decoration: isChecked ? TextDecoration.lineThrough : null,
+                  color: isChecked
+                      ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5)
+                      : Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// Steps Section widget
+class _StepsSection extends StatelessWidget {
+  const _StepsSection({required this.steps});
+
+  final List<RecipeStep> steps;
+
+  @override
+  Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SectionTitleWidget(
+          text: "${localizations?.steps ?? "Steps"} (${steps.length})",
+          variant: SectionTitleVariant.regular,
+        ),
+        const SizedBox(height: 12),
+        ...steps.asMap().entries.map((entry) => _StepCard(
+          stepNumber: entry.key + 1,
+          step: entry.value,
+        )),
+      ],
+    );
+  }
+}
+
+class _StepCard extends StatelessWidget {
+  const _StepCard({
+    required this.stepNumber,
+    required this.step,
+  });
+
+  final int stepNumber;
+  final RecipeStep step;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.15),
+          width: 1,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primary,
+                shape: BoxShape.circle,
+              ),
+              child: Center(
+                child: Text(
+                  "$stepNumber",
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onPrimary,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Text(
+                step.instruction,
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      height: 1.5,
+                    ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// User Info Row widget
 class _UserInfoRow extends StatelessWidget {
   const _UserInfoRow({required this.r, required this.apiClient, this.auth});
   final RecipeDetail r;
@@ -435,28 +1061,35 @@ class _UserInfoRow extends StatelessWidget {
             context,
             r.authorAvatarUrl,
             r.authorUsername,
-            radius: 16,
+            radius: 18,
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 10),
         Expanded(
-          child: Row(
-            children: [
-              Text(
-                "@${r.authorUsername}",
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              Text(
-                " • $date",
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-              if (hasCuisine) ...[
-                Text(
-                  " • Cuisine: $cuisine",
-                  style: Theme.of(context).textTheme.bodySmall,
+          child: Text.rich(
+            TextSpan(
+              children: [
+                TextSpan(
+                  text: "@${r.authorUsername}",
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
                 ),
+                TextSpan(
+                  text: " • $date",
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                      ),
+                ),
+                if (hasCuisine)
+                  TextSpan(
+                    text: " • $cuisine",
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                        ),
+                  ),
               ],
-            ],
+            ),
           ),
         ),
       ],
@@ -464,6 +1097,7 @@ class _UserInfoRow extends StatelessWidget {
   }
 }
 
+// Hashtag Pill widget
 class _HashtagPill extends StatelessWidget {
   const _HashtagPill({required this.tag});
   final String tag;
@@ -481,10 +1115,10 @@ class _HashtagPill extends StatelessWidget {
         ),
       ),
       child: Text(
-        "# $tag",
+        "#$tag",
         style: TextStyle(
           color: Theme.of(context).colorScheme.primary,
-          fontSize: 14,
+          fontSize: 13,
           fontWeight: FontWeight.w500,
         ),
       ),
@@ -492,330 +1126,7 @@ class _HashtagPill extends StatelessWidget {
   }
 }
 
-class _IngredientsCard extends StatelessWidget {
-  const _IngredientsCard({required this.ingredients});
-  final List<RecipeIngredient> ingredients;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: ExpansionTile(
-        initiallyExpanded: false,
-        leading: const Text("🥕", style: TextStyle(fontSize: 24)),
-        title: Builder(
-          builder: (context) {
-            final localizations = AppLocalizations.of(context);
-            return Text("${localizations?.ingredients ?? "Ingredients"} (${ingredients.length})");
-          },
-        ),
-        children: [
-          const Divider(height: 1),
-          ...ingredients.map((ing) {
-            final qty = ing.quantity == null ? "" : "${ing.quantity}";
-            final unit = ing.unit == null ? "" : " ${ing.unit}";
-            final prefix = (qty.isEmpty && unit.isEmpty) ? "" : "$qty$unit • ";
-            return ListTile(
-              dense: true,
-              title: Text("$prefix${ing.displayName}"),
-            );
-          }),
-          const SizedBox(height: 8),
-        ],
-      ),
-    );
-  }
-}
-
-class _StepsCard extends StatelessWidget {
-  const _StepsCard({required this.steps});
-  final List<RecipeStep> steps;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: ExpansionTile(
-        initiallyExpanded: false,
-        leading: const Text("📋", style: TextStyle(fontSize: 24)),
-        title: Builder(
-          builder: (context) {
-            final localizations = AppLocalizations.of(context);
-            return Text("${localizations?.steps ?? "Steps"} (${steps.length})");
-          },
-        ),
-        children: [
-          const Divider(height: 1),
-          ...steps.asMap().entries.map((entry) {
-            final i = entry.key + 1;
-            final st = entry.value;
-            return ListTile(
-              leading: CircleAvatar(radius: 14, child: Text("$i")),
-              title: Text(st.instruction),
-            );
-          }),
-          const SizedBox(height: 8),
-        ],
-      ),
-    );
-  }
-}
-
-
-
-class _EngagementMetricsOverlay extends StatelessWidget {
-  const _EngagementMetricsOverlay({
-    required this.counts,
-    required this.onLikeTap,
-    required this.onBookmarkTap,
-    required this.onCommentTap,
-    required this.viewerHasLiked,
-    required this.viewerHasBookmarked,
-    required this.isLiking,
-    required this.isBookmarking,
-  });
-
-  final RecipeCounts counts;
-  final VoidCallback onLikeTap;
-  final VoidCallback onBookmarkTap;
-  final VoidCallback onCommentTap;
-  final bool viewerHasLiked;
-  final bool viewerHasBookmarked;
-  final bool isLiking;
-  final bool isBookmarking;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _OverlayIconButton(
-            icon: Icons.favorite,
-            count: counts.likes,
-            isActive: viewerHasLiked,
-            isLoading: isLiking,
-            onTap: onLikeTap,
-          ),
-          const SizedBox(height: 12),
-          _OverlayIconButton(
-            icon: Icons.comment_outlined,
-            count: counts.comments,
-            onTap: onCommentTap,
-          ),
-          const SizedBox(height: 12),
-          _OverlayIconButton(
-            icon: viewerHasBookmarked ? Icons.bookmark_rounded : Icons.bookmark_outline_rounded,
-            count: counts.bookmarks,
-            isActive: viewerHasBookmarked,
-            isLoading: isBookmarking,
-            onTap: onBookmarkTap,
-          ),
-        ],
-      );
-  }
-}
-
-class _OverlayIconButton extends StatelessWidget {
-  const _OverlayIconButton({
-    required this.icon,
-    required this.onTap,
-    this.count,
-    this.isActive = false,
-    this.isLoading = false,
-  });
-
-  final IconData icon;
-  final VoidCallback onTap;
-  final int? count;
-  final bool isActive;
-  final bool isLoading;
-
-  @override
-  Widget build(BuildContext context) {
-    // Fixed height to prevent flicker: icon (24) + spacing (2) + text (~14) + padding (16) = ~60px
-    // Using fixed height ensures both loading and non-loading states have identical dimensions
-    const fixedHeight = 60.0;
-    
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: isLoading ? null : onTap,
-        borderRadius: BorderRadius.circular(20),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-          height: fixedHeight,
-          alignment: Alignment.center,
-          child: isLoading
-              ? const SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                  ),
-                )
-              : Column(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      icon,
-                      color: isActive ? Theme.of(context).colorScheme.primary : Colors.white,
-                      size: 24,
-                    ),
-                    if (count != null) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        "$count",
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          height: 1.0, // Reduce line height to minimize space
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ImageGallery extends StatefulWidget {
-  const _ImageGallery({
-    required this.images,
-    required this.counts,
-    required this.onLikeTap,
-    required this.onBookmarkTap,
-    required this.onCommentTap,
-    this.viewerHasLiked,
-    this.viewerHasBookmarked,
-    this.isLiking = false,
-    this.isBookmarking = false,
-  });
-  final List<RecipeImage> images;
-  final RecipeCounts counts;
-  final VoidCallback onLikeTap;
-  final VoidCallback onBookmarkTap;
-  final VoidCallback onCommentTap;
-  final bool? viewerHasLiked;
-  final bool? viewerHasBookmarked;
-  final bool isLiking;
-  final bool isBookmarking;
-
-  @override
-  State<_ImageGallery> createState() => _ImageGalleryState();
-}
-
-class _ImageGalleryState extends State<_ImageGallery> {
-  final PageController _pageController = PageController();
-  int _currentPage = 0;
-
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
-  }
-
-  void _openImageViewer(int initialIndex) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => _FullScreenImageViewer(
-          images: widget.images,
-          initialIndex: initialIndex,
-        ),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 350,
-      width: double.infinity,
-      child: Stack(
-        children: [
-          if (widget.images.isNotEmpty)
-            PageView.builder(
-              controller: _pageController,
-              onPageChanged: (index) {
-                setState(() => _currentPage = index);
-              },
-              itemCount: widget.images.length,
-              itemBuilder: (context, index) {
-                final image = widget.images[index];
-                return GestureDetector(
-                  onTap: () => _openImageViewer(index),
-                  child: RecipeImageWidget(
-                    imageUrl: image.url,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                  ),
-                );
-              },
-            )
-          else
-            const RecipeFallbackImage(
-              width: double.infinity,
-              height: double.infinity,
-              iconSize: 200, // Larger size for full screen
-            ),
-          // Engagement metrics overlay (right, vertically centered)
-          Positioned(
-            top: 0,
-            bottom: 0,
-            right: 16,
-            child: Align(
-              alignment: Alignment.centerRight,
-              child: _EngagementMetricsOverlay(
-                counts: widget.counts,
-                onLikeTap: widget.onLikeTap,
-                onBookmarkTap: widget.onBookmarkTap,
-                onCommentTap: widget.onCommentTap,
-                viewerHasLiked: widget.viewerHasLiked ?? false,
-                viewerHasBookmarked: widget.viewerHasBookmarked ?? false,
-                isLiking: widget.isLiking,
-                isBookmarking: widget.isBookmarking,
-              ),
-            ),
-          ),
-          // Pagination indicators
-          if (widget.images.length > 1)
-            Positioned(
-              bottom: 16,
-              left: 0,
-              right: 0,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(
-                  widget.images.length,
-                  (index) => Container(
-                    width: 8,
-                    height: 8,
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: _currentPage == index
-                          ? Colors.white
-                          : Colors.white.withValues(alpha: 0.5),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.3),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
+// Full Screen Image Viewer
 class _FullScreenImageViewer extends StatefulWidget {
   const _FullScreenImageViewer({
     required this.images,
@@ -884,7 +1195,7 @@ class _FullScreenImageViewerState extends State<_FullScreenImageViewer> {
   }
 }
 
-
+// Error View widget
 class _ErrorView extends StatelessWidget {
   const _ErrorView({required this.error, required this.onRetry});
   final String error;
@@ -918,20 +1229,5 @@ class _ErrorView extends StatelessWidget {
         ),
       ],
     );
-  }
-}
-
-extension DifficultyColorExtension on BuildContext {
-  Color getDifficultyColor(String difficulty) {
-    switch (difficulty.toLowerCase()) {
-      case "easy":
-        return Colors.green;
-      case "medium":
-        return Colors.orange;
-      case "hard":
-        return Colors.red;
-      default:
-        return Theme.of(this).colorScheme.primary;
-    }
   }
 }
