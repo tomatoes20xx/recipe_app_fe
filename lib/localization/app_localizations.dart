@@ -200,6 +200,17 @@ class AppLocalizations {
   String get searchRecipes => _localizedValues[locale.languageCode]?["searchRecipes"] ?? "Search recipes...";
   String get searchUsers => _localizedValues[locale.languageCode]?["searchUsers"] ?? "Search users...";
 
+  // Pantry Search (Cook with What I Have)
+  String get cookWithWhatIHave => _localizedValues[locale.languageCode]?["cookWithWhatIHave"] ?? "Cook with What I Have";
+  String get findRecipesWithIngredients => _localizedValues[locale.languageCode]?["findRecipesWithIngredients"] ?? "Find recipes based on ingredients you have";
+  String get addIngredientsToStart => _localizedValues[locale.languageCode]?["addIngredientsToStart"] ?? "Add ingredients to start";
+  String get addIngredientsDescription => _localizedValues[locale.languageCode]?["addIngredientsDescription"] ?? "Add the ingredients you have and we'll find recipes you can make";
+  String get tryDifferentIngredients => _localizedValues[locale.languageCode]?["tryDifferentIngredients"] ?? "Try adding different ingredients or lowering the match threshold";
+  String get enterIngredient => _localizedValues[locale.languageCode]?["enterIngredient"] ?? "Enter an ingredient...";
+  String get matchThreshold => _localizedValues[locale.languageCode]?["matchThreshold"] ?? "Match threshold:";
+  String get findRecipes => _localizedValues[locale.languageCode]?["findRecipes"] ?? "Find Recipes";
+  String get missing => _localizedValues[locale.languageCode]?["missing"] ?? "Missing";
+
   // Analytics
   String get statistics => _localizedValues[locale.languageCode]?["statistics"] ?? "Statistics";
   String get events => _localizedValues[locale.languageCode]?["events"] ?? "Events";
@@ -487,6 +498,15 @@ class AppLocalizations {
       "filters": "Filters",
       "searchRecipes": "Search recipes...",
       "searchUsers": "Search users...",
+      "cookWithWhatIHave": "Cook with What I Have",
+      "findRecipesWithIngredients": "Find recipes based on ingredients you have",
+      "addIngredientsToStart": "Add ingredients to start",
+      "addIngredientsDescription": "Add the ingredients you have and we'll find recipes you can make",
+      "tryDifferentIngredients": "Try adding different ingredients or lowering the match threshold",
+      "enterIngredient": "Enter an ingredient...",
+      "matchThreshold": "Match threshold:",
+      "findRecipes": "Find Recipes",
+      "missing": "Missing",
       "statistics": "Statistics",
       "events": "Events",
       "overallStatistics": "Overall Statistics",
@@ -781,6 +801,15 @@ class AppLocalizations {
       "filters": "ფილტრები",
       "searchRecipes": "რეცეპტების ძიება...",
       "searchUsers": "მომხმარებლების ძიება...",
+      "cookWithWhatIHave": "რა მაქვს იმით მოვამზადო",
+      "findRecipesWithIngredients": "იპოვეთ რეცეპტები იმ ინგრედიენტებით, რაც გაქვთ",
+      "addIngredientsToStart": "დაამატეთ ინგრედიენტები დასაწყებად",
+      "addIngredientsDescription": "დაამატეთ ინგრედიენტები, რომლებიც გაქვთ და ჩვენ ვიპოვით რეცეპტებს, რომლებიც შეგიძლიათ მოამზადოთ",
+      "tryDifferentIngredients": "სცადეთ სხვა ინგრედიენტების დამატება ან შემცირეთ შესაბამისობის ზღვარი",
+      "enterIngredient": "შეიყვანეთ ინგრედიენტი...",
+      "matchThreshold": "შესაბამისობის ზღვარი:",
+      "findRecipes": "რეცეპტების პოვნა",
+      "missing": "აკლია",
       "statistics": "სტატისტიკა",
       "events": "მოვლენები",
       "overallStatistics": "ზოგადი სტატისტიკა",

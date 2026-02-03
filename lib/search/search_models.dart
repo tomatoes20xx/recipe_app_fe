@@ -1,5 +1,31 @@
 import "../users/user_models.dart";
 
+class IngredientMatch {
+  final int percentage;
+  final int matchedCount;
+  final int totalCount;
+  final List<String> matched;
+  final List<String> missing;
+
+  IngredientMatch({
+    required this.percentage,
+    required this.matchedCount,
+    required this.totalCount,
+    required this.matched,
+    required this.missing,
+  });
+
+  factory IngredientMatch.fromJson(Map<String, dynamic> json) {
+    return IngredientMatch(
+      percentage: json["percentage"] as int? ?? 0,
+      matchedCount: json["matched_count"] as int? ?? 0,
+      totalCount: json["total_count"] as int? ?? 0,
+      matched: (json["matched"] as List<dynamic>? ?? []).map((e) => e.toString()).toList(),
+      missing: (json["missing"] as List<dynamic>? ?? []).map((e) => e.toString()).toList(),
+    );
+  }
+}
+
 class SearchResult {
   final String id;
   final String title;
@@ -9,6 +35,7 @@ class SearchResult {
   final DateTime createdAt;
   final String authorUsername;
   final String? authorAvatarUrl;
+  final IngredientMatch? ingredientMatch;
 
   SearchResult({
     required this.id,
@@ -19,6 +46,7 @@ class SearchResult {
     required this.createdAt,
     required this.authorUsername,
     this.authorAvatarUrl,
+    this.ingredientMatch,
   });
 
   factory SearchResult.fromJson(Map<String, dynamic> json) {
@@ -26,7 +54,9 @@ class SearchResult {
     final authorAvatarUrl = avatarUrl == null || avatarUrl == "null" || (avatarUrl is String && avatarUrl.isEmpty)
         ? null
         : avatarUrl.toString();
-    
+
+    final ingredientMatchData = json["ingredient_match"] as Map<String, dynamic>?;
+
     return SearchResult(
       id: json["id"].toString(),
       title: json["title"].toString(),
@@ -36,6 +66,7 @@ class SearchResult {
       createdAt: DateTime.parse(json["created_at"].toString()),
       authorUsername: json["author_username"].toString(),
       authorAvatarUrl: authorAvatarUrl,
+      ingredientMatch: ingredientMatchData != null ? IngredientMatch.fromJson(ingredientMatchData) : null,
     );
   }
 }

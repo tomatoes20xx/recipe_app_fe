@@ -42,7 +42,7 @@ class UnifiedSearchController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> search(String query, {RecipeSearchFilters? filters}) async {
+  Future<void> search(String query, {RecipeSearchFilters? filters, bool saveToHistory = false}) async {
     if (query.trim().isEmpty) {
       clear();
       return;
@@ -81,13 +81,23 @@ class UnifiedSearchController extends ChangeNotifier {
       recipesNextCursor = res.recipes.nextCursor;
       recipesHasMore = res.recipes.hasMore;
 
-      await historyStorage.addSearch(currentQuery!);
-      await loadRecentSearches();
+      if (saveToHistory) {
+        await historyStorage.addSearch(currentQuery!);
+        await loadRecentSearches();
+      }
     } catch (e) {
       error = e.toString();
     } finally {
       isLoading = false;
       notifyListeners();
+    }
+  }
+
+  /// Saves the current query to history (call when user commits a search)
+  Future<void> commitCurrentQueryToHistory() async {
+    if (currentQuery != null && currentQuery!.trim().isNotEmpty) {
+      await historyStorage.addSearch(currentQuery!);
+      await loadRecentSearches();
     }
   }
 

@@ -16,6 +16,7 @@ import "../users/user_models.dart";
 import "../utils/error_utils.dart";
 import "../utils/ui_utils.dart";
 import "../widgets/empty_state_widget.dart";
+import "pantry_search_screen.dart";
 import "profile_screen.dart";
 
 class SearchScreen extends StatefulWidget {
@@ -207,88 +208,89 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget _buildRecentSearches() {
     final localizations = AppLocalizations.of(context);
 
-    if (searchController.recentSearches.isEmpty) {
-      return EmptyStateWidget(
-        icon: Icons.history,
-        title: localizations?.noRecentSearches ?? "No recent searches",
-        description:
-            localizations?.searchHistoryWillAppear ?? "Your search history will appear here",
-        titleStyle: Theme.of(context).textTheme.titleLarge?.copyWith(
-              color:
-                  Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
-            ),
-        descriptionStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color:
-                  Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
-            ),
-      );
-    }
-
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                localizations?.recentSearches ?? "Recent Searches",
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: Theme.of(context)
-                          .colorScheme
-                          .onSurface
-                          .withValues(alpha: 0.7),
-                    ),
-              ),
-              GestureDetector(
-                onTap: () => searchController.clearHistory(),
-                child: Text(
-                  localizations?.clearAll ?? "Clear All",
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.primary,
+          // Cook with What I Have card
+          _CookWithIngredientsCard(
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => PantrySearchScreen(
+                    apiClient: widget.apiClient,
+                    auth: widget.auth,
+                  ),
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 24),
+
+          // Recent searches section
+          if (searchController.recentSearches.isNotEmpty) ...[
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  localizations?.recentSearches ?? "Recent Searches",
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withValues(alpha: 0.7),
                       ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: searchController.recentSearches.map((query) {
-              return InputChip(
-                label: Text(
-                  query,
-                  style: Theme.of(context).textTheme.bodySmall,
+                GestureDetector(
+                  onTap: () => searchController.clearHistory(),
+                  child: Text(
+                    localizations?.clearAll ?? "Clear All",
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                  ),
                 ),
-                avatar: Icon(
-                  Icons.history,
-                  size: 16,
-                  color: Theme.of(context)
-                      .colorScheme
-                      .onSurface
-                      .withValues(alpha: 0.6),
-                ),
-                deleteIcon: Icon(
-                  Icons.close,
-                  size: 16,
-                  color: Theme.of(context)
-                      .colorScheme
-                      .onSurface
-                      .withValues(alpha: 0.6),
-                ),
-                onDeleted: () => searchController.removeFromHistory(query),
-                onPressed: () {
-                  _lastSearchedQuery = query;
-                  searchController.search(query);
-                },
-                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                visualDensity: VisualDensity.compact,
-              );
-            }).toList(),
-          ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: searchController.recentSearches.map((query) {
+                return InputChip(
+                  label: Text(
+                    query,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  avatar: Icon(
+                    Icons.history,
+                    size: 16,
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.6),
+                  ),
+                  deleteIcon: Icon(
+                    Icons.close,
+                    size: 16,
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.6),
+                  ),
+                  onDeleted: () => searchController.removeFromHistory(query),
+                  onPressed: () {
+                    _lastSearchedQuery = query;
+                    searchController.search(query, saveToHistory: true);
+                  },
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  visualDensity: VisualDensity.compact,
+                );
+              }).toList(),
+            ),
+          ],
         ],
       ),
     );
@@ -441,6 +443,8 @@ class _SearchScreenState extends State<SearchScreen> {
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
           onTap: () {
+            // Save search to history when user taps a result
+            searchController.commitCurrentQueryToHistory();
             if (isCurrentUser) {
               Navigator.of(context).push(
                 MaterialPageRoute(
@@ -524,6 +528,8 @@ class _SearchScreenState extends State<SearchScreen> {
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
           onTap: () {
+            // Save search to history when user taps a result
+            searchController.commitCurrentQueryToHistory();
             Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (_) => RecipeDetailScreen(
@@ -1155,6 +1161,85 @@ class FollowButton extends StatelessWidget {
           color: isFollowing
               ? Theme.of(context).colorScheme.onSurface
               : Theme.of(context).colorScheme.primary,
+        ),
+      ),
+    );
+  }
+}
+
+class _CookWithIngredientsCard extends StatelessWidget {
+  const _CookWithIngredientsCard({
+    required this.onTap,
+  });
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context);
+
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
+          width: 1.5,
+        ),
+      ),
+      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.08),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.kitchen_outlined,
+                  color: Theme.of(context).colorScheme.primary,
+                  size: 28,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      localizations?.cookWithWhatIHave ?? "Cook with What I Have",
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      localizations?.findRecipesWithIngredients ??
+                          "Find recipes based on ingredients you have",
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withValues(alpha: 0.7),
+                          ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.chevron_right,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ],
+          ),
         ),
       ),
     );

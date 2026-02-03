@@ -109,4 +109,54 @@ class SearchApi {
     final data = await api.get("/search", query: queryParams, auth: true);
     return UnifiedSearchResponse.fromJson(Map<String, dynamic>.from(data as Map));
   }
+
+  /// Search for recipes that can be made with the given ingredients
+  Future<SearchResponse> searchByIngredients({
+    required List<String> haveIngredients,
+    int matchThreshold = 70,
+    String? cuisine,
+    int? cookingTimeMin,
+    int? cookingTimeMax,
+    String? difficulty,
+    int limit = 20,
+    String? cursor,
+  }) async {
+    final queryParams = <String, String>{
+      "types": "recipes",
+      "have_ingredients": haveIngredients.join(","),
+      "match_threshold": matchThreshold.toString(),
+      "limit": limit.toString(),
+    };
+
+    if (cursor != null) {
+      queryParams["recipes_cursor"] = cursor;
+    }
+
+    if (cuisine != null && cuisine.trim().isNotEmpty) {
+      queryParams["cuisine"] = cuisine.trim();
+    }
+
+    if (cookingTimeMin != null) {
+      queryParams["cooking_time_min"] = cookingTimeMin.toString();
+    }
+
+    if (cookingTimeMax != null) {
+      queryParams["cooking_time_max"] = cookingTimeMax.toString();
+    }
+
+    if (difficulty != null && difficulty.isNotEmpty) {
+      queryParams["difficulty"] = difficulty;
+    }
+
+    final data = await api.get("/search", query: queryParams, auth: true);
+    final results = data["results"] as Map<String, dynamic>? ?? {};
+    final recipesData = results["recipes"] as Map<String, dynamic>? ?? {};
+
+    return SearchResponse(
+      items: (recipesData["items"] as List<dynamic>? ?? [])
+          .map((e) => SearchResult.fromJson(Map<String, dynamic>.from(e)))
+          .toList(),
+      nextCursor: recipesData["nextCursor"]?.toString(),
+    );
+  }
 }
