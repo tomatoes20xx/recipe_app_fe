@@ -59,7 +59,7 @@ class UserSearchResponse {
 
     return UserSearchResponse(
       items: items,
-      nextCursor: json["next_cursor"]?.toString(),
+      nextCursor: json["nextCursor"]?.toString(),
     );
   }
 }
@@ -81,7 +81,7 @@ class UserRecipesResponse {
 
     return UserRecipesResponse(
       items: items,
-      nextCursor: json["next_cursor"]?.toString(),
+      nextCursor: json["nextCursor"]?.toString(),
     );
   }
 }
