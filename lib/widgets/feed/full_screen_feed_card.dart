@@ -226,7 +226,7 @@ class _ContentOverlay extends StatelessWidget {
         onTap: onTap,
         child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
@@ -378,76 +378,105 @@ class _EngagementOverlay extends StatelessWidget {
   Widget build(BuildContext context) {
     return Positioned(
       right: 16,
-      bottom: 180,
+      top: 0,
+      bottom: 0,
       child: SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            EngagementStatWidget(
-              icon: Icons.favorite_rounded,
-              value: item.likes,
-              active: item.viewerHasLiked,
-              activeColor: const Color(0xFFE53935),
-              size: EngagementStatSize.large,
-              style: EngagementStatStyle.fullScreen,
-              vertical: true,
-              iconSize: 26,
-              textSize: 14,
-              onTap: () async {
-                await feed.toggleLike(item.id);
-                // Refresh notifications after like action (with small delay for backend processing)
-                Future.delayed(const Duration(milliseconds: 500), () {
-                  onActionCompleted?.call();
-                });
-              },
-            ),
-            const SizedBox(height: 28),
-            EngagementStatWidget(
-              icon: Icons.comment_outlined,
-              value: item.comments,
-              size: EngagementStatSize.large,
-              style: EngagementStatStyle.fullScreen,
-              vertical: true,
-              iconSize: 26,
-              textSize: 14,
-              onTap: () {
-                showCommentsBottomSheet(
-                  context: context,
-                  recipeId: item.id,
-                  apiClient: apiClient,
-                  auth: auth,
-                  onCommentPosted: () {
-                    feed.updateCommentCount(item.id, item.comments + 1);
-                    // Refresh notifications after comment action (with small delay for backend processing)
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _ShadowedIcon(
+                child: EngagementStatWidget(
+                  icon: Icons.favorite_rounded,
+                  value: item.likes,
+                  active: item.viewerHasLiked,
+                  activeColor: const Color(0xFFE53935),
+                  size: EngagementStatSize.large,
+                  style: EngagementStatStyle.fullScreen,
+                  vertical: true,
+                  iconSize: 26,
+                  textSize: 14,
+                  onTap: () async {
+                    await feed.toggleLike(item.id);
                     Future.delayed(const Duration(milliseconds: 500), () {
                       onActionCompleted?.call();
                     });
                   },
-                );
-              },
-            ),
-            const SizedBox(height: 28),
-            EngagementStatWidget(
-              icon: item.viewerHasBookmarked ? Icons.bookmark_rounded : Icons.bookmark_outline_rounded,
-              value: item.bookmarks,
-              active: item.viewerHasBookmarked,
-              activeColor: const Color(0xFFE53935),
-              size: EngagementStatSize.large,
-              style: EngagementStatStyle.fullScreen,
-              vertical: true,
-              iconSize: 26,
-              textSize: 14,
-              onTap: () async {
-                await feed.toggleBookmark(item.id);
-                // Refresh notifications after bookmark action (with small delay for backend processing)
-                Future.delayed(const Duration(milliseconds: 500), () {
-                  onActionCompleted?.call();
-                });
-              },
-            ),
-          ],
+                ),
+              ),
+              const SizedBox(height: 32),
+              _ShadowedIcon(
+                child: EngagementStatWidget(
+                  icon: Icons.comment_outlined,
+                  value: item.comments,
+                  size: EngagementStatSize.large,
+                  style: EngagementStatStyle.fullScreen,
+                  vertical: true,
+                  iconSize: 26,
+                  textSize: 14,
+                  onTap: () {
+                    showCommentsBottomSheet(
+                      context: context,
+                      recipeId: item.id,
+                      apiClient: apiClient,
+                      auth: auth,
+                      onCommentPosted: () {
+                        feed.updateCommentCount(item.id, item.comments + 1);
+                        Future.delayed(const Duration(milliseconds: 500), () {
+                          onActionCompleted?.call();
+                        });
+                      },
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 32),
+              _ShadowedIcon(
+                child: EngagementStatWidget(
+                  icon: item.viewerHasBookmarked ? Icons.bookmark_rounded : Icons.bookmark_outline_rounded,
+                  value: item.bookmarks,
+                  active: item.viewerHasBookmarked,
+                  activeColor: const Color(0xFFE53935),
+                  size: EngagementStatSize.large,
+                  style: EngagementStatStyle.fullScreen,
+                  vertical: true,
+                  iconSize: 26,
+                  textSize: 14,
+                  onTap: () async {
+                    await feed.toggleBookmark(item.id);
+                    Future.delayed(const Duration(milliseconds: 500), () {
+                      onActionCompleted?.call();
+                    });
+                  },
+                ),
+              ),
+            ],
+          ),
         ),
       ),
+    );
+  }
+}
+
+class _ShadowedIcon extends StatelessWidget {
+  const _ShadowedIcon({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.4),
+            blurRadius: 8,
+            spreadRadius: 1,
+          ),
+        ],
+        shape: BoxShape.circle,
+      ),
+      child: child,
     );
   }
 }
