@@ -697,34 +697,6 @@ class _FeedShellDrawer extends StatelessWidget {
                 },
               ),
             ],
-
-            // Logout button
-            const SizedBox(height: 24),
-            _DrawerCard(
-              isDestructive: true,
-              onTap: () {
-                Navigator.of(context).pop();
-                auth.logout();
-              },
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.logout_rounded,
-                    color: Theme.of(context).colorScheme.error,
-                    size: 22,
-                  ),
-                  const SizedBox(width: 12),
-                  Text(
-                    AppLocalizations.of(context)?.logout ?? "Logout",
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500,
-                      color: Theme.of(context).colorScheme.error,
-                    ),
-                  ),
-                ],
-              ),
-            ),
           ],
         ),
       ),
@@ -758,12 +730,10 @@ class _DrawerCard extends StatefulWidget {
   const _DrawerCard({
     required this.child,
     required this.onTap,
-    this.isDestructive = false,
   });
 
   final Widget child;
   final VoidCallback onTap;
-  final bool isDestructive;
 
   @override
   State<_DrawerCard> createState() => _DrawerCardState();
@@ -776,12 +746,8 @@ class _DrawerCardState extends State<_DrawerCard> {
   @override
   Widget build(BuildContext context) {
     final baseColor = Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5);
-    final hoverColor = widget.isDestructive
-        ? Theme.of(context).colorScheme.error.withValues(alpha: 0.1)
-        : Theme.of(context).colorScheme.primary.withValues(alpha: 0.1);
-    final pressedColor = widget.isDestructive
-        ? Theme.of(context).colorScheme.error.withValues(alpha: 0.15)
-        : Theme.of(context).colorScheme.primary.withValues(alpha: 0.15);
+    final hoverColor = Theme.of(context).colorScheme.primary.withValues(alpha: 0.1);
+    final pressedColor = Theme.of(context).colorScheme.primary.withValues(alpha: 0.15);
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),

@@ -38,6 +38,7 @@ class AppLocalizations {
   String get unreadOnly => _localizedValues[locale.languageCode]?["unreadOnly"] ?? "Unread only";
   String get search => _localizedValues[locale.languageCode]?["search"] ?? "Search";
   String get logout => _localizedValues[locale.languageCode]?["logout"] ?? "Logout";
+  String get logoutConfirmation => _localizedValues[locale.languageCode]?["logoutConfirmation"] ?? "Are you sure you want to log out?";
 
   // Common UI
   String get feed => _localizedValues[locale.languageCode]?["feed"] ?? "Feed";
@@ -382,6 +383,7 @@ class AppLocalizations {
       "unreadOnly": "Unread only",
       "search": "Search",
       "logout": "Logout",
+      "logoutConfirmation": "Are you sure you want to log out?",
       "feed": "Feed",
       "recent": "Recent",
       "top": "Top",
@@ -685,6 +687,7 @@ class AppLocalizations {
       "unreadOnly": "მხოლოდ წაუკითხავი",
       "search": "ძიება",
       "logout": "გასვლა",
+      "logoutConfirmation": "დარწმუნებული ხართ, რომ გსურთ გასვლა?",
       "feed": "არხი",
       "recent": "უახლესი",
       "top": "ყველაზე პოპულარული",

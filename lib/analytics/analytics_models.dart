@@ -167,6 +167,15 @@ class AnalyticsEvent {
   });
 
   factory AnalyticsEvent.fromJson(Map<String, dynamic> json) {
+    Map<String, dynamic>? parsedMetadata;
+    final rawMetadata = json["metadata"];
+    if (rawMetadata != null) {
+      if (rawMetadata is Map) {
+        parsedMetadata = Map<String, dynamic>.from(rawMetadata);
+      }
+      // If metadata is a string or other type, ignore it
+    }
+
     return AnalyticsEvent(
       id: (json["id"] ?? "").toString(),
       eventType: (json["event_type"] ?? "").toString(),
@@ -175,9 +184,7 @@ class AnalyticsEvent {
       userUsername: json["user_username"]?.toString(),
       recipeId: json["recipe_id"]?.toString(),
       recipeTitle: json["recipe_title"]?.toString(),
-      metadata: json["metadata"] != null
-          ? Map<String, dynamic>.from(json["metadata"] as Map)
-          : null,
+      metadata: parsedMetadata,
     );
   }
 }
