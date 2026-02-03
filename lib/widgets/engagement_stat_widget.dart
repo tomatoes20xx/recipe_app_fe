@@ -8,6 +8,7 @@ class EngagementStatWidget extends StatelessWidget {
     required this.icon,
     required this.value,
     this.active = false,
+    this.activeColor,
     this.onTap,
     this.size = EngagementStatSize.medium,
     this.style = EngagementStatStyle.regular,
@@ -19,31 +20,34 @@ class EngagementStatWidget extends StatelessWidget {
 
   /// The icon to display
   final IconData icon;
-  
+
   /// The numeric value to display (will be converted to string)
   final dynamic value; // Can be int, String, or num
-  
+
   /// Whether this stat is in an active state (e.g., user has liked/bookmarked)
   final bool active;
-  
+
+  /// Optional color to use when active (defaults to primary)
+  final Color? activeColor;
+
   /// Optional tap callback - if provided, makes the widget tappable
   final VoidCallback? onTap;
-  
+
   /// Size variant of the stat
   final EngagementStatSize size;
-  
+
   /// Style variant of the stat
   final EngagementStatStyle style;
-  
+
   /// Whether to show text shadows (useful for overlay styles)
   final bool showShadows;
-  
+
   /// Whether to stack icon above the value
   final bool vertical;
-  
+
   /// Optional override for icon size
   final double? iconSize;
-  
+
   /// Optional override for text size
   final double? textSize;
 
@@ -109,13 +113,14 @@ class EngagementStatWidget extends StatelessWidget {
 
   _StatData _getStatData(BuildContext context) {
     final theme = Theme.of(context);
-    
+    final activeClr = activeColor ?? theme.colorScheme.primary;
+
     switch (style) {
       case EngagementStatStyle.fullScreen:
         return _StatData(
           iconSize: _getIconSize(),
           spacing: 4,
-          iconColor: active ? theme.colorScheme.primary : Colors.white,
+          iconColor: active ? activeClr : Colors.white,
           textStyle: TextStyle(
             fontSize: _getFontSize(),
             fontWeight: FontWeight.w400,
@@ -129,7 +134,7 @@ class EngagementStatWidget extends StatelessWidget {
             ],
           ),
         );
-      
+
       case EngagementStatStyle.overlay:
         return _StatData(
           iconSize: _getIconSize(),
@@ -146,7 +151,7 @@ class EngagementStatWidget extends StatelessWidget {
             ] : null,
           ),
         );
-      
+
       case EngagementStatStyle.mini:
         return _StatData(
           iconSize: 14,
@@ -154,19 +159,19 @@ class EngagementStatWidget extends StatelessWidget {
           iconColor: theme.colorScheme.onSurface.withValues(alpha: 0.6),
           textStyle: theme.textTheme.bodySmall ?? const TextStyle(),
         );
-      
+
       case EngagementStatStyle.regular:
         return _StatData(
           iconSize: _getIconSize(),
           spacing: 6,
           iconColor: active
-              ? theme.colorScheme.primary
+              ? activeClr
               : theme.colorScheme.onSurface.withValues(alpha: 0.6),
           textStyle: TextStyle(
             fontSize: _getFontSize(),
             fontWeight: active ? FontWeight.w600 : FontWeight.w500,
             color: active
-                ? theme.colorScheme.primary
+                ? activeClr
                 : theme.colorScheme.onSurface.withValues(alpha: 0.7),
           ),
         );

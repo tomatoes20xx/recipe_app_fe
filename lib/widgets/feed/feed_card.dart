@@ -249,6 +249,7 @@ class _EngagementRow extends StatelessWidget {
           icon: item.viewerHasLiked ? Icons.favorite_rounded : Icons.favorite_outline_rounded,
           value: item.likes,
           active: item.viewerHasLiked,
+          activeColor: const Color(0xFFE53935),
           onTap: () async {
             await feed.toggleLike(item.id);
             onActionCompleted?.call();
@@ -280,6 +281,7 @@ class _EngagementRow extends StatelessWidget {
           icon: item.viewerHasBookmarked ? Icons.bookmark_rounded : Icons.bookmark_outline_rounded,
           value: item.bookmarks,
           active: item.viewerHasBookmarked,
+          activeColor: const Color(0xFFE53935),
           onTap: () async {
             await feed.toggleBookmark(item.id);
             onActionCompleted?.call();
@@ -295,18 +297,20 @@ class _EngagementButton extends StatelessWidget {
     required this.icon,
     required this.value,
     this.active = false,
+    this.activeColor,
     required this.onTap,
   });
 
   final IconData icon;
   final int value;
   final bool active;
+  final Color? activeColor;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final color = active
-        ? Theme.of(context).colorScheme.primary
+        ? (activeColor ?? Theme.of(context).colorScheme.primary)
         : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6);
 
     return GestureDetector(
