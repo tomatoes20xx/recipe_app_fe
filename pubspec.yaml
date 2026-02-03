@@ -51,7 +51,7 @@ dependencies:
   # For app version info
   package_info_plus: ^8.1.1
   # For Google AdMob
-  google_mobile_ads: ^5.1.0
+  google_mobile_ads: ^7.0.0
   # For launching URLs (email, web links)
   url_launcher: ^6.3.1
 
