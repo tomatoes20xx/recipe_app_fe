@@ -81,7 +81,7 @@ Widget buildUserAvatar(
 }
 
 /// Reusable widget for recipe fallback images
-/// Shows a custom placeholder image or decorative placeholder with a recipe icon
+/// Shows a custom placeholder image from assets/images/recipe_fallback.png
 class RecipeFallbackImage extends StatelessWidget {
   const RecipeFallbackImage({
     super.key,
@@ -96,86 +96,23 @@ class RecipeFallbackImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: width,
-      height: height,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.3),
-            Theme.of(context).colorScheme.secondaryContainer.withValues(alpha: 0.2),
-          ],
-        ),
-      ),
-      child: _buildFallbackContent(context),
-    );
-  }
+    // Determine if we should expand to fill available space
+    final shouldExpand = (width != null && !width!.isFinite) ||
+        (height != null && !height!.isFinite);
 
-  Widget _buildFallbackContent(BuildContext context) {
-    // Use container dimensions directly to fill the space completely
-    double? imageWidth = width;
-    double? imageHeight = height;
-    BoxFit fit = BoxFit.cover; // Fill the container completely
-    
-    // If dimensions are infinite, use screen size
-    if (width != null && !width!.isFinite) {
-      final screenSize = MediaQuery.of(context).size;
-      imageWidth = screenSize.width;
-    }
-    if (height != null && !height!.isFinite) {
-      final screenSize = MediaQuery.of(context).size;
-      imageHeight = screenSize.height;
-    }
-    
-    // If no dimensions provided, use iconSize as fallback (centered)
-    if (imageWidth == null && imageHeight == null) {
-      return Center(
-        child: Image.asset(
-          'assets/images/recipe_fallback.png',
-          width: iconSize * 1.5,
-          height: iconSize * 1.5,
-          fit: BoxFit.contain,
-          errorBuilder: (context, error, stackTrace) {
-            return _buildIconFallback(context);
-          },
-        ),
-      );
-    }
-    
-    return Image.asset(
+    final image = Image.asset(
       'assets/images/recipe_fallback.png',
-      width: imageWidth,
-      height: imageHeight,
-      fit: fit,
-      errorBuilder: (context, error, stackTrace) {
-        // If custom image doesn't exist, show icon fallback
-        return _buildIconFallback(context);
-      },
+      fit: BoxFit.cover,
+      width: shouldExpand ? null : width,
+      height: shouldExpand ? null : height,
     );
-  }
 
-  Widget _buildIconFallback(BuildContext context) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(
-          Icons.restaurant_menu_rounded,
-          size: iconSize,
-          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.4),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          "No Image",
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
-          ),
-        ),
-      ],
-    );
+    // Expand to fill container when dimensions are infinite
+    if (shouldExpand) {
+      return SizedBox.expand(child: image);
+    }
+
+    return image;
   }
 }
 
@@ -278,11 +215,17 @@ class RecipeImageWidget extends StatelessWidget {
         errorWidget: (context, url, error) {
           // Use fallback image for broken images
           final iconSize = _calculateIconSize(width, height);
-          return RecipeFallbackImage(
+          // Wrap in SizedBox.expand when dimensions are infinite to fill the container
+          final fallback = RecipeFallbackImage(
             width: width?.isFinite == true ? width : null,
             height: height?.isFinite == true ? height : null,
             iconSize: iconSize,
           );
+          // If either dimension is infinite, expand to fill available space
+          if ((width != null && !width!.isFinite) || (height != null && !height!.isFinite)) {
+            return SizedBox.expand(child: fallback);
+          }
+          return fallback;
         },
       ),
     );
