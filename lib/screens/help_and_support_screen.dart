@@ -147,7 +147,7 @@ class _HelpAndSupportScreenState extends State<HelpAndSupportScreen> {
       {
         "question": localizations?.faqHowToCreateRecipe ?? "How do I create a recipe?",
         "answer": localizations?.faqHowToCreateRecipeAnswer ?? 
-          "Tap the '+' button in the navigation bar or use the 'Create Recipe' option from the menu. Fill in the recipe details including title, description, ingredients, steps, and images, then save.",
+          "Tap the '+' button in the navigation bar. Fill in the recipe details including title, description, ingredients, steps, and images, then save.",
       },
       {
         "question": localizations?.faqHowToSaveRecipe ?? "How do I save a recipe?",
