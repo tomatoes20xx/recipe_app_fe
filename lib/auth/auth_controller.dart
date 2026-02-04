@@ -70,6 +70,23 @@ class AuthController extends ChangeNotifier {
     }
   }
 
+  /// Login with Google OAuth
+  /// Takes an ID token from Google Sign-In and authenticates with backend
+  Future<void> loginWithGoogle(String idToken) async {
+    isLoading = true;
+    notifyListeners();
+
+    try {
+      final t = await authApi.googleLogin(idToken: idToken);
+      token = t;
+      await tokenStorage.saveToken(t);
+      me = await authApi.me();
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
+  }
+
   Future<void> signup({
     required String email,
     required String password,

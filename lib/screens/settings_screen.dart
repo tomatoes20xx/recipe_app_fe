@@ -8,6 +8,10 @@ import "theme_selection_screen.dart";
 import "language_selection_screen.dart";
 import "terms_and_privacy_screen.dart";
 import "help_and_support_screen.dart";
+import "../api/api_client.dart";
+import "../users/user_api.dart";
+import "../users/user_models.dart";
+import "../utils/error_utils.dart";
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({
@@ -15,11 +19,13 @@ class SettingsScreen extends StatefulWidget {
     required this.themeController,
     required this.languageController,
     this.auth,
+    this.apiClient,
   });
 
   final ThemeController themeController;
   final LanguageController languageController;
   final AuthController? auth;
+  final ApiClient? apiClient;
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -27,11 +33,16 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   String _appVersion = "";
+  UserPrivacySettings? _privacySettings;
+  bool _isLoadingPrivacy = false;
 
   @override
   void initState() {
     super.initState();
     _loadAppVersion();
+    if (widget.auth?.isLoggedIn == true && widget.apiClient != null) {
+      _loadPrivacySettings();
+    }
   }
 
   Future<void> _loadAppVersion() async {
@@ -40,6 +51,68 @@ class _SettingsScreenState extends State<SettingsScreen> {
       setState(() {
         _appVersion = packageInfo.version;
       });
+    }
+  }
+
+  Future<void> _loadPrivacySettings() async {
+    if (widget.apiClient == null) return;
+
+    setState(() {
+      _isLoadingPrivacy = true;
+    });
+
+    try {
+      final userApi = UserApi(widget.apiClient!);
+      final username = widget.auth?.me?["username"]?.toString();
+      if (username != null) {
+        final profile = await userApi.getUserProfile(username);
+        if (mounted && profile.privacy != null) {
+          setState(() {
+            _privacySettings = profile.privacy;
+            _isLoadingPrivacy = false;
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoadingPrivacy = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _updatePrivacy({
+    bool? followersPrivate,
+    bool? followingPrivate,
+  }) async {
+    if (widget.apiClient == null) return;
+
+    setState(() {
+      _isLoadingPrivacy = true;
+    });
+
+    try {
+      final userApi = UserApi(widget.apiClient!);
+      final updatedPrivacy = await userApi.updatePrivacy(
+        followersPrivate: followersPrivate,
+        followingPrivate: followingPrivate,
+      );
+
+      if (mounted) {
+        setState(() {
+          _privacySettings = updatedPrivacy;
+          _isLoadingPrivacy = false;
+        });
+        ErrorUtils.showSuccess(context, "Privacy settings updated");
+      }
+    } catch (e) {
+      setState(() {
+        _isLoadingPrivacy = false;
+      });
+      if (mounted) {
+        ErrorUtils.showError(context, e);
+      }
     }
   }
 
@@ -140,6 +213,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
 
                 const SizedBox(height: 28),
+
+                // Privacy Section (only if logged in)
+                if (isLoggedIn && _privacySettings != null) ...[
+                  _buildSectionLabel(
+                    context,
+                    localizations?.privacy ?? "Privacy",
+                  ),
+                  const SizedBox(height: 12),
+                  _buildPrivacySettings(context),
+                  const SizedBox(height: 28),
+                ],
 
                 // Support Section
                 _buildSectionLabel(
@@ -358,6 +442,60 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildPrivacySettings(BuildContext context) {
+    final theme = Theme.of(context);
+    final localizations = AppLocalizations.of(context);
+
+    if (_privacySettings == null) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.onSurface.withValues(alpha: 0.04),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        children: [
+          SwitchListTile(
+            title: Text(localizations?.privateFollowers ?? "Private Followers"),
+            subtitle: Text(localizations?.hideYourFollowersListFromOthers ?? "Hide your followers list from others"),
+            value: _privacySettings!.followersPrivate,
+            onChanged: _isLoadingPrivacy
+                ? null
+                : (value) {
+                    _updatePrivacy(followersPrivate: value);
+                  },
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+          ),
+          Divider(
+            height: 1,
+            indent: 16,
+            endIndent: 16,
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.08),
+          ),
+          SwitchListTile(
+            title: Text(localizations?.privateFollowing ?? "Private Following"),
+            subtitle: Text(localizations?.hideYourFollowingListFromOthers ?? "Hide your following list from others"),
+            value: _privacySettings!.followingPrivate,
+            onChanged: _isLoadingPrivacy
+                ? null
+                : (value) {
+                    _updatePrivacy(followingPrivate: value);
+                  },
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+          ),
+        ],
       ),
     );
   }

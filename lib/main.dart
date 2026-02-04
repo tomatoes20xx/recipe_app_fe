@@ -4,6 +4,7 @@ import "package:flutter/material.dart";
 import "package:flutter_localizations/flutter_localizations.dart";
 import "package:google_fonts/google_fonts.dart";
 import "package:google_mobile_ads/google_mobile_ads.dart";
+import "package:google_sign_in/google_sign_in.dart";
 import "package:sqflite_common_ffi/sqflite_ffi.dart";
 
 import "api/api_client.dart";
@@ -17,10 +18,22 @@ import "theme/theme_controller.dart";
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Initialize Google Mobile Ads SDK
   // App ID: ca-app-pub-5283215754482121~9547688424
   MobileAds.instance.initialize();
+
+  // Initialize Google Sign-In with Web Client ID
+  const String webClientId = '627234687645-1hjoc27r69tvs0mn7o7st2t3bki2rbru.apps.googleusercontent.com';
+
+  try {
+    await GoogleSignIn.instance.initialize(
+      serverClientId: webClientId,
+    );
+  } catch (e) {
+    // Ignore initialization errors
+    debugPrint('Google Sign-In initialization error: $e');
+  }
   
   // Initialize sqflite_common_ffi for Windows/Linux/macOS desktop support
   // This is required for cached_network_image to work on desktop platforms

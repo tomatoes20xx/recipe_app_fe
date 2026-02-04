@@ -691,6 +691,7 @@ class _FeedShellDrawer extends StatelessWidget {
                         themeController: themeController,
                         languageController: languageController,
                         auth: auth,
+                        apiClient: apiClient,
                       ),
                     ),
                   );

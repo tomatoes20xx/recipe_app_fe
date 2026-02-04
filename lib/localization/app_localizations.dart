@@ -23,11 +23,23 @@ class AppLocalizations {
   String get login => _localizedValues[locale.languageCode]?["login"] ?? "Login";
   String get signUp => _localizedValues[locale.languageCode]?["signUp"] ?? "Sign up";
   String get email => _localizedValues[locale.languageCode]?["email"] ?? "Email";
+  String get emailHint => _localizedValues[locale.languageCode]?["emailHint"] ?? "Enter your email";
   String get password => _localizedValues[locale.languageCode]?["password"] ?? "Password";
+  String get passwordHint => _localizedValues[locale.languageCode]?["passwordHint"] ?? "Enter your password";
   String get createAccount => _localizedValues[locale.languageCode]?["createAccount"] ?? "Create account";
   String get username => _localizedValues[locale.languageCode]?["username"] ?? "Username";
   String get displayName => _localizedValues[locale.languageCode]?["displayName"] ?? "Display name (optional)";
   String get passwordMin => _localizedValues[locale.languageCode]?["passwordMin"] ?? "Password (min 8)";
+  String get continueWithGoogle => _localizedValues[locale.languageCode]?["continueWithGoogle"] ?? "Continue with Google";
+  String get orContinue => _localizedValues[locale.languageCode]?["orContinue"] ?? "or continue";
+  String get rememberMe => _localizedValues[locale.languageCode]?["rememberMe"] ?? "Remember me";
+  String get forgotPassword => _localizedValues[locale.languageCode]?["forgotPassword"] ?? "Forgot password?";
+  String get forgotPasswordComingSoon => _localizedValues[locale.languageCode]?["forgotPasswordComingSoon"] ?? "Forgot password feature coming soon!";
+  String get dontHaveAccount => _localizedValues[locale.languageCode]?["dontHaveAccount"] ?? "Don't have an account?";
+  String get googleSignInFailed => _localizedValues[locale.languageCode]?["googleSignInFailed"] ?? "Google Sign-In failed. Please try again.";
+  String get showPassword => _localizedValues[locale.languageCode]?["showPassword"] ?? "Show password";
+  String get hidePassword => _localizedValues[locale.languageCode]?["hidePassword"] ?? "Hide password";
+  String get appTagline => _localizedValues[locale.languageCode]?["appTagline"] ?? "Your Recipe Journey";
 
   // Navigation & Tooltips
   String get menu => _localizedValues[locale.languageCode]?["menu"] ?? "Menu";
@@ -147,6 +159,7 @@ class AppLocalizations {
   String get areYouSureDeleteAvatar => _localizedValues[locale.languageCode]?["areYouSureDeleteAvatar"] ?? "Are you sure you want to remove your avatar?";
   String get followers => _localizedValues[locale.languageCode]?["followers"] ?? "Followers";
   String get followingTitle => _localizedValues[locale.languageCode]?["followingTitle"] ?? "Following";
+  String get totalLikes => _localizedValues[locale.languageCode]?["totalLikes"] ?? "Total Likes";
   String get private => _localizedValues[locale.languageCode]?["private"] ?? "Private";
   String get thisUsersFollowersListIsPrivate => _localizedValues[locale.languageCode]?["thisUsersFollowersListIsPrivate"] ?? "This user's followers list is private";
   String get noFollowers => _localizedValues[locale.languageCode]?["noFollowers"] ?? "No followers";
@@ -154,6 +167,11 @@ class AppLocalizations {
   String get thisUsersFollowingListIsPrivate => _localizedValues[locale.languageCode]?["thisUsersFollowingListIsPrivate"] ?? "This user's following list is private";
   String get notFollowingAnyone => _localizedValues[locale.languageCode]?["notFollowingAnyone"] ?? "Not following anyone";
   String get thisUserIsntFollowingAnyoneYet => _localizedValues[locale.languageCode]?["thisUserIsntFollowingAnyoneYet"] ?? "This user isn't following anyone yet";
+  String get privacy => _localizedValues[locale.languageCode]?["privacy"] ?? "Privacy";
+  String get privateFollowers => _localizedValues[locale.languageCode]?["privateFollowers"] ?? "Private Followers";
+  String get privateFollowing => _localizedValues[locale.languageCode]?["privateFollowing"] ?? "Private Following";
+  String get hideYourFollowersListFromOthers => _localizedValues[locale.languageCode]?["hideYourFollowersListFromOthers"] ?? "Hide your followers list from others";
+  String get hideYourFollowingListFromOthers => _localizedValues[locale.languageCode]?["hideYourFollowingListFromOthers"] ?? "Hide your following list from others";
 
   // Create Recipe Form
   String get title => _localizedValues[locale.languageCode]?["title"] ?? "Title";
@@ -377,11 +395,23 @@ class AppLocalizations {
       "login": "Login",
       "signUp": "Sign up",
       "email": "Email",
+      "emailHint": "Enter your email",
       "password": "Password",
+      "passwordHint": "Enter your password",
       "createAccount": "Create account",
       "username": "Username",
       "displayName": "Display name (optional)",
       "passwordMin": "Password (min 8)",
+      "continueWithGoogle": "Continue with Google",
+      "orContinue": "or continue",
+      "rememberMe": "Remember me",
+      "forgotPassword": "Forgot password?",
+      "forgotPasswordComingSoon": "Forgot password feature coming soon!",
+      "dontHaveAccount": "Don't have an account?",
+      "googleSignInFailed": "Google Sign-In failed. Please try again.",
+      "showPassword": "Show password",
+      "hidePassword": "Hide password",
+      "appTagline": "Your Recipe Journey",
       "menu": "Menu",
       "createRecipe": "Create Recipe",
       "notifications": "Notifications",
@@ -466,6 +496,7 @@ class AppLocalizations {
       "areYouSureDeleteAvatar": "Are you sure you want to remove your avatar?",
       "followers": "Followers",
       "followingTitle": "Following",
+      "totalLikes": "Total Likes",
       "private": "Private",
       "thisUsersFollowersListIsPrivate": "This user's followers list is private",
       "noFollowers": "No followers",
@@ -473,6 +504,11 @@ class AppLocalizations {
       "thisUsersFollowingListIsPrivate": "This user's following list is private",
       "notFollowingAnyone": "Not following anyone",
       "thisUserIsntFollowingAnyoneYet": "This user isn't following anyone yet",
+      "privacy": "Privacy",
+      "privateFollowers": "Private Followers",
+      "privateFollowing": "Private Following",
+      "hideYourFollowersListFromOthers": "Hide your followers list from others",
+      "hideYourFollowingListFromOthers": "Hide your following list from others",
       "title": "Title",
       "enterRecipeTitle": "Enter recipe title",
       "description": "Description",
@@ -688,11 +724,23 @@ class AppLocalizations {
       "login": "შესვლა",
       "signUp": "რეგისტრაცია",
       "email": "ელ-ფოსტა",
+      "emailHint": "შეიყვანეთ თქვენი ელ-ფოსტა",
       "password": "პაროლი",
+      "passwordHint": "შეიყვანეთ თქვენი პაროლი",
       "createAccount": "ანგარიშის შექმნა",
       "username": "მომხმარებლის სახელი",
       "displayName": "როგორ გინდათ თქვენი სახელი გამოჩნდეს? (არასავალდებულო)",
       "passwordMin": "პაროლი (მინ. 8)",
+      "continueWithGoogle": "გაგრძელება Google-ით",
+      "orContinue": "ან გაგრძელება",
+      "rememberMe": "დამახსოვრება",
+      "forgotPassword": "დაგავიწყდათ პაროლი?",
+      "forgotPasswordComingSoon": "პაროლის აღდგენის ფუნქცია მალე გამოჩნდება!",
+      "dontHaveAccount": "არ გაქვთ ანგარიში?",
+      "googleSignInFailed": "Google-ით შესვლა ვერ მოხერხდა. გთხოვთ, სცადოთ თავიდან.",
+      "showPassword": "პაროლის ჩვენება",
+      "hidePassword": "პაროლის დამალვა",
+      "appTagline": "თქვენი რეცეპტების მოგზაურობა",
       "menu": "მენიუ",
       "createRecipe": "რეცეპტის შექმნა",
       "notifications": "შეტყობინებები",
@@ -777,6 +825,7 @@ class AppLocalizations {
       "areYouSureDeleteAvatar": "დარწმუნებული ხართ, რომ გსურთ თქვენი ავატარის წაშლა?",
       "followers": "გამომწერები",
       "followingTitle": "გამოწერილი",
+      "totalLikes": "მოწონებები",
       "private": "პირადი",
       "thisUsersFollowersListIsPrivate": "ამ მომხმარებლის მიმდევრების სია დახურულია",
       "noFollowers": "გამომწერები არ არიან",
@@ -784,6 +833,11 @@ class AppLocalizations {
       "thisUsersFollowingListIsPrivate": "ამ მომხმარებლის გამოწერების სია დახურულია",
       "notFollowingAnyone": "არავინ ყავს გამომოწერილი",
       "thisUserIsntFollowingAnyoneYet": "ამ მომხმარებელს ჯერ არვინ ყავს გამოწერილი",
+      "privacy": "კონფიდენციალურობა",
+      "privateFollowers": "პირადი გამომწერები",
+      "privateFollowing": "პირადი გამოწერები",
+      "hideYourFollowersListFromOthers": "დამალეთ თქვენი გამომწერების სია სხვებისგან",
+      "hideYourFollowingListFromOthers": "დამალეთ თქვენი გამოწერების სია სხვებისგან",
       "title": "სათაური",
       "enterRecipeTitle": "შეიყვანეთ რეცეპტის სათაური",
       "description": "აღწერა",

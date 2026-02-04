@@ -123,3 +123,4 @@ lcov.info
 # Testing
 test-results/
 .test_coverage/
+nul

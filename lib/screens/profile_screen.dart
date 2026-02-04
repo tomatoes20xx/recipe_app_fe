@@ -43,8 +43,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _isFollowing = false;
   UserProfile? _userProfile;
   String? _error;
-  bool _isLoadingPrivacy = false;
-  
+
   late final UserRecipesController? _recipesController;
   final ScrollController _recipesScrollController = ScrollController();
 
@@ -75,7 +74,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (widget.username != null) {
       _loadUserProfile();
     } else {
-      // Load own profile to get privacy settings
+      // Load own profile
       _loadOwnProfile();
     }
   }
@@ -180,42 +179,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           viewerIsFollowing: oldFollowing,
           followersCount: _userProfile!.followersCount + (oldFollowing ? 1 : -1),
         );
-      });
-      if (mounted) {
-        ErrorUtils.showError(context, e);
-      }
-    }
-  }
-
-  Future<void> _updatePrivacy({
-    bool? followersPrivate,
-    bool? followingPrivate,
-  }) async {
-    setState(() {
-      _isLoadingPrivacy = true;
-    });
-
-    try {
-      final userApi = UserApi(widget.apiClient);
-      final updatedPrivacy = await userApi.updatePrivacy(
-        followersPrivate: followersPrivate,
-        followingPrivate: followingPrivate,
-      );
-
-      // Update local profile with new privacy settings
-      if (_userProfile != null) {
-        setState(() {
-          _userProfile = _userProfile!.copyWith(privacy: updatedPrivacy);
-          _isLoadingPrivacy = false;
-        });
-      }
-
-      if (mounted) {
-        ErrorUtils.showSuccess(context, "Privacy settings updated");
-      }
-    } catch (e) {
-      setState(() {
-        _isLoadingPrivacy = false;
       });
       if (mounted) {
         ErrorUtils.showError(context, e);
@@ -423,139 +386,295 @@ class _ProfileScreenState extends State<ProfileScreen> {
         );
       }
 
+      final theme = Theme.of(context);
+
       return Scaffold(
-        appBar: AppBar(
-          title: Text(_userProfile!.displayName ?? _userProfile!.username),
-        ),
+        backgroundColor: theme.colorScheme.surface,
         body: RefreshIndicator(
           onRefresh: _refreshProfile,
-          child: ListView(
+          child: CustomScrollView(
             controller: _recipesScrollController,
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.all(16),
-            children: [
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          buildUserAvatar(
-                            context,
-                            _userProfile!.avatarUrl,
-                            _userProfile!.username,
-                            radius: 40,
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  _userProfile!.displayName ?? _userProfile!.username,
-                                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  "@${_userProfile!.username}",
-                                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
-                                      ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          if (widget.auth.isLoggedIn && !_userProfile!.isViewer)
-                            FollowButton(
-                              isFollowing: _isFollowing,
-                              onTap: _toggleFollow,
-                            ),
+            slivers: [
+              // Modern App Bar with gradient
+              SliverAppBar(
+                pinned: true,
+                elevation: 0,
+                scrolledUnderElevation: 0.5,
+                backgroundColor: theme.colorScheme.surface,
+                expandedHeight: 200,
+                flexibleSpace: FlexibleSpaceBar(
+                  background: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          theme.colorScheme.primary.withValues(alpha: 0.15),
+                          theme.colorScheme.primary.withValues(alpha: 0.05),
                         ],
                       ),
-                      if (_userProfile!.bio != null && _userProfile!.bio!.isNotEmpty) ...[
-                        const SizedBox(height: 16),
-                        Text(
-                          _userProfile!.bio!,
-                          style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                    child: SafeArea(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 60, 20, 20),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            // Avatar with shadow
+                            Container(
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: theme.colorScheme.primary.withValues(alpha: 0.3),
+                                    blurRadius: 20,
+                                    offset: const Offset(0, 8),
+                                  ),
+                                ],
+                              ),
+                              child: buildUserAvatar(
+                                context,
+                                _userProfile!.avatarUrl,
+                                _userProfile!.username,
+                                radius: 45,
+                              ),
+                            ),
+                            const SizedBox(width: 20),
+                            // Name and username
+                            Expanded(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    _userProfile!.displayName ?? _userProfile!.username,
+                                    style: theme.textTheme.headlineSmall?.copyWith(
+                                      fontWeight: FontWeight.w700,
+                                      color: theme.colorScheme.onSurface,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    "@${_userProfile!.username}",
+                                    style: theme.textTheme.bodyLarge?.copyWith(
+                                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
-                      const SizedBox(height: 16),
-                      const Divider(),
-                      const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          Expanded(
-                            child: InkWell(
-                              onTap: () {
-                                Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (_) => FollowersScreen(
-                                      username: _userProfile!.username,
-                                      apiClient: widget.apiClient,
-                                      auth: widget.auth,
-                                    ),
-                                  ),
-                                );
-                              },
-                              borderRadius: BorderRadius.circular(8),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-                                child: Builder(
-                                  builder: (context) {
-                                    final localizations = AppLocalizations.of(context);
-                                    return StatItem(
-                                      label: localizations?.followers ?? "Followers",
-                                      value: _userProfile!.followersCount.toString(),
-                                      showChevron: true,
-                                    );
-                                  },
-                                ),
-                              ),
-                            ),
-                          ),
-                          Expanded(
-                            child: InkWell(
-                              onTap: () {
-                                Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (_) => FollowingScreen(
-                                      username: _userProfile!.username,
-                                      apiClient: widget.apiClient,
-                                      auth: widget.auth,
-                                    ),
-                                  ),
-                                );
-                              },
-                              borderRadius: BorderRadius.circular(8),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-                                child: Builder(
-                                  builder: (context) {
-                                    final localizations = AppLocalizations.of(context);
-                                    return StatItem(
-                                      label: localizations?.followingTitle ?? "Following",
-                                      value: _userProfile!.followingCount.toString(),
-                                      showChevron: true,
-                                    );
-                                  },
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
-              // Recipes section
-              ...(_recipesController != null ? [_buildRecipesSection(context)] : []),
+
+              // Profile Content
+              SliverPadding(
+                padding: const EdgeInsets.all(20),
+                sliver: SliverList(
+                  delegate: SliverChildListDelegate([
+                    // Follow button (if not viewing own profile)
+                    if (widget.auth.isLoggedIn && !_userProfile!.isViewer) ...[
+                      SizedBox(
+                        width: double.infinity,
+                        height: 48,
+                        child: FilledButton.icon(
+                          onPressed: _toggleFollow,
+                          icon: Icon(_isFollowing ? Icons.person_remove_outlined : Icons.person_add_outlined),
+                          label: Text(_isFollowing ? "Unfollow" : "Follow"),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: _isFollowing
+                                ? theme.colorScheme.surfaceContainerHighest
+                                : theme.colorScheme.primary,
+                            foregroundColor: _isFollowing
+                                ? theme.colorScheme.onSurface
+                                : theme.colorScheme.onPrimary,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                    ],
+
+                    // Bio (if exists)
+                    if (_userProfile!.bio != null && _userProfile!.bio!.isNotEmpty) ...[
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Text(
+                          _userProfile!.bio!,
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            height: 1.5,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                    ],
+
+                    // Stats Card
+                    Container(
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: theme.colorScheme.outline.withValues(alpha: 0.1),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                onTap: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) => FollowersScreen(
+                                        username: _userProfile!.username,
+                                        apiClient: widget.apiClient,
+                                        auth: widget.auth,
+                                      ),
+                                    ),
+                                  );
+                                },
+                                borderRadius: const BorderRadius.only(
+                                  topLeft: Radius.circular(16),
+                                  bottomLeft: Radius.circular(16),
+                                ),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                                  child: Builder(
+                                    builder: (context) {
+                                      final localizations = AppLocalizations.of(context);
+                                      return Column(
+                                        children: [
+                                          Text(
+                                            _userProfile!.followersCount.toString(),
+                                            style: theme.textTheme.titleLarge?.copyWith(
+                                              fontWeight: FontWeight.w700,
+                                              color: theme.colorScheme.primary,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            localizations?.followers ?? "Followers",
+                                            style: theme.textTheme.bodySmall?.copyWith(
+                                              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                                            ),
+                                          ),
+                                        ],
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          Container(
+                            width: 1,
+                            height: 40,
+                            color: theme.colorScheme.outline.withValues(alpha: 0.2),
+                          ),
+                          Expanded(
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                onTap: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) => FollowingScreen(
+                                        username: _userProfile!.username,
+                                        apiClient: widget.apiClient,
+                                        auth: widget.auth,
+                                      ),
+                                    ),
+                                  );
+                                },
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                                  child: Builder(
+                                    builder: (context) {
+                                      final localizations = AppLocalizations.of(context);
+                                      return Column(
+                                        children: [
+                                          Text(
+                                            _userProfile!.followingCount.toString(),
+                                            style: theme.textTheme.titleLarge?.copyWith(
+                                              fontWeight: FontWeight.w700,
+                                              color: theme.colorScheme.primary,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            localizations?.followingTitle ?? "Following",
+                                            style: theme.textTheme.bodySmall?.copyWith(
+                                              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                                            ),
+                                          ),
+                                        ],
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          Container(
+                            width: 1,
+                            height: 40,
+                            color: theme.colorScheme.outline.withValues(alpha: 0.2),
+                          ),
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                              child: Builder(
+                                builder: (context) {
+                                  final localizations = AppLocalizations.of(context);
+                                  return Column(
+                                    children: [
+                                      Text(
+                                        _userProfile!.totalLikesCount.toString(),
+                                        style: theme.textTheme.titleLarge?.copyWith(
+                                          fontWeight: FontWeight.w700,
+                                          color: theme.colorScheme.primary,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        localizations?.totalLikes ?? "Total Likes",
+                                        style: theme.textTheme.bodySmall?.copyWith(
+                                          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    // Recipes section
+                    if (_recipesController != null) _buildRecipesSection(context),
+                  ]),
+                ),
+              ),
             ],
           ),
         ),
@@ -591,193 +710,323 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final email = user["email"]?.toString() ?? "";
     final avatarUrl = user["avatar_url"]?.toString();
 
+    final theme = Theme.of(context);
+
     return Scaffold(
-      appBar: AppBar(
-        title: Builder(
-          builder: (context) {
-            final localizations = AppLocalizations.of(context);
-            return Text(localizations?.profile ?? "Profile");
-          },
-        ),
-      ),
+      backgroundColor: theme.colorScheme.surface,
       body: RefreshIndicator(
         onRefresh: _refreshProfile,
-        child: ListView(
+        child: CustomScrollView(
           controller: _recipesScrollController,
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(16),
-          children: [
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        GestureDetector(
-                          onTap: _isUploading || _isDeleting
-                              ? null
-                              : () => _showAvatarMenu(context, avatarUrl),
-                          child: Stack(
-                            children: [
-                            buildUserAvatar(context, avatarUrl, username, radius: 40),
-                            if (_isUploading || _isDeleting)
-                              Positioned.fill(
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: Colors.black.withValues(alpha: 0.5),
-                                    shape: BoxShape.circle,
+          slivers: [
+            // Modern App Bar with gradient
+            SliverAppBar(
+              pinned: true,
+              elevation: 0,
+              scrolledUnderElevation: 0.5,
+              backgroundColor: theme.colorScheme.surface,
+              expandedHeight: 200,
+              flexibleSpace: FlexibleSpaceBar(
+                background: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        theme.colorScheme.primary.withValues(alpha: 0.15),
+                        theme.colorScheme.primary.withValues(alpha: 0.05),
+                      ],
+                    ),
+                  ),
+                  child: SafeArea(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 60, 20, 20),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          // Avatar with edit functionality
+                          GestureDetector(
+                            onTap: _isUploading || _isDeleting
+                                ? null
+                                : () => _showAvatarMenu(context, avatarUrl),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: theme.colorScheme.primary.withValues(alpha: 0.3),
+                                    blurRadius: 20,
+                                    offset: const Offset(0, 8),
                                   ),
-                                  child: const Center(
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                ],
+                              ),
+                              child: Stack(
+                                children: [
+                                  buildUserAvatar(context, avatarUrl, username, radius: 45),
+                                  if (_isUploading || _isDeleting)
+                                    Positioned.fill(
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          color: Colors.black.withValues(alpha: 0.5),
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: const Center(
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  // Edit icon
+                                  Positioned(
+                                    right: 0,
+                                    bottom: 0,
+                                    child: Container(
+                                      width: 32,
+                                      height: 32,
+                                      decoration: BoxDecoration(
+                                        color: theme.colorScheme.primary,
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                          color: theme.colorScheme.surface,
+                                          width: 3,
+                                        ),
+                                      ),
+                                      child: Icon(
+                                        Icons.edit_outlined,
+                                        size: 16,
+                                        color: theme.colorScheme.onPrimary,
+                                      ),
                                     ),
                                   ),
-                                ),
-                              ),
-                            // Pencil icon to indicate avatar is editable
-                            Positioned(
-                              right: 0,
-                              bottom: 0,
-                              child: Container(
-                                width: 24,
-                                height: 24,
-                                decoration: BoxDecoration(
-                                  color: Theme.of(context).colorScheme.primary,
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: Theme.of(context).colorScheme.surface,
-                                    width: 2,
-                                  ),
-                                ),
-                                child: Icon(
-                                  Icons.edit_outlined,
-                                  size: 14,
-                                  color: Theme.of(context).colorScheme.onPrimary,
-                                ),
+                                ],
                               ),
                             ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              displayName ?? username,
-                              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          ),
+                          const SizedBox(width: 20),
+                          // Name and username
+                          Expanded(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  displayName ?? username,
+                                  style: theme.textTheme.headlineSmall?.copyWith(
                                     fontWeight: FontWeight.w700,
+                                    color: theme.colorScheme.onSurface,
                                   ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              "@$username",
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  "@$username",
+                                  style: theme.textTheme.bodyLarge?.copyWith(
+                                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                                   ),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
+                ),
+              ),
+            ),
+
+            // Profile Content
+            SliverPadding(
+              padding: const EdgeInsets.all(20),
+              sliver: SliverList(
+                delegate: SliverChildListDelegate([
+                  // Email (if exists)
                   if (email.isNotEmpty) ...[
-                    const SizedBox(height: 16),
-                    const Divider(),
-                    const SizedBox(height: 8),
-                    Row(
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.email_outlined,
+                            size: 20,
+                            color: theme.colorScheme.primary,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              email,
+                              style: theme.textTheme.bodyLarge,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                  ],
+
+                  // Stats Card
+                  Container(
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: theme.colorScheme.outline.withValues(alpha: 0.1),
+                      ),
+                    ),
+                    child: Row(
                       children: [
-                        Icon(
-                          Icons.email_outlined,
-                          size: 20,
-                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                        Expanded(
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => FollowersScreen(
+                                      username: username,
+                                      apiClient: widget.apiClient,
+                                      auth: widget.auth,
+                                    ),
+                                  ),
+                                );
+                              },
+                              borderRadius: const BorderRadius.only(
+                                topLeft: Radius.circular(16),
+                                bottomLeft: Radius.circular(16),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                                child: Builder(
+                                  builder: (context) {
+                                    final localizations = AppLocalizations.of(context);
+                                    return Column(
+                                      children: [
+                                        Text(
+                                          _userProfile?.followersCount.toString() ?? "0",
+                                          style: theme.textTheme.titleLarge?.copyWith(
+                                            fontWeight: FontWeight.w700,
+                                            color: theme.colorScheme.primary,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          localizations?.followers ?? "Followers",
+                                          style: theme.textTheme.bodySmall?.copyWith(
+                                            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                                          ),
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                ),
+                              ),
+                            ),
+                          ),
                         ),
-                        const SizedBox(width: 8),
-                        Text(
-                          email,
-                          style: Theme.of(context).textTheme.bodyMedium,
+                        Container(
+                          width: 1,
+                          height: 40,
+                          color: theme.colorScheme.outline.withValues(alpha: 0.2),
+                        ),
+                        Expanded(
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => FollowingScreen(
+                                      username: username,
+                                      apiClient: widget.apiClient,
+                                      auth: widget.auth,
+                                    ),
+                                  ),
+                                );
+                              },
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                                child: Builder(
+                                  builder: (context) {
+                                    final localizations = AppLocalizations.of(context);
+                                    return Column(
+                                      children: [
+                                        Text(
+                                          _userProfile?.followingCount.toString() ?? "0",
+                                          style: theme.textTheme.titleLarge?.copyWith(
+                                            fontWeight: FontWeight.w700,
+                                            color: theme.colorScheme.primary,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          localizations?.followingTitle ?? "Following",
+                                          style: theme.textTheme.bodySmall?.copyWith(
+                                            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                                          ),
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        Container(
+                          width: 1,
+                          height: 40,
+                          color: theme.colorScheme.outline.withValues(alpha: 0.2),
+                        ),
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                            child: Builder(
+                              builder: (context) {
+                                final localizations = AppLocalizations.of(context);
+                                return Column(
+                                  children: [
+                                    Text(
+                                      _userProfile?.totalLikesCount.toString() ?? "0",
+                                      style: theme.textTheme.titleLarge?.copyWith(
+                                        fontWeight: FontWeight.w700,
+                                        color: theme.colorScheme.primary,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      localizations?.totalLikes ?? "Total Likes",
+                                      style: theme.textTheme.bodySmall?.copyWith(
+                                        color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              },
+                            ),
+                          ),
                         ),
                       ],
                     ),
-                  ],
-                  const SizedBox(height: 16),
-                  const Divider(),
-                  const SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      Expanded(
-                        child: InkWell(
-                          onTap: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => FollowersScreen(
-                                  username: username,
-                                  apiClient: widget.apiClient,
-                                  auth: widget.auth,
-                                ),
-                              ),
-                            );
-                          },
-                          borderRadius: BorderRadius.circular(8),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-                            child: StatItem(
-                              label: "Followers",
-                              value: _userProfile?.followersCount.toString() ?? "0",
-                              showChevron: true,
-                            ),
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        child: InkWell(
-                          onTap: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => FollowingScreen(
-                                  username: username,
-                                  apiClient: widget.apiClient,
-                                  auth: widget.auth,
-                                ),
-                              ),
-                            );
-                          },
-                          borderRadius: BorderRadius.circular(8),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-                            child: StatItem(
-                              label: "Following",
-                              value: _userProfile?.followingCount.toString() ?? "0",
-                              showChevron: true,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
                   ),
-                  // Privacy settings (only for own profile)
-                  if (_userProfile?.isViewer == true && _userProfile?.privacy != null) ...[
-                    const SizedBox(height: 16),
-                    const Divider(),
-                    const SizedBox(height: 8),
-                    _PrivacySettings(
-                      privacy: _userProfile!.privacy!,
-                      onUpdate: _updatePrivacy,
-                      isLoading: _isLoadingPrivacy,
-                    ),
-                  ],
-                ],
+
+                  const SizedBox(height: 24),
+
+                  // Recipes section
+                  _buildRecipesSection(context),
+                ]),
               ),
             ),
-            ),
-            const SizedBox(height: 16),
-            // Recipes section
-            _buildRecipesSection(context),
           ],
         ),
       ),
@@ -881,63 +1130,4 @@ class _ProfileScreenState extends State<ProfileScreen> {
 }
 
 
-class _PrivacySettings extends StatelessWidget {
-  const _PrivacySettings({
-    required this.privacy,
-    required this.onUpdate,
-    required this.isLoading,
-  });
-
-  final UserPrivacySettings privacy;
-  final Future<void> Function({bool? followersPrivate, bool? followingPrivate}) onUpdate;
-  final bool isLoading;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Icon(
-              Icons.lock_outline,
-              size: 20,
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-            ),
-            const SizedBox(width: 8),
-            Text(
-              "Privacy Settings",
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        SwitchListTile(
-          title: const Text("Private Followers"),
-          subtitle: const Text("Hide your followers list from others"),
-          value: privacy.followersPrivate,
-          onChanged: isLoading
-              ? null
-              : (value) {
-                  onUpdate(followersPrivate: value);
-                },
-          contentPadding: EdgeInsets.zero,
-        ),
-        SwitchListTile(
-          title: const Text("Private Following"),
-          subtitle: const Text("Hide your following list from others"),
-          value: privacy.followingPrivate,
-          onChanged: isLoading
-              ? null
-              : (value) {
-                  onUpdate(followingPrivate: value);
-                },
-          contentPadding: EdgeInsets.zero,
-        ),
-      ],
-    );
-  }
-}
 

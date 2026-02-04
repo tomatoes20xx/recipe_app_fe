@@ -68,6 +68,20 @@ class AuthApi {
     return token;
   }
 
+  /// Login with Google OAuth
+  /// Takes an ID token from Google Sign-In and exchanges it for a JWT
+  Future<String> googleLogin({required String idToken}) async {
+    final data = await api.post("/auth/google", body: {
+      "idToken": idToken,
+    });
+
+    final token = (data["token"] ?? "").toString();
+    if (token.isEmpty) throw ApiException(500, "No token returned from Google login");
+
+    await api.tokenStorage.saveToken(token); // ✅ store
+    return token;
+  }
+
   Future<void> logout() async {
     await api.tokenStorage.deleteToken(); // ✅ clear
   }

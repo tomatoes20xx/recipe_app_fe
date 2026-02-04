@@ -3,6 +3,8 @@ import "package:flutter/material.dart";
 import "../api/api_client.dart";
 import "../auth/auth_controller.dart";
 import "../localization/app_localizations.dart";
+import "../services/google_auth_service.dart";
+import "../utils/error_utils.dart";
 import "terms_and_privacy_screen.dart";
 import "email_verification_screen.dart";
 
@@ -19,6 +21,7 @@ class _SignupScreenState extends State<SignupScreen> {
   final passCtrl = TextEditingController();
   final usernameCtrl = TextEditingController();
   final displayNameCtrl = TextEditingController();
+  final _googleAuthService = GoogleAuthService();
   String? error;
   bool _termsAccepted = false;
 
@@ -29,6 +32,39 @@ class _SignupScreenState extends State<SignupScreen> {
     usernameCtrl.dispose();
     displayNameCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _handleGoogleSignIn() async {
+    setState(() => error = null);
+
+    try {
+      // 1. Sign in with Google (opens account picker)
+      final account = await _googleAuthService.signInWithGoogle();
+      if (account == null) return; // User cancelled
+
+      // 2. Get ID token
+      final idToken = await _googleAuthService.getIdToken(account);
+      if (idToken == null) {
+        throw Exception("Failed to get ID token");
+      }
+
+      // 3. Send to backend (backend creates user if doesn't exist)
+      await widget.auth.loginWithGoogle(idToken);
+
+      // Navigation handled by AuthGate (watches authController)
+    } on ApiException catch (e) {
+      setState(() => error = e.message);
+      if (mounted) {
+        ErrorUtils.showError(context, e);
+      }
+    } catch (e) {
+      const errorMessage = "Google Sign-In failed. Please try again.";
+      setState(() => error = errorMessage);
+      if (mounted) {
+        final localizations = AppLocalizations.of(context);
+        ErrorUtils.showError(context, localizations?.googleSignInFailed ?? errorMessage);
+      }
+    }
   }
 
   Future<void> onSignup() async {
@@ -69,6 +105,7 @@ class _SignupScreenState extends State<SignupScreen> {
   Widget build(BuildContext context) {
     final loading = widget.auth.isLoading;
     final localizations = AppLocalizations.of(context);
+    final theme = Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(title: Text(localizations?.signUp ?? "Sign up")),
@@ -76,6 +113,82 @@ class _SignupScreenState extends State<SignupScreen> {
         padding: const EdgeInsets.all(16),
         child: ListView(
           children: [
+            const SizedBox(height: 8),
+            // Google Sign-In Button
+            SizedBox(
+              height: 52,
+              child: FilledButton.icon(
+                onPressed: loading ? null : _handleGoogleSignIn,
+                icon: loading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : Container(
+                        width: 24,
+                        height: 24,
+                        padding: const EdgeInsets.all(2),
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Image.asset(
+                          'assets/images/google_logo.png',
+                          errorBuilder: (context, error, stackTrace) {
+                            // Fallback if Google logo not available
+                            return const Icon(Icons.login, color: Colors.blue, size: 18);
+                          },
+                        ),
+                      ),
+                label: Text(
+                  localizations?.continueWithGoogle ?? 'Continue with Google',
+                  style: const TextStyle(fontSize: 16),
+                ),
+                style: FilledButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: Colors.black87,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  elevation: 1,
+                  shadowColor: Colors.black26,
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            // Divider
+            Row(
+              children: [
+                Expanded(
+                  child: Divider(
+                    color: theme.dividerColor.withValues(alpha: 0.5),
+                    thickness: 1,
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Text(
+                    localizations?.orContinue ?? 'or continue',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                      fontSize: 12,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Divider(
+                    color: theme.dividerColor.withValues(alpha: 0.5),
+                    thickness: 1,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
             // Form Fields
             TextField(
               controller: emailCtrl,
@@ -100,9 +213,9 @@ class _SignupScreenState extends State<SignupScreen> {
             ),
             const SizedBox(height: 16),
             if (error != null)
-              Text(error!, style: const TextStyle(color: Colors.red)),
+              Text(error!, style: TextStyle(color: theme.colorScheme.error)),
             const SizedBox(height: 16),
-            
+
             // Link to Terms and Privacy
             Center(
               child: TextButton(
@@ -119,7 +232,7 @@ class _SignupScreenState extends State<SignupScreen> {
               ),
             ),
             const SizedBox(height: 8),
-            
+
             // Acceptance Checkbox
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -151,7 +264,7 @@ class _SignupScreenState extends State<SignupScreen> {
               ],
             ),
             const SizedBox(height: 16),
-            
+
             // Signup Button
             SizedBox(
               width: double.infinity,
