@@ -11,7 +11,6 @@ import "../recipes/recipe_api.dart";
 import "../recipes/recipe_detail_models.dart";
 import "../utils/error_utils.dart";
 import "../utils/ui_utils.dart";
-import "../widgets/section_title_widget.dart";
 
 class CreateRecipeScreen extends StatefulWidget {
   const CreateRecipeScreen({
@@ -37,6 +36,7 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
   final _tagController = TextEditingController();
   final _cookingTimeMinController = TextEditingController();
   final _cookingTimeMaxController = TextEditingController();
+  final _scrollController = ScrollController();
 
   final List<String> _tags = [];
   final List<_IngredientItem> _ingredients = [];
@@ -52,6 +52,20 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
   String? _error;
   String? _uploadStatus; // For showing upload progress
   bool _isEditMode = false;
+
+  // Common cuisines for suggestions
+  static const List<String> _cuisineSuggestions = [
+    "Italian",
+    "Mexican",
+    "Chinese",
+    "Japanese",
+    "Indian",
+    "Thai",
+    "French",
+    "Mediterranean",
+    "American",
+    "Korean",
+  ];
 
   @override
   void initState() {
@@ -97,6 +111,7 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
     _tagController.dispose();
     _cookingTimeMinController.dispose();
     _cookingTimeMaxController.dispose();
+    _scrollController.dispose();
     for (var ing in _ingredients) {
       ing.quantityController.dispose();
       ing.unitController.dispose();
@@ -139,6 +154,14 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
     });
   }
 
+  void _reorderIngredients(int oldIndex, int newIndex) {
+    setState(() {
+      if (newIndex > oldIndex) newIndex -= 1;
+      final item = _ingredients.removeAt(oldIndex);
+      _ingredients.insert(newIndex, item);
+    });
+  }
+
   void _addStep() {
     setState(() {
       _steps.add(_StepItem());
@@ -149,6 +172,14 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
     setState(() {
       _steps[index].instructionController.dispose();
       _steps.removeAt(index);
+    });
+  }
+
+  void _reorderSteps(int oldIndex, int newIndex) {
+    setState(() {
+      if (newIndex > oldIndex) newIndex -= 1;
+      final item = _steps.removeAt(oldIndex);
+      _steps.insert(newIndex, item);
     });
   }
 
@@ -174,7 +205,8 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
         // Show processing indicator for large files
         if (originalSizeMB > 2) {
           setState(() {
-            _uploadStatus = localizations?.processingImage ?? "Processing image...";
+            _uploadStatus =
+                localizations?.processingImage ?? "Processing image...";
           });
         }
 
@@ -315,18 +347,25 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
     if (!_formKey.currentState!.validate()) return;
     final localizations = AppLocalizations.of(context);
     if (_ingredients.isEmpty) {
-        ErrorUtils.showError(context, localizations?.pleaseAddAtLeastOneIngredient ?? "Please add at least one ingredient");
+      ErrorUtils.showError(
+          context,
+          localizations?.pleaseAddAtLeastOneIngredient ??
+              "Please add at least one ingredient");
       return;
     }
     if (_steps.isEmpty) {
-        ErrorUtils.showError(context, localizations?.pleaseAddAtLeastOneStep ?? "Please add at least one step");
+      ErrorUtils.showError(context,
+          localizations?.pleaseAddAtLeastOneStep ?? "Please add at least one step");
       return;
     }
 
     // Validate ingredients
     for (var i = 0; i < _ingredients.length; i++) {
       if (_ingredients[i].nameController.text.trim().isEmpty) {
-        ErrorUtils.showError(context, localizations?.ingredientNameRequired(i) ?? "Ingredient ${i + 1}: name is required");
+        ErrorUtils.showError(
+            context,
+            localizations?.ingredientNameRequired(i) ??
+                "Ingredient ${i + 1}: name is required");
         return;
       }
     }
@@ -334,7 +373,10 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
     // Validate steps
     for (var i = 0; i < _steps.length; i++) {
       if (_steps[i].instructionController.text.trim().isEmpty) {
-        ErrorUtils.showError(context, localizations?.stepInstructionRequired(i) ?? "Step ${i + 1}: instruction is required");
+        ErrorUtils.showError(
+            context,
+            localizations?.stepInstructionRequired(i) ??
+                "Step ${i + 1}: instruction is required");
         return;
       }
     }
@@ -342,33 +384,42 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
     // Validate cooking time: min should not be more than max (they can be equal)
     final cookingTimeMinText = _cookingTimeMinController.text.trim();
     final cookingTimeMaxText = _cookingTimeMaxController.text.trim();
-    
+
     // Check if fields have text but are invalid
     if (cookingTimeMinText.isNotEmpty) {
       final min = int.tryParse(cookingTimeMinText);
       if (min == null) {
-        ErrorUtils.showError(context, localizations?.minCookingTimeMustBeValidNumber ?? "Minimum cooking time must be a valid number");
+        ErrorUtils.showError(
+            context,
+            localizations?.minCookingTimeMustBeValidNumber ??
+                "Minimum cooking time must be a valid number");
         return;
       }
     }
     if (cookingTimeMaxText.isNotEmpty) {
       final max = int.tryParse(cookingTimeMaxText);
       if (max == null) {
-        ErrorUtils.showError(context, localizations?.maxCookingTimeMustBeValidNumber ?? "Maximum cooking time must be a valid number");
+        ErrorUtils.showError(
+            context,
+            localizations?.maxCookingTimeMustBeValidNumber ??
+                "Maximum cooking time must be a valid number");
         return;
       }
     }
-    
-    // Parse cooking time values - we already validated they're valid if text is present
-    final cookingTimeMin = cookingTimeMinText.isEmpty
-        ? null
-        : int.tryParse(cookingTimeMinText);
-    final cookingTimeMax = cookingTimeMaxText.isEmpty
-        ? null
-        : int.tryParse(cookingTimeMaxText);
 
-    if (cookingTimeMin != null && cookingTimeMax != null && cookingTimeMin > cookingTimeMax) {
-      ErrorUtils.showError(context, localizations?.minCookingTimeCannotBeGreater ?? "Minimum cooking time cannot be greater than maximum time");
+    // Parse cooking time values - we already validated they're valid if text is present
+    final cookingTimeMin =
+        cookingTimeMinText.isEmpty ? null : int.tryParse(cookingTimeMinText);
+    final cookingTimeMax =
+        cookingTimeMaxText.isEmpty ? null : int.tryParse(cookingTimeMaxText);
+
+    if (cookingTimeMin != null &&
+        cookingTimeMax != null &&
+        cookingTimeMin > cookingTimeMax) {
+      ErrorUtils.showError(
+          context,
+          localizations?.minCookingTimeCannotBeGreater ??
+              "Minimum cooking time cannot be greater than maximum time");
       return;
     }
 
@@ -378,62 +429,53 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
     });
 
     try {
-      final ingredients = _ingredients
-          .asMap()
-          .entries
-          .map((e) {
-            final qty = e.value.quantityController.text.trim();
-            final unit = e.value.unitController.text.trim();
-            final name = e.value.nameController.text.trim();
-            
-            // Build ingredient - normalized_name is likely auto-generated by backend, don't send it
-            final parsedQty = qty.isNotEmpty ? double.tryParse(qty) : null;
-            final ingredient = <String, dynamic>{
-              "display_name": name,
-              "sort_order": e.key,
-            };
-            
-            // Add optional fields only if they have values
-            if (parsedQty != null) {
-              ingredient["quantity"] = parsedQty;
-            }
-            if (unit.isNotEmpty) {
-              ingredient["unit"] = unit;
-            }
-            
-            return ingredient;
-          })
-          .toList();
+      final ingredients = _ingredients.asMap().entries.map((e) {
+        final qty = e.value.quantityController.text.trim();
+        final unit = e.value.unitController.text.trim();
+        final name = e.value.nameController.text.trim();
 
-      final steps = _steps
-          .asMap()
-          .entries
-          .map((e) => {
-                "instruction": e.value.instructionController.text.trim(),
-                "sort_order": e.key,
-              })
-          .toList();
+        // Build ingredient - normalized_name is likely auto-generated by backend, don't send it
+        final parsedQty = qty.isNotEmpty ? double.tryParse(qty) : null;
+        final ingredient = <String, dynamic>{
+          "display_name": name,
+          "sort_order": e.key,
+        };
+
+        // Add optional fields only if they have values
+        if (parsedQty != null) {
+          ingredient["quantity"] = parsedQty;
+        }
+        if (unit.isNotEmpty) {
+          ingredient["unit"] = unit;
+        }
+
+        return ingredient;
+      }).toList();
+
+      final steps = _steps.asMap().entries.map((e) => {
+            "instruction": e.value.instructionController.text.trim(),
+            "sort_order": e.key,
+          }).toList();
 
       final api = RecipeApi(widget.apiClient);
-      
+
       // Convert XFile to File for upload
-      final imageFiles = _selectedImages
-          .map((xfile) => File(xfile.path))
-          .toList();
-      
+      final imageFiles =
+          _selectedImages.map((xfile) => File(xfile.path)).toList();
+
       // Show upload status
       if (mounted && imageFiles.isNotEmpty) {
         setState(() {
           _uploadStatus = "Preparing upload...";
         });
-        
+
         // Calculate total size for user feedback
         int totalSize = 0;
         for (final file in imageFiles) {
           totalSize += await file.length();
         }
         final sizeMB = (totalSize / 1024 / 1024).toStringAsFixed(2);
-        
+
         if (mounted) {
           setState(() {
             _uploadStatus = _isEditMode
@@ -442,7 +484,7 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
           });
         }
       }
-      
+
       if (_isEditMode && widget.recipeId != null) {
         // Update existing recipe using PATCH
         // Only send fields that are being updated (partial update)
@@ -451,13 +493,11 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
         // Ingredients and steps require full replace, so we'll handle them separately if needed
         final cookingTimeMinText = _cookingTimeMinController.text.trim();
         final cookingTimeMaxText = _cookingTimeMaxController.text.trim();
-        
-        final cookingTimeMin = cookingTimeMinText.isEmpty
-            ? null
-            : int.tryParse(cookingTimeMinText);
-        final cookingTimeMax = cookingTimeMaxText.isEmpty
-            ? null
-            : int.tryParse(cookingTimeMaxText);
+
+        final cookingTimeMin =
+            cookingTimeMinText.isEmpty ? null : int.tryParse(cookingTimeMinText);
+        final cookingTimeMax =
+            cookingTimeMaxText.isEmpty ? null : int.tryParse(cookingTimeMaxText);
 
         await api.updateRecipe(
           recipeId: widget.recipeId!,
@@ -477,20 +517,18 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
           ingredients: null,
           steps: null,
         );
-        
+
         // Note: Image updates would need a separate endpoint if supported
         // For now, we only update metadata via PATCH
       } else {
         // Create new recipe
         final cookingTimeMinText = _cookingTimeMinController.text.trim();
         final cookingTimeMaxText = _cookingTimeMaxController.text.trim();
-        
-        final cookingTimeMin = cookingTimeMinText.isEmpty
-            ? null
-            : int.tryParse(cookingTimeMinText);
-        final cookingTimeMax = cookingTimeMaxText.isEmpty
-            ? null
-            : int.tryParse(cookingTimeMaxText);
+
+        final cookingTimeMin =
+            cookingTimeMinText.isEmpty ? null : int.tryParse(cookingTimeMinText);
+        final cookingTimeMax =
+            cookingTimeMaxText.isEmpty ? null : int.tryParse(cookingTimeMaxText);
 
         await api.createRecipe(
           title: _titleController.text.trim(),
@@ -518,9 +556,11 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
         final localizations = AppLocalizations.of(context);
         ErrorUtils.showSuccess(
           context,
-          _isEditMode 
-            ? (localizations?.recipeUpdatedSuccessfully ?? "Recipe updated successfully")
-            : (localizations?.recipeCreatedSuccessfully ?? "Recipe created successfully"),
+          _isEditMode
+              ? (localizations?.recipeUpdatedSuccessfully ??
+                  "Recipe updated successfully")
+              : (localizations?.recipeCreatedSuccessfully ??
+                  "Recipe created successfully"),
         );
         Navigator.of(context).pop(true); // Return true to indicate success
       }
@@ -535,633 +575,1104 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final localizations = AppLocalizations.of(context);
+
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      appBar: AppBar(
-        elevation: 0,
-        scrolledUnderElevation: 1,
-        title: Builder(
-          builder: (context) {
-            final localizations = AppLocalizations.of(context);
-            return Text(
-              _isEditMode ? (localizations?.editRecipe ?? "Edit Recipe") : (localizations?.createRecipeTitle ?? "Create Recipe"),
-              style: const TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.w700,
-                letterSpacing: -0.5,
-              ),
-            );
-          },
-        ),
-      ),
+      backgroundColor: theme.colorScheme.surface,
       body: Form(
         key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            // Title
-            Builder(
-              builder: (context) {
-                final localizations = AppLocalizations.of(context);
-                return TextFormField(
-                  controller: _titleController,
-                  decoration: InputDecoration(
-                    labelText: "${localizations?.title ?? "Title"} *",
-                    hintText: localizations?.enterRecipeTitle ?? "Enter recipe title",
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                filled: true,
-                fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-              ),
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return "${localizations?.title ?? "Title"} is required";
-                    }
-                    return null;
-                  },
-                );
-              },
-            ),
-            const SizedBox(height: 16),
+        child: CustomScrollView(
+          controller: _scrollController,
+          slivers: [
+            // Modern App Bar with Hero Image
+            _buildSliverAppBar(context, theme, localizations),
 
-            // Description
-            Builder(
-              builder: (context) {
-                final localizations = AppLocalizations.of(context);
-                return TextFormField(
-                  controller: _descriptionController,
-                  decoration: InputDecoration(
-                    labelText: localizations?.description ?? "Description",
-                    hintText: localizations?.describeYourRecipe ?? "Describe your recipe",
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                filled: true,
-                fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-              ),
-                  maxLines: 4,
-                );
-              },
-            ),
-            const SizedBox(height: 16),
+            // Main Content
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
+              sliver: SliverList(
+                delegate: SliverChildListDelegate([
+                  const SizedBox(height: 24),
 
-            // Cuisine
-            Builder(
-              builder: (context) {
-                final localizations = AppLocalizations.of(context);
-                return TextFormField(
-                  controller: _cuisineController,
-                  decoration: InputDecoration(
-                    labelText: localizations?.cuisine ?? "Cuisine",
-                    hintText: localizations?.cuisineExample ?? "e.g., Italian, Mexican, Asian",
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                    filled: true,
-                    fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 16),
+                  // Basic Info Section
+                  _buildBasicInfoSection(context, theme, localizations),
 
-            // Cooking Time
-            Builder(
-              builder: (context) {
-                final localizations = AppLocalizations.of(context);
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextFormField(
-                            controller: _cookingTimeMinController,
-                            keyboardType: TextInputType.number,
-                            inputFormatters: [
-                              FilteringTextInputFormatter.digitsOnly,
-                            ],
-                            decoration: InputDecoration(
-                              labelText: localizations?.minTimeMinutes ?? "Min Time (minutes)",
-                              hintText: "0",
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          filled: true,
-                          fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-                          prefixIcon: const Icon(Icons.timer_outlined),
-                        ),
-                        onChanged: (value) {
-                          // Clear error when user starts typing
-                          if (_cookingTimeError != null) {
-                            setState(() {
-                              _cookingTimeError = null;
-                            });
-                          }
-                          // Validate in real-time if both fields have values
-                          final min = value.trim().isEmpty ? null : int.tryParse(value.trim());
-                          final max = _cookingTimeMaxController.text.trim().isEmpty
-                              ? null
-                              : int.tryParse(_cookingTimeMaxController.text.trim());
-                          if (min != null && max != null && min > max) {
-                            final localizations = AppLocalizations.of(context);
-                            setState(() {
-                              _cookingTimeError = localizations?.minTimeCannotBeGreater ?? "Minimum time cannot be greater than maximum time";
-                            });
-                          }
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                        Expanded(
-                          child: TextFormField(
-                            controller: _cookingTimeMaxController,
-                            keyboardType: TextInputType.number,
-                            inputFormatters: [
-                              FilteringTextInputFormatter.digitsOnly,
-                            ],
-                            decoration: InputDecoration(
-                              labelText: localizations?.maxTimeMinutes ?? "Max Time (minutes)",
-                              hintText: "120",
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          filled: true,
-                          fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-                          prefixIcon: const Icon(Icons.timer),
-                        ),
-                        onChanged: (value) {
-                          // Clear error when user starts typing
-                          if (_cookingTimeError != null) {
-                            setState(() {
-                              _cookingTimeError = null;
-                            });
-                          }
-                          // Validate in real-time if both fields have values
-                          final max = value.trim().isEmpty ? null : int.tryParse(value.trim());
-                          final min = _cookingTimeMinController.text.trim().isEmpty
-                              ? null
-                              : int.tryParse(_cookingTimeMinController.text.trim());
-                          if (min != null && max != null && min > max) {
-                            final localizations = AppLocalizations.of(context);
-                            setState(() {
-                              _cookingTimeError = localizations?.minTimeCannotBeGreater ?? "Minimum time cannot be greater than maximum time";
-                            });
-                          }
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-                if (_cookingTimeError != null) ...[
-                  const SizedBox(height: 8),
-                  Padding(
-                    padding: const EdgeInsets.only(left: 12),
-                    child: Text(
-                      _cookingTimeError!,
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.error,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-                ],
-              ],
-                );
-              },
-            ),
-            const SizedBox(height: 16),
+                  const SizedBox(height: 24),
 
-            // Difficulty
-            Builder(
-              builder: (context) {
-                final localizations = AppLocalizations.of(context);
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      localizations?.difficulty ?? "Difficulty",
-                      style: Theme.of(context).textTheme.labelLarge,
-                    ),
-                    const SizedBox(height: 8),
-                    SizedBox(
-                      width: double.infinity,
-                      child: SegmentedButton<String?>(
-                        segments: [
-                          ButtonSegment<String?>(value: "easy", label: Text(localizations?.easy ?? "Easy")),
-                          ButtonSegment<String?>(value: "medium", label: Text(localizations?.medium ?? "Medium")),
-                          ButtonSegment<String?>(value: "hard", label: Text(localizations?.hard ?? "Hard")),
-                        ],
-                    selected: _selectedDifficulty != null ? {_selectedDifficulty} : <String?>{},
-                    onSelectionChanged: (Set<String?> newSelection) {
-                      setState(() {
-                        // Allow deselection: if clicking the same option, deselect it
-                        if (newSelection.isEmpty || newSelection.first == _selectedDifficulty) {
-                          _selectedDifficulty = null;
-                        } else {
-                          _selectedDifficulty = newSelection.firstOrNull;
-                        }
-                      });
-                    },
-                    multiSelectionEnabled: false,
-                    emptySelectionAllowed: true,
-                        style: SegmentedButton.styleFrom(
-                          fixedSize: const Size.fromHeight(40),
-                        ),
-                      ),
-                    ),
-                  ],
-                );
-              },
-            ),
-            const SizedBox(height: 16),
+                  // Cooking Details Section
+                  _buildCookingDetailsSection(context, theme, localizations),
 
-            // Images
-            Builder(
-              builder: (context) {
-                final localizations = AppLocalizations.of(context);
-                return SectionTitleWidget(
-                  text: localizations?.images ?? "Images",
-                  variant: SectionTitleVariant.large,
-                );
-              },
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 12,
-              runSpacing: 12,
-              children: [
-                // Existing images (in edit mode)
-                ..._existingImages.asMap().entries.map((entry) {
-                  final index = entry.key;
-                  final image = entry.value;
-                  return Stack(
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: RecipeImageWidget(
-                          imageUrl: image.url,
-                          width: 100,
-                          height: 100,
-                          fit: BoxFit.cover,
-                          cacheWidth: 200,
-                          cacheHeight: 200,
-                          placeholderSize: 20,
-                        ),
-                      ),
-                      Positioned(
-                        top: 4,
-                        right: 4,
-                        child: GestureDetector(
-                          onTap: () => _removeExistingImage(index),
-                          child: Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: BoxDecoration(
-                              color: Colors.red,
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.close,
-                              size: 16,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  );
-                }),
-                // New images
-                ..._selectedImages.asMap().entries.map((entry) {
-                  final index = entry.key;
-                  final image = entry.value;
-                  return Stack(
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: Image.file(
-                          File(image.path),
-                          width: 100,
-                          height: 100,
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                      Positioned(
-                        top: 4,
-                        right: 4,
-                        child: Material(
-                          color: Colors.black54,
-                          shape: const CircleBorder(),
-                          child: IconButton(
-                            icon: const Icon(Icons.close, size: 18, color: Colors.white),
-                            onPressed: () => _removeImage(index),
-                            padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(),
-                          ),
-                        ),
-                      ),
-                    ],
-                  );
-                }),
-                GestureDetector(
-                  onTap: _pickImage,
-                  child: Container(
-                    width: 100,
-                    height: 100,
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
-                        width: 2,
-                        style: BorderStyle.solid,
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                      color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-                    ),
-                    child: Builder(
-                      builder: (context) {
-                        final localizations = AppLocalizations.of(context);
-                        return Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.add_photo_alternate_rounded,
-                              size: 32,
-                              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              localizations?.add ?? "Add",
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-                              ),
-                            ),
-                          ],
-                        );
-                      },
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
+                  const SizedBox(height: 24),
 
-            // Tags
-            Builder(
-              builder: (context) {
-                final localizations = AppLocalizations.of(context);
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SectionTitleWidget(
-                      text: localizations?.tags ?? "Tags",
-                      variant: SectionTitleVariant.large,
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: _tagController,
-                            decoration: InputDecoration(
-                              hintText: localizations?.addTag ?? "Add a tag",
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      filled: true,
-                      fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    ),
-                            onSubmitted: (_) => _addTag(),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        IconButton(
-                          onPressed: _addTag,
-                          icon: const Icon(Icons.add_circle_rounded),
-                          style: IconButton.styleFrom(
-                            backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                          ),
-                        ),
-                      ],
-                    ),
-                    if (_tags.isNotEmpty) ...[
-                      const SizedBox(height: 8),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: _tags.map((tag) {
-                          return Chip(
-                            label: Text(tag),
-                            onDeleted: () => _removeTag(tag),
-                            deleteIcon: const Icon(Icons.close, size: 18),
-                          );
-                        }).toList(),
-                      ),
-                    ],
-                    const SizedBox(height: 24),
-                  ],
-                );
-              },
-            ),
+                  // Tags Section
+                  _buildTagsSection(context, theme, localizations),
 
-            // Ingredients
-            Builder(
-              builder: (context) {
-                final localizations = AppLocalizations.of(context);
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        SectionTitleWidget(
-                          text: "${localizations?.ingredients ?? "Ingredients"} *",
-                          variant: SectionTitleVariant.large,
-                        ),
-                        TextButton.icon(
-                          onPressed: _addIngredient,
-                          icon: const Icon(Icons.add_rounded),
-                          label: Text(localizations?.add ?? "Add"),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    ..._ingredients.asMap().entries.map((entry) {
-                      final index = entry.key;
-                      final ingredient = entry.value;
-                      return _IngredientField(
-                        ingredient: ingredient,
-                        onRemove: () => _removeIngredient(index),
-                      );
-                    }),
-                    const SizedBox(height: 24),
-                  ],
-                );
-              },
-            ),
+                  const SizedBox(height: 24),
 
-            // Steps
-            Builder(
-              builder: (context) {
-                final localizations = AppLocalizations.of(context);
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        SectionTitleWidget(
-                          text: "${localizations?.instruction ?? "Steps"} *",
-                          variant: SectionTitleVariant.large,
-                        ),
-                        TextButton.icon(
-                          onPressed: _addStep,
-                          icon: const Icon(Icons.add_rounded),
-                          label: Text(localizations?.add ?? "Add"),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    ..._steps.asMap().entries.map((entry) {
-                      final index = entry.key;
-                      final step = entry.value;
-                      return _StepField(
-                        step: step,
-                        stepNumber: index + 1,
-                        onRemove: () => _removeStep(index),
-                      );
-                    }),
-                    if (_steps.isEmpty)
-                      Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Center(
-                          child: Builder(
-                            builder: (context) {
-                              final localizations = AppLocalizations.of(context);
-                              return Text(
-                                localizations?.noStepsYet ?? "No steps yet. Add one to get started!",
-                                style: TextStyle(
-                                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                      ),
-                    const SizedBox(height: 32),
-                  ],
-                );
-              },
-            ),
+                  // Ingredients Section
+                  _buildIngredientsSection(context, theme, localizations),
 
-            // Error message
-            if (_error != null)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 16),
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.errorContainer,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.error_outline_rounded,
-                        color: Theme.of(context).colorScheme.onErrorContainer,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          _error!,
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.onErrorContainer,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+                  const SizedBox(height: 24),
 
-            // Upload status message
-            if (_uploadStatus != null)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 16),
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    children: [
-                      SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            Theme.of(context).colorScheme.onPrimaryContainer,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          _uploadStatus!,
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.onPrimaryContainer,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+                  // Steps Section
+                  _buildStepsSection(context, theme, localizations),
 
-            // Submit button
-            FilledButton(
-              onPressed: _isSubmitting ? null : _submit,
-              style: FilledButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: Builder(
-                builder: (context) {
-                  final localizations = AppLocalizations.of(context);
-                  return _isSubmitting
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : Text(
-                          _isEditMode 
-                            ? (localizations?.editRecipe ?? "Edit Recipe")
-                            : (localizations?.createRecipeTitle ?? "Create Recipe"),
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                        );
-                },
+                  const SizedBox(height: 32),
+
+                  // Error message
+                  if (_error != null) _buildErrorMessage(context, theme),
+
+                  // Upload status message
+                  if (_uploadStatus != null) _buildUploadStatus(context, theme),
+
+                  // Submit button
+                  _buildSubmitButton(context, theme, localizations),
+
+                  const SizedBox(height: 32),
+                ]),
               ),
             ),
-            const SizedBox(height: 32),
           ],
         ),
       ),
     );
   }
+
+  Widget _buildSliverAppBar(
+      BuildContext context, ThemeData theme, AppLocalizations? localizations) {
+    final hasImages = _existingImages.isNotEmpty || _selectedImages.isNotEmpty;
+
+    return SliverAppBar(
+      expandedHeight: hasImages ? 280 : 200,
+      pinned: true,
+      stretch: true,
+      backgroundColor: theme.colorScheme.surface,
+      surfaceTintColor: Colors.transparent,
+      flexibleSpace: FlexibleSpaceBar(
+        background: _buildHeroImageSection(context, theme, localizations),
+        collapseMode: CollapseMode.pin,
+      ),
+      title: Text(
+        _isEditMode
+            ? (localizations?.editRecipe ?? "Edit Recipe")
+            : (localizations?.createRecipeTitle ?? "Create Recipe"),
+        style: TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.w600,
+          color: theme.colorScheme.onSurface,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeroImageSection(
+      BuildContext context, ThemeData theme, AppLocalizations? localizations) {
+    final hasImages = _existingImages.isNotEmpty || _selectedImages.isNotEmpty;
+
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
+            theme.colorScheme.surface,
+          ],
+        ),
+      ),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 60, 20, 20),
+          child: hasImages
+              ? _buildImageGallery(context, theme, localizations)
+              : _buildEmptyImageUpload(context, theme, localizations),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyImageUpload(
+      BuildContext context, ThemeData theme, AppLocalizations? localizations) {
+    return GestureDetector(
+      onTap: _pickImage,
+      child: Container(
+        height: 140,
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: theme.colorScheme.outline.withValues(alpha: 0.2),
+            width: 2,
+            style: BorderStyle.solid,
+          ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.add_photo_alternate_rounded,
+                size: 28,
+                color: theme.colorScheme.primary,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              localizations?.addCoverPhoto ?? "Add cover photo",
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: theme.colorScheme.onSurface,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              localizations?.tapToUpload ?? "Tap to upload",
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildImageGallery(
+      BuildContext context, ThemeData theme, AppLocalizations? localizations) {
+    final allImages = <Widget>[];
+
+    // Add existing images
+    for (var i = 0; i < _existingImages.length; i++) {
+      allImages.add(_buildImageTile(
+        context,
+        theme,
+        child: RecipeImageWidget(
+          imageUrl: _existingImages[i].url,
+          width: double.infinity,
+          height: double.infinity,
+          fit: BoxFit.cover,
+          cacheWidth: 400,
+          cacheHeight: 400,
+          placeholderSize: 24,
+        ),
+        onRemove: () => _removeExistingImage(i),
+        isFirst: i == 0 && _selectedImages.isEmpty,
+      ));
+    }
+
+    // Add new images
+    for (var i = 0; i < _selectedImages.length; i++) {
+      allImages.add(_buildImageTile(
+        context,
+        theme,
+        child: Image.file(
+          File(_selectedImages[i].path),
+          fit: BoxFit.cover,
+        ),
+        onRemove: () => _removeImage(i),
+        isFirst: i == 0 && _existingImages.isEmpty,
+      ));
+    }
+
+    // Add "add more" button
+    allImages.add(_buildAddMoreImageTile(context, theme));
+
+    return SizedBox(
+      height: 140,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: allImages.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 12),
+        itemBuilder: (context, index) => allImages[index],
+      ),
+    );
+  }
+
+  Widget _buildImageTile(
+    BuildContext context,
+    ThemeData theme, {
+    required Widget child,
+    required VoidCallback onRemove,
+    required bool isFirst,
+  }) {
+    return Stack(
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: SizedBox(
+            width: isFirst ? 180 : 120,
+            height: 140,
+            child: child,
+          ),
+        ),
+        // Cover badge for first image
+        if (isFirst)
+          Positioned(
+            left: 8,
+            bottom: 8,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.black54,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                "Cover",
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+        // Remove button
+        Positioned(
+          top: 8,
+          right: 8,
+          child: GestureDetector(
+            onTap: onRemove,
+            child: Container(
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(
+                color: Colors.black54,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.close_rounded,
+                size: 16,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAddMoreImageTile(BuildContext context, ThemeData theme) {
+    return GestureDetector(
+      onTap: _pickImage,
+      child: Container(
+        width: 100,
+        height: 140,
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: theme.colorScheme.outline.withValues(alpha: 0.2),
+            width: 2,
+          ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.add_rounded,
+              size: 32,
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              "Add",
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionCard({
+    required BuildContext context,
+    required ThemeData theme,
+    required String title,
+    required IconData icon,
+    required Color iconColor,
+    required Widget child,
+    Widget? action,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: theme.colorScheme.outline.withValues(alpha: 0.08),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: theme.colorScheme.shadow.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 18, 12, 12),
+            child: Row(
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: iconColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(icon, size: 20, color: iconColor),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                if (action != null) action,
+              ],
+            ),
+          ),
+          // Content
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+            child: child,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBasicInfoSection(
+      BuildContext context, ThemeData theme, AppLocalizations? localizations) {
+    return _buildSectionCard(
+      context: context,
+      theme: theme,
+      title: localizations?.basicInfo ?? "Basic Info",
+      icon: Icons.info_outline_rounded,
+      iconColor: theme.colorScheme.primary,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Title
+          _buildModernTextField(
+            controller: _titleController,
+            label: "${localizations?.title ?? "Title"} *",
+            hint: localizations?.enterRecipeTitle ?? "Enter recipe title",
+            theme: theme,
+            validator: (value) {
+              if (value == null || value.trim().isEmpty) {
+                return "${localizations?.title ?? "Title"} is required";
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 16),
+
+          // Description
+          _buildModernTextField(
+            controller: _descriptionController,
+            label: localizations?.description ?? "Description",
+            hint: localizations?.describeYourRecipe ?? "Describe your recipe",
+            theme: theme,
+            maxLines: 3,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCookingDetailsSection(
+      BuildContext context, ThemeData theme, AppLocalizations? localizations) {
+    return _buildSectionCard(
+      context: context,
+      theme: theme,
+      title: localizations?.cookingDetails ?? "Cooking Details",
+      icon: Icons.schedule_rounded,
+      iconColor: Colors.orange,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Cuisine
+          _buildModernTextField(
+            controller: _cuisineController,
+            label: localizations?.cuisine ?? "Cuisine",
+            hint: localizations?.cuisineExample ?? "e.g., Italian, Mexican",
+            theme: theme,
+            prefixIcon: Icons.restaurant_rounded,
+          ),
+          const SizedBox(height: 8),
+
+          // Cuisine suggestions
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: _cuisineSuggestions.take(5).map((cuisine) {
+              final isSelected =
+                  _cuisineController.text.toLowerCase() == cuisine.toLowerCase();
+              return GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _cuisineController.text = cuisine;
+                  });
+                },
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? theme.colorScheme.primary.withValues(alpha: 0.15)
+                        : theme.colorScheme.surfaceContainerHighest
+                            .withValues(alpha: 0.5),
+                    borderRadius: BorderRadius.circular(20),
+                    border: isSelected
+                        ? Border.all(color: theme.colorScheme.primary, width: 1)
+                        : null,
+                  ),
+                  child: Text(
+                    cuisine,
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: isSelected
+                          ? theme.colorScheme.primary
+                          : theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                      fontWeight:
+                          isSelected ? FontWeight.w600 : FontWeight.normal,
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+
+          const SizedBox(height: 20),
+
+          // Cooking Time
+          Row(
+            children: [
+              Expanded(
+                child: _buildModernTextField(
+                  controller: _cookingTimeMinController,
+                  label: localizations?.minTimeMinutes ?? "Min (mins)",
+                  hint: "15",
+                  theme: theme,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  prefixIcon: Icons.timer_outlined,
+                  onChanged: (_) => _validateCookingTime(),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildModernTextField(
+                  controller: _cookingTimeMaxController,
+                  label: localizations?.maxTimeMinutes ?? "Max (mins)",
+                  hint: "30",
+                  theme: theme,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  prefixIcon: Icons.timer,
+                  onChanged: (_) => _validateCookingTime(),
+                ),
+              ),
+            ],
+          ),
+
+          if (_cookingTimeError != null) ...[
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Icon(
+                  Icons.error_outline_rounded,
+                  size: 16,
+                  color: theme.colorScheme.error,
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    _cookingTimeError!,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.error,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+
+          const SizedBox(height: 20),
+
+          // Difficulty
+          Text(
+            localizations?.difficulty ?? "Difficulty",
+            style: theme.textTheme.labelLarge?.copyWith(
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              _buildDifficultyChip(
+                theme,
+                label: localizations?.easy ?? "Easy",
+                value: "easy",
+                color: Colors.green,
+              ),
+              const SizedBox(width: 10),
+              _buildDifficultyChip(
+                theme,
+                label: localizations?.medium ?? "Medium",
+                value: "medium",
+                color: Colors.orange,
+              ),
+              const SizedBox(width: 10),
+              _buildDifficultyChip(
+                theme,
+                label: localizations?.hard ?? "Hard",
+                value: "hard",
+                color: Colors.red,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDifficultyChip(
+    ThemeData theme, {
+    required String label,
+    required String value,
+    required Color color,
+  }) {
+    final isSelected = _selectedDifficulty == value;
+
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          setState(() {
+            _selectedDifficulty = isSelected ? null : value;
+          });
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? color.withValues(alpha: 0.15)
+                : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isSelected ? color : Colors.transparent,
+              width: 2,
+            ),
+          ),
+          child: Column(
+            children: [
+              Icon(
+                value == "easy"
+                    ? Icons.sentiment_satisfied_rounded
+                    : value == "medium"
+                        ? Icons.sentiment_neutral_rounded
+                        : Icons.local_fire_department_rounded,
+                color: isSelected
+                    ? color
+                    : theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                size: 24,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: isSelected
+                      ? color
+                      : theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _validateCookingTime() {
+    final localizations = AppLocalizations.of(context);
+    final min = _cookingTimeMinController.text.trim().isEmpty
+        ? null
+        : int.tryParse(_cookingTimeMinController.text.trim());
+    final max = _cookingTimeMaxController.text.trim().isEmpty
+        ? null
+        : int.tryParse(_cookingTimeMaxController.text.trim());
+
+    setState(() {
+      if (min != null && max != null && min > max) {
+        _cookingTimeError = localizations?.minTimeCannotBeGreater ??
+            "Min time cannot exceed max time";
+      } else {
+        _cookingTimeError = null;
+      }
+    });
+  }
+
+  Widget _buildTagsSection(
+      BuildContext context, ThemeData theme, AppLocalizations? localizations) {
+    return _buildSectionCard(
+      context: context,
+      theme: theme,
+      title: localizations?.tags ?? "Tags",
+      icon: Icons.label_outline_rounded,
+      iconColor: Colors.purple,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: _buildModernTextField(
+                  controller: _tagController,
+                  label: "",
+                  hint: localizations?.addTag ?? "Add a tag...",
+                  theme: theme,
+                  onSubmitted: (_) => _addTag(),
+                ),
+              ),
+              const SizedBox(width: 12),
+              GestureDetector(
+                onTap: _addTag,
+                child: Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primary,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    Icons.add_rounded,
+                    color: theme.colorScheme.onPrimary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (_tags.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: _tags.map((tag) {
+                return Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primaryContainer.withValues(alpha: 0.5),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        tag,
+                        style: theme.textTheme.labelLarge?.copyWith(
+                          color: theme.colorScheme.onPrimaryContainer,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      GestureDetector(
+                        onTap: () => _removeTag(tag),
+                        child: Icon(
+                          Icons.close_rounded,
+                          size: 18,
+                          color: theme.colorScheme.onPrimaryContainer
+                              .withValues(alpha: 0.7),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildIngredientsSection(
+      BuildContext context, ThemeData theme, AppLocalizations? localizations) {
+    return _buildSectionCard(
+      context: context,
+      theme: theme,
+      title: "${localizations?.ingredients ?? "Ingredients"} *",
+      icon: Icons.shopping_basket_rounded,
+      iconColor: Colors.green,
+      action: TextButton.icon(
+        onPressed: _addIngredient,
+        icon: const Icon(Icons.add_rounded, size: 20),
+        label: Text(localizations?.add ?? "Add"),
+        style: TextButton.styleFrom(
+          foregroundColor: theme.colorScheme.primary,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        ),
+      ),
+      child: _ingredients.isEmpty
+          ? _buildEmptyState(
+              theme,
+              icon: Icons.shopping_basket_outlined,
+              message: localizations?.noIngredientsYet ??
+                  "No ingredients yet. Add your first ingredient!",
+              onTap: _addIngredient,
+            )
+          : ReorderableListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              buildDefaultDragHandles: false,
+              itemCount: _ingredients.length,
+              onReorder: _reorderIngredients,
+              proxyDecorator: (child, index, animation) {
+                return AnimatedBuilder(
+                  animation: animation,
+                  builder: (context, child) {
+                    final animValue = Curves.easeInOut.transform(animation.value);
+                    final elevation = lerpDouble(0, 6, animValue)!;
+                    return Material(
+                      elevation: elevation,
+                      borderRadius: BorderRadius.circular(12),
+                      child: child,
+                    );
+                  },
+                  child: child,
+                );
+              },
+              itemBuilder: (context, index) {
+                return _IngredientTile(
+                  key: ValueKey(_ingredients[index]),
+                  ingredient: _ingredients[index],
+                  index: index,
+                  onRemove: () => _removeIngredient(index),
+                  theme: theme,
+                  localizations: localizations,
+                );
+              },
+            ),
+    );
+  }
+
+  Widget _buildStepsSection(
+      BuildContext context, ThemeData theme, AppLocalizations? localizations) {
+    return _buildSectionCard(
+      context: context,
+      theme: theme,
+      title: "${localizations?.instruction ?? "Steps"} *",
+      icon: Icons.format_list_numbered_rounded,
+      iconColor: Colors.blue,
+      action: TextButton.icon(
+        onPressed: _addStep,
+        icon: const Icon(Icons.add_rounded, size: 20),
+        label: Text(localizations?.add ?? "Add"),
+        style: TextButton.styleFrom(
+          foregroundColor: theme.colorScheme.primary,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        ),
+      ),
+      child: _steps.isEmpty
+          ? _buildEmptyState(
+              theme,
+              icon: Icons.format_list_numbered_outlined,
+              message: localizations?.noStepsYet ??
+                  "No steps yet. Add your first step!",
+              onTap: _addStep,
+            )
+          : ReorderableListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              buildDefaultDragHandles: false,
+              itemCount: _steps.length,
+              onReorder: _reorderSteps,
+              proxyDecorator: (child, index, animation) {
+                return AnimatedBuilder(
+                  animation: animation,
+                  builder: (context, child) {
+                    final animValue = Curves.easeInOut.transform(animation.value);
+                    final elevation = lerpDouble(0, 6, animValue)!;
+                    return Material(
+                      elevation: elevation,
+                      borderRadius: BorderRadius.circular(12),
+                      child: child,
+                    );
+                  },
+                  child: child,
+                );
+              },
+              itemBuilder: (context, index) {
+                return _StepTile(
+                  key: ValueKey(_steps[index]),
+                  step: _steps[index],
+                  stepNumber: index + 1,
+                  onRemove: () => _removeStep(index),
+                  theme: theme,
+                  localizations: localizations,
+                  isLast: index == _steps.length - 1,
+                );
+              },
+            ),
+    );
+  }
+
+  Widget _buildEmptyState(
+    ThemeData theme, {
+    required IconData icon,
+    required String message,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 32),
+        child: Column(
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceContainerHighest,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                icon,
+                size: 28,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.add_rounded,
+                    size: 18,
+                    color: theme.colorScheme.primary,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    "Tap to add",
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: theme.colorScheme.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildModernTextField({
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+    required ThemeData theme,
+    int maxLines = 1,
+    TextInputType? keyboardType,
+    List<TextInputFormatter>? inputFormatters,
+    IconData? prefixIcon,
+    String? Function(String?)? validator,
+    void Function(String)? onChanged,
+    void Function(String)? onSubmitted,
+  }) {
+    return TextFormField(
+      controller: controller,
+      maxLines: maxLines,
+      keyboardType: keyboardType,
+      inputFormatters: inputFormatters,
+      validator: validator,
+      onChanged: onChanged,
+      onFieldSubmitted: onSubmitted,
+      style: theme.textTheme.bodyLarge,
+      decoration: InputDecoration(
+        labelText: label.isNotEmpty ? label : null,
+        hintText: hint,
+        hintStyle: TextStyle(
+          color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+        ),
+        prefixIcon: prefixIcon != null
+            ? Icon(
+                prefixIcon,
+                size: 20,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+              )
+            : null,
+        filled: true,
+        fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(
+            color: theme.colorScheme.primary,
+            width: 2,
+          ),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(
+            color: theme.colorScheme.error,
+            width: 1,
+          ),
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      ),
+    );
+  }
+
+  Widget _buildErrorMessage(BuildContext context, ThemeData theme) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.errorContainer,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.error_outline_rounded,
+            color: theme.colorScheme.onErrorContainer,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              _error!,
+              style: TextStyle(
+                color: theme.colorScheme.onErrorContainer,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUploadStatus(BuildContext context, ThemeData theme) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.primaryContainer,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(
+              strokeWidth: 2.5,
+              valueColor: AlwaysStoppedAnimation<Color>(
+                theme.colorScheme.onPrimaryContainer,
+              ),
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Text(
+              _uploadStatus!,
+              style: TextStyle(
+                color: theme.colorScheme.onPrimaryContainer,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSubmitButton(
+      BuildContext context, ThemeData theme, AppLocalizations? localizations) {
+    return FilledButton(
+      onPressed: _isSubmitting ? null : _submit,
+      style: FilledButton.styleFrom(
+        padding: const EdgeInsets.symmetric(vertical: 18),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        backgroundColor: theme.colorScheme.primary,
+      ),
+      child: _isSubmitting
+          ? SizedBox(
+              height: 22,
+              width: 22,
+              child: CircularProgressIndicator(
+                strokeWidth: 2.5,
+                color: theme.colorScheme.onPrimary,
+              ),
+            )
+          : Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  _isEditMode ? Icons.save_rounded : Icons.publish_rounded,
+                  size: 22,
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  _isEditMode
+                      ? (localizations?.saveChanges ?? "Save Changes")
+                      : (localizations?.publishRecipe ?? "Publish Recipe"),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+    );
+  }
 }
 
+// Helper function
+double? lerpDouble(double a, double b, double t) {
+  return a + (b - a) * t;
+}
 
 class _IngredientItem {
   final TextEditingController quantityController = TextEditingController();
@@ -1169,105 +1680,140 @@ class _IngredientItem {
   final TextEditingController nameController = TextEditingController();
 }
 
-class _IngredientField extends StatelessWidget {
-  const _IngredientField({required this.ingredient, required this.onRemove});
+class _IngredientTile extends StatelessWidget {
+  const _IngredientTile({
+    super.key,
+    required this.ingredient,
+    required this.index,
+    required this.onRemove,
+    required this.theme,
+    this.localizations,
+  });
+
   final _IngredientItem ingredient;
+  final int index;
   final VoidCallback onRemove;
+  final ThemeData theme;
+  final AppLocalizations? localizations;
 
   @override
   Widget build(BuildContext context) {
-    return Card(
+    return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
-          width: 1,
-        ),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(14),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              flex: 2,
-              child: Builder(
-                builder: (context) {
-                  final localizations = AppLocalizations.of(context);
-                  return TextFormField(
-                    controller: ingredient.quantityController,
-                    decoration: InputDecoration(
-                      labelText: localizations?.quantity ?? "Quantity",
-                      hintText: localizations?.quantityExample ?? "e.g., 2",
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      filled: true,
-                      fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                    ),
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    inputFormatters: [
-                      _DecimalNumberFormatter(),
-                    ],
-                  );
-                },
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // Drag handle
+          ReorderableDragStartListener(
+            index: index,
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              child: Icon(
+                Icons.drag_indicator_rounded,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
+                size: 20,
               ),
             ),
-            const SizedBox(width: 8),
-            Expanded(
-              flex: 2,
-              child: Builder(
-                builder: (context) {
-                  final localizations = AppLocalizations.of(context);
-                  return TextFormField(
-                    controller: ingredient.unitController,
-                    decoration: InputDecoration(
-                      labelText: localizations?.unit ?? "Unit",
-                      hintText: localizations?.unitExample ?? "e.g., cups",
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      filled: true,
-                      fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                    ),
-                  );
-                },
+          ),
+          const SizedBox(width: 4),
+
+          // Quantity
+          SizedBox(
+            width: 60,
+            child: TextFormField(
+              controller: ingredient.quantityController,
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              inputFormatters: [_DecimalNumberFormatter()],
+              style: theme.textTheme.bodyMedium,
+              textAlign: TextAlign.center,
+              decoration: InputDecoration(
+                hintText: "Qty",
+                hintStyle: TextStyle(
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                  fontSize: 13,
+                ),
+                filled: true,
+                fillColor: theme.colorScheme.surface,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
               ),
             ),
-            const SizedBox(width: 8),
-            Expanded(
-              flex: 4,
-              child: Builder(
-                builder: (context) {
-                  final localizations = AppLocalizations.of(context);
-                  return TextFormField(
-                    controller: ingredient.nameController,
-                    decoration: InputDecoration(
-                      labelText: "${localizations?.ingredient ?? "Ingredient"} *",
-                      hintText: localizations?.ingredientExample ?? "e.g., flour",
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      filled: true,
-                      fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                    ),
-                  );
-                },
+          ),
+          const SizedBox(width: 8),
+
+          // Unit
+          SizedBox(
+            width: 70,
+            child: TextFormField(
+              controller: ingredient.unitController,
+              style: theme.textTheme.bodyMedium,
+              textAlign: TextAlign.center,
+              decoration: InputDecoration(
+                hintText: "Unit",
+                hintStyle: TextStyle(
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                  fontSize: 13,
+                ),
+                filled: true,
+                fillColor: theme.colorScheme.surface,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
               ),
             ),
-            const SizedBox(width: 8),
-            IconButton(
-              onPressed: onRemove,
-              icon: const Icon(Icons.delete_outline_rounded),
-              color: Theme.of(context).colorScheme.error,
+          ),
+          const SizedBox(width: 8),
+
+          // Name
+          Expanded(
+            child: TextFormField(
+              controller: ingredient.nameController,
+              style: theme.textTheme.bodyMedium,
+              decoration: InputDecoration(
+                hintText: localizations?.ingredientExample ?? "e.g., flour",
+                hintStyle: TextStyle(
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                  fontSize: 13,
+                ),
+                filled: true,
+                fillColor: theme.colorScheme.surface,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              ),
             ),
-          ],
-        ),
+          ),
+          const SizedBox(width: 8),
+
+          // Delete button
+          GestureDetector(
+            onTap: onRemove,
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              child: Icon(
+                Icons.close_rounded,
+                color: theme.colorScheme.error.withValues(alpha: 0.7),
+                size: 20,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1292,7 +1838,7 @@ class _DecimalNumberFormatter extends TextInputFormatter {
     // Check if the new value is a valid decimal number
     // Allow: digits, single decimal point, but not multiple decimal points
     final regex = RegExp(r'^\d+\.?\d*$');
-    
+
     if (regex.hasMatch(newValue.text)) {
       return newValue;
     }
@@ -1302,71 +1848,136 @@ class _DecimalNumberFormatter extends TextInputFormatter {
   }
 }
 
-class _StepField extends StatelessWidget {
-  const _StepField({
+class _StepTile extends StatelessWidget {
+  const _StepTile({
+    super.key,
     required this.step,
     required this.stepNumber,
     required this.onRemove,
+    required this.theme,
+    required this.isLast,
+    this.localizations,
   });
+
   final _StepItem step;
   final int stepNumber;
   final VoidCallback onRemove;
+  final ThemeData theme;
+  final bool isLast;
+  final AppLocalizations? localizations;
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
-          width: 1,
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 4),
+      child: IntrinsicHeight(
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            CircleAvatar(
-              radius: 16,
-              backgroundColor: Theme.of(context).colorScheme.primary,
-              child: Text(
-                "$stepNumber",
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.onPrimary,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Builder(
-                builder: (context) {
-                  final localizations = AppLocalizations.of(context);
-                  return TextFormField(
-                    controller: step.instructionController,
-                    decoration: InputDecoration(
-                      labelText: "${localizations?.instruction ?? "Instruction"} *",
-                      hintText: localizations?.describeThisStep ?? "Describe this step",
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
+            // Timeline indicator
+            SizedBox(
+              width: 48,
+              child: Column(
+                children: [
+                  // Step number circle
+                  Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primary,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Text(
+                        "$stepNumber",
+                        style: TextStyle(
+                          color: theme.colorScheme.onPrimary,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
                   ),
-                  filled: true,
-                  fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                ),
-                maxLines: 3,
-              );
-                },
+                  // Connecting line
+                  if (!isLast)
+                    Expanded(
+                      child: Container(
+                        width: 2,
+                        color: theme.colorScheme.primary.withValues(alpha: 0.2),
+                      ),
+                    ),
+                ],
               ),
             ),
-            const SizedBox(width: 8),
-            IconButton(
-              onPressed: onRemove,
-              icon: const Icon(Icons.delete_outline_rounded),
-              color: Theme.of(context).colorScheme.error,
+
+            // Content
+            Expanded(
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color:
+                      theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Drag handle
+                    ReorderableDragStartListener(
+                      index: stepNumber - 1,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        child: Icon(
+                          Icons.drag_indicator_rounded,
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+
+                    // Instruction field
+                    Expanded(
+                      child: TextFormField(
+                        controller: step.instructionController,
+                        maxLines: 3,
+                        minLines: 2,
+                        style: theme.textTheme.bodyMedium,
+                        decoration: InputDecoration(
+                          hintText: localizations?.describeThisStep ??
+                              "Describe this step...",
+                          hintStyle: TextStyle(
+                            color:
+                                theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                          ),
+                          filled: true,
+                          fillColor: theme.colorScheme.surface,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: BorderSide.none,
+                          ),
+                          contentPadding: const EdgeInsets.all(12),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+
+                    // Delete button
+                    GestureDetector(
+                      onTap: onRemove,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        child: Icon(
+                          Icons.close_rounded,
+                          color: theme.colorScheme.error.withValues(alpha: 0.7),
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ],
         ),
@@ -1374,4 +1985,3 @@ class _StepField extends StatelessWidget {
     );
   }
 }
-

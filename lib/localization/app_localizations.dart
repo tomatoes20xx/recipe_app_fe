@@ -248,6 +248,13 @@ class AppLocalizations {
   String get somethingWentWrong => _localizedValues[locale.languageCode]?["somethingWentWrong"] ?? "Something went wrong";
   String get steps => _localizedValues[locale.languageCode]?["steps"] ?? "Steps";
   String get noStepsYet => _localizedValues[locale.languageCode]?["noStepsYet"] ?? "No steps yet. Add one to get started!";
+  String get noIngredientsYet => _localizedValues[locale.languageCode]?["noIngredientsYet"] ?? "No ingredients yet. Add your first ingredient!";
+  String get addCoverPhoto => _localizedValues[locale.languageCode]?["addCoverPhoto"] ?? "Add cover photo";
+  String get tapToUpload => _localizedValues[locale.languageCode]?["tapToUpload"] ?? "Tap to upload";
+  String get basicInfo => _localizedValues[locale.languageCode]?["basicInfo"] ?? "Basic Info";
+  String get cookingDetails => _localizedValues[locale.languageCode]?["cookingDetails"] ?? "Cooking Details";
+  String get saveChanges => _localizedValues[locale.languageCode]?["saveChanges"] ?? "Save Changes";
+  String get publishRecipe => _localizedValues[locale.languageCode]?["publishRecipe"] ?? "Publish Recipe";
 
   // Language
   String get english => _localizedValues[locale.languageCode]?["english"] ?? "English";
@@ -546,6 +553,13 @@ class AppLocalizations {
       "somethingWentWrong": "Something went wrong",
       "steps": "Steps",
       "noStepsYet": "No steps yet. Add one to get started!",
+      "noIngredientsYet": "No ingredients yet. Add your first ingredient!",
+      "addCoverPhoto": "Add cover photo",
+      "tapToUpload": "Tap to upload",
+      "basicInfo": "Basic Info",
+      "cookingDetails": "Cooking Details",
+      "saveChanges": "Save Changes",
+      "publishRecipe": "Publish Recipe",
       "settings": "Settings",
       "appPreferences": "App preferences",
       "feedPreferences": "Feed Preferences",
@@ -850,6 +864,13 @@ class AppLocalizations {
       "somethingWentWrong": "რაღაც შეცდომა მოხდა",
       "steps": "ნაბიჯები",
       "noStepsYet": "ნაბიჯი ჯერ არ არის. დაამატეთ დასაწყებად!",
+      "noIngredientsYet": "ინგრედიენტები ჯერ არ არის. დაამატეთ პირველი!",
+      "addCoverPhoto": "დაამატეთ გარეკანის ფოტო",
+      "tapToUpload": "შეეხეთ ატვირთვისთვის",
+      "basicInfo": "ძირითადი ინფორმაცია",
+      "cookingDetails": "მომზადების დეტალები",
+      "saveChanges": "ცვლილებების შენახვა",
+      "publishRecipe": "რეცეპტის გამოქვეყნება",
       "settings": "პარამეტრები",
       "appPreferences": "აპის პარამეტრები",
       "feedPreferences": "ფიდის პარამეტრები",
