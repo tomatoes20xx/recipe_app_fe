@@ -2,22 +2,20 @@ import "dart:io";
 
 import "package:flutter/material.dart";
 import "package:image_picker/image_picker.dart";
-import "package:image/image.dart" as img;
-import "package:cached_network_image/cached_network_image.dart";
 
 import "../api/api_client.dart";
 import "../auth/auth_api.dart";
 import "../auth/auth_controller.dart";
-import "../config.dart";
-import "../feed/feed_models.dart";
 import "../localization/app_localizations.dart";
 import "../recipes/recipe_detail_screen.dart";
 import "../users/user_api.dart";
-import "../utils/ui_utils.dart";
-import "../widgets/empty_state_widget.dart";
 import "../users/user_models.dart";
 import "../users/user_recipes_controller.dart";
 import "../utils/error_utils.dart";
+import "../utils/image_utils.dart";
+import "../utils/ui_utils.dart";
+import "../widgets/common/common_widgets.dart";
+import "../widgets/empty_state_widget.dart";
 import "followers_screen.dart";
 import "following_screen.dart";
 
@@ -235,13 +233,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       setState(() => _isUploading = true);
 
-      // Compress the image before uploading (avatars are small, but compression helps)
-      final compressedFile = await _compressImage(File(image.path));
+      // Compress the image before uploading using shared utility
+      final compressedFile = await ImageUtils.compressAvatar(File(image.path));
       final fileToUpload = compressedFile ?? File(image.path);
 
       final authApi = AuthApi(widget.apiClient);
       await authApi.uploadAvatar(fileToUpload);
-      
+
       // Refresh user data
       await widget.auth.bootstrap();
 
@@ -256,58 +254,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (mounted) {
         setState(() => _isUploading = false);
       }
-    }
-  }
-
-  /// Compresses and resizes an image to reduce file size
-  /// Max dimensions: 512x512 (for avatars), Quality: 85%
-  Future<File?> _compressImage(File imageFile) async {
-    try {
-      final bytes = await imageFile.readAsBytes();
-      final originalImage = img.decodeImage(bytes);
-      
-      if (originalImage == null) return null;
-
-      // For avatars, resize to 512x512 (square, center crop)
-      const maxDimension = 512;
-      
-      // Calculate dimensions for square center crop
-      int width = originalImage.width;
-      int height = originalImage.height;
-      int cropSize = width < height ? width : height;
-      int offsetX = (width - cropSize) ~/ 2;
-      int offsetY = (height - cropSize) ~/ 2;
-
-      // Crop to square (center)
-      final croppedImage = img.copyCrop(
-        originalImage,
-        x: offsetX,
-        y: offsetY,
-        width: cropSize,
-        height: cropSize,
-      );
-
-      // Resize to 512x512
-      final resizedImage = img.copyResize(
-        croppedImage,
-        width: maxDimension,
-        height: maxDimension,
-        interpolation: img.Interpolation.linear,
-      );
-
-      // Convert to JPEG with 85% quality
-      final jpegBytes = img.encodeJpg(resizedImage, quality: 85);
-      
-      // Save to a temporary file
-      final tempDir = Directory.systemTemp;
-      final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final compressedFile = File('${tempDir.path}/compressed_avatar_$timestamp.jpg');
-      await compressedFile.writeAsBytes(jpegBytes);
-      
-      return compressedFile;
-    } catch (e) {
-      // If compression fails, return null to use original
-      return null;
     }
   }
 
@@ -562,7 +508,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 child: Builder(
                                   builder: (context) {
                                     final localizations = AppLocalizations.of(context);
-                                    return _StatItem(
+                                    return StatItem(
                                       label: localizations?.followers ?? "Followers",
                                       value: _userProfile!.followersCount.toString(),
                                       showChevron: true,
@@ -591,7 +537,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 child: Builder(
                                   builder: (context) {
                                     final localizations = AppLocalizations.of(context);
-                                    return _StatItem(
+                                    return StatItem(
                                       label: localizations?.followingTitle ?? "Following",
                                       value: _userProfile!.followingCount.toString(),
                                       showChevron: true,
@@ -780,7 +726,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           borderRadius: BorderRadius.circular(8),
                           child: Padding(
                             padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-                            child: _StatItem(
+                            child: StatItem(
                               label: "Followers",
                               value: _userProfile?.followersCount.toString() ?? "0",
                               showChevron: true,
@@ -804,7 +750,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           borderRadius: BorderRadius.circular(8),
                           child: Padding(
                             padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-                            child: _StatItem(
+                            child: StatItem(
                               label: "Following",
                               value: _userProfile?.followingCount.toString() ?? "0",
                               showChevron: true,
@@ -835,50 +781,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ],
         ),
       ),
-    );
-  }
-
-  String buildImageUrl(String relativeUrl) {
-    if (relativeUrl.startsWith('http://') || relativeUrl.startsWith('https://')) {
-      return relativeUrl;
-    }
-    return "${Config.apiBaseUrl}$relativeUrl";
-  }
-
-  Widget buildUserAvatar(BuildContext context, String? avatarUrl, String username, {double radius = 40}) {
-    if (avatarUrl != null && avatarUrl.isNotEmpty) {
-      return CircleAvatar(
-        radius: radius,
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        backgroundImage: CachedNetworkImageProvider(
-          buildImageUrl(avatarUrl),
-          cacheKey: avatarUrl,
-          maxWidth: (radius * 2 * MediaQuery.of(context).devicePixelRatio).round(),
-          maxHeight: (radius * 2 * MediaQuery.of(context).devicePixelRatio).round(),
-        ),
-        onBackgroundImageError: (exception, stackTrace) {
-          // Image failed to load, will show child as fallback
-        },
-        child: null,
-      );
-    }
-    return CircleAvatar(
-      radius: radius,
-      backgroundColor: Theme.of(context).colorScheme.primary,
-      child: username.isNotEmpty
-          ? Text(
-              username[0].toUpperCase(),
-              style: TextStyle(
-                fontSize: radius * 0.8,
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.onPrimary,
-              ),
-            )
-          : Icon(
-              Icons.person_outline_rounded,
-              size: radius,
-              color: Theme.of(context).colorScheme.onPrimary,
-            ),
     );
   }
 
@@ -951,7 +853,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
             final recipe = controller.items[index];
             return RepaintBoundary(
-              child: _RecipeGridCard(
+              child: RecipeGridCard(
                 recipe: recipe,
                 onTap: () {
                   Navigator.of(context).push(
@@ -964,7 +866,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   );
                 },
-                buildImageUrl: (url) => buildImageUrl(url),
               ),
             );
           },
@@ -979,185 +880,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 }
 
-
-class _StatItem extends StatelessWidget {
-  const _StatItem({
-    required this.label,
-    required this.value,
-    this.showChevron = false,
-  });
-
-  final String label;
-  final String value;
-  final bool showChevron;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
-        ),
-        const SizedBox(height: 4),
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              label,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-                  ),
-            ),
-            if (showChevron) ...[
-              const SizedBox(width: 4),
-              Icon(
-                Icons.chevron_right,
-                size: 16,
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
-              ),
-            ],
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-class _RecipeGridCard extends StatelessWidget {
-  const _RecipeGridCard({
-    required this.recipe,
-    required this.onTap,
-    required this.buildImageUrl,
-  });
-
-  final FeedItem recipe;
-  final VoidCallback onTap;
-  final String Function(String) buildImageUrl;
-
-  @override
-  Widget build(BuildContext context) {
-    final firstImage = recipe.images.isNotEmpty ? recipe.images.first : null;
-
-    return GestureDetector(
-      onTap: onTap,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          // Background image
-          if (firstImage != null)
-            RecipeImageWidget(
-              imageUrl: firstImage.url,
-              width: double.infinity,
-              height: double.infinity,
-              fit: BoxFit.cover,
-              cacheWidth: 400,
-              cacheHeight: 400,
-            )
-          else
-            const RecipeFallbackImage(
-              width: double.infinity,
-              height: double.infinity,
-              iconSize: 40,
-            ),
-          // Gradient overlay for better text readability
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.transparent,
-                    Colors.black.withValues(alpha: 0.7),
-                  ],
-                  stops: const [0.4, 1.0],
-                ),
-              ),
-            ),
-          ),
-          // Overlay content
-          Positioned(
-            left: 6,
-            right: 6,
-            bottom: 6,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Title
-                Text(
-                  recipe.title,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    shadows: [
-                      Shadow(
-                        color: Colors.black54,
-                        blurRadius: 4,
-                      ),
-                    ],
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 4),
-                // Stats row
-                Row(
-                  children: [
-                    Icon(
-                      Icons.favorite,
-                      size: 12,
-                      color: Colors.white.withValues(alpha: 0.9),
-                    ),
-                    const SizedBox(width: 2),
-                    Text(
-                      recipe.likes.toString(),
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.9),
-                        fontSize: 11,
-                        shadows: const [
-                          Shadow(
-                            color: Colors.black54,
-                            blurRadius: 4,
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Icon(
-                      Icons.comment_outlined,
-                      size: 12,
-                      color: Colors.white.withValues(alpha: 0.9),
-                    ),
-                    const SizedBox(width: 2),
-                    Text(
-                      recipe.comments.toString(),
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.9),
-                        fontSize: 11,
-                        shadows: const [
-                          Shadow(
-                            color: Colors.black54,
-                            blurRadius: 4,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 class _PrivacySettings extends StatelessWidget {
   const _PrivacySettings({
@@ -1219,40 +941,3 @@ class _PrivacySettings extends StatelessWidget {
   }
 }
 
-class FollowButton extends StatelessWidget {
-  const FollowButton({
-    super.key,
-    required this.isFollowing,
-    required this.onTap,
-  });
-
-  final bool isFollowing;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return OutlinedButton(
-      onPressed: onTap,
-      style: OutlinedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        side: BorderSide(
-          color: isFollowing
-              ? Theme.of(context).colorScheme.outline
-              : Theme.of(context).colorScheme.primary,
-        ),
-      ),
-      child: Text(
-        isFollowing ? "Following" : "Follow",
-        style: TextStyle(
-          fontWeight: FontWeight.w600,
-          color: isFollowing
-              ? Theme.of(context).colorScheme.onSurface
-              : Theme.of(context).colorScheme.primary,
-        ),
-      ),
-    );
-  }
-}

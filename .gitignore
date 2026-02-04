@@ -27,11 +27,14 @@ migrate_working_dir/
 **/doc/api/
 **/ios/Flutter/.last_build_id
 .dart_tool/
+.flutter-plugins
 .flutter-plugins-dependencies
 .pub-cache/
 .pub/
 /build/
+**/build/
 /coverage/
+pubspec.lock
 
 # Symbolication related
 app.*.symbols
@@ -43,3 +46,80 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+/android/.gradle/
+/android/local.properties
+/android/captures/
+/android/gradlew
+/android/gradlew.bat
+/android/gradle/
+
+# iOS
+/ios/Pods/
+/ios/.symlinks/
+/ios/Flutter/Flutter.framework
+/ios/Flutter/Flutter.podspec
+/ios/Flutter/App.framework
+/ios/Flutter/engine/
+/ios/Flutter/ephemeral/
+/ios/Runner.xcworkspace/xcshareddata/
+/ios/Runner.xcworkspace/xcuserdata/
+/ios/Runner.xcodeproj/xcuserdata/
+/ios/Flutter/Generated.xcconfig
+/ios/ServiceDefinitions.json
+
+# macOS
+/macos/Pods/
+/macos/.symlinks/
+/macos/Flutter/ephemeral/
+/macos/Flutter/GeneratedPluginRegistrant.swift
+
+# Linux
+/linux/flutter/ephemeral/
+
+# Windows
+/windows/flutter/ephemeral/
+**/CMakeFiles/
+**/cmake_install.cmake
+**/CMakeCache.txt
+**/*.dir/
+*.exe
+
+# Web
+/web/favicon.png
+/web/icons/
+
+# Claude Code / AI assistants
+.claude/
+.cursor/
+.aider*
+.copilot/
+
+# Environment files
+.env
+.env.*
+*.env
+
+# Logs
+*.log
+logs/
+
+# Temp files
+*.tmp
+*.temp
+.temp/
+tmp/
+
+# Generated files
+*.g.dart
+*.freezed.dart
+*.mocks.dart
+*.gr.dart
+
+# Coverage
+coverage/
+.coverage/
+lcov.info
+
+# Testing
+test-results/
+.test_coverage/
