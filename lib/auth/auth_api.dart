@@ -52,6 +52,26 @@ class AuthApi {
     }
   }
 
+  /// Request password reset - sends reset code to email
+  Future<void> requestPasswordReset(String email) async {
+    await api.post("/auth/forgot-password", body: {
+      "email": email,
+    });
+  }
+
+  /// Reset password with code
+  Future<void> resetPassword({
+    required String email,
+    required String code,
+    required String newPassword,
+  }) async {
+    await api.post("/auth/reset-password", body: {
+      "email": email,
+      "code": code,
+      "newPassword": newPassword,
+    });
+  }
+
   Future<String> login({
     required String email,
     required String password,

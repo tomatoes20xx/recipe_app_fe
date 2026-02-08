@@ -6,6 +6,7 @@ import "../auth/auth_controller.dart";
 import "../localization/app_localizations.dart";
 import "../services/google_auth_service.dart";
 import "../utils/error_utils.dart";
+import "forgot_password_screen.dart";
 import "signup_screen.dart";
 
 class LoginScreen extends StatefulWidget {
@@ -438,13 +439,9 @@ class _LoginScreenState extends State<LoginScreen>
         // Forgot password button
         TextButton(
           onPressed: () {
-            // TODO: Navigate to forgot password screen
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  localizations?.forgotPasswordComingSoon ??
-                      'Forgot password feature coming soon!',
-                ),
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => ForgotPasswordScreen(auth: widget.auth),
               ),
             );
           },

@@ -389,6 +389,30 @@ class AppLocalizations {
   String get verificationEmailSent => _localizedValues[locale.languageCode]?["verificationEmailSent"] ?? "Verification email sent!";
   String get pleaseEnterVerificationCode => _localizedValues[locale.languageCode]?["pleaseEnterVerificationCode"] ?? "Please enter the verification code";
 
+  // Password Reset
+  String get resetPassword => _localizedValues[locale.languageCode]?["resetPassword"] ?? "Reset Password";
+  String get resetPasswordTitle => _localizedValues[locale.languageCode]?["resetPasswordTitle"] ?? "Reset Your Password";
+  String get resetPasswordMessage => _localizedValues[locale.languageCode]?["resetPasswordMessage"] ?? "Enter your email address and we'll send you a code to reset your password.";
+  String resetCodeMessage(String email) => _localizedValues[locale.languageCode]?["resetCodeMessage"]?.replaceAll("{email}", email) ?? "We've sent a 6-digit code to $email. Enter it below along with your new password.";
+  String get resetCode => _localizedValues[locale.languageCode]?["resetCode"] ?? "Reset Code";
+  String get enterResetCode => _localizedValues[locale.languageCode]?["enterResetCode"] ?? "Enter Reset Code";
+  String get sendResetCode => _localizedValues[locale.languageCode]?["sendResetCode"] ?? "Send Reset Code";
+  String get resendCode => _localizedValues[locale.languageCode]?["resendCode"] ?? "Resend Code";
+  String get resetCodeSent => _localizedValues[locale.languageCode]?["resetCodeSent"] ?? "Reset code sent!";
+  String get newPassword => _localizedValues[locale.languageCode]?["newPassword"] ?? "New Password";
+  String get enterNewPassword => _localizedValues[locale.languageCode]?["enterNewPassword"] ?? "Enter new password";
+  String get confirmPassword => _localizedValues[locale.languageCode]?["confirmPassword"] ?? "Confirm Password";
+  String get enterPasswordAgain => _localizedValues[locale.languageCode]?["enterPasswordAgain"] ?? "Enter password again";
+  String get passwordsDoNotMatch => _localizedValues[locale.languageCode]?["passwordsDoNotMatch"] ?? "Passwords do not match";
+  String get passwordTooShort => _localizedValues[locale.languageCode]?["passwordTooShort"] ?? "Password must be at least 8 characters";
+  String get passwordResetSuccess => _localizedValues[locale.languageCode]?["passwordResetSuccess"] ?? "Password reset successfully!";
+  String get pleaseEnterResetCode => _localizedValues[locale.languageCode]?["pleaseEnterResetCode"] ?? "Please enter the reset code";
+  String get pleaseEnterPassword => _localizedValues[locale.languageCode]?["pleaseEnterPassword"] ?? "Please enter a password";
+  String get pleaseEnterEmail => _localizedValues[locale.languageCode]?["pleaseEnterEmail"] ?? "Please enter your email address";
+  String get invalidEmail => _localizedValues[locale.languageCode]?["invalidEmail"] ?? "Please enter a valid email address";
+  String get backToLogin => _localizedValues[locale.languageCode]?["backToLogin"] ?? "Back to Login";
+  String get enterEmail => _localizedValues[locale.languageCode]?["enterEmail"] ?? "Enter your email";
+
   static const Map<String, Map<String, String>> _localizedValues = {
     "en": {
       "appTitle": "Yummy",
@@ -664,6 +688,28 @@ class AppLocalizations {
       "resendVerificationCode": "Resend Code",
       "verificationEmailSent": "Verification email sent!",
       "pleaseEnterVerificationCode": "Please enter the verification code",
+      "resetPassword": "Reset Password",
+      "resetPasswordTitle": "Reset Your Password",
+      "resetPasswordMessage": "Enter your email address and we'll send you a code to reset your password.",
+      "resetCodeMessage": "We've sent a 6-digit code to {email}. Enter it below along with your new password.",
+      "resetCode": "Reset Code",
+      "enterResetCode": "Enter Reset Code",
+      "sendResetCode": "Send Reset Code",
+      "resendCode": "Resend Code",
+      "resetCodeSent": "Reset code sent!",
+      "newPassword": "New Password",
+      "enterNewPassword": "Enter new password",
+      "confirmPassword": "Confirm Password",
+      "enterPasswordAgain": "Enter password again",
+      "passwordsDoNotMatch": "Passwords do not match",
+      "passwordTooShort": "Password must be at least 8 characters",
+      "passwordResetSuccess": "Password reset successfully!",
+      "pleaseEnterResetCode": "Please enter the reset code",
+      "pleaseEnterPassword": "Please enter a password",
+      "pleaseEnterEmail": "Please enter your email address",
+      "invalidEmail": "Please enter a valid email address",
+      "backToLogin": "Back to Login",
+      "enterEmail": "Enter your email",
       "dismiss": "Dismiss",
       "unableToConnect": "Unable to connect to the server. Please check your internet connection and try again.",
       "requestTimedOut": "Request timed out. Please try again.",
@@ -993,6 +1039,28 @@ class AppLocalizations {
       "resendVerificationCode": "კოდის ხელახლა გაგზავნა",
       "verificationEmailSent": "დადასტურების ელფოსტა გაიგზავნა!",
       "pleaseEnterVerificationCode": "გთხოვთ შეიყვანოთ დადასტურების კოდი",
+      "resetPassword": "პაროლის აღდგენა",
+      "resetPasswordTitle": "აღადგინეთ თქვენი პაროლი",
+      "resetPasswordMessage": "შეიყვანეთ თქვენი ელფოსტის მისამართი და ჩვენ გამოგიგზავნით კოდს პაროლის აღსადგენად.",
+      "resetCodeMessage": "ჩვენ გავაგზავნეთ 6-ნიშნა კოდი {email}-ზე. შეიყვანეთ იგი ქვემოთ ახალ პაროლთან ერთად.",
+      "resetCode": "აღდგენის კოდი",
+      "enterResetCode": "შეიყვანეთ აღდგენის კოდი",
+      "sendResetCode": "აღდგენის კოდის გაგზავნა",
+      "resendCode": "კოდის ხელახლა გაგზავნა",
+      "resetCodeSent": "აღდგენის კოდი გაიგზავნა!",
+      "newPassword": "ახალი პაროლი",
+      "enterNewPassword": "შეიყვანეთ ახალი პაროლი",
+      "confirmPassword": "პაროლის დადასტურება",
+      "enterPasswordAgain": "შეიყვანეთ პაროლი ხელახლა",
+      "passwordsDoNotMatch": "პაროლები არ ემთხვევა",
+      "passwordTooShort": "პაროლი უნდა იყოს მინიმუმ 8 სიმბოლო",
+      "passwordResetSuccess": "პაროლი წარმატებით აღდგა!",
+      "pleaseEnterResetCode": "გთხოვთ შეიყვანოთ აღდგენის კოდი",
+      "pleaseEnterPassword": "გთხოვთ შეიყვანოთ პაროლი",
+      "pleaseEnterEmail": "გთხოვთ შეიყვანოთ თქვენი ელფოსტის მისამართი",
+      "invalidEmail": "გთხოვთ შეიყვანოთ ვალიდური ელფოსტის მისამართი",
+      "backToLogin": "შესვლაზე დაბრუნება",
+      "enterEmail": "შეიყვანეთ თქვენი ელფოსტა",
       "dismiss": "დახურვა",
       "unableToConnect": "სერვერთან დაკავშირება ვერ მოხერხდა. გთხოვთ შეამოწმოთ ინტერნეტ-კავშირი და სცადოთ ხელახლა.",
       "requestTimedOut": "მოთხოვნის დრო ამოიწურა. გთხოვთ სცადოთ ხელახლა.",

@@ -138,6 +138,38 @@ class AuthController extends ChangeNotifier {
     }
   }
 
+  Future<void> requestPasswordReset(String email) async {
+    isLoading = true;
+    notifyListeners();
+
+    try {
+      await authApi.requestPasswordReset(email);
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> resetPassword({
+    required String email,
+    required String code,
+    required String newPassword,
+  }) async {
+    isLoading = true;
+    notifyListeners();
+
+    try {
+      await authApi.resetPassword(
+        email: email,
+        code: code,
+        newPassword: newPassword,
+      );
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
+  }
+
   Future<void> logout() async {
     token = null;
     me = null;
