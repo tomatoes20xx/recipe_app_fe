@@ -50,6 +50,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       await widget.auth.requestPasswordReset(email);
 
       if (mounted) {
+        // Clear any error SnackBars before navigating
+        ScaffoldMessenger.of(context).clearSnackBars();
         // Navigate to reset password screen
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(

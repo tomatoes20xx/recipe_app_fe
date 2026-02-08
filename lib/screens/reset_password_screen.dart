@@ -88,14 +88,21 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       );
 
       if (mounted) {
+        // Clear any error SnackBars before showing success
+        ScaffoldMessenger.of(context).clearSnackBars();
+
         // Show success message
         ErrorUtils.showSuccess(
           context,
           localizations?.passwordResetSuccess ?? "Password reset successfully!",
         );
 
-        // Go back to login screen
-        Navigator.of(context).popUntil((route) => route.isFirst);
+        // Go back to login screen after a brief delay to show success message
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (mounted) {
+            Navigator.of(context).popUntil((route) => route.isFirst);
+          }
+        });
       }
     } catch (e) {
       if (mounted) {

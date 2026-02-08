@@ -50,6 +50,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
     try {
       await widget.auth.verifyEmail(token);
       if (mounted) {
+        ScaffoldMessenger.of(context).clearSnackBars();
         Navigator.of(context).pop(true); // Return success
       }
     } catch (e) {

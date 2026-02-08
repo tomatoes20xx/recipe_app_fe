@@ -91,6 +91,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
         // If email was verified, go back to login (user will be logged in)
         if (verified == true && mounted) {
+          ScaffoldMessenger.of(context).clearSnackBars();
           Navigator.of(context).pop();
         }
       }

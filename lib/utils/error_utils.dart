@@ -152,6 +152,7 @@ class ErrorUtils {
   
   /// Shows a success snackbar
   static void showSuccess(BuildContext context, String message) {
+    final localizations = AppLocalizations.of(context);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
@@ -163,11 +164,18 @@ class ErrorUtils {
         ),
         backgroundColor: Colors.green,
         behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 2),
+        duration: const Duration(seconds: 5),
+        action: SnackBarAction(
+          label: localizations?.dismiss ?? "Dismiss",
+          textColor: Colors.white,
+          onPressed: () {
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          },
+        ),
       ),
     );
   }
-  
+
   /// Shows an error snackbar
   static void showError(BuildContext context, dynamic error) {
     final localizations = AppLocalizations.of(context);
@@ -182,7 +190,7 @@ class ErrorUtils {
         ),
         backgroundColor: Theme.of(context).colorScheme.error,
         behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 4),
+        duration: const Duration(seconds: 5),
         action: SnackBarAction(
           label: localizations?.dismiss ?? "Dismiss",
           textColor: Colors.white,
