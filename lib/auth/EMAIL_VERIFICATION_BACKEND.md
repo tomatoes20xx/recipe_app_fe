@@ -93,11 +93,11 @@ function generateVerificationCode() {
 async function sendVerificationEmail(email, code) {
   try {
     await resend.emails.send({
-      from: 'CookBook <onboarding@resend.dev>', // Update with your verified domain
+      from: 'Yummy <onboarding@resend.dev>', // Update with your verified domain
       to: email,
-      subject: 'Verify Your Email - CookBook',
+      subject: 'Verify Your Email - Yummy',
       html: `
-        <h2>Welcome to CookBook!</h2>
+        <h2>Welcome to Yummy!</h2>
         <p>Please verify your email address by entering the following code in the app:</p>
         <h1 style="font-size: 32px; letter-spacing: 8px; text-align: center; margin: 20px 0;">
           ${code}

@@ -235,7 +235,7 @@ class _LoginScreenState extends State<LoginScreen>
         const SizedBox(height: 16),
         // App Name
         Text(
-          'CookBook',
+          'Yummy',
           style: theme.textTheme.headlineMedium?.copyWith(
             fontWeight: FontWeight.bold,
             color: theme.colorScheme.onSurface,

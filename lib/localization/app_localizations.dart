@@ -17,7 +17,7 @@ class AppLocalizations {
   ];
 
   // App title
-  String get appTitle => _localizedValues[locale.languageCode]?["appTitle"] ?? "CookBook";
+  String get appTitle => _localizedValues[locale.languageCode]?["appTitle"] ?? "Yummy";
 
   // Auth screens
   String get login => _localizedValues[locale.languageCode]?["login"] ?? "Login";
@@ -303,7 +303,7 @@ class AppLocalizations {
   
   // Help & Support
   String get helpWelcomeTitle => _localizedValues[locale.languageCode]?["helpWelcomeTitle"] ?? "Welcome to Help & Support";
-  String get helpWelcomeMessage => _localizedValues[locale.languageCode]?["helpWelcomeMessage"] ?? "I'm a solo developer working on CookBook. While I don't have a dedicated support team, I'm here to help! Please check the FAQs below first, and if you still need assistance, feel free to reach out.";
+  String get helpWelcomeMessage => _localizedValues[locale.languageCode]?["helpWelcomeMessage"] ?? "I'm a solo developer working on Yummy. While I don't have a dedicated support team, I'm here to help! Please check the FAQs below first, and if you still need assistance, feel free to reach out.";
   String get faq => _localizedValues[locale.languageCode]?["faq"] ?? "Frequently Asked Questions";
   String get faqHowToCreateRecipe => _localizedValues[locale.languageCode]?["faqHowToCreateRecipe"] ?? "How do I create a recipe?";
   String get faqHowToCreateRecipeAnswer => _localizedValues[locale.languageCode]?["faqHowToCreateRecipeAnswer"] ?? "Tap the '+' button in the navigation bar. Fill in the recipe details including title, description, ingredients, steps, and images, then save.";
@@ -338,15 +338,15 @@ class AppLocalizations {
   
   // Terms of Service sections
   String get termsAcceptanceTitle => _localizedValues[locale.languageCode]?["termsAcceptanceTitle"] ?? "1. Acceptance of Terms";
-  String get termsAcceptanceContent => _localizedValues[locale.languageCode]?["termsAcceptanceContent"] ?? "By accessing and using CookBook, you accept and agree to be bound by the terms and provision of this agreement.";
+  String get termsAcceptanceContent => _localizedValues[locale.languageCode]?["termsAcceptanceContent"] ?? "By accessing and using Yummy, you accept and agree to be bound by the terms and provision of this agreement.";
   String get termsLicenseTitle => _localizedValues[locale.languageCode]?["termsLicenseTitle"] ?? "2. Use License";
-  String get termsLicenseContent => _localizedValues[locale.languageCode]?["termsLicenseContent"] ?? "Permission is granted to temporarily use CookBook for personal, non-commercial purposes. This license does not include:\n\n• Reselling or sublicensing the service\n• Using the service for any commercial purpose\n• Removing any copyright or proprietary notations";
+  String get termsLicenseContent => _localizedValues[locale.languageCode]?["termsLicenseContent"] ?? "Permission is granted to temporarily use Yummy for personal, non-commercial purposes. This license does not include:\n\n• Reselling or sublicensing the service\n• Using the service for any commercial purpose\n• Removing any copyright or proprietary notations";
   String get termsAccountsTitle => _localizedValues[locale.languageCode]?["termsAccountsTitle"] ?? "3. User Accounts";
   String get termsAccountsContent => _localizedValues[locale.languageCode]?["termsAccountsContent"] ?? "You are responsible for maintaining the confidentiality of your account credentials. You agree to:\n\n• Provide accurate and complete information\n• Keep your password secure\n• Notify us immediately of any unauthorized use";
   String get termsContentTitle => _localizedValues[locale.languageCode]?["termsContentTitle"] ?? "4. User Content";
-  String get termsContentContent => _localizedValues[locale.languageCode]?["termsContentContent"] ?? "You retain ownership of content you post on CookBook. By posting content, you grant us a license to use, modify, and display your content on the platform.";
+  String get termsContentContent => _localizedValues[locale.languageCode]?["termsContentContent"] ?? "You retain ownership of content you post on Yummy. By posting content, you grant us a license to use, modify, and display your content on the platform.";
   String get termsProhibitedTitle => _localizedValues[locale.languageCode]?["termsProhibitedTitle"] ?? "5. Prohibited Uses";
-  String get termsProhibitedContent => _localizedValues[locale.languageCode]?["termsProhibitedContent"] ?? "You may not use CookBook to:\n\n• Violate any laws or regulations\n• Infringe on intellectual property rights\n• Post harmful, offensive, or illegal content\n• Spam or harass other users";
+  String get termsProhibitedContent => _localizedValues[locale.languageCode]?["termsProhibitedContent"] ?? "You may not use Yummy to:\n\n• Violate any laws or regulations\n• Infringe on intellectual property rights\n• Post harmful, offensive, or illegal content\n• Spam or harass other users";
   String get termsTerminationTitle => _localizedValues[locale.languageCode]?["termsTerminationTitle"] ?? "6. Termination";
   String get termsTerminationContent => _localizedValues[locale.languageCode]?["termsTerminationContent"] ?? "We reserve the right to terminate or suspend your account at any time for violations of these terms.";
   String get termsChangesTitle => _localizedValues[locale.languageCode]?["termsChangesTitle"] ?? "7. Changes to Terms";
@@ -366,7 +366,7 @@ class AppLocalizations {
   String get privacyCookiesTitle => _localizedValues[locale.languageCode]?["privacyCookiesTitle"] ?? "6. Cookies and Tracking";
   String get privacyCookiesContent => _localizedValues[locale.languageCode]?["privacyCookiesContent"] ?? "We use cookies and similar technologies to enhance your experience, analyze usage, and assist with marketing efforts. You can control cookies through your browser settings.";
   String get privacyChildrenTitle => _localizedValues[locale.languageCode]?["privacyChildrenTitle"] ?? "7. Children's Privacy";
-  String get privacyChildrenContent => _localizedValues[locale.languageCode]?["privacyChildrenContent"] ?? "CookBook is not intended for users under the age of 13. We do not knowingly collect personal information from children under 13.";
+  String get privacyChildrenContent => _localizedValues[locale.languageCode]?["privacyChildrenContent"] ?? "Yummy is not intended for users under the age of 13. We do not knowingly collect personal information from children under 13.";
   String get privacyChangesTitle => _localizedValues[locale.languageCode]?["privacyChangesTitle"] ?? "8. Changes to Privacy Policy";
   String get privacyChangesContent => _localizedValues[locale.languageCode]?["privacyChangesContent"] ?? "We may update this privacy policy from time to time. We will notify you of any material changes by posting the new policy on this page.";
   String get privacyContactTitle => _localizedValues[locale.languageCode]?["privacyContactTitle"] ?? "9. Contact Us";
@@ -391,7 +391,7 @@ class AppLocalizations {
 
   static const Map<String, Map<String, String>> _localizedValues = {
     "en": {
-      "appTitle": "CookBook",
+      "appTitle": "Yummy",
       "login": "Login",
       "signUp": "Sign up",
       "email": "Email",
@@ -618,15 +618,15 @@ class AppLocalizations {
       "termsOfService": "Terms of Service",
       "privacyPolicy": "Privacy Policy",
       "termsAcceptanceTitle": "1. Acceptance of Terms",
-      "termsAcceptanceContent": "By accessing and using CookBook, you accept and agree to be bound by the terms and provision of this agreement.",
+      "termsAcceptanceContent": "By accessing and using Yummy, you accept and agree to be bound by the terms and provision of this agreement.",
       "termsLicenseTitle": "2. Use License",
-      "termsLicenseContent": "Permission is granted to temporarily use CookBook for personal, non-commercial purposes. This license does not include:\n\n• Reselling or sublicensing the service\n• Using the service for any commercial purpose\n• Removing any copyright or proprietary notations",
+      "termsLicenseContent": "Permission is granted to temporarily use Yummy for personal, non-commercial purposes. This license does not include:\n\n• Reselling or sublicensing the service\n• Using the service for any commercial purpose\n• Removing any copyright or proprietary notations",
       "termsAccountsTitle": "3. User Accounts",
       "termsAccountsContent": "You are responsible for maintaining the confidentiality of your account credentials. You agree to:\n\n• Provide accurate and complete information\n• Keep your password secure\n• Notify us immediately of any unauthorized use",
       "termsContentTitle": "4. User Content",
-      "termsContentContent": "You retain ownership of content you post on CookBook. By posting content, you grant us a license to use, modify, and display your content on the platform.",
+      "termsContentContent": "You retain ownership of content you post on Yummy. By posting content, you grant us a license to use, modify, and display your content on the platform.",
       "termsProhibitedTitle": "5. Prohibited Uses",
-      "termsProhibitedContent": "You may not use CookBook to:\n\n• Violate any laws or regulations\n• Infringe on intellectual property rights\n• Post harmful, offensive, or illegal content\n• Spam or harass other users",
+      "termsProhibitedContent": "You may not use Yummy to:\n\n• Violate any laws or regulations\n• Infringe on intellectual property rights\n• Post harmful, offensive, or illegal content\n• Spam or harass other users",
       "termsTerminationTitle": "6. Termination",
       "termsTerminationContent": "We reserve the right to terminate or suspend your account at any time for violations of these terms.",
       "termsChangesTitle": "7. Changes to Terms",
@@ -644,7 +644,7 @@ class AppLocalizations {
       "privacyCookiesTitle": "6. Cookies and Tracking",
       "privacyCookiesContent": "We use cookies and similar technologies to enhance your experience, analyze usage, and assist with marketing efforts. You can control cookies through your browser settings.",
       "privacyChildrenTitle": "7. Children's Privacy",
-      "privacyChildrenContent": "CookBook is not intended for users under the age of 13. We do not knowingly collect personal information from children under 13.",
+      "privacyChildrenContent": "Yummy is not intended for users under the age of 13. We do not knowingly collect personal information from children under 13.",
       "privacyChangesTitle": "8. Changes to Privacy Policy",
       "privacyChangesContent": "We may update this privacy policy from time to time. We will notify you of any material changes by posting the new policy on this page.",
       "privacyContactTitle": "9. Contact Us",
@@ -688,7 +688,7 @@ class AppLocalizations {
       "ingredientNameRequired": "Ingredient {index}: name is required",
       "stepInstructionRequired": "Step {index}: instruction is required",
       "helpWelcomeTitle": "Welcome to Help & Support",
-      "helpWelcomeMessage": "I'm a solo developer working on CookBook. While I don't have a dedicated support team, I'm here to help! Please check the FAQs below first, and if you still need assistance, feel free to reach out.",
+      "helpWelcomeMessage": "I'm a solo developer working on Yummy. While I don't have a dedicated support team, I'm here to help! Please check the FAQs below first, and if you still need assistance, feel free to reach out.",
       "faq": "Frequently Asked Questions",
       "faqHowToCreateRecipe": "How do I create a recipe?",
       "faqHowToCreateRecipeAnswer": "Tap the '+' button in the navigation bar. Fill in the recipe details including title, description, ingredients, steps, and images, then save.",
@@ -720,7 +720,7 @@ class AppLocalizations {
       "versionCopiedToClipboard": "Version copied to clipboard",
     },
     "ka": {
-      "appTitle": "CookBook",
+      "appTitle": "Yummy",
       "login": "შესვლა",
       "signUp": "რეგისტრაცია",
       "email": "ელ-ფოსტა",
@@ -947,15 +947,15 @@ class AppLocalizations {
       "termsOfService": "მომსახურების წესები",
       "privacyPolicy": "კონფიდენციალურობის პოლიტიკა",
       "termsAcceptanceTitle": "1. წესების თანხმობა",
-      "termsAcceptanceContent": "CookBook-ის გამოყენებით თქვენ ეთანხმებით ამ შეთანხმების წესებსა და დებულებებს.",
+      "termsAcceptanceContent": "Yummy-ის გამოყენებით თქვენ ეთანხმებით ამ შეთანხმების წესებსა და დებულებებს.",
       "termsLicenseTitle": "2. გამოყენების ლიცენზია",
-      "termsLicenseContent": "ნებართვა გაქვთ CookBook-ის აპლიკაცია გაოიყენოთ პირადი, არაკომერციული მიზნებისთვის. ეს ლიცენზია არ მოიცავს:\n\n• სერვისის გადაყიდვას ან ქვე-ლიცენზირებას\n• სერვისის გამოყენებას ნებისმიერი კომერციული მიზნით\n• საავტორო უფლებების ან საკუთრებითი აღნიშვნების მოხსნას",
+      "termsLicenseContent": "ნებართვა გაქვთ Yummy-ის აპლიკაცია გაოიყენოთ პირადი, არაკომერციული მიზნებისთვის. ეს ლიცენზია არ მოიცავს:\n\n• სერვისის გადაყიდვას ან ქვე-ლიცენზირებას\n• სერვისის გამოყენებას ნებისმიერი კომერციული მიზნით\n• საავტორო უფლებების ან საკუთრებითი აღნიშვნების მოხსნას",
       "termsAccountsTitle": "3. მომხმარებლის ანგარიშები",
       "termsAccountsContent": "თქვენ პასუხისმგებელი ხართ თქვენი ანგარიშის მონაცემების კონფიდენციალურობის შენარჩუნებაზე. თქვენ ეთანხმებით:\n\n• ზუსტი და სრული ინფორმაციის მიწოდებას\n• პაროლის უსაფრთხო შენარჩუნებას\n• ნებისმიერი არაავტორიზებული გამოყენების შესახებ დაუყოვნებლივ შეტყობინებას",
       "termsContentTitle": "4. მომხმარებლის კონტენტი",
-      "termsContentContent": "თქვენ რჩებით CookBook-ზე გამოქვეყნებული კონტენტის მფლობელად. კონტენტის გამოქვეყნებით, თქვენ გვაძლევთ კონტენტის გამოყენების, შეცვლისა და პლატფორმაზე ჩვენების უფლებას.",
+      "termsContentContent": "თქვენ რჩებით Yummy-ზე გამოქვეყნებული კონტენტის მფლობელად. კონტენტის გამოქვეყნებით, თქვენ გვაძლევთ კონტენტის გამოყენების, შეცვლისა და პლატფორმაზე ჩვენების უფლებას.",
       "termsProhibitedTitle": "5. აკრძალული გამოყენება",
-      "termsProhibitedContent": "თქვენ არ შეგიძლიათ CookBook-ის გამოყენება:\n\n• ნებისმიერი კანონის ან რეგულაციის დარღვევისთვის\n• ინტელექტუალური საკუთრების უფლებების დარღვევისთვის\n• მავნე, შეურაცხმყოფელი ან უკანონო კონტენტის გამოსაქვეყნებლად\n• სპამის ან სხვა მომხმარებლების შევიწროებისთვის",
+      "termsProhibitedContent": "თქვენ არ შეგიძლიათ Yummy-ის გამოყენება:\n\n• ნებისმიერი კანონის ან რეგულაციის დარღვევისთვის\n• ინტელექტუალური საკუთრების უფლებების დარღვევისთვის\n• მავნე, შეურაცხმყოფელი ან უკანონო კონტენტის გამოსაქვეყნებლად\n• სპამის ან სხვა მომხმარებლების შევიწროებისთვის",
       "termsTerminationTitle": "6. შეწყვეტა",
       "termsTerminationContent": "ჩვენ ვიტოვებთ უფლებას დავხუროთ ან შევაჩეროთ თქვენი ანგარიში ნებისმიერ დროს ამ წესების დარღვევის შემთხვევაში.",
       "termsChangesTitle": "7. წესების ცვლილებები",
@@ -973,7 +973,7 @@ class AppLocalizations {
       "privacyCookiesTitle": "6. ქუქი და თვალყური",
       "privacyCookiesContent": "ჩვენ ვიყენებთ ქუქის და მსგავს ტექნოლოგიებს თქვენი გამოცდილებისა და მარკეტინგული წვდომის გასაუმჯობესებლად, გამოყენების ანალიზისთვის.",
       "privacyChildrenTitle": "7. ბავშვების კონფიდენციალურობა",
-      "privacyChildrenContent": "CookBook არ არის განკუთვნილი 13 წლამდე მომხმარებლებისთვის. ჩვენ შეგნებულად არ ვაგროვებთ პირად ინფორმაციას 13 წლამდე ბავშვებისგან.",
+      "privacyChildrenContent": "Yummy არ არის განკუთვნილი 13 წლამდე მომხმარებლებისთვის. ჩვენ შეგნებულად არ ვაგროვებთ პირად ინფორმაციას 13 წლამდე ბავშვებისგან.",
       "privacyChangesTitle": "8. კონფიდენციალურობის პოლიტიკის ცვლილებები",
       "privacyChangesContent": "ჩვენ შეიძლება დროდადრო განვაახლოთ ჩვენი კონფიდენციალურობის პოლიტიკა. ჩვენ შეგატყობინებთ ნებისმიერი მნიშვნელოვანი ცვლილების შესახებ ახალი პოლიტიკის ამ გვერდზე განთავსებით.",
       "privacyContactTitle": "9. დაგვიკავშირდით",
@@ -1017,7 +1017,7 @@ class AppLocalizations {
       "ingredientNameRequired": "ინგრედიენტი {index}: სახელი აუცილებელია",
       "stepInstructionRequired": "ნაბიჯი {index}: ინსტრუქცია აუცილებელია",
       "helpWelcomeTitle": "კეთილი იყოს თქვენი მობრძანება დახმარებისა და მხარდაჭერის გვერდზე",
-      "helpWelcomeMessage": "CookBook-ზე მუშაობს მხოლოდ ერთი დეველოპერი. მიუხედავად იმისა, რომ არ მყავს გამოყოფილი მხარდაჭერის გუნდი, შევეცდები ყველაფერში დაგეხმაროთ! გთხოვთ ჯერ გადახედოთ ხშირად დასმულ კითხვებს, და თუ კვლავ დაგჭირდებათ დახმარება, დამიკავშირდით.",
+      "helpWelcomeMessage": "Yummy-ზე მუშაობს მხოლოდ ერთი დეველოპერი. მიუხედავად იმისა, რომ არ მყავს გამოყოფილი მხარდაჭერის გუნდი, შევეცდები ყველაფერში დაგეხმაროთ! გთხოვთ ჯერ გადახედოთ ხშირად დასმულ კითხვებს, და თუ კვლავ დაგჭირდებათ დახმარება, დამიკავშირდით.",
       "faq": "ხშირად დასმული კითხვები",
       "faqHowToCreateRecipe": "როგორ შევქმნა რეცეპტი?",
       "faqHowToCreateRecipeAnswer": "დააჭირეთ '+' ღილაკს ნავიგაციის ზოლში. შეავსეთ რეცეპტის დეტალები, მათ შორის სათაური, აღწერა, ინგრედიენტები, ნაბიჯები, სურათები და შეინახეთ.",

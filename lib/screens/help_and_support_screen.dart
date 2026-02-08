@@ -89,7 +89,7 @@ class _HelpAndSupportScreenState extends State<HelpAndSupportScreen> {
                   const SizedBox(height: 8),
                   Text(
                     localizations?.helpWelcomeMessage ?? 
-                    "I'm a solo developer working on CookBook. While I don't have a dedicated support team, I'm here to help! Please check the FAQs below first, and if you still need assistance, feel free to reach out.",
+                    "I'm a solo developer working on Yummy. While I don't have a dedicated support team, I'm here to help! Please check the FAQs below first, and if you still need assistance, feel free to reach out.",
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8),
                           height: 1.5,
@@ -317,8 +317,8 @@ class _HelpAndSupportScreenState extends State<HelpAndSupportScreen> {
   Widget _buildContactSection(BuildContext context) {
     final localizations = AppLocalizations.of(context);
     // TODO: Replace with your actual support email
-    const supportEmail = "support@cookbook.app";
-    const subject = "CookBook Support Request";
+    const supportEmail = "support@Yummy.app";
+    const subject = "Yummy Support Request";
     
     return Card(
       elevation: 0,
@@ -474,7 +474,7 @@ class _HelpAndSupportScreenState extends State<HelpAndSupportScreen> {
               Icons.restaurant_menu_outlined,
               color: Theme.of(context).colorScheme.primary,
             ),
-            title: const Text("CookBook"),
+            title: const Text("Yummy"),
             subtitle: Text(
               localizations?.appDescription ?? 
               "Your personal recipe collection and sharing platform",

@@ -45,13 +45,13 @@ class TermsAndPrivacyScreen extends StatelessWidget {
         _buildSection(
           context,
           localizations?.termsAcceptanceTitle ?? "1. Acceptance of Terms",
-          localizations?.termsAcceptanceContent ?? "By accessing and using CookBook, you accept and agree to be bound by the terms and provision of this agreement.",
+          localizations?.termsAcceptanceContent ?? "By accessing and using Yummy, you accept and agree to be bound by the terms and provision of this agreement.",
         ),
         const SizedBox(height: 16),
         _buildSection(
           context,
           localizations?.termsLicenseTitle ?? "2. Use License",
-          localizations?.termsLicenseContent ?? "Permission is granted to temporarily use CookBook for personal, non-commercial purposes. This license does not include:\n\n• Reselling or sublicensing the service\n• Using the service for any commercial purpose\n• Removing any copyright or proprietary notations",
+          localizations?.termsLicenseContent ?? "Permission is granted to temporarily use Yummy for personal, non-commercial purposes. This license does not include:\n\n• Reselling or sublicensing the service\n• Using the service for any commercial purpose\n• Removing any copyright or proprietary notations",
         ),
         const SizedBox(height: 16),
         _buildSection(
@@ -63,13 +63,13 @@ class TermsAndPrivacyScreen extends StatelessWidget {
         _buildSection(
           context,
           localizations?.termsContentTitle ?? "4. User Content",
-          localizations?.termsContentContent ?? "You retain ownership of content you post on CookBook. By posting content, you grant us a license to use, modify, and display your content on the platform.",
+          localizations?.termsContentContent ?? "You retain ownership of content you post on Yummy. By posting content, you grant us a license to use, modify, and display your content on the platform.",
         ),
         const SizedBox(height: 16),
         _buildSection(
           context,
           localizations?.termsProhibitedTitle ?? "5. Prohibited Uses",
-          localizations?.termsProhibitedContent ?? "You may not use CookBook to:\n\n• Violate any laws or regulations\n• Infringe on intellectual property rights\n• Post harmful, offensive, or illegal content\n• Spam or harass other users",
+          localizations?.termsProhibitedContent ?? "You may not use Yummy to:\n\n• Violate any laws or regulations\n• Infringe on intellectual property rights\n• Post harmful, offensive, or illegal content\n• Spam or harass other users",
         ),
         const SizedBox(height: 16),
         _buildSection(
@@ -131,7 +131,7 @@ class TermsAndPrivacyScreen extends StatelessWidget {
         _buildSection(
           context,
           localizations?.privacyChildrenTitle ?? "7. Children's Privacy",
-          localizations?.privacyChildrenContent ?? "CookBook is not intended for users under the age of 13. We do not knowingly collect personal information from children under 13.",
+          localizations?.privacyChildrenContent ?? "Yummy is not intended for users under the age of 13. We do not knowingly collect personal information from children under 13.",
         ),
         const SizedBox(height: 16),
         _buildSection(
