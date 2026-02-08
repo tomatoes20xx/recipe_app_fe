@@ -4,6 +4,7 @@ import "../api/api_client.dart";
 import "../auth/auth_controller.dart";
 import "../localization/language_controller.dart";
 import "../theme/theme_controller.dart";
+import "email_verification_screen.dart";
 import "feed_shell_screen.dart";
 import "login_screen.dart";
 
@@ -69,6 +70,18 @@ class _AuthGateState extends State<AuthGate> {
       animation: widget.auth,
       builder: (context, _) {
         if (widget.auth.isLoggedIn) {
+          // Check if email is verified
+          final emailVerified = widget.auth.me?['emailVerified'] == true;
+
+          if (!emailVerified) {
+            // User logged in but email not verified - show verification screen
+            return EmailVerificationScreen(
+              auth: widget.auth,
+              email: widget.auth.me?['email'] ?? '',
+            );
+          }
+
+          // Email verified - show main app
           return FeedShellScreen(
             auth: widget.auth,
             apiClient: widget.apiClient,

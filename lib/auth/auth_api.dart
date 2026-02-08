@@ -31,8 +31,8 @@ class AuthApi {
   /// Verify email with verification token
   Future<void> verifyEmail(String token) async {
     await api.post("/auth/verify-email", body: {
-      "token": token,
-    });
+      "code": token,  // Backend expects "code", not "token"
+    }, auth: true);
   }
 
   /// Resend verification email
