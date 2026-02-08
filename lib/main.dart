@@ -20,11 +20,11 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize Google Mobile Ads SDK
-  // App ID: ca-app-pub-5283215754482121~9547688424
+  // App ID: ca-app-pub-3299728362959933~7231058371
   MobileAds.instance.initialize();
 
   // Initialize Google Sign-In with Web Client ID
-  const String webClientId = '627234687645-1hjoc27r69tvs0mn7o7st2t3bki2rbru.apps.googleusercontent.com';
+  const String webClientId = '74949530501-mgn67he50nv8qkntu7qgorv55vqur4uu.apps.googleusercontent.com';
 
   try {
     await GoogleSignIn.instance.initialize(

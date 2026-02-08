@@ -2,7 +2,7 @@ import "package:flutter/material.dart";
 import "package:google_mobile_ads/google_mobile_ads.dart";
 
 /// Reusable banner ad widget
-/// Ad Unit ID: ca-app-pub-5283215754482121/4569843853
+/// Ad Unit ID: ca-app-pub-3299728362959933/3238998585
 class BannerAdWidget extends StatefulWidget {
   const BannerAdWidget({
     super.key,
@@ -33,7 +33,7 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
 
   void _loadAd() {
     // Use production ad unit ID or the provided one
-    final adUnitId = widget.adUnitId ?? "ca-app-pub-5283215754482121/4569843853";
+    final adUnitId = widget.adUnitId ?? "ca-app-pub-3299728362959933/3238998585";
     
     _bannerAd = BannerAd(
       adUnitId: adUnitId,
@@ -87,14 +87,14 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
 /// Helper class for AdMob configuration
 class AdHelper {
   /// Production Banner Ad Unit ID
-  static const String bannerAdUnitId = "ca-app-pub-5283215754482121/4569843853";
-  
+  static const String bannerAdUnitId = "ca-app-pub-3299728362959933/3238998585";
+
   /// Production Native Ad Unit ID (for feed cards)
   /// NOTE: Create a Native Ad Unit in AdMob and replace this ID
-  static const String nativeAdUnitId = "ca-app-pub-5283215754482121/4569843853";
-  
+  static const String nativeAdUnitId = "ca-app-pub-3299728362959933/3238998585";
+
   /// App ID
-  static const String appId = "ca-app-pub-5283215754482121~9547688424";
+  static const String appId = "ca-app-pub-3299728362959933~7231058371";
   
   /// Test Ad Unit IDs (for development/testing)
   /// Use these during development to avoid invalid traffic

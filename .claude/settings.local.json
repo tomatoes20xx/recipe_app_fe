@@ -4,7 +4,10 @@
       "Bash(flutter analyze:*)",
       "Bash(find:*)",
       "Bash(tree:*)",
-      "Bash(dir:*)"
+      "Bash(dir:*)",
+      "Bash(./gradlew signingReport:*)",
+      "Bash(keytool:*)",
+      "Bash(findstr:*)"
     ]
   }
 }
