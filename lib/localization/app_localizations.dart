@@ -130,6 +130,7 @@ class AppLocalizations {
   String get error => _localizedValues[locale.languageCode]?["error"] ?? "Error";
   String get dismiss => _localizedValues[locale.languageCode]?["dismiss"] ?? "Dismiss";
   String get skip => _localizedValues[locale.languageCode]?["skip"] ?? "Skip";
+  String get tapToAdd => _localizedValues[locale.languageCode]?["tapToAdd"] ?? "Tap to add";
   String get commentPostedSuccessfully => _localizedValues[locale.languageCode]?["commentPostedSuccessfully"] ?? "Comment posted successfully";
   String get unableToConnect => _localizedValues[locale.languageCode]?["unableToConnect"] ?? "Unable to connect to the server. Please check your internet connection and try again.";
   String get requestTimedOut => _localizedValues[locale.languageCode]?["requestTimedOut"] ?? "Request timed out. Please try again.";
@@ -198,6 +199,7 @@ class AppLocalizations {
   String get quantityExample => _localizedValues[locale.languageCode]?["quantityExample"] ?? "e.g., 2";
   String get unit => _localizedValues[locale.languageCode]?["unit"] ?? "Unit";
   String get unitExample => _localizedValues[locale.languageCode]?["unitExample"] ?? "e.g., cups";
+  String get cupsHint => _localizedValues[locale.languageCode]?["cupsHint"] ?? "cups";
   String get ingredient => _localizedValues[locale.languageCode]?["ingredient"] ?? "Ingredient";
   String get ingredientExample => _localizedValues[locale.languageCode]?["ingredientExample"] ?? "e.g., flour";
   String get instruction => _localizedValues[locale.languageCode]?["instruction"] ?? "Instruction";
@@ -575,6 +577,7 @@ class AppLocalizations {
       "quantityExample": "e.g., 2",
       "unit": "Unit",
       "unitExample": "e.g., cups",
+      "cupsHint": "cups",
       "ingredient": "Ingredient",
       "ingredientExample": "e.g., flour",
       "instruction": "Instruction",
@@ -802,6 +805,7 @@ class AppLocalizations {
       "tourAllSet": "You're all set! Enjoy using Yummy! 🎉",
       "commentPostedSuccessfully": "Comment posted successfully",
       "skip": "Skip",
+      "tapToAdd": "Tap to add",
     },
     "ka": {
       "appTitle": "Yummy",
@@ -944,6 +948,7 @@ class AppLocalizations {
       "quantityExample": "მაგ., 2",
       "unit": "ერთეული",
       "unitExample": "მაგ., ჭიქა",
+      "cupsHint": "ჭიქა",
       "ingredient": "ინგრედიენტი",
       "ingredientExample": "მაგ., ფქვილი",
       "instruction": "ინსტრუქცია",
@@ -1171,6 +1176,7 @@ class AppLocalizations {
       "tourAllSet": "ყველაფერი მზადაა! ისიამოვნეთ Yummy-ს გამოყენებით! 🎉",
       "commentPostedSuccessfully": "კომენტარი წარმატებით დაიდო",
       "skip": "გამოტოვება",
+      "tapToAdd": "დაამატეთ",
     },
   };
 }
