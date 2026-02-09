@@ -129,6 +129,7 @@ class AppLocalizations {
   String get daysAgo => _localizedValues[locale.languageCode]?["daysAgo"] ?? "d ago";
   String get error => _localizedValues[locale.languageCode]?["error"] ?? "Error";
   String get dismiss => _localizedValues[locale.languageCode]?["dismiss"] ?? "Dismiss";
+  String get commentPostedSuccessfully => _localizedValues[locale.languageCode]?["commentPostedSuccessfully"] ?? "Comment posted successfully";
   String get unableToConnect => _localizedValues[locale.languageCode]?["unableToConnect"] ?? "Unable to connect to the server. Please check your internet connection and try again.";
   String get requestTimedOut => _localizedValues[locale.languageCode]?["requestTimedOut"] ?? "Request timed out. Please try again.";
   String get connectionInterrupted => _localizedValues[locale.languageCode]?["connectionInterrupted"] ?? "Connection was interrupted. Please try again.";
@@ -798,6 +799,7 @@ class AppLocalizations {
       "tourViewToggleDescription": "Toggle between list view and full-screen immersive view for a different browsing experience!",
       "tourTapToContinue": "Tap the highlighted area to continue",
       "tourAllSet": "You're all set! Enjoy using Yummy! 🎉",
+      "commentPostedSuccessfully": "Comment posted successfully",
     },
     "ka": {
       "appTitle": "Yummy",
@@ -1165,6 +1167,7 @@ class AppLocalizations {
       "tourViewToggleDescription": "გადართეთ სიის ხედსა და სრულეკრანიან ხედს შორის განსხვავებული გამოცდილებისთვის!",
       "tourTapToContinue": "გასაგრძელებლად შეეხეთ მონიშნულ არეს",
       "tourAllSet": "ყველაფერი მზადაა! ისიამოვნეთ Yummy-ს გამოყენებით! 🎉",
+      "commentPostedSuccessfully": "კომენტარი წარმატებით დაიდო",
     },
   };
 }

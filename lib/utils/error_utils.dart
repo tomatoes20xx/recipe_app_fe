@@ -153,7 +153,8 @@ class ErrorUtils {
   /// Shows a success snackbar
   static void showSuccess(BuildContext context, String message) {
     final localizations = AppLocalizations.of(context);
-    ScaffoldMessenger.of(context).showSnackBar(
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    scaffoldMessenger.showSnackBar(
       SnackBar(
         content: Row(
           children: [
@@ -164,12 +165,12 @@ class ErrorUtils {
         ),
         backgroundColor: Colors.green,
         behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 5),
+        duration: const Duration(seconds: 3),
         action: SnackBarAction(
           label: localizations?.dismiss ?? "Dismiss",
           textColor: Colors.white,
           onPressed: () {
-            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+            scaffoldMessenger.hideCurrentSnackBar();
           },
         ),
       ),
@@ -179,7 +180,8 @@ class ErrorUtils {
   /// Shows an error snackbar
   static void showError(BuildContext context, dynamic error) {
     final localizations = AppLocalizations.of(context);
-    ScaffoldMessenger.of(context).showSnackBar(
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    scaffoldMessenger.showSnackBar(
       SnackBar(
         content: Row(
           children: [
@@ -190,12 +192,12 @@ class ErrorUtils {
         ),
         backgroundColor: Theme.of(context).colorScheme.error,
         behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 5),
+        duration: const Duration(seconds: 3),
         action: SnackBarAction(
           label: localizations?.dismiss ?? "Dismiss",
           textColor: Colors.white,
           onPressed: () {
-            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+            scaffoldMessenger.hideCurrentSnackBar();
           },
         ),
       ),

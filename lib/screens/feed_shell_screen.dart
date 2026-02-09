@@ -660,11 +660,21 @@ class _FeedShellDrawer extends StatelessWidget {
               enabled: auth.isLoggedIn,
               onTap: () {
                 if (!auth.isLoggedIn) {
+                  final scaffoldMessenger = ScaffoldMessenger.of(context);
+                  final localizations = AppLocalizations.of(context);
                   Navigator.of(context).pop();
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  scaffoldMessenger.showSnackBar(
                     SnackBar(
                       content: Text(
-                        AppLocalizations.of(context)?.logInToSeeFollowingFeed ?? "Log in to see Following feed",
+                        localizations?.logInToSeeFollowingFeed ?? "Log in to see Following feed",
+                      ),
+                      duration: const Duration(seconds: 3),
+                      behavior: SnackBarBehavior.floating,
+                      action: SnackBarAction(
+                        label: localizations?.dismiss ?? "Dismiss",
+                        onPressed: () {
+                          scaffoldMessenger.hideCurrentSnackBar();
+                        },
                       ),
                     ),
                   );
