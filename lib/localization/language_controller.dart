@@ -4,7 +4,7 @@ import "package:flutter_secure_storage/flutter_secure_storage.dart";
 class LanguageController extends ChangeNotifier {
   static const _kLanguageKey = "language_code";
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
-  Locale _locale = const Locale("en");
+  Locale _locale = const Locale("ka");
 
   Locale get locale => _locale;
   String get languageCode => _locale.languageCode;
@@ -21,7 +21,7 @@ class LanguageController extends ChangeNotifier {
         notifyListeners();
       }
     } catch (e) {
-      // If loading fails, use default (English)
+      // If loading fails, use default (Georgian)
     }
   }
 
