@@ -16,26 +16,31 @@ class NotificationsScreen extends StatefulWidget {
     super.key,
     required this.apiClient,
     required this.auth,
+    required this.notificationController,
   });
 
   final ApiClient apiClient;
   final AuthController auth;
+  final NotificationController notificationController;
 
   @override
   State<NotificationsScreen> createState() => _NotificationsScreenState();
 }
 
 class _NotificationsScreenState extends State<NotificationsScreen> {
-  late final NotificationController controller;
   bool _showUnreadOnly = false;
 
   @override
   void initState() {
     super.initState();
-    final notificationApi = NotificationApi(widget.apiClient);
-    controller = NotificationController(notificationApi: notificationApi);
-    controller.addListener(_onControllerChanged);
-    controller.loadInitial();
+    widget.notificationController.addListener(_onControllerChanged);
+    // Always refresh notifications when entering this screen
+    if (widget.notificationController.items.isEmpty) {
+      widget.notificationController.loadInitial();
+    } else {
+      // If already loaded, just refresh to get latest data
+      widget.notificationController.refresh(unreadOnly: _showUnreadOnly);
+    }
   }
 
   void _onControllerChanged() {
@@ -46,8 +51,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   @override
   void dispose() {
-    controller.removeListener(_onControllerChanged);
-    controller.dispose();
+    widget.notificationController.removeListener(_onControllerChanged);
+    // Don't dispose the controller - it's owned by FeedShellScreen
     super.dispose();
   }
 
@@ -163,7 +168,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     // Mark as read if unread
     if (!notification.isRead) {
       try {
-        await controller.markAsRead(notification.id);
+        await widget.notificationController.markAsRead(notification.id);
       } catch (e) {
         if (!mounted) return;
         ErrorUtils.showError(context, e);
@@ -235,11 +240,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           },
         ),
         actions: [
-          if (controller.unreadCount > 0)
+          if (widget.notificationController.unreadCount > 0)
             TextButton.icon(
               onPressed: () async {
                 try {
-                  await controller.markAllAsRead();
+                  await widget.notificationController.markAllAsRead();
                   if (!mounted) return;
                   ErrorUtils.showSuccess(this.context, "All notifications marked as read");
                 } catch (e) {
@@ -260,7 +265,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               setState(() {
                 _showUnreadOnly = value == "unread";
               });
-              controller.loadInitial(unreadOnly: _showUnreadOnly);
+              widget.notificationController.loadInitial(unreadOnly: _showUnreadOnly);
             },
             itemBuilder: (context) {
               final localizations = AppLocalizations.of(context);
@@ -297,25 +302,25 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         ],
       ),
       body: RefreshIndicator(
-        onRefresh: () => controller.refresh(unreadOnly: _showUnreadOnly),
+        onRefresh: () => widget.notificationController.refresh(unreadOnly: _showUnreadOnly),
         child: _buildContent(),
       ),
     );
   }
 
   Widget _buildContent() {
-    if (controller.isLoading && controller.items.isEmpty) {
+    if (widget.notificationController.isLoading && widget.notificationController.items.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    if (controller.error != null && controller.items.isEmpty) {
+    if (widget.notificationController.error != null && widget.notificationController.items.isEmpty) {
       return ErrorStateWidget(
-        message: ErrorUtils.getUserFriendlyMessage(controller.error!, context),
-        onRetry: () => controller.loadInitial(unreadOnly: _showUnreadOnly),
+        message: ErrorUtils.getUserFriendlyMessage(widget.notificationController.error!, context),
+        onRetry: () => widget.notificationController.loadInitial(unreadOnly: _showUnreadOnly),
       );
     }
 
-    if (controller.items.isEmpty) {
+    if (widget.notificationController.items.isEmpty) {
       return EmptyStateWidget(
         icon: _showUnreadOnly ? Icons.mark_email_read : Icons.notifications_none,
         title: _showUnreadOnly ? "No unread notifications" : "No notifications",
@@ -333,16 +338,16 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
     return ListView.builder(
       padding: const EdgeInsets.fromLTRB(0, 8, 0, 120),
-      itemCount: controller.items.length + (controller.isLoadingMore ? 1 : 0),
+      itemCount: widget.notificationController.items.length + (widget.notificationController.isLoadingMore ? 1 : 0),
       itemBuilder: (context, index) {
-        if (index >= controller.items.length) {
+        if (index >= widget.notificationController.items.length) {
           return const Padding(
             padding: EdgeInsets.all(16),
             child: Center(child: CircularProgressIndicator()),
           );
         }
 
-        final notification = controller.items[index];
+        final notification = widget.notificationController.items[index];
         return _buildNotificationItem(notification);
       },
     );

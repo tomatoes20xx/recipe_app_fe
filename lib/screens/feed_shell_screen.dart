@@ -197,6 +197,7 @@ class _FeedShellScreenState extends State<FeedShellScreen> {
           key: const ValueKey("notifications"),
           apiClient: widget.apiClient,
           auth: widget.auth,
+          notificationController: _notificationController,
         );
       case 2:
         return SearchScreen(
@@ -454,9 +455,11 @@ class _BottomNavAction extends StatelessWidget {
                   ),
                 ),
                 if (badgeCount > 0)
-                  Positioned(
-                    right: -4,
-                    top: -6,
+                  AnimatedPositioned(
+                    duration: const Duration(milliseconds: 200),
+                    curve: Curves.easeOut,
+                    right: isActive ? 8 : 4,
+                    top: 2,
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
                       decoration: BoxDecoration(
