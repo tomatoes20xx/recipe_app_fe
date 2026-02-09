@@ -202,6 +202,7 @@ class AppTourService {
       paddingFocus: 10,
       opacityShadow: 0.8,
       hideSkip: false,
+      textSkip: localizations?.skip ?? "Skip",
       onFinish: () {
         markTourCompleted();
         onFinish?.call();
