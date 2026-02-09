@@ -56,7 +56,7 @@ void main() async {
   MobileAds.instance.initialize();
 
   // Initialize Google Sign-In with Web Client ID
-  const String webClientId = '74949530501-mgn67he50nv8qkntu7qgorv55vqur4uu.apps.googleusercontent.com';
+  const String webClientId = '31640311657-vt82s1udbrrn2t36g3ivhh0jll148q4l.apps.googleusercontent.com';
 
   try {
     await GoogleSignIn.instance.initialize(

@@ -86,8 +86,6 @@ class GoogleAuthService {
 
       return result;
     } catch (error) {
-      // Log the error for debugging
-      debugPrint('Google Sign-In error: $error');
       return null;
     } finally {
       _signInCompleter = null;
