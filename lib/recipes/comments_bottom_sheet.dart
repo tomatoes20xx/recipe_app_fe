@@ -546,6 +546,7 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
 
     setState(() => _isSubmitting = true);
     final parentId = _replyingToId;
+
     try {
       await widget.commentsController.addComment(content, parentId: parentId);
       _commentController.clear();
@@ -554,9 +555,6 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
         _replyingToUsername = null;
       });
       widget.onCommentPosted?.call();
-      if (mounted) {
-        ErrorUtils.showSuccess(context, "Comment posted successfully");
-      }
     } catch (e) {
       if (mounted) {
         ErrorUtils.showError(context, e);
