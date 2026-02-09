@@ -413,6 +413,24 @@ class AppLocalizations {
   String get backToLogin => _localizedValues[locale.languageCode]?["backToLogin"] ?? "Back to Login";
   String get enterEmail => _localizedValues[locale.languageCode]?["enterEmail"] ?? "Enter your email";
 
+  // App Tour
+  String get tourWelcomeTitle => _localizedValues[locale.languageCode]?["tourWelcomeTitle"] ?? "Welcome to Yummy! 👋";
+  String get tourWelcomeDescription => _localizedValues[locale.languageCode]?["tourWelcomeDescription"] ?? "This is your home feed. Discover amazing recipes from the community and find your next meal inspiration!";
+  String get tourSearchTitle => _localizedValues[locale.languageCode]?["tourSearchTitle"] ?? "Search Recipes 🔍";
+  String get tourSearchDescription => _localizedValues[locale.languageCode]?["tourSearchDescription"] ?? "Find recipes by name, ingredients, or cuisine type.";
+  String get tourCreateTitle => _localizedValues[locale.languageCode]?["tourCreateTitle"] ?? "Share Your Recipes ✨";
+  String get tourCreateDescription => _localizedValues[locale.languageCode]?["tourCreateDescription"] ?? "Tap here to create and share your own recipes with the community. Add photos, ingredients, and steps!";
+  String get tourNotificationsTitle => _localizedValues[locale.languageCode]?["tourNotificationsTitle"] ?? "Stay Updated 🔔";
+  String get tourNotificationsDescription => _localizedValues[locale.languageCode]?["tourNotificationsDescription"] ?? "Get notified when someone likes your recipes, follows you, or comments on your posts!";
+  String get tourMenuTitle => _localizedValues[locale.languageCode]?["tourMenuTitle"] ?? "More Features 📱";
+  String get tourMenuDescription => _localizedValues[locale.languageCode]?["tourMenuDescription"] ?? "Access saved recipes, notifications, settings, and more from the menu.";
+  String get tourSortTitle => _localizedValues[locale.languageCode]?["tourSortTitle"] ?? "Sort Your Feed 🔽";
+  String get tourSortDescription => _localizedValues[locale.languageCode]?["tourSortDescription"] ?? "Switch between Recent (newest first) and Top (most popular) posts. Choose what matters to you!";
+  String get tourViewToggleTitle => _localizedValues[locale.languageCode]?["tourViewToggleTitle"] ?? "Switch Views 👁️";
+  String get tourViewToggleDescription => _localizedValues[locale.languageCode]?["tourViewToggleDescription"] ?? "Toggle between list view and full-screen immersive view for a different browsing experience!";
+  String get tourTapToContinue => _localizedValues[locale.languageCode]?["tourTapToContinue"] ?? "Tap the highlighted area to continue";
+  String get tourAllSet => _localizedValues[locale.languageCode]?["tourAllSet"] ?? "You're all set! Enjoy using Yummy! 🎉";
+
   static const Map<String, Map<String, String>> _localizedValues = {
     "en": {
       "appTitle": "Yummy",
@@ -764,6 +782,22 @@ class AppLocalizations {
       "appInformation": "App Information",
       "appDescription": "Your personal recipe collection and sharing platform",
       "versionCopiedToClipboard": "Version copied to clipboard",
+      "tourWelcomeTitle": "Welcome to Yummy! 👋",
+      "tourWelcomeDescription": "This is your home feed. Discover amazing recipes from the community and find your next meal inspiration!",
+      "tourSearchTitle": "Search Recipes 🔍",
+      "tourSearchDescription": "Find recipes by name, ingredients, or cuisine type.",
+      "tourCreateTitle": "Share Your Recipes ✨",
+      "tourCreateDescription": "Tap here to create and share your own recipes with the community. Add photos, ingredients, and steps!",
+      "tourNotificationsTitle": "Stay Updated 🔔",
+      "tourNotificationsDescription": "Get notified when someone likes your recipes, follows you, or comments on your posts!",
+      "tourMenuTitle": "More Features 📱",
+      "tourMenuDescription": "Access saved recipes, notifications, settings, and more from the menu.",
+      "tourSortTitle": "Sort Your Feed 🔽",
+      "tourSortDescription": "Switch between Recent (newest first) and Top (most popular) posts. Choose what matters to you!",
+      "tourViewToggleTitle": "Switch Views 👁️",
+      "tourViewToggleDescription": "Toggle between list view and full-screen immersive view for a different browsing experience!",
+      "tourTapToContinue": "Tap the highlighted area to continue",
+      "tourAllSet": "You're all set! Enjoy using Yummy! 🎉",
     },
     "ka": {
       "appTitle": "Yummy",
@@ -1115,6 +1149,22 @@ class AppLocalizations {
       "appInformation": "აპლიკაციის ინფორმაცია",
       "appDescription": "თქვენი პერსონალური რეცეპტების კოლექცია და გაზიარების პლატფორმა",
       "versionCopiedToClipboard": "ვერსია დაკოპირდა ბუფერში",
+      "tourWelcomeTitle": "კეთილი იყოს თქვენი მობრძანება Yummy-ში! 👋",
+      "tourWelcomeDescription": "ეს არის თქვენი მთავარი არხი. აღმოაჩინეთ საოცარი რეცეპტები მომხმარებლებისგან და იპოვეთ თქვენი შემდეგი კერძის იდეა!",
+      "tourSearchTitle": "რეცეპტების ძიება 🔍",
+      "tourSearchDescription": "იპოვეთ რეცეპტები სახელით, ინგრედიენტებით ან სამზარეულოს ტიპით.",
+      "tourCreateTitle": "გააზიარეთ თქვენი რეცეპტები ✨",
+      "tourCreateDescription": "დააჭირეთ აქ თქვენი რეცეპტის შესაქმნელად და სხვა მომხმარებლებთან გასაზიარებლად. დაამატეთ ფოტოები, ინგრედიენტები და ნაბიჯები!",
+      "tourNotificationsTitle": "იყავით ინფორმირებული 🔔",
+      "tourNotificationsDescription": "მიიღეთ შეტყობინებები როდესაც ვიღაც მოიწონებს თქვენს რეცეპტებს, გამოგიწერთ ან კომენტარს დაგიწერთ!",
+      "tourMenuTitle": "სხვა ფუნქციები 📱",
+      "tourMenuDescription": "წვდომა შენახულ რეცეპტებზე, შეტყობინებებზე, პარამეტრებზე და სხვა აპლიკაციის ფუნქციებზე მენიუდან.",
+      "tourSortTitle": "დაალაგეთ თქვენი არხი 🔽",
+      "tourSortDescription": "გადართეთ უახლესი (ახალი პირველი) და ტოპ (ყველაზე პოპულარული) პოსტებს შორის. აირჩიეთ რაც მნიშვნელოვანია თქვენთვის!",
+      "tourViewToggleTitle": "გადართეთ ხედები 👁️",
+      "tourViewToggleDescription": "გადართეთ სიის ხედსა და სრულეკრანიან ხედს შორის განსხვავებული გამოცდილებისთვის!",
+      "tourTapToContinue": "გასაგრძელებლად შეეხეთ მონიშნულ არეს",
+      "tourAllSet": "ყველაფერი მზადაა! ისიამოვნეთ Yummy-ს გამოყენებით! 🎉",
     },
   };
 }

@@ -50,10 +50,12 @@ class _AuthGateState extends State<AuthGate> {
       // If bootstrap fails, still show the app (user can try to login)
       // Don't block the app from starting
     }
-    
+
     // Check mounted and update state after try-catch, not in finally
     if (mounted) {
-      setState(() => bootstrapped = true);
+      setState(() {
+        bootstrapped = true;
+      });
     }
   }
 
