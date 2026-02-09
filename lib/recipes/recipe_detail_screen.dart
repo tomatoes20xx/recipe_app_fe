@@ -213,6 +213,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
         widget.auth!.me?["username"]?.toString() == r.authorUsername;
 
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
@@ -1171,6 +1172,7 @@ class _FullScreenImageViewerState extends State<_FullScreenImageViewer> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       backgroundColor: Colors.black,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
