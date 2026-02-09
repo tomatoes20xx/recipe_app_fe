@@ -1264,6 +1264,7 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
               message: localizations?.noIngredientsYet ??
                   "No ingredients yet. Add your first ingredient!",
               onTap: _addIngredient,
+              localizations: localizations,
             )
           : ReorderableListView.builder(
               shrinkWrap: true,
@@ -1324,6 +1325,7 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
               message: localizations?.noStepsYet ??
                   "No steps yet. Add your first step!",
               onTap: _addStep,
+              localizations: localizations,
             )
           : ReorderableListView.builder(
               shrinkWrap: true,
@@ -1366,12 +1368,17 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
     required IconData icon,
     required String message,
     required VoidCallback onTap,
+    AppLocalizations? localizations,
   }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 32),
+        alignment: Alignment.center,
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Container(
               width: 56,
@@ -1403,6 +1410,7 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(
                     Icons.add_rounded,
@@ -1411,7 +1419,7 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    "Tap to add",
+                    localizations?.tapToAdd ?? "Tap to add",
                     style: theme.textTheme.labelMedium?.copyWith(
                       color: theme.colorScheme.primary,
                       fontWeight: FontWeight.w600,
@@ -1632,112 +1640,130 @@ class _IngredientTile extends StatelessWidget {
         color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(14),
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Drag handle
-          ReorderableDragStartListener(
-            index: index,
-            child: Container(
-              padding: const EdgeInsets.all(8),
-              child: Icon(
-                Icons.drag_indicator_rounded,
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
-                size: 20,
+          // First row: Drag handle, Quantity, Unit, Delete button
+          Row(
+            children: [
+              // Drag handle
+              ReorderableDragStartListener(
+                index: index,
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  child: Icon(
+                    Icons.drag_indicator_rounded,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
+                    size: 20,
+                  ),
+                ),
               ),
-            ),
-          ),
-          const SizedBox(width: 4),
+              const SizedBox(width: 8),
 
-          // Quantity
-          SizedBox(
-            width: 60,
-            child: TextFormField(
-              controller: ingredient.quantityController,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              inputFormatters: [_DecimalNumberFormatter()],
-              style: theme.textTheme.bodyMedium,
-              textAlign: TextAlign.center,
-              decoration: InputDecoration(
-                hintText: "Qty",
-                hintStyle: TextStyle(
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
-                  fontSize: 13,
+              // Quantity
+              Expanded(
+                flex: 2,
+                child: TextFormField(
+                  controller: ingredient.quantityController,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  inputFormatters: [_DecimalNumberFormatter()],
+                  style: theme.textTheme.bodyMedium,
+                  textAlign: TextAlign.center,
+                  decoration: InputDecoration(
+                    labelText: localizations?.quantity ?? "Qty",
+                    labelStyle: TextStyle(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                      fontSize: 12,
+                    ),
+                    hintText: "2",
+                    hintStyle: TextStyle(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                      fontSize: 13,
+                    ),
+                    filled: true,
+                    fillColor: theme.colorScheme.surface,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide.none,
+                    ),
+                    contentPadding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                  ),
                 ),
-                filled: true,
-                fillColor: theme.colorScheme.surface,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide.none,
-                ),
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
               ),
-            ),
-          ),
-          const SizedBox(width: 8),
+              const SizedBox(width: 8),
 
-          // Unit
-          SizedBox(
-            width: 70,
-            child: TextFormField(
-              controller: ingredient.unitController,
-              style: theme.textTheme.bodyMedium,
-              textAlign: TextAlign.center,
-              decoration: InputDecoration(
-                hintText: "Unit",
-                hintStyle: TextStyle(
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
-                  fontSize: 13,
+              // Unit
+              Expanded(
+                flex: 2,
+                child: TextFormField(
+                  controller: ingredient.unitController,
+                  style: theme.textTheme.bodyMedium,
+                  textAlign: TextAlign.center,
+                  decoration: InputDecoration(
+                    labelText: localizations?.unit ?? "Unit",
+                    labelStyle: TextStyle(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                      fontSize: 12,
+                    ),
+                    hintText: localizations?.cupsHint ?? "cups",
+                    hintStyle: TextStyle(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                      fontSize: 13,
+                    ),
+                    filled: true,
+                    fillColor: theme.colorScheme.surface,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide.none,
+                    ),
+                    contentPadding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                  ),
                 ),
-                filled: true,
-                fillColor: theme.colorScheme.surface,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide.none,
-                ),
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
               ),
-            ),
-          ),
-          const SizedBox(width: 8),
+              const SizedBox(width: 8),
 
-          // Name
-          Expanded(
-            child: TextFormField(
-              controller: ingredient.nameController,
-              style: theme.textTheme.bodyMedium,
-              decoration: InputDecoration(
-                hintText: localizations?.ingredientExample ?? "e.g., flour",
-                hintStyle: TextStyle(
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
-                  fontSize: 13,
+              // Delete button
+              GestureDetector(
+                onTap: onRemove,
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  child: Icon(
+                    Icons.close_rounded,
+                    color: theme.colorScheme.error.withValues(alpha: 0.7),
+                    size: 20,
+                  ),
                 ),
-                filled: true,
-                fillColor: theme.colorScheme.surface,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide.none,
-                ),
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               ),
-            ),
+            ],
           ),
-          const SizedBox(width: 8),
+          const SizedBox(height: 8),
 
-          // Delete button
-          GestureDetector(
-            onTap: onRemove,
-            child: Container(
-              padding: const EdgeInsets.all(8),
-              child: Icon(
-                Icons.close_rounded,
-                color: theme.colorScheme.error.withValues(alpha: 0.7),
-                size: 20,
+          // Second row: Ingredient name (full width)
+          TextFormField(
+            controller: ingredient.nameController,
+            style: theme.textTheme.bodyMedium,
+            decoration: InputDecoration(
+              labelText: localizations?.ingredient ?? "Ingredient",
+              labelStyle: TextStyle(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                fontSize: 12,
               ),
+              hintText: localizations?.ingredientExample ?? "e.g., flour",
+              hintStyle: TextStyle(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                fontSize: 13,
+              ),
+              filled: true,
+              fillColor: theme.colorScheme.surface,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide.none,
+              ),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             ),
           ),
         ],
