@@ -595,14 +595,17 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
     }
     
     final screenHeight = MediaQuery.of(context).size.height;
+    final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
     final sheetHeight = screenHeight * 0.75; // 75% of screen height
 
     final isLoggedIn = widget.auth?.isLoggedIn ?? false;
     final userAvatar = widget.auth?.me?["avatar_url"]?.toString();
     final username = widget.auth?.me?["username"]?.toString() ?? "";
 
-    return Container(
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 100),
       height: sheetHeight,
+      padding: EdgeInsets.only(bottom: keyboardHeight),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
@@ -699,6 +702,7 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
                 ],
               ),
               child: SafeArea(
+                bottom: false,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
