@@ -20,6 +20,8 @@ class HomeScreen extends StatefulWidget {
     required this.languageController,
     required this.feed,
     this.onNotificationRefresh,
+    this.sortDropdownKey,
+    this.viewToggleKey,
   });
 
   final AuthController auth;
@@ -28,6 +30,8 @@ class HomeScreen extends StatefulWidget {
   final LanguageController languageController;
   final FeedController feed;
   final VoidCallback? onNotificationRefresh;
+  final GlobalKey? sortDropdownKey;
+  final GlobalKey? viewToggleKey;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -308,6 +312,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   feed: feed,
                   isFullScreenView: _isFullScreenView,
                   onViewToggle: _handleViewToggle,
+                  sortDropdownKey: widget.sortDropdownKey,
+                  viewToggleKey: widget.viewToggleKey,
                 ),
               ),
             )

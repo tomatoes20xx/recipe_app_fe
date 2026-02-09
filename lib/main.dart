@@ -1,4 +1,5 @@
 import "dart:io" show Platform;
+import "dart:ui";
 import "package:flutter/foundation.dart" show kIsWeb;
 import "package:flutter/material.dart";
 import "package:flutter_localizations/flutter_localizations.dart";
@@ -6,6 +7,11 @@ import "package:google_fonts/google_fonts.dart";
 import "package:google_mobile_ads/google_mobile_ads.dart";
 import "package:google_sign_in/google_sign_in.dart";
 import "package:sqflite_common_ffi/sqflite_ffi.dart";
+import "package:firebase_core/firebase_core.dart";
+import "package:firebase_crashlytics/firebase_crashlytics.dart";
+import "package:firebase_messaging/firebase_messaging.dart";
+import "firebase_options.dart";
+import "services/notification_service.dart";
 
 import "api/api_client.dart";
 import "auth/auth_api.dart";
@@ -18,6 +24,32 @@ import "theme/theme_controller.dart";
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Firebase (optional - will skip if not configured)
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+
+    // Initialize Firebase Crashlytics
+    FlutterError.onError = (errorDetails) {
+      FirebaseCrashlytics.instance.recordFlutterFatalError(errorDetails);
+    };
+    // Pass all uncaught asynchronous errors to Crashlytics
+    PlatformDispatcher.instance.onError = (error, stack) {
+      FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+      return true;
+    };
+
+    // Initialize Firebase Messaging background handler
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+
+    // Initialize notification service
+    await NotificationService().initialize();
+  } catch (e) {
+    // Firebase not configured - app will run without Firebase features
+    // Run "flutterfire configure" to set up Firebase
+  }
 
   // Initialize Google Mobile Ads SDK
   // App ID: ca-app-pub-3299728362959933~7231058371

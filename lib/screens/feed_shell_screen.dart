@@ -12,6 +12,7 @@ import "../localization/app_localizations.dart";
 import "../localization/language_controller.dart";
 import "../notifications/notification_api.dart";
 import "../notifications/notification_controller.dart";
+import "../services/app_tour_service.dart";
 import "../theme/theme_controller.dart";
 import "../utils/ui_utils.dart";
 import "analytics_stats_screen.dart";
@@ -55,6 +56,15 @@ class _FeedShellScreenState extends State<FeedShellScreen> {
   final FocusNode _searchFocusNode = FocusNode();
   bool _isSearchExpanded = false;
 
+  // Tour keys
+  final GlobalKey _feedKey = GlobalKey();
+  final GlobalKey _searchKey = GlobalKey();
+  final GlobalKey _createKey = GlobalKey();
+  final GlobalKey _notificationsKey = GlobalKey();
+  final GlobalKey _menuKey = GlobalKey();
+  final GlobalKey _sortDropdownKey = GlobalKey();
+  final GlobalKey _viewToggleKey = GlobalKey();
+
   @override
   void initState() {
     super.initState();
@@ -73,6 +83,30 @@ class _FeedShellScreenState extends State<FeedShellScreen> {
     _startNotificationPolling();
 
     _searchController.addListener(_onSearchTextChanged);
+
+    // Check and show tour for first-time users
+    _checkAndShowTour();
+  }
+
+  Future<void> _checkAndShowTour() async {
+    final tourCompleted = await AppTourService.hasTourCompleted();
+    if (!tourCompleted && mounted) {
+      // Delay to ensure widgets are built
+      Future.delayed(const Duration(seconds: 1), () {
+        if (mounted) {
+          AppTourService.showTour(
+            context,
+            feedKey: _feedKey,
+            searchKey: _searchKey,
+            createKey: _createKey,
+            notificationsKey: _notificationsKey,
+            menuKey: _menuKey,
+            sortDropdownKey: _sortDropdownKey,
+            viewToggleKey: _viewToggleKey,
+          );
+        }
+      });
+    }
   }
 
   @override
@@ -155,6 +189,8 @@ class _FeedShellScreenState extends State<FeedShellScreen> {
           languageController: widget.languageController,
           feed: feed,
           onNotificationRefresh: _notificationController.refreshUnreadCount,
+          sortDropdownKey: _sortDropdownKey,
+          viewToggleKey: _viewToggleKey,
         );
       case 1:
         return NotificationsScreen(
@@ -224,6 +260,11 @@ class _FeedShellScreenState extends State<FeedShellScreen> {
             searchController: _searchController,
             searchFocusNode: _searchFocusNode,
             onSearchCollapse: _collapseSearch,
+            feedKey: _feedKey,
+            searchKey: _searchKey,
+            createKey: _createKey,
+            notificationsKey: _notificationsKey,
+            menuKey: _menuKey,
           );
         },
       ),
@@ -244,6 +285,11 @@ class _BottomShellNavBar extends StatelessWidget {
     required this.searchController,
     required this.searchFocusNode,
     required this.onSearchCollapse,
+    required this.feedKey,
+    required this.searchKey,
+    required this.createKey,
+    required this.notificationsKey,
+    required this.menuKey,
   });
 
   final int currentIndex;
@@ -257,6 +303,11 @@ class _BottomShellNavBar extends StatelessWidget {
   final TextEditingController searchController;
   final FocusNode searchFocusNode;
   final VoidCallback onSearchCollapse;
+  final GlobalKey feedKey;
+  final GlobalKey searchKey;
+  final GlobalKey createKey;
+  final GlobalKey notificationsKey;
+  final GlobalKey menuKey;
 
   @override
   Widget build(BuildContext context) {
@@ -276,12 +327,14 @@ class _BottomShellNavBar extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               _BottomNavAction(
+                key: feedKey,
                 icon: Icons.home_rounded,
                 label: "Home",
                 isActive: currentIndex == 0 && !isSearchExpanded,
                 onTap: onHomeTap,
               ),
               _BottomNavAction(
+                key: notificationsKey,
                 icon: Icons.notifications_outlined,
                 label: "Notifications",
                 isActive: currentIndex == 1 && !isSearchExpanded,
@@ -289,6 +342,7 @@ class _BottomShellNavBar extends StatelessWidget {
                 onTap: onNotificationsTap,
               ),
               _BottomNavAction(
+                key: createKey,
                 icon: Icons.add_rounded,
                 label: "Add",
                 isActive: false,
@@ -302,12 +356,14 @@ class _BottomShellNavBar extends StatelessWidget {
                 )
               else
                 _BottomNavAction(
+                  key: searchKey,
                   icon: Icons.search_rounded,
                   label: "Search",
                   isActive: currentIndex == 2,
                   onTap: onSearchTap,
                 ),
               _BottomNavAction(
+                key: menuKey,
                 icon: Icons.menu_rounded,
                 label: "Menu",
                 isActive: false,
@@ -323,6 +379,7 @@ class _BottomShellNavBar extends StatelessWidget {
 
 class _BottomNavAction extends StatelessWidget {
   const _BottomNavAction({
+    super.key,
     required this.icon,
     required this.label,
     required this.onTap,
@@ -662,23 +719,25 @@ class _FeedShellDrawer extends StatelessWidget {
                 },
               ),
               const SizedBox(height: 8),
-              _QuickAccessCard(
-                icon: Icons.bar_chart_rounded,
-                title: AppLocalizations.of(context)?.analyticsStatistics ?? "Analytics Statistics",
-                subtitle: AppLocalizations.of(context)?.viewTrackingStatistics ?? "View tracking statistics",
-                onTap: () {
-                  Navigator.of(context).pop();
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => AnalyticsStatsScreen(
-                        apiClient: apiClient,
-                        auth: auth,
-                      ),
-                    ),
-                  );
-                },
-              ),
-              const SizedBox(height: 8),
+              // Analytics Statistics - Hidden for regular users
+              // TODO: Add role-based access control to show this for admins only
+              // _QuickAccessCard(
+              //   icon: Icons.bar_chart_rounded,
+              //   title: AppLocalizations.of(context)?.analyticsStatistics ?? "Analytics Statistics",
+              //   subtitle: AppLocalizations.of(context)?.viewTrackingStatistics ?? "View tracking statistics",
+              //   onTap: () {
+              //     Navigator.of(context).pop();
+              //     Navigator.of(context).push(
+              //       MaterialPageRoute(
+              //         builder: (_) => AnalyticsStatsScreen(
+              //           apiClient: apiClient,
+              //           auth: auth,
+              //         ),
+              //       ),
+              //     );
+              //   },
+              // ),
+              // const SizedBox(height: 8),
               _QuickAccessCard(
                 icon: Icons.settings_outlined,
                 title: AppLocalizations.of(context)?.settings ?? "Settings",

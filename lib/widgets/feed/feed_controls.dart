@@ -10,11 +10,15 @@ class FeedControls extends StatelessWidget {
     required this.feed,
     required this.isFullScreenView,
     required this.onViewToggle,
+    this.sortDropdownKey,
+    this.viewToggleKey,
   });
 
   final FeedController feed;
   final bool isFullScreenView;
   final VoidCallback onViewToggle;
+  final GlobalKey? sortDropdownKey;
+  final GlobalKey? viewToggleKey;
 
   @override
   Widget build(BuildContext context) {
@@ -34,7 +38,7 @@ class FeedControls extends StatelessWidget {
           children: [
             // Sort dropdown (only for global/following)
             if (feed.scope == "global" || feed.scope == "following") ...[
-              FeedSortDropdown(feed: feed),
+              FeedSortDropdown(key: sortDropdownKey, feed: feed),
               const SizedBox(width: 12),
             ],
             // Period selector for popular
@@ -51,6 +55,7 @@ class FeedControls extends StatelessWidget {
             const Spacer(),
             // View toggle button
             _ViewToggleButton(
+              key: viewToggleKey,
               isFullScreenView: isFullScreenView,
               onViewToggle: onViewToggle,
             ),
@@ -347,6 +352,7 @@ class FeedWindowDaysSelector extends StatelessWidget {
 
 class _ViewToggleButton extends StatelessWidget {
   const _ViewToggleButton({
+    super.key,
     required this.isFullScreenView,
     required this.onViewToggle,
   });

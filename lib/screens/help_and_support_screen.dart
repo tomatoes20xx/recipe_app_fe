@@ -316,8 +316,7 @@ class _HelpAndSupportScreenState extends State<HelpAndSupportScreen> {
 
   Widget _buildContactSection(BuildContext context) {
     final localizations = AppLocalizations.of(context);
-    // TODO: Replace with your actual support email
-    const supportEmail = "support@Yummy.app";
+    const supportEmail = "yummyhelper@gmail.com";
     const subject = "Yummy Support Request";
     
     return Card(
