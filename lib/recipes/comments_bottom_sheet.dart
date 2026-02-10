@@ -1,4 +1,5 @@
 import "package:flutter/material.dart";
+import "package:flutter/services.dart";
 
 import "../api/api_client.dart";
 import "../auth/auth_controller.dart";
@@ -20,7 +21,7 @@ Future<void> showCommentsBottomSheet({
 }) async {
   final recipeApi = RecipeApi(apiClient);
   final commentsController = CommentsController(recipeApi: recipeApi, recipeId: recipeId);
-  
+
   // Load comments before showing the sheet
   await commentsController.load();
 
@@ -38,6 +39,14 @@ Future<void> showCommentsBottomSheet({
     ),
   );
 }
+
+/// Colored thread lines per nesting depth for visual hierarchy
+const _threadColors = [
+  Color(0xFF5B9BD5), // Blue
+  Color(0xFF70BF73), // Green
+  Color(0xFFE8944A), // Orange
+  Color(0xFFB07CC6), // Purple
+];
 
 /// Tree node for nesting comments: root has parentId==null, replies have parentId set.
 class _CommentNode {
@@ -127,9 +136,10 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
   final _focusNode = FocusNode();
   final _scrollController = ScrollController();
   bool _isSubmitting = false;
+  bool _hasText = false;
   String? _replyingToId;
   String? _replyingToUsername;
-  
+
   // Get or create UI state for this recipe
   _CommentsUIState get _uiState => _commentsUIStateCache.putIfAbsent(
     widget.recipeId,
@@ -138,23 +148,29 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
       fullyExpandedIds: {},
     ),
   );
-  
+
   Set<String> get _collapsedIds => _uiState.collapsedIds;
   Set<String> get _fullyExpandedIds => _uiState.fullyExpandedIds;
   bool get _hasInitializedCollapsedState => _uiState.hasInitializedCollapsedState;
-  
+
   double _savedScrollPosition = 0.0;
-  bool _shouldRestoreScrollPosition = false; // For post-action restore (after posting/deleting)
-  bool _hasRestoredInitialScroll = false; // Track if we've restored saved scroll position on initial load
+  bool _shouldRestoreScrollPosition = false;
+  bool _hasRestoredInitialScroll = false;
 
   @override
   void initState() {
     super.initState();
     widget.commentsController.addListener(_onChanged);
-    // Initialize collapsed state if comments are already loaded
     _initializeCollapsedState();
-    // Listen to scroll changes to save position continuously
     _scrollController.addListener(_onScroll);
+    _commentController.addListener(_onTextChanged);
+  }
+
+  void _onTextChanged() {
+    final hasText = _commentController.text.trim().isNotEmpty;
+    if (hasText != _hasText) {
+      setState(() => _hasText = hasText);
+    }
   }
 
   void _onScroll() {
@@ -165,27 +181,21 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
 
   void _initializeCollapsedState() {
     if (!_hasInitializedCollapsedState &&
-        !widget.commentsController.isLoading && 
+        !widget.commentsController.isLoading &&
         widget.commentsController.comments.isNotEmpty) {
-      // Build tree and collect all comment IDs that have replies
       final tree = _buildCommentTree(widget.commentsController.comments);
       final newCollapsedIds = <String>{};
       void collectCommentIdsWithReplies(List<_CommentNode> nodes) {
         for (final node in nodes) {
           if (node.children.isNotEmpty) {
-            // Only add if not already manually expanded by user
-            // If user has expanded it, it won't be in collapsedIds, so we preserve that
             if (_collapsedIds.contains(node.comment.id) || _collapsedIds.isEmpty) {
               newCollapsedIds.add(node.comment.id);
             }
-            // Recursively check children
             collectCommentIdsWithReplies(node.children);
           }
         }
       }
       collectCommentIdsWithReplies(tree);
-      // If collapsedIds was empty (first time), use newCollapsedIds
-      // Otherwise, preserve existing state (user's manual choices)
       final finalCollapsedIds = _collapsedIds.isEmpty ? newCollapsedIds : _collapsedIds;
       _updateUIState(
         collapsedIds: finalCollapsedIds,
@@ -198,7 +208,7 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
   void dispose() {
     widget.commentsController.removeListener(_onChanged);
     _scrollController.removeListener(_onScroll);
-    // Save scroll position one final time before disposing
+    _commentController.removeListener(_onTextChanged);
     if (_scrollController.hasClients) {
       _updateUIState(scrollPosition: _scrollController.offset);
     }
@@ -224,15 +234,12 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
 
   void _onChanged() {
     if (mounted) {
-      // Initialize collapsed state if not done yet (for cases where comments load after widget creation)
       _initializeCollapsedState();
-      
+
       setState(() {});
-      
-      // Restore scroll position after posting/deleting comments
+
       if (_shouldRestoreScrollPosition && !widget.commentsController.isLoading) {
         _shouldRestoreScrollPosition = false;
-        // Wait for the next frame to ensure the list has been rebuilt
         WidgetsBinding.instance.addPostFrameCallback((_) {
           Future.delayed(const Duration(milliseconds: 100), () {
             if (mounted && _scrollController.hasClients && _savedScrollPosition > 0) {
@@ -251,6 +258,7 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
   }
 
   void _onReply(Comment c) {
+    HapticFeedback.lightImpact();
     setState(() {
       _replyingToId = c.id;
       _replyingToUsername = c.authorUsername;
@@ -259,19 +267,18 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
   }
 
   void _onToggleCollapse(String commentId) {
+    HapticFeedback.selectionClick();
     setState(() {
       final newCollapsedIds = Set<String>.from(_collapsedIds);
       final newFullyExpandedIds = Set<String>.from(_fullyExpandedIds);
-      
+
       if (newCollapsedIds.contains(commentId)) {
-        // Expanding: remove from collapsed and reset fully expanded state
         newCollapsedIds.remove(commentId);
         newFullyExpandedIds.remove(commentId);
       } else {
-        // Collapsing: add to collapsed
         newCollapsedIds.add(commentId);
       }
-      
+
       _updateUIState(
         collapsedIds: newCollapsedIds,
         fullyExpandedIds: newFullyExpandedIds,
@@ -288,21 +295,23 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
   }
 
   Future<void> _onDeleteComment(String commentId) async {
-    // Show confirmation dialog
+    HapticFeedback.mediumImpact();
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("Delete Comment"),
-        content: const Text("Are you sure you want to delete this comment? This will also delete all replies to this comment."),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text("Delete comment?"),
+        content: const Text("This will also delete all replies to this comment."),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
             child: const Text("Cancel"),
           ),
-          TextButton(
+          FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
-            style: TextButton.styleFrom(
-              foregroundColor: Theme.of(context).colorScheme.error,
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+              foregroundColor: Theme.of(context).colorScheme.onError,
             ),
             child: const Text("Delete"),
           ),
@@ -312,7 +321,6 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
 
     if (confirmed != true) return;
 
-    // Save current scroll position before deleting
     if (_scrollController.hasClients) {
       _savedScrollPosition = _scrollController.offset;
       _shouldRestoreScrollPosition = true;
@@ -320,7 +328,6 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
 
     try {
       await widget.commentsController.deleteComment(commentId);
-      // Scroll position will be restored in _onChanged after loading completes
     } catch (e) {
       if (mounted) {
         ErrorUtils.showError(context, e);
@@ -328,56 +335,6 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
     }
   }
 
-  List<Widget> _buildCommentList(List<_CommentNode> nodes, int depth, {String? parentCommentId}) {
-    final out = <Widget>[];
-    for (int i = 0; i < nodes.length; i++) {
-      final n = nodes[i];
-      final isLastChild = i == nodes.length - 1;
-      out.add(_buildCommentBlock(n, depth, isLastChild: isLastChild, parentCommentId: parentCommentId));
-      if (n.children.isNotEmpty && !_collapsedIds.contains(n.comment.id)) {
-        // Limit to 10 replies unless fully expanded
-        final isFullyExpanded = _fullyExpandedIds.contains(n.comment.id);
-        final childrenToShow = isFullyExpanded ? n.children : n.children.take(10).toList();
-        final hasMoreReplies = n.children.length > 10 && !isFullyExpanded;
-        
-        out.addAll(_buildCommentList(childrenToShow, depth + 1, parentCommentId: n.comment.id));
-        
-        // Add "Show more" button if there are more than 10 replies
-        if (hasMoreReplies) {
-          final remainingCount = n.children.length - 10;
-          // Calculate indentation to match reply depth (same as _buildCommentBlock)
-          final replyDepth = depth + 1;
-          final maxDepth = 4;
-          final indentPerLevel = 16.0;
-          final cappedDepth = replyDepth > maxDepth ? maxDepth : replyDepth;
-          final leftMargin = indentPerLevel * cappedDepth;
-          
-          out.add(
-            Padding(
-              padding: EdgeInsets.only(left: leftMargin + 10, top: 8, bottom: 8),
-              child: TextButton(
-                onPressed: () => _onShowMoreReplies(n.comment.id),
-                style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  foregroundColor: Theme.of(context).colorScheme.primary,
-                ),
-                child: Text(
-                  "Show $remainingCount more ${remainingCount == 1 ? 'reply' : 'replies'}",
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.primary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ),
-          );
-        }
-      }
-    }
-    return out;
-  }
-
-  /// Recursively counts all descendants (replies at any depth) of a comment node
   int _countAllReplies(_CommentNode node) {
     int count = node.children.length;
     for (final child in node.children) {
@@ -386,84 +343,177 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
     return count;
   }
 
+  List<Widget> _buildCommentList(List<_CommentNode> nodes, int depth, {String? parentCommentId}) {
+    final out = <Widget>[];
+    for (int i = 0; i < nodes.length; i++) {
+      final n = nodes[i];
+      final isLastChild = i == nodes.length - 1;
+      out.add(_buildCommentBlock(n, depth, isLastChild: isLastChild, parentCommentId: parentCommentId));
+
+      // Build children with animated expand/collapse
+      final hasReplies = n.children.isNotEmpty;
+      final isCollapsed = _collapsedIds.contains(n.comment.id);
+
+      if (hasReplies) {
+        final isFullyExpanded = _fullyExpandedIds.contains(n.comment.id);
+        final childrenToShow = isFullyExpanded ? n.children : n.children.take(10).toList();
+        final hasMoreReplies = n.children.length > 10 && !isFullyExpanded;
+
+        out.add(
+          AnimatedSize(
+            duration: const Duration(milliseconds: 250),
+            curve: Curves.easeInOutCubic,
+            alignment: Alignment.topCenter,
+            child: isCollapsed
+                ? const SizedBox.shrink()
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ..._buildCommentList(childrenToShow, depth + 1, parentCommentId: n.comment.id),
+                      if (hasMoreReplies) _buildShowMoreButton(n, depth + 1),
+                    ],
+                  ),
+          ),
+        );
+      }
+    }
+    return out;
+  }
+
+  Widget _buildShowMoreButton(_CommentNode node, int replyDepth) {
+    final remainingCount = node.children.length - 10;
+    const maxDepth = 4;
+    const indentPerLevel = 16.0;
+    final cappedDepth = replyDepth > maxDepth ? maxDepth : replyDepth;
+    final leftMargin = indentPerLevel * cappedDepth;
+    final threadColor = _threadColors[(replyDepth - 1) % _threadColors.length];
+
+    return Container(
+      margin: EdgeInsets.only(left: leftMargin),
+      padding: const EdgeInsets.only(left: 12, top: 4, bottom: 8),
+      decoration: BoxDecoration(
+        border: Border(
+          left: BorderSide(color: threadColor.withValues(alpha: 0.4), width: 2),
+        ),
+      ),
+      child: TextButton.icon(
+        onPressed: () => _onShowMoreReplies(node.comment.id),
+        icon: const Icon(Icons.subdirectory_arrow_right_rounded, size: 16),
+        label: Text(
+          "Show $remainingCount more ${remainingCount == 1 ? 'reply' : 'replies'}",
+          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        style: TextButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          foregroundColor: Theme.of(context).colorScheme.primary,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        ),
+      ),
+    );
+  }
+
   Widget _buildCommentBlock(_CommentNode node, int depth, {String? parentCommentId, bool isLastChild = false}) {
     final c = node.comment;
-    final date = formatDate(c.createdAt);
+    final timeAgo = formatRelativeTime(c.createdAt);
     final hasReplies = node.children.isNotEmpty;
     final isCollapsed = _collapsedIds.contains(c.id);
     final isLoggedIn = widget.auth?.isLoggedIn ?? false;
     final totalReplyCount = _countAllReplies(node);
     final replyLabel = totalReplyCount == 1 ? 'reply' : 'replies';
+    final displayName = c.authorDisplayName ?? c.authorUsername;
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
 
-    // Build the comment content (without bottom padding)
     Widget commentContent = Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        buildUserAvatar(context, c.authorAvatarUrl, c.authorUsername, radius: 16),
+        buildUserAvatar(context, c.authorAvatarUrl, c.authorUsername, radius: depth >= 1 ? 14 : 16),
         const SizedBox(width: 10),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                c.content,
-                style: Theme.of(context).textTheme.bodyLarge,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                "@${c.authorUsername} • $date",
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.65),
-                ),
-              ),
-              const SizedBox(height: 6),
-              Wrap(
-                spacing: 8,
-                runSpacing: 4,
+              // Name row: display name + relative time
+              Row(
                 children: [
-                  if (isLoggedIn)
-                    TextButton(
-                      onPressed: () => _onReply(c),
-                      style: TextButton.styleFrom(
-                        padding: EdgeInsets.zero,
-                        minimumSize: Size.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        foregroundColor: Theme.of(context).colorScheme.primary,
+                  Flexible(
+                    child: Text(
+                      displayName,
+                      style: textTheme.labelMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: colorScheme.onSurface,
                       ),
-                      child: Text("Reply", style: Theme.of(context).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600)),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  if (c.viewerIsMe)
-                    TextButton(
-                      onPressed: () => _onDeleteComment(c.id),
-                      style: TextButton.styleFrom(
-                        padding: EdgeInsets.zero,
-                        minimumSize: Size.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        foregroundColor: Theme.of(context).colorScheme.error,
+                  ),
+                  if (c.viewerIsMe) ...[
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                      decoration: BoxDecoration(
+                        color: colorScheme.primary.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(4),
                       ),
-                      child: Text("Delete", style: Theme.of(context).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600)),
-                    ),
-                  if (hasReplies)
-                    TextButton.icon(
-                      onPressed: () => _onToggleCollapse(c.id),
-                      icon: Icon(
-                        isCollapsed ? Icons.expand_more : Icons.expand_less,
-                        size: 18,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                      label: Text(
-                        isCollapsed ? "Show $totalReplyCount $replyLabel" : "Hide $totalReplyCount $replyLabel",
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.primary,
-                          fontWeight: FontWeight.w500,
+                      child: Text(
+                        "You",
+                        style: textTheme.labelSmall?.copyWith(
+                          color: colorScheme.primary,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 10,
                         ),
                       ),
-                      style: TextButton.styleFrom(
-                        padding: EdgeInsets.zero,
-                        minimumSize: Size.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
                     ),
+                  ],
+                  const SizedBox(width: 8),
+                  Text(
+                    timeAgo,
+                    style: textTheme.labelSmall?.copyWith(
+                      color: colorScheme.onSurface.withValues(alpha: 0.45),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              // Comment body
+              Text(
+                c.content,
+                style: textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurface.withValues(alpha: 0.87),
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 8),
+              // Action row
+              Row(
+                children: [
+                  if (isLoggedIn)
+                    _CommentActionButton(
+                      icon: Icons.reply_rounded,
+                      label: "Reply",
+                      onTap: () => _onReply(c),
+                      color: colorScheme.onSurface.withValues(alpha: 0.5),
+                    ),
+                  if (c.viewerIsMe) ...[
+                    if (isLoggedIn) const SizedBox(width: 16),
+                    _CommentActionButton(
+                      icon: Icons.delete_outline_rounded,
+                      label: "Delete",
+                      onTap: () => _onDeleteComment(c.id),
+                      color: colorScheme.error.withValues(alpha: 0.7),
+                    ),
+                  ],
+                  if (hasReplies) ...[
+                    if (isLoggedIn || c.viewerIsMe) const SizedBox(width: 16),
+                    _CommentActionButton(
+                      icon: isCollapsed ? Icons.expand_more_rounded : Icons.expand_less_rounded,
+                      label: isCollapsed ? "$totalReplyCount $replyLabel" : "Hide",
+                      onTap: () => _onToggleCollapse(c.id),
+                      color: colorScheme.primary,
+                    ),
+                  ],
                 ],
               ),
             ],
@@ -472,59 +522,184 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
       ],
     );
 
-    // Apply border and indentation for nested comments (depth >= 1)
+    // Nested comments with colored thread lines
     if (depth >= 1) {
-      // Cap indentation at 4 levels (64px) to prevent content from shrinking too much
-      // Use 16px per level instead of 24px for better space efficiency
-      final maxDepth = 4;
-      final indentPerLevel = 16.0;
+      const maxDepth = 4;
+      const indentPerLevel = 16.0;
       final cappedDepth = depth > maxDepth ? maxDepth : depth;
       final leftMargin = indentPerLevel * cappedDepth;
-      
-      // For last child: border wraps only content (ends at action buttons)
-      // For other children: border wraps content + padding (extends to bottom)
+      final threadColor = _threadColors[(depth - 1) % _threadColors.length];
+
       if (isLastChild) {
-        // Last child: apply border to content only, then wrap in padding
         commentContent = Container(
           margin: EdgeInsets.only(left: leftMargin),
-          padding: const EdgeInsets.only(left: 10),
+          padding: const EdgeInsets.only(left: 12),
           decoration: BoxDecoration(
             border: Border(
-              left: BorderSide(
-                color: Colors.grey.withValues(alpha: 0.4),
-                width: 1,
-              ),
+              left: BorderSide(color: threadColor.withValues(alpha: 0.4), width: 2),
             ),
           ),
           child: commentContent,
         );
-        // Wrap in padding for spacing between comments
         return Padding(
-          padding: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.only(bottom: 14),
           child: commentContent,
         );
       } else {
-        // Not last child: wrap content + padding in border container
         return Container(
           margin: EdgeInsets.only(left: leftMargin),
-          padding: const EdgeInsets.only(left: 10, bottom: 12),
+          padding: const EdgeInsets.only(left: 12, bottom: 14),
           decoration: BoxDecoration(
             border: Border(
-              left: BorderSide(
-                color: Colors.grey.withValues(alpha: 0.4),
-                width: 1,
-              ),
+              left: BorderSide(color: threadColor.withValues(alpha: 0.4), width: 2),
             ),
           ),
           child: commentContent,
         );
       }
     }
-    
-    // For root comments (depth 0), just wrap in padding
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: commentContent,
+
+    // Root comments separated by a subtle divider
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(bottom: 14),
+          child: commentContent,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildShimmerLoading(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final shimmerBase = colorScheme.onSurface.withValues(alpha: 0.06);
+    final shimmerHighlight = colorScheme.onSurface.withValues(alpha: 0.1);
+
+    Widget shimmerBlock({double avatarRadius = 16, double nameWidth = 100, double contentWidth = 200}) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 20),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            CircleAvatar(radius: avatarRadius, backgroundColor: shimmerBase),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: nameWidth,
+                        height: 12,
+                        decoration: BoxDecoration(
+                          color: shimmerHighlight,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                      ),
+                      const Spacer(),
+                      Container(
+                        width: 40,
+                        height: 10,
+                        decoration: BoxDecoration(
+                          color: shimmerBase,
+                          borderRadius: BorderRadius.circular(5),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    width: contentWidth,
+                    height: 12,
+                    decoration: BoxDecoration(
+                      color: shimmerBase,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Container(
+                    width: contentWidth * 0.6,
+                    height: 12,
+                    decoration: BoxDecoration(
+                      color: shimmerBase,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Container(
+                        width: 40, height: 10,
+                        decoration: BoxDecoration(
+                          color: shimmerBase,
+                          borderRadius: BorderRadius.circular(5),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Container(
+                        width: 50, height: 10,
+                        decoration: BoxDecoration(
+                          color: shimmerBase,
+                          borderRadius: BorderRadius.circular(5),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return ListView(
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      children: [
+        shimmerBlock(nameWidth: 120, contentWidth: 240),
+        shimmerBlock(nameWidth: 90, contentWidth: 200),
+        shimmerBlock(nameWidth: 110, contentWidth: 180),
+      ],
+    );
+  }
+
+  Widget _buildEmptyState(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 40),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.chat_bubble_outline_rounded,
+              size: 48,
+              color: colorScheme.onSurface.withValues(alpha: 0.18),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              "No comments yet",
+              style: textTheme.titleSmall?.copyWith(
+                color: colorScheme.onSurface.withValues(alpha: 0.5),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              "Be the first to share your thoughts!",
+              style: textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurface.withValues(alpha: 0.35),
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -538,7 +713,8 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
       return;
     }
 
-    // Save current scroll position before submitting
+    HapticFeedback.lightImpact();
+
     if (_scrollController.hasClients) {
       _savedScrollPosition = _scrollController.offset;
       _shouldRestoreScrollPosition = true;
@@ -568,16 +744,14 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
-    // Ensure collapsed state is initialized (fallback in case initState didn't catch it)
     _initializeCollapsedState();
-    
+
     // Restore scroll position after build if not already restored
     if (!_hasRestoredInitialScroll &&
-        !widget.commentsController.isLoading && 
+        !widget.commentsController.isLoading &&
         widget.commentsController.comments.isNotEmpty) {
       final savedPosition = _uiState.scrollPosition;
       if (savedPosition > 0) {
-        // Use SchedulerBinding to ensure this runs after the layout phase
         WidgetsBinding.instance.addPostFrameCallback((_) {
           Future.delayed(const Duration(milliseconds: 100), () {
             if (mounted && _scrollController.hasClients && !_hasRestoredInitialScroll) {
@@ -593,93 +767,112 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
         });
       }
     }
-    
+
     final screenHeight = MediaQuery.of(context).size.height;
     final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
-    final sheetHeight = screenHeight * 0.75; // 75% of screen height
+    final sheetHeight = screenHeight * 0.75;
 
     final isLoggedIn = widget.auth?.isLoggedIn ?? false;
     final userAvatar = widget.auth?.me?["avatar_url"]?.toString();
     final username = widget.auth?.me?["username"]?.toString() ?? "";
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 100),
       height: sheetHeight,
       padding: EdgeInsets.only(bottom: keyboardHeight),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: colorScheme.surface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Column(
         children: [
           // Handle bar
-          Container(
-            margin: const EdgeInsets.only(top: 12),
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
-              borderRadius: BorderRadius.circular(2),
+          Center(
+            child: Container(
+              margin: const EdgeInsets.only(top: 10, bottom: 4),
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: colorScheme.onSurface.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
           ),
           // Header
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             child: Row(
               children: [
-                Text(
-                  "Comments (${widget.commentsController.comments.length})",
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                const SizedBox(width: 48), // Balance the close button
+                Expanded(
+                  child: Text(
+                    "Comments",
+                    style: textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
                 ),
-                const Spacer(),
                 IconButton(
-                  icon: const Icon(Icons.close),
+                  icon: Icon(Icons.close_rounded, color: colorScheme.onSurface.withValues(alpha: 0.6)),
                   onPressed: () => Navigator.of(context).pop(),
+                  style: IconButton.styleFrom(
+                    shape: const CircleBorder(),
+                    backgroundColor: colorScheme.onSurface.withValues(alpha: 0.06),
+                  ),
                 ),
               ],
             ),
           ),
-          const Divider(height: 1),
+          // Comment count
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text(
+              "${widget.commentsController.comments.length} ${widget.commentsController.comments.length == 1 ? 'comment' : 'comments'}",
+              style: textTheme.labelSmall?.copyWith(
+                color: colorScheme.onSurface.withValues(alpha: 0.4),
+                letterSpacing: 0.3,
+              ),
+            ),
+          ),
+          Divider(height: 1, color: colorScheme.outlineVariant.withValues(alpha: 0.3)),
           // Comments list
           Expanded(
             child: widget.commentsController.isLoading
-                ? const Center(child: CircularProgressIndicator())
+                ? _buildShimmerLoading(context)
                 : widget.commentsController.error != null
                     ? Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
+                            Icon(
+                              Icons.error_outline_rounded,
+                              size: 40,
+                              color: colorScheme.error.withValues(alpha: 0.5),
+                            ),
+                            const SizedBox(height: 12),
                             Text(
-                              "Error loading comments",
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.error,
+                              "Couldn't load comments",
+                              style: textTheme.bodyMedium?.copyWith(
+                                color: colorScheme.onSurface.withValues(alpha: 0.6),
                               ),
                             ),
-                            const SizedBox(height: 8),
-                            TextButton(
+                            const SizedBox(height: 12),
+                            FilledButton.tonalIcon(
                               onPressed: () => widget.commentsController.load(),
-                              child: const Text("Retry"),
+                              icon: const Icon(Icons.refresh_rounded, size: 18),
+                              label: const Text("Retry"),
                             ),
                           ],
                         ),
                       )
                     : widget.commentsController.comments.isEmpty
-                        ? Center(
-                            child: Text(
-                              "No comments yet. Be the first to comment!",
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurface
-                                        .withValues(alpha: 0.6),
-                                  ),
-                            ),
-                          )
+                        ? _buildEmptyState(context)
                         : ListView(
                             controller: _scrollController,
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                             children: _buildCommentList(
                               _buildCommentTree(widget.commentsController.comments),
                               0,
@@ -688,94 +881,166 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
           ),
           // Comment input
           if (isLoggedIn) ...[
-            const Divider(height: 1),
+            Divider(height: 1, color: colorScheme.outlineVariant.withValues(alpha: 0.3)),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.1),
-                    blurRadius: 4,
-                    offset: const Offset(0, -2),
-                  ),
-                ],
+                color: colorScheme.surface,
               ),
               child: SafeArea(
                 bottom: false,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    if (_replyingToId != null && _replyingToUsername != null) ...[
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                        margin: const EdgeInsets.only(bottom: 8),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.5),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.reply_rounded, size: 16, color: Theme.of(context).colorScheme.primary),
-                            const SizedBox(width: 6),
-                            Text(
-                              "Replying to @$_replyingToUsername",
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: Theme.of(context).colorScheme.onSurface,
-                                fontWeight: FontWeight.w500,
+                    // Reply indicator
+                    AnimatedSize(
+                      duration: const Duration(milliseconds: 200),
+                      curve: Curves.easeOutCubic,
+                      child: _replyingToId != null && _replyingToUsername != null
+                          ? Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              margin: const EdgeInsets.only(bottom: 8),
+                              decoration: BoxDecoration(
+                                color: colorScheme.primaryContainer.withValues(alpha: 0.25),
+                                borderRadius: BorderRadius.circular(12),
                               ),
-                            ),
-                            const SizedBox(width: 8),
-                            GestureDetector(
-                              onTap: () => setState(() {
-                                _replyingToId = null;
-                                _replyingToUsername = null;
-                              }),
-                              child: Icon(Icons.close, size: 18, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+                              child: Row(
+                                children: [
+                                  Icon(Icons.reply_rounded, size: 16, color: colorScheme.primary),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: RichText(
+                                      text: TextSpan(
+                                        style: textTheme.bodySmall?.copyWith(
+                                          color: colorScheme.onSurface.withValues(alpha: 0.7),
+                                        ),
+                                        children: [
+                                          const TextSpan(text: "Replying to "),
+                                          TextSpan(
+                                            text: "@$_replyingToUsername",
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.w600,
+                                              color: colorScheme.primary,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  InkWell(
+                                    onTap: () => setState(() {
+                                      _replyingToId = null;
+                                      _replyingToUsername = null;
+                                    }),
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(4),
+                                      child: Icon(
+                                        Icons.close_rounded,
+                                        size: 16,
+                                        color: colorScheme.onSurface.withValues(alpha: 0.4),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
+                          : const SizedBox.shrink(),
+                    ),
+                    // Input row
                     Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        buildUserAvatar(
-                          context,
-                          userAvatar,
-                          username,
-                          radius: 18,
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 4),
+                          child: buildUserAvatar(
+                            context,
+                            userAvatar,
+                            username,
+                            radius: 16,
+                          ),
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: 10),
                         Expanded(
                           child: TextField(
                             controller: _commentController,
                             focusNode: _focusNode,
-                            maxLines: null,
+                            maxLines: 4,
+                            minLines: 1,
                             maxLength: 2000,
+                            textCapitalization: TextCapitalization.sentences,
+                            style: textTheme.bodyMedium,
                             decoration: InputDecoration(
-                              hintText: _replyingToId != null ? "Write a reply..." : "Write a comment...",
+                              hintText: _replyingToId != null
+                                  ? "Write a reply..."
+                                  : "Share your thoughts...",
+                              hintStyle: textTheme.bodyMedium?.copyWith(
+                                color: colorScheme.onSurface.withValues(alpha: 0.35),
+                              ),
                               border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(24),
+                                borderRadius: BorderRadius.circular(22),
+                                borderSide: BorderSide.none,
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(22),
+                                borderSide: BorderSide.none,
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(22),
+                                borderSide: BorderSide(
+                                  color: colorScheme.primary.withValues(alpha: 0.3),
+                                  width: 1.5,
+                                ),
                               ),
                               contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                               counterText: "",
                               filled: true,
-                              fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                              fillColor: colorScheme.onSurface.withValues(alpha: 0.05),
                             ),
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        IconButton(
-                          onPressed: _isSubmitting ? null : _submitComment,
-                          icon: _isSubmitting
-                              ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
-                                )
-                              : const Icon(Icons.send_rounded),
-                          tooltip: "Post comment",
+                        const SizedBox(width: 6),
+                        // Animated send button
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 2),
+                          child: AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 200),
+                            transitionBuilder: (child, animation) => ScaleTransition(
+                              scale: animation,
+                              child: FadeTransition(opacity: animation, child: child),
+                            ),
+                            child: _isSubmitting
+                                ? SizedBox(
+                                    key: const ValueKey("loading"),
+                                    width: 40,
+                                    height: 40,
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(10),
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: colorScheme.primary,
+                                      ),
+                                    ),
+                                  )
+                                : _hasText
+                                    ? IconButton(
+                                        key: const ValueKey("send"),
+                                        onPressed: _submitComment,
+                                        icon: Icon(
+                                          Icons.send_rounded,
+                                          color: colorScheme.primary,
+                                          size: 22,
+                                        ),
+                                        style: IconButton.styleFrom(
+                                          backgroundColor: colorScheme.primary.withValues(alpha: 0.1),
+                                          shape: const CircleBorder(),
+                                          fixedSize: const Size(40, 40),
+                                        ),
+                                        tooltip: "Post comment",
+                                      )
+                                    : const SizedBox(key: ValueKey("empty"), width: 40, height: 40),
+                          ),
                         ),
                       ],
                     ),
@@ -784,19 +1049,59 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
               ),
             ),
           ] else ...[
-            const Divider(height: 1),
+            Divider(height: 1, color: colorScheme.outlineVariant.withValues(alpha: 0.3)),
             Padding(
               padding: const EdgeInsets.all(16),
               child: Text(
                 "Log in to comment",
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-                    ),
+                style: textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurface.withValues(alpha: 0.45),
+                ),
                 textAlign: TextAlign.center,
               ),
             ),
           ],
         ],
+      ),
+    );
+  }
+}
+
+/// Compact action button used beneath each comment (Reply, Delete, expand/collapse).
+class _CommentActionButton extends StatelessWidget {
+  const _CommentActionButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    required this.color,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 2),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 16, color: color),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: color,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
