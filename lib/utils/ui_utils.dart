@@ -18,7 +18,7 @@ final Map<DateTime, String> _dateCache = {};
 String formatDate(DateTime date) {
   // Use a normalized date (without time) as cache key
   final normalizedDate = DateTime(date.year, date.month, date.day);
-  
+
   return _dateCache.putIfAbsent(normalizedDate, () {
     const months = [
       'January', 'February', 'March', 'April', 'May', 'June',
@@ -27,6 +27,30 @@ String formatDate(DateTime date) {
     final localDate = date.toLocal();
     return '${months[localDate.month - 1]} ${localDate.day}, ${localDate.year}';
   });
+}
+
+const _monthAbbr = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+];
+
+/// Formats a DateTime to a relative time string like "2h ago", "3d ago", etc.
+/// Falls back to absolute date for older timestamps.
+String formatRelativeTime(DateTime dateTime) {
+  final now = DateTime.now();
+  final difference = now.difference(dateTime.toLocal());
+
+  if (difference.isNegative || difference.inSeconds < 60) return 'Just now';
+  if (difference.inMinutes < 60) return '${difference.inMinutes}m ago';
+  if (difference.inHours < 24) return '${difference.inHours}h ago';
+  if (difference.inDays < 7) return '${difference.inDays}d ago';
+  if (difference.inDays < 30) return '${(difference.inDays / 7).floor()}w ago';
+
+  final local = dateTime.toLocal();
+  if (difference.inDays < 365) {
+    return '${_monthAbbr[local.month - 1]} ${local.day}';
+  }
+  return '${_monthAbbr[local.month - 1]} ${local.day}, ${local.year}';
 }
 
 /// Builds a user avatar widget with fallback to initials or icon
