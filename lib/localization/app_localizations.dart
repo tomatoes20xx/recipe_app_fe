@@ -430,6 +430,22 @@ class AppLocalizations {
   String get backToLogin => _localizedValues[locale.languageCode]?["backToLogin"] ?? "Back to Login";
   String get enterEmail => _localizedValues[locale.languageCode]?["enterEmail"] ?? "Enter your email";
 
+  // Username Selection (Google OAuth)
+  String get welcomeToYummy => _localizedValues[locale.languageCode]?["welcomeToYummy"] ?? "Welcome to Yummy!";
+  String get chooseYourUsername => _localizedValues[locale.languageCode]?["chooseYourUsername"] ?? "Choose your username to complete signup";
+  String get enterUsername => _localizedValues[locale.languageCode]?["enterUsername"] ?? "Enter username";
+  String get usernameRequired => _localizedValues[locale.languageCode]?["usernameRequired"] ?? "Username is required";
+  String get usernameTooShort => _localizedValues[locale.languageCode]?["usernameTooShort"] ?? "Username must be at least 3 characters";
+  String get usernameTooLong => _localizedValues[locale.languageCode]?["usernameTooLong"] ?? "Username must be at most 30 characters";
+  String get usernameInvalidCharacters => _localizedValues[locale.languageCode]?["usernameInvalidCharacters"] ?? "Username can only contain letters, numbers, and underscores";
+  String get usernameHelper => _localizedValues[locale.languageCode]?["usernameHelper"] ?? "3-30 characters, letters, numbers, and underscores only";
+  String get usernameInfo => _localizedValues[locale.languageCode]?["usernameInfo"] ?? "Your username is permanent and cannot be changed later. Choose wisely!";
+  String get continueButton => _localizedValues[locale.languageCode]?["continueButton"] ?? "Continue";
+  String get usernameTaken => _localizedValues[locale.languageCode]?["usernameTaken"] ?? "Username is already taken. Please choose another.";
+  String get sessionExpired => _localizedValues[locale.languageCode]?["sessionExpired"] ?? "Session expired. Please sign in again.";
+  String get completeYourProfile => _localizedValues[locale.languageCode]?["completeYourProfile"] ?? "Complete your profile to get started";
+  String get profileSetupInfo => _localizedValues[locale.languageCode]?["profileSetupInfo"] ?? "Your username is permanent and cannot be changed. Display name and bio can be updated anytime from your profile.";
+
   // App Tour
   String get tourWelcomeTitle => _localizedValues[locale.languageCode]?["tourWelcomeTitle"] ?? "Welcome to Yummy! 👋";
   String get tourWelcomeDescription => _localizedValues[locale.languageCode]?["tourWelcomeDescription"] ?? "This is your home feed. Discover amazing recipes from the community and find your next meal inspiration!";
@@ -757,6 +773,20 @@ class AppLocalizations {
       "invalidEmail": "Please enter a valid email address",
       "backToLogin": "Back to Login",
       "enterEmail": "Enter your email",
+      "welcomeToYummy": "Welcome to Yummy!",
+      "chooseYourUsername": "Choose your username to complete signup",
+      "enterUsername": "Enter username",
+      "usernameRequired": "Username is required",
+      "usernameTooShort": "Username must be at least 3 characters",
+      "usernameTooLong": "Username must be at most 30 characters",
+      "usernameInvalidCharacters": "Username can only contain letters, numbers, and underscores",
+      "usernameHelper": "3-30 characters, letters, numbers, and underscores only",
+      "usernameInfo": "Your username is permanent and cannot be changed later. Choose wisely!",
+      "continueButton": "Continue",
+      "usernameTaken": "Username is already taken. Please choose another.",
+      "sessionExpired": "Session expired. Please sign in again.",
+      "completeYourProfile": "Complete your profile to get started",
+      "profileSetupInfo": "Your username is permanent and cannot be changed. Display name and bio can be updated anytime from your profile.",
       "dismiss": "Dismiss",
       "unableToConnect": "Unable to connect to the server. Please check your internet connection and try again.",
       "requestTimedOut": "Request timed out. Please try again.",
@@ -1139,6 +1169,20 @@ class AppLocalizations {
       "invalidEmail": "გთხოვთ შეიყვანოთ ვალიდური ელფოსტის მისამართი",
       "backToLogin": "შესვლაზე დაბრუნება",
       "enterEmail": "შეიყვანეთ თქვენი ელფოსტა",
+      "welcomeToYummy": "მოგესალმებით Yummy-ში!",
+      "chooseYourUsername": "აირჩიეთ მომხმარებლის სახელი რეგისტრაციის დასასრულებლად",
+      "enterUsername": "შეიყვანეთ მომხმარებლის სახელი",
+      "usernameRequired": "მომხმარებლის სახელი აუცილებელია",
+      "usernameTooShort": "მომხმარებლის სახელი უნდა შეიცავდეს მინიმუმ 3 სიმბოლოს",
+      "usernameTooLong": "მომხმარებლის სახელი უნდა შეიცავდეს მაქსიმუმ 30 სიმბოლოს",
+      "usernameInvalidCharacters": "მომხმარებლის სახელი შეიძლება შეიცავდეს მხოლოდ ასოებს, რიცხვებს და ქვედა ხაზს",
+      "usernameHelper": "3-30 სიმბოლო, მხოლოდ ასოები, რიცხვები და ქვედა ხაზი",
+      "usernameInfo": "თქვენი მომხმარებლის სახელი მუდმივია და მოგვიანებით ვერ შეიცვლება. აირჩიეთ ფრთხილად!",
+      "continueButton": "გაგრძელება",
+      "usernameTaken": "მომხმარებლის სახელი უკვე დაკავებულია. გთხოვთ აირჩიოთ სხვა.",
+      "sessionExpired": "სესია ამოიწურა. გთხოვთ ხელახლა შეხვიდეთ სისტემაში.",
+      "completeYourProfile": "შეავსეთ თქვენი პროფილი დასაწყებად",
+      "profileSetupInfo": "თქვენი მომხმარებლის სახელი მუდმივია და ვერ შეიცვლება. საჩვენებელი სახელი და ბიოგრაფია შეგიძლიათ ნებისმიერ დროს განაახლოთ პროფილიდან.",
       "dismiss": "დახურვა",
       "unableToConnect": "სერვერთან დაკავშირება ვერ მოხერხდა. გთხოვთ შეამოწმოთ ინტერნეტ-კავშირი და სცადოთ ხელახლა.",
       "requestTimedOut": "მოთხოვნის დრო ამოიწურა. გთხოვთ სცადოთ ხელახლა.",

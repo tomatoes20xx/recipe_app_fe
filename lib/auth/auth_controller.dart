@@ -70,17 +70,24 @@ class AuthController extends ChangeNotifier {
     }
   }
 
-  /// Login with Google OAuth
-  /// Takes an ID token from Google Sign-In and authenticates with backend
-  Future<void> loginWithGoogle(String idToken) async {
+  /// Login with Google OAuth (Step 1)
+  /// Takes an ID token from Google Sign-In
+  /// Returns GoogleAuthResponse - check needsUsername to see if username selection is required
+  Future<GoogleAuthResponse> loginWithGoogle(String idToken) async {
     isLoading = true;
     notifyListeners();
 
     try {
-      final t = await authApi.googleLogin(idToken: idToken);
-      token = t;
-      await tokenStorage.saveToken(t);
-      me = await authApi.me();
+      final response = await authApi.googleLogin(idToken: idToken);
+
+      // If existing user (no username needed), complete login immediately
+      if (!response.needsUsername && response.token != null) {
+        token = response.token;
+        await tokenStorage.saveToken(response.token!);
+        me = await authApi.me();
+      }
+
+      return response;
     } finally {
       isLoading = false;
       notifyListeners();

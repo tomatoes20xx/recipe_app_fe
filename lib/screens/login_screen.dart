@@ -2,12 +2,14 @@ import "package:flutter/material.dart";
 import "package:flutter_secure_storage/flutter_secure_storage.dart";
 
 import "../api/api_client.dart";
+import "../auth/auth_api.dart";
 import "../auth/auth_controller.dart";
 import "../localization/app_localizations.dart";
 import "../services/google_auth_service.dart";
 import "../utils/error_utils.dart";
 import "forgot_password_screen.dart";
 import "signup_screen.dart";
+import "username_selection_screen.dart";
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key, required this.auth});
@@ -101,7 +103,26 @@ class _LoginScreenState extends State<LoginScreen>
       if (account != null) {
         final idToken = await _googleAuthService.getIdToken(account);
         if (idToken != null) {
-          await widget.auth.loginWithGoogle(idToken);
+          final response = await widget.auth.loginWithGoogle(idToken);
+
+          // Check if username selection is needed
+          if (response.needsUsername && response.tempToken != null) {
+            if (mounted) {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => UsernameSelectionScreen(
+                    tempToken: response.tempToken!,
+                    suggestedDisplayName: response.suggestedDisplayName,
+                    authApi: widget.auth.authApi,
+                    authController: widget.auth,
+                    avatarUrl: response.avatarUrl,
+                    email: response.email,
+                  ),
+                ),
+              );
+            }
+          }
+          // If existing user, loginWithGoogle already handled everything
         }
       }
     } catch (e) {
@@ -124,12 +145,29 @@ class _LoginScreenState extends State<LoginScreen>
       }
 
       // 3. Send to backend
-      await widget.auth.loginWithGoogle(idToken);
+      final response = await widget.auth.loginWithGoogle(idToken);
 
-      // 4. Save remember me preference
-      await _saveRememberMePreference();
-
-      // Navigation handled by AuthGate (watches authController)
+      // 4. Check if username selection is needed
+      if (response.needsUsername && response.tempToken != null) {
+        if (mounted) {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => UsernameSelectionScreen(
+                tempToken: response.tempToken!,
+                suggestedDisplayName: response.suggestedDisplayName,
+                authApi: widget.auth.authApi,
+                authController: widget.auth,
+                avatarUrl: response.avatarUrl,
+                email: response.email,
+              ),
+            ),
+          );
+        }
+      } else {
+        // Existing user - login complete, save remember me preference
+        await _saveRememberMePreference();
+        // Navigation handled by AuthGate (watches authController)
+      }
     } on ApiException catch (e) {
       setState(() => error = e.message);
       if (mounted) {
