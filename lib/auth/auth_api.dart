@@ -4,6 +4,36 @@ import "package:http/http.dart" as http;
 
 import "../api/api_client.dart";
 
+/// Response from Google OAuth login
+class GoogleAuthResponse {
+  final bool needsUsername;
+  final String? token;  // Full JWT for existing users
+  final String? tempToken;  // Temporary token for new users (15min)
+  final String? suggestedDisplayName;  // Suggested display name from Google
+  final String? avatarUrl;  // Google profile picture URL
+  final String? email;  // Google email address
+
+  GoogleAuthResponse({
+    required this.needsUsername,
+    this.token,
+    this.tempToken,
+    this.suggestedDisplayName,
+    this.avatarUrl,
+    this.email,
+  });
+
+  factory GoogleAuthResponse.fromJson(Map<String, dynamic> json) {
+    return GoogleAuthResponse(
+      needsUsername: json["needsUsername"] == true,
+      token: json["token"]?.toString(),
+      tempToken: json["tempToken"]?.toString(),
+      suggestedDisplayName: json["suggestedDisplayName"]?.toString(),
+      avatarUrl: json["avatarUrl"]?.toString(),
+      email: json["email"]?.toString(),
+    );
+  }
+}
+
 class AuthApi {
   AuthApi(this.api);
   final ApiClient api;
@@ -88,17 +118,46 @@ class AuthApi {
     return token;
   }
 
-  /// Login with Google OAuth
-  /// Takes an ID token from Google Sign-In and exchanges it for a JWT
-  Future<String> googleLogin({required String idToken}) async {
+  /// Login with Google OAuth (Step 1)
+  /// Takes an ID token from Google Sign-In
+  /// Returns GoogleAuthResponse:
+  /// - For existing users: contains full JWT token
+  /// - For new users: contains tempToken and needsUsername=true
+  Future<GoogleAuthResponse> googleLogin({required String idToken}) async {
     final data = await api.post("/auth/google", body: {
       "idToken": idToken,
     });
 
-    final token = (data["token"] ?? "").toString();
-    if (token.isEmpty) throw ApiException(500, "No token returned from Google login");
+    final response = GoogleAuthResponse.fromJson(data);
 
-    await api.tokenStorage.saveToken(token); // ✅ store
+    // If existing user (has full token), save it immediately
+    if (!response.needsUsername && response.token != null) {
+      await api.tokenStorage.saveToken(response.token!);
+    }
+
+    return response;
+  }
+
+  /// Complete OAuth signup (Step 2)
+  /// Called after new user chooses their username
+  /// Returns full JWT token
+  Future<String> completeOAuth({
+    required String tempToken,
+    required String username,
+    String? displayName,
+    String? bio,
+  }) async {
+    final data = await api.post("/auth/complete-oauth", body: {
+      "tempToken": tempToken,
+      "username": username,
+      if (displayName != null && displayName.isNotEmpty) "displayName": displayName,
+      if (bio != null && bio.isNotEmpty) "bio": bio,
+    });
+
+    final token = (data["token"] ?? "").toString();
+    if (token.isEmpty) throw ApiException(500, "No token returned from complete-oauth");
+
+    await api.tokenStorage.saveToken(token);
     return token;
   }
 
