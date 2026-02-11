@@ -1059,12 +1059,14 @@ class _UserInfoRow extends StatelessWidget {
               ErrorUtils.showError(context, "Log in to view profiles");
               return;
             }
+            // If viewing own profile, pass null to show edit functionality
+            final isOwnProfile = auth!.me?["username"]?.toString() == r.authorUsername;
             Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (_) => ProfileScreen(
                   auth: auth!,
                   apiClient: apiClient,
-                  username: r.authorUsername,
+                  username: isOwnProfile ? null : r.authorUsername,
                 ),
               ),
             );
@@ -1082,13 +1084,13 @@ class _UserInfoRow extends StatelessWidget {
             TextSpan(
               children: [
                 TextSpan(
-                  text: "@${r.authorUsername}",
+                  text: r.authorDisplayName ?? r.authorUsername,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
                 ),
                 TextSpan(
-                  text: " • $date",
+                  text: " • @${r.authorUsername} • $date",
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                       ),

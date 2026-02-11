@@ -16,6 +16,7 @@ import "../utils/image_utils.dart";
 import "../utils/ui_utils.dart";
 import "../widgets/common/common_widgets.dart";
 import "../widgets/empty_state_widget.dart";
+import "edit_profile_screen.dart";
 import "followers_screen.dart";
 import "following_screen.dart";
 
@@ -83,14 +84,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final currentUsername = widget.auth.me?["username"]?.toString();
     if (currentUsername == null) return;
 
+    // Debug: Log auth.me data
+    print("🔍 DEBUG: auth.me data = ${widget.auth.me}");
+
     try {
       final userApi = UserApi(widget.apiClient);
       final profile = await userApi.getUserProfile(currentUsername);
+
+      // Debug: Log loaded profile
+      print("🔍 DEBUG: Loaded profile - username: ${profile.username}, displayName: ${profile.displayName}, bio: ${profile.bio}");
+
       setState(() {
         _userProfile = profile;
       });
     } catch (e) {
       // Silently fail - not critical for own profile
+      print("🔍 DEBUG: Failed to load own profile: $e");
     }
   }
 
@@ -104,7 +113,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       await widget.auth.bootstrap();
       await _loadOwnProfile();
     }
-    // Always refresh recipes
+
+    // Refresh recipes (username never changes, so no need to recreate controller)
     await _recipesController?.refresh();
   }
 
@@ -706,9 +716,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
 
     final username = user["username"]?.toString() ?? "Unknown";
-    final displayName = user["displayName"]?.toString();
+    final displayName = user["display_name"]?.toString(); // Fixed: was "displayName", should be "display_name"
     final email = user["email"]?.toString() ?? "";
     final avatarUrl = user["avatar_url"]?.toString();
+
+    // Debug: Log what we're displaying
+    print("🔍 DEBUG: Displaying profile - username: $username, displayName: $displayName, email: $email");
 
     final theme = Theme.of(context);
 
@@ -844,6 +857,63 @@ class _ProfileScreenState extends State<ProfileScreen> {
               padding: const EdgeInsets.all(20),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
+                  // Edit Profile Button
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: OutlinedButton.icon(
+                      onPressed: () async {
+                        final result = await Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => EditProfileScreen(
+                              auth: widget.auth,
+                              apiClient: widget.apiClient,
+                            ),
+                          ),
+                        );
+                        // Refresh profile if changes were made
+                        if (result == true) {
+                          _refreshProfile();
+                        }
+                      },
+                      icon: const Icon(Icons.edit_outlined),
+                      label: Builder(
+                        builder: (context) {
+                          final localizations = AppLocalizations.of(context);
+                          return Text(localizations?.editProfile ?? "Edit Profile");
+                        },
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(
+                          color: theme.colorScheme.outline.withValues(alpha: 0.3),
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Bio (if exists)
+                  if (_userProfile?.bio != null && _userProfile!.bio!.isNotEmpty) ...[
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Text(
+                        _userProfile!.bio!,
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          height: 1.5,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                  ],
+
                   // Email (if exists)
                   if (email.isNotEmpty) ...[
                     Container(

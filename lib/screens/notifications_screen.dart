@@ -181,12 +181,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     switch (notification.type) {
       case notification_models.NotificationType.follow:
         if (notification.actorUsername != null) {
+          // If viewing own profile, pass null to show edit functionality
+          final isOwnProfile = widget.auth.me?["username"]?.toString() == notification.actorUsername;
           Navigator.of(context).push(
             MaterialPageRoute(
               builder: (_) => ProfileScreen(
                 auth: widget.auth,
                 apiClient: widget.apiClient,
-                username: notification.actorUsername!,
+                username: isOwnProfile ? null : notification.actorUsername!,
               ),
             ),
           );

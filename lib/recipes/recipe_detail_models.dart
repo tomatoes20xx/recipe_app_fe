@@ -111,6 +111,7 @@ class RecipeDetail {
   final String? difficulty; // 'easy', 'medium', 'hard'
   final DateTime createdAt;
   final String authorUsername;
+  final String? authorDisplayName;
   final String? authorAvatarUrl;
 
   final RecipeCounts counts;
@@ -134,6 +135,7 @@ class RecipeDetail {
     this.difficulty,
     required this.createdAt,
     required this.authorUsername,
+    this.authorDisplayName,
     this.authorAvatarUrl,
     required this.counts,
     required this.ingredients,
@@ -166,6 +168,7 @@ class RecipeDetail {
       difficulty: json["difficulty"]?.toString(),
       createdAt: DateTime.parse(json["created_at"].toString()),
       authorUsername: json["author_username"].toString(),
+      authorDisplayName: json["author_display_name"]?.toString(),
       authorAvatarUrl: json["author_avatar_url"]?.toString(),
       counts: RecipeCounts.fromJson(countsRaw),
       ingredients: ingredientsRaw

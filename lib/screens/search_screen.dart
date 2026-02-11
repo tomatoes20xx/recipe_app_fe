@@ -564,7 +564,7 @@ class _SearchScreenState extends State<SearchScreen> {
                               recipe.authorUsername),
                           const SizedBox(width: 6),
                           Text(
-                            "@${recipe.authorUsername} • $date",
+                            "${recipe.authorDisplayName ?? recipe.authorUsername} • @${recipe.authorUsername} • $date",
                             style:
                                 Theme.of(context).textTheme.bodySmall?.copyWith(
                                       color: Theme.of(context)

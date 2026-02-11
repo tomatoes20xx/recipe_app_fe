@@ -134,32 +134,20 @@ class _AuthorRow extends StatelessWidget {
   final AuthController auth;
   final ApiClient apiClient;
 
-  String _formatDisplayName(String username) {
-    // Convert username to a display name format
-    // e.g., "wellnesschef" -> "Wellness Chef"
-    return username
-        .replaceAllMapped(
-          RegExp(r'([a-z])([A-Z])'),
-          (match) => '${match.group(1)} ${match.group(2)}',
-        )
-        .replaceAll('_', ' ')
-        .split(' ')
-        .map((word) => word.isNotEmpty ? '${word[0].toUpperCase()}${word.substring(1)}' : '')
-        .join(' ');
-  }
-
   @override
   Widget build(BuildContext context) {
-    final displayName = _formatDisplayName(item.authorUsername);
+    final displayName = item.authorDisplayName ?? item.authorUsername;
 
     return GestureDetector(
       onTap: () {
+        // If viewing own profile, pass null to show edit functionality
+        final isOwnProfile = auth.me?["username"]?.toString() == item.authorUsername;
         Navigator.of(context).push(
           MaterialPageRoute(
             builder: (_) => ProfileScreen(
               auth: auth,
               apiClient: apiClient,
-              username: item.authorUsername,
+              username: isOwnProfile ? null : item.authorUsername,
             ),
           ),
         );
