@@ -290,16 +290,20 @@ class _AuthorInfo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final displayName = item.authorDisplayName ?? item.authorUsername;
+
     return Row(
       children: [
         GestureDetector(
           onTap: () {
+            // If viewing own profile, pass null to show edit functionality
+            final isOwnProfile = auth.me?["username"]?.toString() == item.authorUsername;
             Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (_) => ProfileScreen(
                   auth: auth,
                   apiClient: apiClient,
-                  username: item.authorUsername,
+                  username: isOwnProfile ? null : item.authorUsername,
                 ),
               ),
             );
@@ -337,7 +341,7 @@ class _AuthorInfo extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                "@${item.authorUsername}",
+                displayName,
                 style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.w600,
@@ -345,7 +349,7 @@ class _AuthorInfo extends StatelessWidget {
                 ),
               ),
               Text(
-                date,
+                "@${item.authorUsername} · $date",
                 style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.8),
                   fontSize: 12,

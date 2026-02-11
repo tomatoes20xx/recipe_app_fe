@@ -34,6 +34,7 @@ class SearchResult {
   final String? difficulty;
   final DateTime createdAt;
   final String authorUsername;
+  final String? authorDisplayName;
   final String? authorAvatarUrl;
   final IngredientMatch? ingredientMatch;
 
@@ -45,6 +46,7 @@ class SearchResult {
     this.difficulty,
     required this.createdAt,
     required this.authorUsername,
+    this.authorDisplayName,
     this.authorAvatarUrl,
     this.ingredientMatch,
   });
@@ -65,6 +67,7 @@ class SearchResult {
       difficulty: json["difficulty"]?.toString(),
       createdAt: DateTime.parse(json["created_at"].toString()),
       authorUsername: json["author_username"].toString(),
+      authorDisplayName: json["author_display_name"]?.toString(),
       authorAvatarUrl: authorAvatarUrl,
       ingredientMatch: ingredientMatchData != null ? IngredientMatch.fromJson(ingredientMatchData) : null,
     );

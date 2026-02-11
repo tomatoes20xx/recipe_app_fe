@@ -417,7 +417,7 @@ class _AnalyticsStatsScreenState extends State<AnalyticsStatsScreen> with Single
                 subtitle: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text("@${recipe.authorUsername}"),
+                    Text("${recipe.authorDisplayName ?? recipe.authorUsername} • @${recipe.authorUsername}"),
                     const SizedBox(height: 4),
                     Wrap(
                       spacing: 12,

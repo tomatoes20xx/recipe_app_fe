@@ -33,6 +33,7 @@ class FeedItem {
   final String? difficulty; // 'easy', 'medium', 'hard'
   final DateTime createdAt;
   final String authorUsername;
+  final String? authorDisplayName;
   final String? authorAvatarUrl;
 
   final int likes;
@@ -56,6 +57,7 @@ class FeedItem {
     this.difficulty,
     required this.createdAt,
     required this.authorUsername,
+    this.authorDisplayName,
     this.authorAvatarUrl,
     required this.likes,
     required this.comments,
@@ -82,6 +84,7 @@ class FeedItem {
       difficulty: json["difficulty"]?.toString(),
       createdAt: DateTime.parse(json["created_at"].toString()),
       authorUsername: (json["author_username"] ?? "").toString(),
+      authorDisplayName: json["author_display_name"]?.toString(),
       authorAvatarUrl: json["author_avatar_url"]?.toString(),
       likes: (json["likes"] ?? 0) as int,
       comments: (json["comments"] ?? 0) as int,
@@ -112,6 +115,7 @@ class FeedItem {
       difficulty: difficulty,
       createdAt: createdAt,
       authorUsername: authorUsername,
+      authorDisplayName: authorDisplayName,
       authorAvatarUrl: authorAvatarUrl,
       likes: likes ?? this.likes,
       comments: comments ?? this.comments,

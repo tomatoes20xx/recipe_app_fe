@@ -304,7 +304,20 @@ class AppLocalizations {
   String get georgianLanguage => _localizedValues[locale.languageCode]?["georgianLanguage"] ?? "ქართული";
   String get helpAndSupport => _localizedValues[locale.languageCode]?["helpAndSupport"] ?? "Help & Support";
   String get termsAndPrivacy => _localizedValues[locale.languageCode]?["termsAndPrivacy"] ?? "Terms & Privacy";
-  
+
+  // Profile Edit
+  String get editProfile => _localizedValues[locale.languageCode]?["editProfile"] ?? "Edit Profile";
+  String get profileUpdateInfo => _localizedValues[locale.languageCode]?["profileUpdateInfo"] ?? "Update your profile information. Changes will be visible to other users.";
+  String get enterDisplayName => _localizedValues[locale.languageCode]?["enterDisplayName"] ?? "Enter display name";
+  String get displayNameTooLong => _localizedValues[locale.languageCode]?["displayNameTooLong"] ?? "Display name must be at most 100 characters";
+  String get bio => _localizedValues[locale.languageCode]?["bio"] ?? "Bio";
+  String get enterBio => _localizedValues[locale.languageCode]?["enterBio"] ?? "Tell us about yourself";
+  String get bioTooLong => _localizedValues[locale.languageCode]?["bioTooLong"] ?? "Bio must be at most 500 characters";
+  String get saving => _localizedValues[locale.languageCode]?["saving"] ?? "Saving...";
+  String get discardChanges => _localizedValues[locale.languageCode]?["discardChanges"] ?? "Discard changes?";
+  String get unsavedChangesMessage => _localizedValues[locale.languageCode]?["unsavedChangesMessage"] ?? "You have unsaved changes. Are you sure you want to discard them?";
+  String get discard => _localizedValues[locale.languageCode]?["discard"] ?? "Discard";
+
   // Help & Support
   String get helpWelcomeTitle => _localizedValues[locale.languageCode]?["helpWelcomeTitle"] ?? "Welcome to Help & Support";
   String get helpWelcomeMessage => _localizedValues[locale.languageCode]?["helpWelcomeMessage"] ?? "I'm a solo developer working on Yummy. While I don't have a dedicated support team, I'm here to help! Please check the FAQs below first, and if you still need assistance, feel free to reach out.";
@@ -662,6 +675,17 @@ class AppLocalizations {
       "georgianLanguage": "ქართული",
       "helpAndSupport": "Help & Support",
       "termsAndPrivacy": "Terms & Privacy",
+      "editProfile": "Edit Profile",
+      "profileUpdateInfo": "Update your profile information. Changes will be visible to other users.",
+      "enterDisplayName": "Enter display name",
+      "displayNameTooLong": "Display name must be at most 100 characters",
+      "bio": "Bio",
+      "enterBio": "Tell us about yourself",
+      "bioTooLong": "Bio must be at most 500 characters",
+      "saving": "Saving...",
+      "discardChanges": "Discard changes?",
+      "unsavedChangesMessage": "You have unsaved changes. Are you sure you want to discard them?",
+      "discard": "Discard",
       "termsOfService": "Terms of Service",
       "privacyPolicy": "Privacy Policy",
       "termsAcceptanceTitle": "1. Acceptance of Terms",
@@ -1033,6 +1057,17 @@ class AppLocalizations {
       "georgianLanguage": "ქართული",
       "helpAndSupport": "დახმარება და მხარდაჭერა",
       "termsAndPrivacy": "წესები და კონფიდენციალურობა",
+      "editProfile": "პროფილის რედაქტირება",
+      "profileUpdateInfo": "განაახლეთ თქვენი პროფილის ინფორმაცია. ცვლილებები სხვა მომხმარებლებისთვის ხილული იქნება.",
+      "enterDisplayName": "შეიყვანეთ საჩვენებელი სახელი",
+      "displayNameTooLong": "საჩვენებელი სახელი უნდა იყოს მაქსიმუმ 100 სიმბოლო",
+      "bio": "ბიოგრაფია",
+      "enterBio": "მოგვიყევით თქვენს შესახებ",
+      "bioTooLong": "ბიოგრაფია უნდა იყოს მაქსიმუმ 500 სიმბოლო",
+      "saving": "მიმდინარეობს შენახვა...",
+      "discardChanges": "გავაუქმოთ ცვლილებები?",
+      "unsavedChangesMessage": "თქვენ გაქვთ შეუნახავი ცვლილებები. დარწმუნებული ხართ, რომ გსურთ მათი გაუქმება?",
+      "discard": "გაუქმება",
       "termsOfService": "მომსახურების წესები",
       "privacyPolicy": "კონფიდენციალურობის პოლიტიკა",
       "termsAcceptanceTitle": "1. წესების თანხმობა",

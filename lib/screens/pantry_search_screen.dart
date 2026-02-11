@@ -425,7 +425,7 @@ class _RecipeMatchCard extends StatelessWidget {
 
               // Author
               Text(
-                "@${recipe.authorUsername}",
+                "${recipe.authorDisplayName ?? recipe.authorUsername} • @${recipe.authorUsername}",
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                     ),

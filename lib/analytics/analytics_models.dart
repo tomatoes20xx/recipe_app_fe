@@ -85,6 +85,7 @@ class TopRecipe {
   final String recipeId;
   final String recipeTitle;
   final String authorUsername;
+  final String? authorDisplayName;
   final int totalEvents;
   final int views;
   final int likes;
@@ -95,6 +96,7 @@ class TopRecipe {
     required this.recipeId,
     required this.recipeTitle,
     required this.authorUsername,
+    this.authorDisplayName,
     required this.totalEvents,
     required this.views,
     required this.likes,
@@ -107,6 +109,7 @@ class TopRecipe {
       recipeId: (json["recipe_id"] ?? "").toString(),
       recipeTitle: (json["recipe_title"] ?? "").toString(),
       authorUsername: (json["author_username"] ?? "").toString(),
+      authorDisplayName: json["author_display_name"]?.toString(),
       totalEvents: (json["total_events"] ?? 0) as int,
       views: (json["views"] ?? 0) as int,
       likes: (json["likes"] ?? 0) as int,

@@ -116,4 +116,25 @@ class UserApi {
     final data = await api.get("/users/me/bookmarks", query: queryParams, auth: true);
     return UserRecipesResponse.fromJson(Map<String, dynamic>.from(data as Map));
   }
+
+  /// Update user profile (display_name, bio)
+  Future<Map<String, dynamic>> updateProfile({
+    String? displayName,
+    String? bio,
+  }) async {
+    final body = <String, dynamic>{};
+    if (displayName != null) {
+      body["display_name"] = displayName;
+    }
+    if (bio != null) {
+      body["bio"] = bio;
+    }
+
+    if (body.isEmpty) {
+      throw Exception("At least one field must be provided");
+    }
+
+    final data = await api.patch("/users/me/profile", body: body, auth: true);
+    return Map<String, dynamic>.from(data as Map);
+  }
 }
