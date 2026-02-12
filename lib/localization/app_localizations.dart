@@ -42,6 +42,7 @@ class AppLocalizations {
   String get appTagline => _localizedValues[locale.languageCode]?["appTagline"] ?? "Your Recipe Journey";
 
   // Navigation & Tooltips
+  String get home => _localizedValues[locale.languageCode]?["home"] ?? "Home";
   String get menu => _localizedValues[locale.languageCode]?["menu"] ?? "Menu";
   String get createRecipe => _localizedValues[locale.languageCode]?["createRecipe"] ?? "Create Recipe";
   String get notifications => _localizedValues[locale.languageCode]?["notifications"] ?? "Notifications";
@@ -487,6 +488,7 @@ class AppLocalizations {
       "showPassword": "Show password",
       "hidePassword": "Hide password",
       "appTagline": "Your Recipe Journey",
+      "home": "Home",
       "menu": "Menu",
       "createRecipe": "Create Recipe",
       "notifications": "Notifications",
@@ -883,6 +885,7 @@ class AppLocalizations {
       "showPassword": "პაროლის ჩვენება",
       "hidePassword": "პაროლის დამალვა",
       "appTagline": "თქვენი რეცეპტების მოგზაურობა",
+      "home": "მთავარი",
       "menu": "მენიუ",
       "createRecipe": "რეცეპტის შექმნა",
       "notifications": "შეტყობინებები",

@@ -314,6 +314,7 @@ class _BottomShellNavBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final surfaceColor = Theme.of(context).colorScheme.surface;
     final borderColor = Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08);
+    final localizations = AppLocalizations.of(context);
 
     return Container(
       decoration: BoxDecoration(
@@ -330,14 +331,14 @@ class _BottomShellNavBar extends StatelessWidget {
               _BottomNavAction(
                 key: feedKey,
                 icon: Icons.home_rounded,
-                label: "Home",
+                label: localizations?.home ?? "Home",
                 isActive: currentIndex == 0 && !isSearchExpanded,
                 onTap: onHomeTap,
               ),
               _BottomNavAction(
                 key: notificationsKey,
                 icon: Icons.notifications_outlined,
-                label: "Notifications",
+                label: localizations?.notifications ?? "Notifications",
                 isActive: currentIndex == 1 && !isSearchExpanded,
                 badgeCount: unreadCount,
                 onTap: onNotificationsTap,
@@ -345,7 +346,7 @@ class _BottomShellNavBar extends StatelessWidget {
               _BottomNavAction(
                 key: createKey,
                 icon: Icons.add_rounded,
-                label: "Add",
+                label: localizations?.add ?? "Add",
                 isActive: false,
                 onTap: onAddRecipeTap,
               ),
@@ -359,14 +360,14 @@ class _BottomShellNavBar extends StatelessWidget {
                 _BottomNavAction(
                   key: searchKey,
                   icon: Icons.search_rounded,
-                  label: "Search",
+                  label: localizations?.search ?? "Search",
                   isActive: currentIndex == 2,
                   onTap: onSearchTap,
                 ),
               _BottomNavAction(
                 key: menuKey,
                 icon: Icons.menu_rounded,
-                label: "Menu",
+                label: localizations?.menu ?? "Menu",
                 isActive: false,
                 onTap: onMenuTap,
               ),
