@@ -51,11 +51,6 @@ class _FeedShellScreenState extends State<FeedShellScreen> {
   late final NotificationController _notificationController;
   Timer? _notificationTimer;
 
-  // Search expansion state
-  final TextEditingController _searchController = TextEditingController();
-  final FocusNode _searchFocusNode = FocusNode();
-  bool _isSearchExpanded = false;
-
   // Tour keys
   final GlobalKey _feedKey = GlobalKey();
   final GlobalKey _searchKey = GlobalKey();
@@ -81,8 +76,6 @@ class _FeedShellScreenState extends State<FeedShellScreen> {
     // the notification badge, not the entire screen.
     _notificationController.refreshUnreadCount();
     _startNotificationPolling();
-
-    _searchController.addListener(_onSearchTextChanged);
 
     // Check and show tour for first-time users
     _checkAndShowTour();
@@ -114,9 +107,6 @@ class _FeedShellScreenState extends State<FeedShellScreen> {
     feed.dispose();
     _notificationController.dispose();
     _notificationTimer?.cancel();
-    _searchController.removeListener(_onSearchTextChanged);
-    _searchController.dispose();
-    _searchFocusNode.dispose();
     super.dispose();
   }
 
@@ -133,39 +123,7 @@ class _FeedShellScreenState extends State<FeedShellScreen> {
     setState(() {
       _previousIndex = _currentIndex;
       _currentIndex = index;
-      // Collapse search when navigating away from search page
-      if (index != 2 && _isSearchExpanded) {
-        _isSearchExpanded = false;
-        _searchController.clear();
-        _searchFocusNode.unfocus();
-      }
     });
-  }
-
-  void _expandSearch() {
-    setState(() {
-      _isSearchExpanded = true;
-    });
-    _setPage(2);
-    Future.microtask(() {
-      _searchFocusNode.requestFocus();
-    });
-  }
-
-  void _collapseSearch() {
-    setState(() {
-      _isSearchExpanded = false;
-      _searchController.clear();
-    });
-    _searchFocusNode.unfocus();
-    if (_currentIndex == 2) {
-      _setPage(0);
-    }
-  }
-
-  void _onSearchTextChanged() {
-    // Trigger rebuild to pass updated text to SearchScreen
-    setState(() {});
   }
 
   void _changeFeedScope(String scope) {
@@ -204,7 +162,6 @@ class _FeedShellScreenState extends State<FeedShellScreen> {
           key: const ValueKey("search"),
           apiClient: widget.apiClient,
           auth: widget.auth,
-          searchQuery: _searchController.text,
         );
       default:
         return const SizedBox.shrink();
@@ -255,12 +212,8 @@ class _FeedShellScreenState extends State<FeedShellScreen> {
                 _notificationController.refreshUnreadCount();
               }
             },
-            onSearchTap: _expandSearch,
+            onSearchTap: () => _setPage(2),
             onMenuTap: () => _scaffoldKey.currentState?.openDrawer(),
-            isSearchExpanded: _isSearchExpanded || _currentIndex == 2,
-            searchController: _searchController,
-            searchFocusNode: _searchFocusNode,
-            onSearchCollapse: _collapseSearch,
             feedKey: _feedKey,
             searchKey: _searchKey,
             createKey: _createKey,
@@ -282,10 +235,6 @@ class _BottomShellNavBar extends StatelessWidget {
     required this.onAddRecipeTap,
     required this.onSearchTap,
     required this.onMenuTap,
-    required this.isSearchExpanded,
-    required this.searchController,
-    required this.searchFocusNode,
-    required this.onSearchCollapse,
     required this.feedKey,
     required this.searchKey,
     required this.createKey,
@@ -300,10 +249,6 @@ class _BottomShellNavBar extends StatelessWidget {
   final VoidCallback onAddRecipeTap;
   final VoidCallback onSearchTap;
   final VoidCallback onMenuTap;
-  final bool isSearchExpanded;
-  final TextEditingController searchController;
-  final FocusNode searchFocusNode;
-  final VoidCallback onSearchCollapse;
   final GlobalKey feedKey;
   final GlobalKey searchKey;
   final GlobalKey createKey;
@@ -332,14 +277,14 @@ class _BottomShellNavBar extends StatelessWidget {
                 key: feedKey,
                 icon: Icons.home_rounded,
                 label: localizations?.home ?? "Home",
-                isActive: currentIndex == 0 && !isSearchExpanded,
+                isActive: currentIndex == 0,
                 onTap: onHomeTap,
               ),
               _BottomNavAction(
                 key: notificationsKey,
                 icon: Icons.notifications_outlined,
                 label: localizations?.notifications ?? "Notifications",
-                isActive: currentIndex == 1 && !isSearchExpanded,
+                isActive: currentIndex == 1,
                 badgeCount: unreadCount,
                 onTap: onNotificationsTap,
               ),
@@ -350,20 +295,13 @@ class _BottomShellNavBar extends StatelessWidget {
                 isActive: false,
                 onTap: onAddRecipeTap,
               ),
-              if (isSearchExpanded)
-                _ExpandableSearchField(
-                  controller: searchController,
-                  focusNode: searchFocusNode,
-                  onClose: onSearchCollapse,
-                )
-              else
-                _BottomNavAction(
-                  key: searchKey,
-                  icon: Icons.search_rounded,
-                  label: localizations?.search ?? "Search",
-                  isActive: currentIndex == 2,
-                  onTap: onSearchTap,
-                ),
+              _BottomNavAction(
+                key: searchKey,
+                icon: Icons.search_rounded,
+                label: localizations?.search ?? "Search",
+                isActive: currentIndex == 2,
+                onTap: onSearchTap,
+              ),
               _BottomNavAction(
                 key: menuKey,
                 icon: Icons.menu_rounded,
@@ -480,79 +418,6 @@ class _BottomNavAction extends StatelessWidget {
                     ),
                   ),
               ],
-            ),
-          );
-        },
-      ),
-    );
-  }
-}
-
-class _ExpandableSearchField extends StatelessWidget {
-  const _ExpandableSearchField({
-    required this.controller,
-    required this.focusNode,
-    required this.onClose,
-  });
-
-  final TextEditingController controller;
-  final FocusNode focusNode;
-  final VoidCallback onClose;
-
-  @override
-  Widget build(BuildContext context) {
-    final primaryColor = Theme.of(context).colorScheme.primary;
-    final borderColor = Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2);
-
-    return Expanded(
-      flex: 2,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          return Align(
-            alignment: Alignment.center,
-            child: Container(
-              height: 36,
-              constraints: BoxConstraints(maxWidth: constraints.maxWidth),
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(999),
-                border: Border.all(color: borderColor, width: 1),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.search_rounded, size: 20, color: primaryColor),
-                  const SizedBox(width: 4),
-                  Flexible(
-                    child: TextField(
-                      controller: controller,
-                      focusNode: focusNode,
-                      autofocus: false,
-                      style: TextStyle(
-                        color: primaryColor,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      decoration: InputDecoration(
-                        hintText: AppLocalizations.of(context)?.search ?? "Search...",
-                        hintStyle: TextStyle(
-                          color: primaryColor.withValues(alpha: 0.6),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        border: InputBorder.none,
-                        contentPadding: EdgeInsets.zero,
-                        isDense: true,
-                      ),
-                      textInputAction: TextInputAction.search,
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: onClose,
-                    child: Icon(Icons.close, size: 16, color: primaryColor),
-                  ),
-                ],
-              ),
             ),
           );
         },
