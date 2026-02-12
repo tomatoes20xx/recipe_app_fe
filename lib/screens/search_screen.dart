@@ -40,6 +40,7 @@ class _SearchScreenState extends State<SearchScreen> {
   late final UnifiedSearchController searchController;
   late final UserApi userApi;
   final ScrollController _scrollController = ScrollController();
+  final TextEditingController _searchTextController = TextEditingController();
 
   Timer? _debounceTimer;
   String? _lastSearchedQuery;
@@ -108,6 +109,7 @@ class _SearchScreenState extends State<SearchScreen> {
   void dispose() {
     _debounceTimer?.cancel();
     _scrollController.dispose();
+    _searchTextController.dispose();
     searchController.removeListener(_onSearchChanged);
     searchController.dispose();
     super.dispose();
@@ -169,9 +171,69 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+
     return Scaffold(
       appBar: AppBar(
-        title: Text(localizations?.search ?? "Search"),
+        title: Row(
+          children: [
+            Text(localizations?.search ?? "Search"),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Container(
+                height: 40,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: theme.colorScheme.outline.withValues(alpha: 0.2),
+                  ),
+                ),
+                child: TextField(
+                  controller: _searchTextController,
+                  autofocus: false,
+                  style: theme.textTheme.bodyMedium,
+                  decoration: InputDecoration(
+                    hintText: localizations?.searchRecipes ?? "Search recipes, users...",
+                    hintStyle: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                    ),
+                    prefixIcon: Icon(
+                      Icons.search,
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                      size: 20,
+                    ),
+                    suffixIcon: _searchTextController.text.isNotEmpty
+                        ? IconButton(
+                            icon: Icon(
+                              Icons.clear,
+                              color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                              size: 20,
+                            ),
+                            onPressed: () {
+                              _searchTextController.clear();
+                              searchController.clear();
+                            },
+                          )
+                        : null,
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    isDense: true,
+                  ),
+                  textInputAction: TextInputAction.search,
+                  onSubmitted: (query) {
+                    if (query.trim().isNotEmpty) {
+                      _performSearch(query.trim());
+                    }
+                  },
+                  onChanged: (value) {
+                    setState(() {}); // Rebuild to show/hide clear button
+                  },
+                ),
+              ),
+            ),
+          ],
+        ),
         automaticallyImplyLeading: false,
       ),
       body: _buildBody(),
