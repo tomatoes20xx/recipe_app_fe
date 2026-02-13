@@ -37,13 +37,16 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   void initState() {
     super.initState();
     widget.notificationController.addListener(_onControllerChanged);
-    // Always refresh notifications when entering this screen
-    if (widget.notificationController.items.isEmpty) {
-      widget.notificationController.loadInitial();
-    } else {
-      // If already loaded, just refresh to get latest data
-      widget.notificationController.refresh(unreadOnly: _showUnreadOnly);
-    }
+    // Defer loading until after the build phase completes
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Always refresh notifications when entering this screen
+      if (widget.notificationController.items.isEmpty) {
+        widget.notificationController.loadInitial();
+      } else {
+        // If already loaded, just refresh to get latest data
+        widget.notificationController.refresh(unreadOnly: _showUnreadOnly);
+      }
+    });
   }
 
   void _onControllerChanged() {
