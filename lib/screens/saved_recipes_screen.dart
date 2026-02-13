@@ -8,6 +8,7 @@ import "../feed/feed_models.dart";
 import "../feed/saved_recipes_controller.dart";
 import "../localization/app_localizations.dart";
 import "../recipes/recipe_detail_screen.dart";
+import "../shopping/shopping_list_controller.dart";
 import "../users/user_api.dart";
 import "../utils/ui_utils.dart";
 import "../widgets/empty_state_widget.dart";
@@ -18,10 +19,12 @@ class SavedRecipesScreen extends StatefulWidget {
     super.key,
     required this.apiClient,
     required this.auth,
+    required this.shoppingListController,
   });
 
   final ApiClient apiClient;
   final AuthController auth;
+  final ShoppingListController shoppingListController;
 
   @override
   State<SavedRecipesScreen> createState() => _SavedRecipesScreenState();
@@ -146,6 +149,7 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen> {
                             recipeId: recipe.id,
                             apiClient: widget.apiClient,
                             auth: widget.auth,
+                            shoppingListController: widget.shoppingListController,
                           ),
                         ),
                       );

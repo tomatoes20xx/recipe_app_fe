@@ -5,6 +5,7 @@ import "../api/api_client.dart";
 import "../auth/auth_controller.dart";
 import "../feed/feed_controller.dart";
 import "../localization/language_controller.dart";
+import "../shopping/shopping_list_controller.dart";
 import "../theme/theme_controller.dart";
 import "../widgets/feed/feed_controls.dart";
 import "../widgets/feed/feed_list.dart";
@@ -19,6 +20,7 @@ class HomeScreen extends StatefulWidget {
     required this.themeController,
     required this.languageController,
     required this.feed,
+    required this.shoppingListController,
     this.onNotificationRefresh,
     this.sortDropdownKey,
     this.viewToggleKey,
@@ -29,6 +31,7 @@ class HomeScreen extends StatefulWidget {
   final ThemeController themeController;
   final LanguageController languageController;
   final FeedController feed;
+  final ShoppingListController shoppingListController;
   final VoidCallback? onNotificationRefresh;
   final GlobalKey? sortDropdownKey;
   final GlobalKey? viewToggleKey;
@@ -273,6 +276,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         pageController: _fullScreenPageController,
                         apiClient: widget.apiClient,
                         auth: widget.auth,
+                        shoppingListController: widget.shoppingListController,
                         onPageChanged: (index) {
                           _currentFullScreenIndex = index;
                         },
@@ -286,6 +290,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       controller: sc,
                       apiClient: widget.apiClient,
                       auth: widget.auth,
+                      shoppingListController: widget.shoppingListController,
                       onActionCompleted: () {
                         widget.onNotificationRefresh?.call();
                       },

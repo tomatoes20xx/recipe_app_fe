@@ -5,8 +5,10 @@ import "../auth/auth_controller.dart";
 import "../localization/app_localizations.dart";
 import "../screens/create_recipe_screen.dart";
 import "../screens/profile_screen.dart";
+import "../shopping/shopping_list_controller.dart";
 import "../utils/error_utils.dart";
 import "../utils/ui_utils.dart";
+import "../widgets/ingredient_action_bar.dart";
 import "../widgets/section_title_widget.dart";
 import "comments_bottom_sheet.dart";
 import "recipe_api.dart";
@@ -19,11 +21,13 @@ class RecipeDetailScreen extends StatefulWidget {
     required this.recipeId,
     required this.apiClient,
     this.auth,
+    required this.shoppingListController,
   });
 
   final String recipeId;
   final ApiClient apiClient;
   final AuthController? auth;
+  final ShoppingListController shoppingListController;
 
   @override
   State<RecipeDetailScreen> createState() => _RecipeDetailScreenState();
@@ -40,6 +44,8 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
   int? _localBookmarks;
   int? _localComments;
   final Set<String> _checkedIngredients = {};
+  final Set<String> _selectedForShopping = {};
+  bool _isSelectionMode = false;
 
   @override
   void initState() {
@@ -71,11 +77,38 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
 
   void _toggleIngredient(String id) {
     setState(() {
-      if (_checkedIngredients.contains(id)) {
-        _checkedIngredients.remove(id);
+      if (_isSelectionMode) {
+        // In selection mode, toggle for shopping list
+        if (_selectedForShopping.contains(id)) {
+          _selectedForShopping.remove(id);
+          // Exit selection mode if no ingredients are selected
+          if (_selectedForShopping.isEmpty) {
+            _isSelectionMode = false;
+          }
+        } else {
+          _selectedForShopping.add(id);
+        }
       } else {
-        _checkedIngredients.add(id);
+        // Normal mode - enter selection mode and select the ingredient
+        _isSelectionMode = true;
+        _selectedForShopping.clear();
+        _selectedForShopping.add(id);
       }
+    });
+  }
+
+  void _exitSelectionMode() {
+    setState(() {
+      _isSelectionMode = false;
+      _selectedForShopping.clear();
+    });
+  }
+
+  void _markSelectedAsHave() {
+    setState(() {
+      // Add to checked ingredients (strikethrough)
+      _checkedIngredients.addAll(_selectedForShopping);
+      _exitSelectionMode();
     });
   }
 
@@ -321,6 +354,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                                     recipe: r,
                                     apiClient: widget.apiClient,
                                     auth: widget.auth,
+                                    shoppingListController: widget.shoppingListController,
                                     counts: RecipeCounts(
                                       likes: _localLikes ?? r.counts.likes,
                                       comments: _localComments ?? r.counts.comments,
@@ -348,6 +382,8 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                                       );
                                     },
                                     checkedIngredients: _checkedIngredients,
+                                    selectedForShopping: _selectedForShopping,
+                                    isSelectionMode: _isSelectionMode,
                                     onToggleIngredient: _toggleIngredient,
                                   ),
                                 ),
@@ -357,6 +393,19 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                         ),
                       ],
                     ),
+      bottomNavigationBar: _isSelectionMode && _selectedForShopping.isNotEmpty && r != null
+          ? IngredientActionBar(
+              selectedIngredients: r.ingredients
+                  .where((ing) => _selectedForShopping.contains(ing.id))
+                  .toList(),
+              recipeId: r.id,
+              recipeName: r.title,
+              recipeImage: r.images.isNotEmpty ? r.images.first.url : null,
+              shoppingListController: widget.shoppingListController,
+              onMarkAsHave: _markSelectedAsHave,
+              onCancel: _exitSelectionMode,
+            )
+          : null,
     );
   }
 
@@ -494,6 +543,7 @@ class _ContentBody extends StatelessWidget {
     required this.recipe,
     required this.apiClient,
     this.auth,
+    required this.shoppingListController,
     required this.counts,
     required this.viewerHasLiked,
     required this.viewerHasBookmarked,
@@ -503,12 +553,15 @@ class _ContentBody extends StatelessWidget {
     required this.onBookmarkTap,
     required this.onCommentTap,
     required this.checkedIngredients,
+    required this.selectedForShopping,
+    required this.isSelectionMode,
     required this.onToggleIngredient,
   });
 
   final RecipeDetail recipe;
   final ApiClient apiClient;
   final AuthController? auth;
+  final ShoppingListController shoppingListController;
   final RecipeCounts counts;
   final bool viewerHasLiked;
   final bool viewerHasBookmarked;
@@ -518,6 +571,8 @@ class _ContentBody extends StatelessWidget {
   final VoidCallback onBookmarkTap;
   final VoidCallback onCommentTap;
   final Set<String> checkedIngredients;
+  final Set<String> selectedForShopping;
+  final bool isSelectionMode;
   final Function(String) onToggleIngredient;
 
   @override
@@ -553,7 +608,7 @@ class _ContentBody extends StatelessWidget {
           const SizedBox(height: 12),
 
           // User Info Row
-          _UserInfoRow(r: recipe, apiClient: apiClient, auth: auth),
+          _UserInfoRow(r: recipe, apiClient: apiClient, auth: auth, shoppingListController: shoppingListController),
           const SizedBox(height: 16),
 
           // Quick Info Bar
@@ -605,6 +660,8 @@ class _ContentBody extends StatelessWidget {
             _IngredientsSection(
               ingredients: recipe.ingredients,
               checkedIds: checkedIngredients,
+              selectedIds: selectedForShopping,
+              isSelectionMode: isSelectionMode,
               onToggle: onToggleIngredient,
             ),
             const SizedBox(height: 24),
@@ -864,11 +921,15 @@ class _IngredientsSection extends StatelessWidget {
   const _IngredientsSection({
     required this.ingredients,
     required this.checkedIds,
+    required this.selectedIds,
+    required this.isSelectionMode,
     required this.onToggle,
   });
 
   final List<RecipeIngredient> ingredients;
   final Set<String> checkedIds;
+  final Set<String> selectedIds;
+  final bool isSelectionMode;
   final Function(String) onToggle;
 
   @override
@@ -886,6 +947,8 @@ class _IngredientsSection extends StatelessWidget {
         ...ingredients.map((ing) => _IngredientTile(
           ingredient: ing,
           isChecked: checkedIds.contains(ing.id),
+          isSelected: selectedIds.contains(ing.id),
+          isSelectionMode: isSelectionMode,
           onToggle: () => onToggle(ing.id),
         )),
       ],
@@ -897,11 +960,15 @@ class _IngredientTile extends StatelessWidget {
   const _IngredientTile({
     required this.ingredient,
     required this.isChecked,
+    required this.isSelected,
+    required this.isSelectionMode,
     required this.onToggle,
   });
 
   final RecipeIngredient ingredient;
   final bool isChecked;
+  final bool isSelected;
+  final bool isSelectionMode;
   final VoidCallback onToggle;
 
   String _formatIngredient() {
@@ -913,23 +980,48 @@ class _IngredientTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final showCheckbox = !isSelectionMode;
+    final showSelectionCheckbox = isSelectionMode;
+
     return InkWell(
       onTap: onToggle,
       borderRadius: BorderRadius.circular(8),
-      child: Padding(
+      child: Container(
         padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+        decoration: BoxDecoration(
+          color: isSelectionMode && isSelected
+              ? theme.colorScheme.primaryContainer.withValues(alpha: 0.3)
+              : null,
+          borderRadius: BorderRadius.circular(8),
+        ),
         child: Row(
           children: [
-            SizedBox(
-              width: 24,
-              height: 24,
-              child: Checkbox(
-                value: isChecked,
-                onChanged: (_) => onToggle(),
-                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                visualDensity: VisualDensity.compact,
+            if (showCheckbox)
+              SizedBox(
+                width: 24,
+                height: 24,
+                child: Checkbox(
+                  value: isChecked,
+                  onChanged: (_) => onToggle(),
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  visualDensity: VisualDensity.compact,
+                ),
               ),
-            ),
+            if (showSelectionCheckbox)
+              SizedBox(
+                width: 24,
+                height: 24,
+                child: Checkbox(
+                  value: isSelected,
+                  onChanged: (_) => onToggle(),
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  visualDensity: VisualDensity.compact,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+              ),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
@@ -937,10 +1029,11 @@ class _IngredientTile extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 15,
                   height: 1.4,
-                  decoration: isChecked ? TextDecoration.lineThrough : null,
-                  color: isChecked
-                      ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5)
-                      : Theme.of(context).colorScheme.onSurface,
+                  decoration: !isSelectionMode && isChecked ? TextDecoration.lineThrough : null,
+                  color: !isSelectionMode && isChecked
+                      ? theme.colorScheme.onSurface.withValues(alpha: 0.5)
+                      : theme.colorScheme.onSurface,
+                  fontWeight: isSelectionMode && isSelected ? FontWeight.w600 : null,
                 ),
               ),
             ),
@@ -1040,10 +1133,11 @@ class _StepCard extends StatelessWidget {
 
 // User Info Row widget
 class _UserInfoRow extends StatelessWidget {
-  const _UserInfoRow({required this.r, required this.apiClient, this.auth});
+  const _UserInfoRow({required this.r, required this.apiClient, this.auth, required this.shoppingListController});
   final RecipeDetail r;
   final ApiClient apiClient;
   final AuthController? auth;
+  final ShoppingListController shoppingListController;
 
   @override
   Widget build(BuildContext context) {
@@ -1066,6 +1160,7 @@ class _UserInfoRow extends StatelessWidget {
                 builder: (_) => ProfileScreen(
                   auth: auth!,
                   apiClient: apiClient,
+                  shoppingListController: shoppingListController,
                   username: isOwnProfile ? null : r.authorUsername,
                 ),
               ),

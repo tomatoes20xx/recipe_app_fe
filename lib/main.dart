@@ -20,6 +20,8 @@ import "auth/token_storage.dart";
 import "localization/app_localizations.dart";
 import "localization/language_controller.dart";
 import "screens/auth_gate.dart";
+import "shopping/shopping_list_api.dart";
+import "shopping/shopping_list_controller.dart";
 import "theme/theme_controller.dart";
 
 void main() async {
@@ -84,12 +86,15 @@ void main() async {
   final authController = AuthController(authApi: authApi, tokenStorage: tokenStorage);
   final themeController = ThemeController();
   final languageController = LanguageController();
+  final shoppingListApi = ShoppingListApi(apiClient);
+  final shoppingListController = ShoppingListController(api: shoppingListApi);
 
   runApp(MyApp(
     authController: authController,
     apiClient: apiClient,
     themeController: themeController,
     languageController: languageController,
+    shoppingListController: shoppingListController,
   ));
 }
 
@@ -100,11 +105,13 @@ class MyApp extends StatelessWidget {
     required this.apiClient,
     required this.themeController,
     required this.languageController,
+    required this.shoppingListController,
   });
   final AuthController authController;
   final ApiClient apiClient;
   final ThemeController themeController;
   final LanguageController languageController;
+  final ShoppingListController shoppingListController;
 
   @override
   Widget build(BuildContext context) {
@@ -143,6 +150,7 @@ class MyApp extends StatelessWidget {
             apiClient: apiClient,
             themeController: themeController,
             languageController: languageController,
+            shoppingListController: shoppingListController,
           ),
         );
       },

@@ -4,6 +4,7 @@ import "../../api/api_client.dart";
 import "../../auth/auth_controller.dart";
 import "../../feed/feed_controller.dart";
 import "../../localization/app_localizations.dart";
+import "../../shopping/shopping_list_controller.dart";
 import "../empty_state_widget.dart";
 import "../native_ad_card_widget.dart";
 import "full_screen_feed_card.dart";
@@ -16,6 +17,7 @@ class FullScreenFeedList extends StatefulWidget {
     required this.pageController,
     required this.apiClient,
     required this.auth,
+    required this.shoppingListController,
     this.onPageChanged,
     this.onActionCompleted,
   });
@@ -24,6 +26,7 @@ class FullScreenFeedList extends StatefulWidget {
   final PageController pageController;
   final ApiClient apiClient;
   final AuthController auth;
+  final ShoppingListController shoppingListController;
   final ValueChanged<int>? onPageChanged;
   final VoidCallback? onActionCompleted;
 
@@ -145,6 +148,7 @@ class _FullScreenFeedListState extends State<FullScreenFeedList> {
             feed: widget.feed,
             apiClient: widget.apiClient,
             auth: widget.auth,
+            shoppingListController: widget.shoppingListController,
             onActionCompleted: widget.onActionCompleted,
           ),
         );

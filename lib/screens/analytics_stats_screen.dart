@@ -7,6 +7,7 @@ import "../api/api_client.dart";
 import "../auth/auth_controller.dart";
 import "../localization/app_localizations.dart";
 import "../recipes/recipe_detail_screen.dart";
+import "../shopping/shopping_list_controller.dart";
 import "../utils/ui_utils.dart";
 import "../widgets/engagement_stat_widget.dart";
 import "../widgets/section_title_widget.dart";
@@ -16,10 +17,12 @@ class AnalyticsStatsScreen extends StatefulWidget {
     super.key,
     required this.apiClient,
     required this.auth,
+    required this.shoppingListController,
   });
 
   final ApiClient apiClient;
   final AuthController auth;
+  final ShoppingListController shoppingListController;
 
   @override
   State<AnalyticsStatsScreen> createState() => _AnalyticsStatsScreenState();
@@ -465,6 +468,7 @@ class _AnalyticsStatsScreenState extends State<AnalyticsStatsScreen> with Single
                         recipeId: recipe.recipeId,
                         apiClient: widget.apiClient,
                         auth: widget.auth,
+                        shoppingListController: widget.shoppingListController,
                       ),
                     ),
                   );
@@ -829,6 +833,7 @@ class _AnalyticsStatsScreenState extends State<AnalyticsStatsScreen> with Single
                         recipeId: event.recipeId!,
                         apiClient: widget.apiClient,
                         auth: widget.auth,
+                        shoppingListController: widget.shoppingListController,
                       ),
                     ),
                   );
@@ -843,6 +848,7 @@ class _AnalyticsStatsScreenState extends State<AnalyticsStatsScreen> with Single
                       recipeId: event.recipeId!,
                       apiClient: widget.apiClient,
                       auth: widget.auth,
+                      shoppingListController: widget.shoppingListController,
                     ),
                   ),
                 );

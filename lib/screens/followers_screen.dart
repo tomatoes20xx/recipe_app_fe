@@ -5,6 +5,7 @@ import "../api/api_client.dart";
 import "../auth/auth_controller.dart";
 import "../config.dart";
 import "../localization/app_localizations.dart";
+import "../shopping/shopping_list_controller.dart";
 import "../users/followers_controller.dart";
 import "../users/user_api.dart";
 import "../users/user_models.dart";
@@ -19,11 +20,13 @@ class FollowersScreen extends StatefulWidget {
     required this.username,
     required this.apiClient,
     required this.auth,
+    required this.shoppingListController,
   });
 
   final String username;
   final ApiClient apiClient;
   final AuthController auth;
+  final ShoppingListController shoppingListController;
 
   @override
   State<FollowersScreen> createState() => _FollowersScreenState();
@@ -277,6 +280,7 @@ class _FollowersScreenState extends State<FollowersScreen> {
                       builder: (_) => ProfileScreen(
                         auth: widget.auth,
                         apiClient: widget.apiClient,
+                        shoppingListController: widget.shoppingListController,
                       ),
                     ),
                   );
@@ -287,6 +291,7 @@ class _FollowersScreenState extends State<FollowersScreen> {
                       builder: (_) => ProfileScreen(
                         auth: widget.auth,
                         apiClient: widget.apiClient,
+                        shoppingListController: widget.shoppingListController,
                         username: user.username,
                       ),
                     ),
