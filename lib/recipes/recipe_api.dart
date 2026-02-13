@@ -304,6 +304,42 @@ class RecipeApi {
     await api.delete("/recipes/$recipeId/bookmark", auth: true);
   }
 
+  /// Add an image to a recipe
+  Future<void> addRecipeImage(String recipeId, File image) async {
+    final length = await image.length();
+    final filename = image.path.split('/').last;
+    final contentType = _getContentTypeFromFilename(filename);
+
+    final multipartFile = http.MultipartFile(
+      'image',
+      image.openRead(),
+      length,
+      filename: filename,
+      contentType: http.MediaType.parse(contentType),
+    );
+
+    await api.postMultipart(
+      "/recipes/$recipeId/images",
+      fields: {}, // No additional fields needed for image upload
+      files: [multipartFile],
+      auth: true,
+    );
+  }
+
+  /// Delete an image from a recipe
+  Future<void> deleteRecipeImage(String recipeId, String imageId) async {
+    await api.delete("/recipes/$recipeId/images/$imageId", auth: true);
+  }
+
+  /// Reorder recipe images
+  Future<void> reorderRecipeImages(String recipeId, List<String> imageIds) async {
+    await api.patch(
+      "/recipes/$recipeId/images/reorder",
+      body: {"imageIds": imageIds},
+      auth: true,
+    );
+  }
+
   /// Get popular recipes
   /// 
   /// [period] - Time period: "all_time", "30d", or "7d"
