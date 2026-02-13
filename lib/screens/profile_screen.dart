@@ -8,6 +8,7 @@ import "../auth/auth_api.dart";
 import "../auth/auth_controller.dart";
 import "../localization/app_localizations.dart";
 import "../recipes/recipe_detail_screen.dart";
+import "../shopping/shopping_list_controller.dart";
 import "../users/user_api.dart";
 import "../users/user_models.dart";
 import "../users/user_recipes_controller.dart";
@@ -25,11 +26,13 @@ class ProfileScreen extends StatefulWidget {
     super.key,
     required this.auth,
     required this.apiClient,
+    required this.shoppingListController,
     this.username,
   });
 
   final AuthController auth;
   final ApiClient apiClient;
+  final ShoppingListController shoppingListController;
   final String? username; // If provided, view this user's profile instead of current user
 
   @override
@@ -555,6 +558,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                         username: _userProfile!.username,
                                         apiClient: widget.apiClient,
                                         auth: widget.auth,
+                                        shoppingListController: widget.shoppingListController,
                                       ),
                                     ),
                                   );
@@ -608,6 +612,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                         username: _userProfile!.username,
                                         apiClient: widget.apiClient,
                                         auth: widget.auth,
+                                        shoppingListController: widget.shoppingListController,
                                       ),
                                     ),
                                   );
@@ -967,6 +972,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                       username: username,
                                       apiClient: widget.apiClient,
                                       auth: widget.auth,
+                                      shoppingListController: widget.shoppingListController,
                                     ),
                                   ),
                                 );
@@ -1020,6 +1026,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                       username: username,
                                       apiClient: widget.apiClient,
                                       auth: widget.auth,
+                                      shoppingListController: widget.shoppingListController,
                                     ),
                                   ),
                                 );
@@ -1181,6 +1188,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         recipeId: recipe.id,
                         apiClient: widget.apiClient,
                         auth: widget.auth,
+                        shoppingListController: widget.shoppingListController,
                       ),
                     ),
                   );

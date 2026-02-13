@@ -6,6 +6,7 @@ import "../localization/app_localizations.dart";
 import "../recipes/recipe_detail_screen.dart";
 import "../search/search_api.dart";
 import "../search/search_models.dart";
+import "../shopping/shopping_list_controller.dart";
 import "../utils/error_utils.dart";
 import "../widgets/empty_state_widget.dart";
 
@@ -13,10 +14,12 @@ class PantrySearchScreen extends StatefulWidget {
   const PantrySearchScreen({
     super.key,
     required this.apiClient,
+    required this.shoppingListController,
     this.auth,
   });
 
   final ApiClient apiClient;
+  final ShoppingListController shoppingListController;
   final AuthController? auth;
 
   @override
@@ -147,6 +150,7 @@ class _PantrySearchScreenState extends State<PantrySearchScreen> {
           recipeId: recipe.id,
           apiClient: widget.apiClient,
           auth: widget.auth,
+          shoppingListController: widget.shoppingListController,
         ),
       ),
     );

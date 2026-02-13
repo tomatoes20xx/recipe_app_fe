@@ -5,6 +5,7 @@ import "../../auth/auth_controller.dart";
 import "../../feed/feed_controller.dart";
 import "../../localization/app_localizations.dart";
 import "../../recipes/recipe_detail_screen.dart";
+import "../../shopping/shopping_list_controller.dart";
 import "../empty_state_widget.dart";
 import "../native_ad_card_widget.dart";
 import "feed_card.dart";
@@ -18,6 +19,7 @@ class FeedList extends StatelessWidget {
     required this.controller,
     required this.apiClient,
     required this.auth,
+    required this.shoppingListController,
     this.onActionCompleted,
   });
 
@@ -25,6 +27,7 @@ class FeedList extends StatelessWidget {
   final ScrollController controller;
   final ApiClient apiClient;
   final AuthController auth;
+  final ShoppingListController shoppingListController;
   final VoidCallback? onActionCompleted;
 
   @override
@@ -170,6 +173,7 @@ class FeedList extends StatelessWidget {
                         recipeId: item.id,
                         apiClient: apiClient,
                         auth: auth,
+                        shoppingListController: shoppingListController,
                       ),
                     ),
                   );
@@ -184,6 +188,7 @@ class FeedList extends StatelessWidget {
                   feed: feed,
                   apiClient: apiClient,
                   auth: auth,
+                  shoppingListController: shoppingListController,
                   onActionCompleted: onActionCompleted,
                 ),
               ),

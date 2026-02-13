@@ -7,6 +7,7 @@ import "../notifications/notification_controller.dart";
 import "../notifications/notification_models.dart" as notification_models;
 import "../recipes/recipe_detail_screen.dart";
 import "../screens/profile_screen.dart";
+import "../shopping/shopping_list_controller.dart";
 import "../utils/error_utils.dart";
 import "../utils/ui_utils.dart";
 import "../widgets/empty_state_widget.dart";
@@ -17,11 +18,13 @@ class NotificationsScreen extends StatefulWidget {
     required this.apiClient,
     required this.auth,
     required this.notificationController,
+    required this.shoppingListController,
   });
 
   final ApiClient apiClient;
   final AuthController auth;
   final NotificationController notificationController;
+  final ShoppingListController shoppingListController;
 
   @override
   State<NotificationsScreen> createState() => _NotificationsScreenState();
@@ -188,6 +191,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               builder: (_) => ProfileScreen(
                 auth: widget.auth,
                 apiClient: widget.apiClient,
+                shoppingListController: widget.shoppingListController,
                 username: isOwnProfile ? null : notification.actorUsername!,
               ),
             ),
@@ -205,6 +209,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 recipeId: notification.recipeId!,
                 apiClient: widget.apiClient,
                 auth: widget.auth,
+                shoppingListController: widget.shoppingListController,
               ),
             ),
           );
@@ -219,6 +224,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 recipeId: notification.recipeId!,
                 apiClient: widget.apiClient,
                 auth: widget.auth,
+                shoppingListController: widget.shoppingListController,
               ),
             ),
           );

@@ -11,6 +11,7 @@ import "../search/search_filters.dart";
 import "../search/search_history_storage.dart";
 import "../search/search_models.dart";
 import "../search/unified_search_controller.dart";
+import "../shopping/shopping_list_controller.dart";
 import "../users/user_api.dart";
 import "../users/user_models.dart";
 import "../utils/error_utils.dart";
@@ -23,11 +24,13 @@ class SearchScreen extends StatefulWidget {
   const SearchScreen({
     super.key,
     required this.apiClient,
+    required this.shoppingListController,
     this.auth,
     this.searchQuery,
   });
 
   final ApiClient apiClient;
+  final ShoppingListController shoppingListController;
   final AuthController? auth;
   final String? searchQuery;
 
@@ -283,6 +286,7 @@ class _SearchScreenState extends State<SearchScreen> {
                   builder: (_) => PantrySearchScreen(
                     apiClient: widget.apiClient,
                     auth: widget.auth,
+                    shoppingListController: widget.shoppingListController,
                   ),
                 ),
               );
@@ -513,6 +517,7 @@ class _SearchScreenState extends State<SearchScreen> {
                   builder: (_) => ProfileScreen(
                     auth: widget.auth!,
                     apiClient: widget.apiClient,
+                    shoppingListController: widget.shoppingListController,
                   ),
                 ),
               );
@@ -522,6 +527,7 @@ class _SearchScreenState extends State<SearchScreen> {
                   builder: (_) => ProfileScreen(
                     auth: widget.auth!,
                     apiClient: widget.apiClient,
+                    shoppingListController: widget.shoppingListController,
                     username: user.username,
                   ),
                 ),
@@ -598,6 +604,7 @@ class _SearchScreenState extends State<SearchScreen> {
                   recipeId: recipe.id,
                   apiClient: widget.apiClient,
                   auth: widget.auth,
+                  shoppingListController: widget.shoppingListController,
                 ),
               ),
             );

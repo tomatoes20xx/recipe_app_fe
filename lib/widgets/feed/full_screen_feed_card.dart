@@ -8,6 +8,7 @@ import "../../feed/feed_models.dart";
 import "../../recipes/comments_bottom_sheet.dart";
 import "../../recipes/recipe_detail_screen.dart";
 import "../../screens/profile_screen.dart";
+import "../../shopping/shopping_list_controller.dart";
 import "../../utils/ui_utils.dart";
 import "../engagement_stat_widget.dart";
 import "expandable_description.dart";
@@ -21,6 +22,7 @@ class FullScreenFeedCard extends StatefulWidget {
     required this.feed,
     required this.apiClient,
     required this.auth,
+    required this.shoppingListController,
     this.onActionCompleted,
   });
 
@@ -29,6 +31,7 @@ class FullScreenFeedCard extends StatefulWidget {
   final FeedController feed;
   final ApiClient apiClient;
   final AuthController auth;
+  final ShoppingListController shoppingListController;
   final VoidCallback? onActionCompleted;
 
   @override
@@ -53,6 +56,7 @@ class _FullScreenFeedCardState extends State<FullScreenFeedCard> {
           recipeId: widget.item.id,
           apiClient: widget.apiClient,
           auth: widget.auth,
+          shoppingListController: widget.shoppingListController,
         ),
       ),
     );
@@ -98,6 +102,7 @@ class _FullScreenFeedCardState extends State<FullScreenFeedCard> {
           onTap: _navigateToDetail,
           auth: widget.auth,
           apiClient: widget.apiClient,
+          shoppingListController: widget.shoppingListController,
         ),
         // Engagement actions overlay (right side)
         _EngagementOverlay(
@@ -206,6 +211,7 @@ class _ContentOverlay extends StatelessWidget {
     required this.onTap,
     required this.auth,
     required this.apiClient,
+    required this.shoppingListController,
   });
 
   final FeedItem item;
@@ -215,6 +221,7 @@ class _ContentOverlay extends StatelessWidget {
   final VoidCallback onTap;
   final AuthController auth;
   final ApiClient apiClient;
+  final ShoppingListController shoppingListController;
 
   @override
   Widget build(BuildContext context) {
@@ -237,6 +244,7 @@ class _ContentOverlay extends StatelessWidget {
                   date: date,
                   auth: auth,
                   apiClient: apiClient,
+                  shoppingListController: shoppingListController,
                 ),
                 const SizedBox(height: 12),
                 // Title
@@ -281,12 +289,14 @@ class _AuthorInfo extends StatelessWidget {
     required this.date,
     required this.auth,
     required this.apiClient,
+    required this.shoppingListController,
   });
 
   final FeedItem item;
   final String date;
   final AuthController auth;
   final ApiClient apiClient;
+  final ShoppingListController shoppingListController;
 
   @override
   Widget build(BuildContext context) {
@@ -303,6 +313,7 @@ class _AuthorInfo extends StatelessWidget {
                 builder: (_) => ProfileScreen(
                   auth: auth,
                   apiClient: apiClient,
+                  shoppingListController: shoppingListController,
                   username: isOwnProfile ? null : item.authorUsername,
                 ),
               ),

@@ -48,6 +48,10 @@ dependencies:
   cached_network_image: ^3.3.1
   # For SQLite support on Windows/Linux/macOS (required by cached_network_image)
   sqflite_common_ffi: ^2.3.3+2
+  # For local storage (shopping list, preferences)
+  shared_preferences: ^2.2.2
+  # For generating unique IDs
+  uuid: ^4.3.3
   # For app version info
   package_info_plus: ^8.1.1
   # For Google AdMob

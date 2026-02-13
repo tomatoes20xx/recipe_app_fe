@@ -447,6 +447,31 @@ class AppLocalizations {
   String get completeYourProfile => _localizedValues[locale.languageCode]?["completeYourProfile"] ?? "Complete your profile to get started";
   String get profileSetupInfo => _localizedValues[locale.languageCode]?["profileSetupInfo"] ?? "Your username is permanent and cannot be changed. Display name and bio can be updated anytime from your profile.";
 
+  // Shopping List
+  String get shoppingList => _localizedValues[locale.languageCode]?["shoppingList"] ?? "Shopping List";
+  String get manageYourShoppingList => _localizedValues[locale.languageCode]?["manageYourShoppingList"] ?? "Manage your shopping list";
+  String get emptyShoppingList => _localizedValues[locale.languageCode]?["emptyShoppingList"] ?? "Shopping list is empty";
+  String get emptyShoppingListMessage => _localizedValues[locale.languageCode]?["emptyShoppingListMessage"] ?? "Add ingredients from recipes to create your shopping list";
+  String get checked => _localizedValues[locale.languageCode]?["checked"] ?? "Checked";
+  String get remaining => _localizedValues[locale.languageCode]?["remaining"] ?? "Remaining";
+  String get clearChecked => _localizedValues[locale.languageCode]?["clearChecked"] ?? "Clear";
+  String get clearCheckedItems => _localizedValues[locale.languageCode]?["clearCheckedItems"] ?? "Clear checked items?";
+  String get clearCheckedItemsMessage => _localizedValues[locale.languageCode]?["clearCheckedItemsMessage"] ?? "This will remove all checked items from your shopping list.";
+  String get clearAllItems => _localizedValues[locale.languageCode]?["clearAllItems"] ?? "Clear all items?";
+  String get clearAllItemsMessage => _localizedValues[locale.languageCode]?["clearAllItemsMessage"] ?? "This will remove all items from your shopping list. This action cannot be undone.";
+  String get clear => _localizedValues[locale.languageCode]?["clear"] ?? "Clear";
+  String get removeRecipeItems => _localizedValues[locale.languageCode]?["removeRecipeItems"] ?? "Remove recipe items?";
+  String get removeRecipeItemsMessage => _localizedValues[locale.languageCode]?["removeRecipeItemsMessage"] ?? "Remove all items from {recipe}?";
+  String get remove => _localizedValues[locale.languageCode]?["remove"] ?? "Remove";
+  String get checkAll => _localizedValues[locale.languageCode]?["checkAll"] ?? "Check All";
+  String get uncheckAll => _localizedValues[locale.languageCode]?["uncheckAll"] ?? "Uncheck All";
+  String get removeRecipe => _localizedValues[locale.languageCode]?["removeRecipe"] ?? "Remove Recipe";
+  String get nItemsSelected => _localizedValues[locale.languageCode]?["nItemsSelected"] ?? "{n} items selected";
+  String get alreadyHave => _localizedValues[locale.languageCode]?["alreadyHave"] ?? "Already Have";
+  String get addToShoppingList => _localizedValues[locale.languageCode]?["addToShoppingList"] ?? "Add to List";
+  String get nItemsAddedToList => _localizedValues[locale.languageCode]?["nItemsAddedToList"] ?? "{n} items added to shopping list";
+  String get view => _localizedValues[locale.languageCode]?["view"] ?? "View";
+
   // App Tour
   String get tourWelcomeTitle => _localizedValues[locale.languageCode]?["tourWelcomeTitle"] ?? "Welcome to Yummy! 👋";
   String get tourWelcomeDescription => _localizedValues[locale.languageCode]?["tourWelcomeDescription"] ?? "This is your home feed. Discover amazing recipes from the community and find your next meal inspiration!";
@@ -789,6 +814,29 @@ class AppLocalizations {
       "sessionExpired": "Session expired. Please sign in again.",
       "completeYourProfile": "Complete your profile to get started",
       "profileSetupInfo": "Your username is permanent and cannot be changed. Display name and bio can be updated anytime from your profile.",
+      "shoppingList": "Shopping List",
+      "manageYourShoppingList": "Manage your shopping list",
+      "emptyShoppingList": "Shopping list is empty",
+      "emptyShoppingListMessage": "Add ingredients from recipes to create your shopping list",
+      "checked": "Checked",
+      "remaining": "Remaining",
+      "clearChecked": "Clear",
+      "clearCheckedItems": "Clear checked items?",
+      "clearCheckedItemsMessage": "This will remove all checked items from your shopping list.",
+      "clearAllItems": "Clear all items?",
+      "clearAllItemsMessage": "This will remove all items from your shopping list. This action cannot be undone.",
+      "clear": "Clear",
+      "removeRecipeItems": "Remove recipe items?",
+      "removeRecipeItemsMessage": "Remove all items from {recipe}?",
+      "remove": "Remove",
+      "checkAll": "Check All",
+      "uncheckAll": "Uncheck All",
+      "removeRecipe": "Remove Recipe",
+      "nItemsSelected": "{n} items selected",
+      "alreadyHave": "Already Have",
+      "addToShoppingList": "Add to List",
+      "nItemsAddedToList": "{n} items added to shopping list",
+      "view": "View",
       "dismiss": "Dismiss",
       "unableToConnect": "Unable to connect to the server. Please check your internet connection and try again.",
       "requestTimedOut": "Request timed out. Please try again.",
@@ -1186,6 +1234,29 @@ class AppLocalizations {
       "sessionExpired": "სესია ამოიწურა. გთხოვთ ხელახლა შეხვიდეთ სისტემაში.",
       "completeYourProfile": "შეავსეთ თქვენი პროფილი დასაწყებად",
       "profileSetupInfo": "თქვენი მომხმარებლის სახელი მუდმივია და ვერ შეიცვლება. საჩვენებელი სახელი და ბიოგრაფია შეგიძლიათ ნებისმიერ დროს განაახლოთ პროფილიდან.",
+      "shoppingList": "სასყიდლე სია",
+      "manageYourShoppingList": "მართეთ თქვენი სასყიდლე სია",
+      "emptyShoppingList": "სასყიდლე სია ცარიელია",
+      "emptyShoppingListMessage": "დაამატეთ ინგრედიენტები რეცეპტებიდან სასყიდლე სიის შესაქმნელად",
+      "checked": "მონიშნული",
+      "remaining": "დარჩენილი",
+      "clearChecked": "გასუფთავება",
+      "clearCheckedItems": "გავასუფთაო მონიშნული ელემენტები?",
+      "clearCheckedItemsMessage": "ეს ამოშლის ყველა მონიშნულ ელემენტს თქვენი სასყიდლე სიიდან.",
+      "clearAllItems": "გავასუფთაო ყველა ელემენტი?",
+      "clearAllItemsMessage": "ეს ამოშლის ყველა ელემენტს თქვენი სასყიდლე სიიდან. ეს მოქმედება ვერ გაუქმდება.",
+      "clear": "გასუფთავება",
+      "removeRecipeItems": "ამოვშალო რეცეპტის ელემენტები?",
+      "removeRecipeItemsMessage": "ამოვშალო ყველა ელემენტი {recipe}-დან?",
+      "remove": "ამოშლა",
+      "checkAll": "ყველას მონიშვნა",
+      "uncheckAll": "ყველას მოხსნა",
+      "removeRecipe": "რეცეპტის ამოშლა",
+      "nItemsSelected": "{n} ელემენტი არჩეულია",
+      "alreadyHave": "უკვე მაქვს",
+      "addToShoppingList": "სიაში დამატება",
+      "nItemsAddedToList": "{n} ელემენტი დაემატა სასყიდლე სიას",
+      "view": "ნახვა",
       "dismiss": "დახურვა",
       "unableToConnect": "სერვერთან დაკავშირება ვერ მოხერხდა. გთხოვთ შეამოწმოთ ინტერნეტ-კავშირი და სცადოთ ხელახლა.",
       "requestTimedOut": "მოთხოვნის დრო ამოიწურა. გთხოვთ სცადოთ ხელახლა.",

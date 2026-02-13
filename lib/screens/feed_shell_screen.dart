@@ -13,6 +13,7 @@ import "../localization/language_controller.dart";
 import "../notifications/notification_api.dart";
 import "../notifications/notification_controller.dart";
 import "../services/app_tour_service.dart";
+import "../shopping/shopping_list_controller.dart";
 import "../theme/theme_controller.dart";
 import "../utils/ui_utils.dart";
 import "analytics_stats_screen.dart";
@@ -23,6 +24,7 @@ import "profile_screen.dart";
 import "saved_recipes_screen.dart";
 import "search_screen.dart";
 import "settings_screen.dart";
+import "shopping_list_screen.dart";
 
 class FeedShellScreen extends StatefulWidget {
   const FeedShellScreen({
@@ -31,12 +33,14 @@ class FeedShellScreen extends StatefulWidget {
     required this.apiClient,
     required this.themeController,
     required this.languageController,
+    required this.shoppingListController,
   });
 
   final AuthController auth;
   final ApiClient apiClient;
   final ThemeController themeController;
   final LanguageController languageController;
+  final ShoppingListController shoppingListController;
 
   @override
   State<FeedShellScreen> createState() => _FeedShellScreenState();
@@ -149,6 +153,7 @@ class _FeedShellScreenState extends State<FeedShellScreen> {
           onNotificationRefresh: _notificationController.refreshUnreadCount,
           sortDropdownKey: _sortDropdownKey,
           viewToggleKey: _viewToggleKey,
+          shoppingListController: widget.shoppingListController,
         );
       case 1:
         return NotificationsScreen(
@@ -156,12 +161,14 @@ class _FeedShellScreenState extends State<FeedShellScreen> {
           apiClient: widget.apiClient,
           auth: widget.auth,
           notificationController: _notificationController,
+          shoppingListController: widget.shoppingListController,
         );
       case 2:
         return SearchScreen(
           key: const ValueKey("search"),
           apiClient: widget.apiClient,
           auth: widget.auth,
+          shoppingListController: widget.shoppingListController,
         );
       default:
         return const SizedBox.shrink();
@@ -179,6 +186,7 @@ class _FeedShellScreenState extends State<FeedShellScreen> {
         apiClient: widget.apiClient,
         themeController: widget.themeController,
         languageController: widget.languageController,
+        shoppingListController: widget.shoppingListController,
         onScopeSelected: _changeFeedScope,
       ),
       body: PageTransitionSwitcher(
@@ -433,6 +441,7 @@ class _FeedShellDrawer extends StatelessWidget {
     required this.apiClient,
     required this.themeController,
     required this.languageController,
+    required this.shoppingListController,
     required this.onScopeSelected,
   });
 
@@ -441,6 +450,7 @@ class _FeedShellDrawer extends StatelessWidget {
   final ApiClient apiClient;
   final ThemeController themeController;
   final LanguageController languageController;
+  final ShoppingListController shoppingListController;
   final ValueChanged<String> onScopeSelected;
 
   @override
@@ -461,6 +471,7 @@ class _FeedShellDrawer extends StatelessWidget {
                       builder: (_) => ProfileScreen(
                         auth: auth,
                         apiClient: apiClient,
+                        shoppingListController: shoppingListController,
                       ),
                     ),
                   );
@@ -592,6 +603,23 @@ class _FeedShellDrawer extends StatelessWidget {
                       builder: (_) => SavedRecipesScreen(
                         apiClient: apiClient,
                         auth: auth,
+                        shoppingListController: shoppingListController,
+                      ),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 8),
+              _QuickAccessCard(
+                icon: Icons.shopping_cart_outlined,
+                title: AppLocalizations.of(context)?.shoppingList ?? "Shopping List",
+                subtitle: AppLocalizations.of(context)?.manageYourShoppingList ?? "Manage your shopping list",
+                onTap: () {
+                  Navigator.of(context).pop();
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => ShoppingListScreen(
+                        controller: shoppingListController,
                       ),
                     ),
                   );

@@ -7,6 +7,7 @@ import "../../feed/feed_controller.dart";
 import "../../feed/feed_models.dart";
 import "../../recipes/comments_bottom_sheet.dart";
 import "../../screens/profile_screen.dart";
+import "../../shopping/shopping_list_controller.dart";
 import "../../utils/ui_utils.dart";
 import "expandable_description.dart";
 
@@ -19,6 +20,7 @@ class FeedCard extends StatefulWidget {
     required this.feed,
     required this.apiClient,
     required this.auth,
+    required this.shoppingListController,
     this.onActionCompleted,
   });
 
@@ -27,6 +29,7 @@ class FeedCard extends StatefulWidget {
   final FeedController feed;
   final ApiClient apiClient;
   final AuthController auth;
+  final ShoppingListController shoppingListController;
   final VoidCallback? onActionCompleted;
 
   @override
@@ -75,6 +78,7 @@ class _FeedCardState extends State<FeedCard> {
                   date: date,
                   auth: widget.auth,
                   apiClient: widget.apiClient,
+                  shoppingListController: widget.shoppingListController,
                 ),
                 const SizedBox(height: 10),
                 // Recipe title
@@ -127,12 +131,14 @@ class _AuthorRow extends StatelessWidget {
     required this.date,
     required this.auth,
     required this.apiClient,
+    required this.shoppingListController,
   });
 
   final FeedItem item;
   final String date;
   final AuthController auth;
   final ApiClient apiClient;
+  final ShoppingListController shoppingListController;
 
   @override
   Widget build(BuildContext context) {
@@ -147,6 +153,7 @@ class _AuthorRow extends StatelessWidget {
             builder: (_) => ProfileScreen(
               auth: auth,
               apiClient: apiClient,
+              shoppingListController: shoppingListController,
               username: isOwnProfile ? null : item.authorUsername,
             ),
           ),
