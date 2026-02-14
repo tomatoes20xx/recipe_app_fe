@@ -73,22 +73,31 @@ class SharedShoppingList {
   bool get isCollaborative => shareType == "collaborative";
 
   factory SharedShoppingList.fromJson(Map<String, dynamic> json) {
-    // Handle avatar URL (check for null, empty, or "null" string)
-    final avatarUrl = json["owner_avatar_url"];
+    // Extract owner object (nested structure)
+    final owner = json["owner"] as Map<String, dynamic>? ?? {};
+
+    // Handle avatar URL
+    final avatarUrl = owner["avatarUrl"] ?? owner["avatar_url"];
     final processedAvatarUrl = avatarUrl == null ||
                                avatarUrl == "null" ||
                                (avatarUrl is String && avatarUrl.isEmpty)
         ? null
         : avatarUrl.toString();
 
+    // Handle date parsing safely
+    final sharedAtStr = json["sharedAt"]?.toString();
+    final sharedAt = sharedAtStr != null && sharedAtStr.isNotEmpty
+        ? DateTime.parse(sharedAtStr)
+        : DateTime.now();
+
     return SharedShoppingList(
-      ownerId: json["owner_id"].toString(),
-      ownerUsername: json["owner_username"].toString(),
-      ownerDisplayName: json["owner_display_name"]?.toString(),
+      ownerId: (owner["userId"] ?? owner["user_id"] ?? "").toString(),
+      ownerUsername: (owner["username"] ?? "").toString(),
+      ownerDisplayName: (owner["displayName"] ?? owner["display_name"])?.toString(),
       ownerAvatarUrl: processedAvatarUrl,
-      shareType: json["share_type"].toString(),
-      sharedAt: DateTime.parse(json["shared_at"].toString()),
-      itemCount: json["item_count"] is int ? json["item_count"] as int : 0,
+      shareType: (json["shareType"] ?? json["share_type"] ?? "read_only").toString(),
+      sharedAt: sharedAt,
+      itemCount: json["totalItems"] ?? json["total_items"] ?? json["itemCount"] ?? json["item_count"] ?? 0,
     );
   }
 
