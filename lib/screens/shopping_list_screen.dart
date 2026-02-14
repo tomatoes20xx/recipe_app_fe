@@ -11,6 +11,7 @@ import "../utils/error_utils.dart";
 import "../utils/ui_utils.dart";
 import "../widgets/empty_state_widget.dart";
 import "../widgets/sharing/follower_selection_bottom_sheet.dart";
+import "../widgets/sharing/recipe_selection_bottom_sheet.dart";
 import "../widgets/sharing/shared_with_bottom_sheet.dart";
 
 class ShoppingListScreen extends StatefulWidget {
@@ -280,30 +281,40 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
       return;
     }
 
-    await showFollowerSelectionBottomSheet(
+    // First: Select recipes to share
+    await showRecipeSelectionBottomSheet(
       context: context,
-      apiClient: widget.apiClient,
-      auth: widget.auth!,
-      alreadySharedWith: _sharingController.sharedWith.map((u) => u.userId).toList(),
-      showShareTypeSelector: true,
-      onShare: (userIds, shareType) async {
-        try {
-          await _sharingController.shareWith(
-            userIds: userIds,
-            shareType: shareType ?? "read_only",
-          );
-          if (mounted) {
-            final localizations = AppLocalizations.of(context);
-            ErrorUtils.showSuccess(
-              context,
-              localizations?.shoppingListSharedSuccess ?? "Shopping list shared successfully!",
-            );
-          }
-        } catch (e) {
-          if (mounted) {
-            ErrorUtils.showError(context, e);
-          }
-        }
+      allItems: widget.controller.items,
+      onRecipesSelected: (selectedRecipeIds) async {
+        // Second: Select followers and share type
+        await showFollowerSelectionBottomSheet(
+          context: context,
+          apiClient: widget.apiClient,
+          auth: widget.auth!,
+          alreadySharedWith: [], // TODO: Track per-recipe shares
+          showShareTypeSelector: true,
+          onShare: (userIds, shareType) async {
+            try {
+              final api = ShoppingListApi(widget.apiClient);
+              await api.shareRecipeIngredients(
+                userIds: userIds,
+                recipeIds: selectedRecipeIds,
+                shareType: shareType ?? "read_only",
+              );
+              if (mounted) {
+                final localizations = AppLocalizations.of(context);
+                ErrorUtils.showSuccess(
+                  context,
+                  localizations?.shoppingListSharedSuccess ?? "Recipes shared successfully!",
+                );
+              }
+            } catch (e) {
+              if (mounted) {
+                ErrorUtils.showError(context, e);
+              }
+            }
+          },
+        );
       },
     );
   }
