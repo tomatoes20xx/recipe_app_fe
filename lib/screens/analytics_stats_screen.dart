@@ -546,7 +546,7 @@ class _AnalyticsStatsScreenState extends State<AnalyticsStatsScreen> with Single
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
                         Tooltip(
-                          message: "${formatDate(event.date)}\nTotal: ${event.total}\nViews: ${event.views}\nLikes: ${event.likes}",
+                          message: "${formatDate(context, event.date)}\nTotal: ${event.total}\nViews: ${event.views}\nLikes: ${event.likes}",
                           child: Container(
                             width: 30,
                             height: height,
@@ -814,7 +814,7 @@ class _AnalyticsStatsScreenState extends State<AnalyticsStatsScreen> with Single
                 if (event.recipeTitle != null)
                   Text("${localizations?.recipe ?? "Recipe"}: ${event.recipeTitle}"),
                 Text(
-                  formatDate(event.createdAt),
+                  formatDate(context, event.createdAt),
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                       ),

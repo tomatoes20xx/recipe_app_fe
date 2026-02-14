@@ -416,7 +416,7 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
 
   Widget _buildCommentBlock(_CommentNode node, int depth, {String? parentCommentId, bool isLastChild = false}) {
     final c = node.comment;
-    final timeAgo = formatRelativeTime(c.createdAt);
+    final timeAgo = formatRelativeTime(context, c.createdAt);
     final hasReplies = node.children.isNotEmpty;
     final isCollapsed = _collapsedIds.contains(c.id);
     final isLoggedIn = widget.auth?.isLoggedIn ?? false;

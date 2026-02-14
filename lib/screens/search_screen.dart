@@ -579,7 +579,7 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Widget _buildRecipeCard(SearchResult recipe) {
-    final date = formatDate(recipe.createdAt);
+    final date = formatDate(context, recipe.createdAt);
 
     return RepaintBoundary(
       child: Card(

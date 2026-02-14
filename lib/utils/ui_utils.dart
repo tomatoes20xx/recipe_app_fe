@@ -2,6 +2,7 @@ import "package:flutter/material.dart";
 import "package:cached_network_image/cached_network_image.dart";
 
 import "../config.dart";
+import "../localization/app_localizations.dart";
 
 /// Builds a full image URL from a relative URL or returns the URL if it's already absolute
 String buildImageUrl(String relativeUrl) {
@@ -11,46 +12,45 @@ String buildImageUrl(String relativeUrl) {
   return "${Config.apiBaseUrl}$relativeUrl";
 }
 
-/// Memoized date formatter - cache formatted dates to avoid repeated formatting
-final Map<DateTime, String> _dateCache = {};
-
 /// Formats a DateTime to a readable string like "January 15, 2024"
-String formatDate(DateTime date) {
-  // Use a normalized date (without time) as cache key
-  final normalizedDate = DateTime(date.year, date.month, date.day);
-
-  return _dateCache.putIfAbsent(normalizedDate, () {
-    const months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
-    ];
-    final localDate = date.toLocal();
-    return '${months[localDate.month - 1]} ${localDate.day}, ${localDate.year}';
-  });
+/// Uses localized month names based on the current app locale
+String formatDate(BuildContext context, DateTime date) {
+  final localizations = AppLocalizations.of(context);
+  final localDate = date.toLocal();
+  final monthName = localizations?.getMonthName(localDate.month) ?? 'Unknown';
+  return '$monthName ${localDate.day}, ${localDate.year}';
 }
-
-const _monthAbbr = [
-  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-];
 
 /// Formats a DateTime to a relative time string like "2h ago", "3d ago", etc.
 /// Falls back to absolute date for older timestamps.
-String formatRelativeTime(DateTime dateTime) {
+/// Uses localized strings based on the current app locale
+String formatRelativeTime(BuildContext context, DateTime dateTime) {
+  final localizations = AppLocalizations.of(context);
   final now = DateTime.now();
   final difference = now.difference(dateTime.toLocal());
 
-  if (difference.isNegative || difference.inSeconds < 60) return 'Just now';
-  if (difference.inMinutes < 60) return '${difference.inMinutes}m ago';
-  if (difference.inHours < 24) return '${difference.inHours}h ago';
-  if (difference.inDays < 7) return '${difference.inDays}d ago';
-  if (difference.inDays < 30) return '${(difference.inDays / 7).floor()}w ago';
+  if (difference.isNegative || difference.inSeconds < 60) {
+    return localizations?.timeJustNow ?? 'Just now';
+  }
+  if (difference.inMinutes < 60) {
+    return '${difference.inMinutes}${localizations?.timeMinutesAgo ?? 'm ago'}';
+  }
+  if (difference.inHours < 24) {
+    return '${difference.inHours}${localizations?.timeHoursAgo ?? 'h ago'}';
+  }
+  if (difference.inDays < 7) {
+    return '${difference.inDays}${localizations?.timeDaysAgo ?? 'd ago'}';
+  }
+  if (difference.inDays < 30) {
+    return '${(difference.inDays / 7).floor()}${localizations?.timeWeeksAgo ?? 'w ago'}';
+  }
 
   final local = dateTime.toLocal();
+  final monthName = localizations?.getMonthAbbr(local.month) ?? 'Unknown';
   if (difference.inDays < 365) {
-    return '${_monthAbbr[local.month - 1]} ${local.day}';
+    return '$monthName ${local.day}';
   }
-  return '${_monthAbbr[local.month - 1]} ${local.day}, ${local.year}';
+  return '$monthName ${local.day}, ${local.year}';
 }
 
 /// Builds a user avatar widget with fallback to initials or icon

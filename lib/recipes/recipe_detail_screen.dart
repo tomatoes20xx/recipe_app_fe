@@ -1141,7 +1141,7 @@ class _UserInfoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final date = formatDate(r.createdAt);
+    final date = formatDate(context, r.createdAt);
     final cuisine = r.cuisine;
     final hasCuisine = cuisine != null && cuisine.trim().isNotEmpty;
 
