@@ -25,6 +25,8 @@ import "profile_screen.dart";
 import "saved_recipes_screen.dart";
 import "search_screen.dart";
 import "settings_screen.dart";
+import "shared_recipes_screen.dart";
+import "shared_shopping_lists_screen.dart";
 import "shopping_list_screen.dart";
 
 class FeedShellScreen extends StatefulWidget {
@@ -609,6 +611,43 @@ class _FeedShellDrawer extends StatelessWidget {
                     MaterialPageRoute(
                       builder: (_) => ShoppingListScreen(
                         controller: shoppingListController,
+                        apiClient: apiClient,
+                        auth: auth,
+                      ),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 8),
+              _QuickAccessCard(
+                icon: Icons.folder_shared,
+                title: AppLocalizations.of(context)?.sharedRecipes ?? "Shared Recipes",
+                subtitle: AppLocalizations.of(context)?.recipesSharedWithYou ?? "Recipes shared with you",
+                onTap: () {
+                  Navigator.of(context).pop();
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => SharedRecipesScreen(
+                        apiClient: apiClient,
+                        auth: auth,
+                        shoppingListController: shoppingListController,
+                      ),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 8),
+              _QuickAccessCard(
+                icon: Icons.shopping_basket_outlined,
+                title: AppLocalizations.of(context)?.sharedShoppingLists ?? "Shared Shopping Lists",
+                subtitle: AppLocalizations.of(context)?.listsSharedWithYou ?? "Shopping lists shared with you",
+                onTap: () {
+                  Navigator.of(context).pop();
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => SharedShoppingListsScreen(
+                        apiClient: apiClient,
+                        auth: auth,
                       ),
                     ),
                   );

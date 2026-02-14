@@ -1,11 +1,13 @@
 /// Notification types
 enum NotificationType {
-  follow,      // Someone followed you
-  like,        // Someone liked your recipe
-  comment,     // Someone commented on your recipe
-  bookmark,    // Someone bookmarked your recipe
-  recipe,      // Someone you follow posted a recipe (optional)
-  unknown,     // Unknown type (for future compatibility)
+  follow,             // Someone followed you
+  like,               // Someone liked your recipe
+  comment,            // Someone commented on your recipe
+  bookmark,           // Someone bookmarked your recipe
+  recipe,             // Someone you follow posted a recipe (optional)
+  recipeShare,        // Someone shared a recipe with you
+  shoppingListShare,  // Someone shared a shopping list with you
+  unknown,            // Unknown type (for future compatibility)
 }
 
 /// Notification model
@@ -53,6 +55,12 @@ class Notification {
         break;
       case "recipe":
         type = NotificationType.recipe;
+        break;
+      case "recipe_share":
+        type = NotificationType.recipeShare;
+        break;
+      case "shopping_list_share":
+        type = NotificationType.shoppingListShare;
         break;
       default:
         type = NotificationType.unknown;

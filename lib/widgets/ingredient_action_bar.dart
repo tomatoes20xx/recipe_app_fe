@@ -1,6 +1,8 @@
 import "package:flutter/material.dart";
 import "package:uuid/uuid.dart";
 
+import "../api/api_client.dart";
+import "../auth/auth_controller.dart";
 import "../localization/app_localizations.dart";
 import "../recipes/recipe_detail_models.dart";
 import "../screens/shopping_list_screen.dart";
@@ -16,6 +18,8 @@ class IngredientActionBar extends StatelessWidget {
     required this.recipeName,
     this.recipeImage,
     required this.shoppingListController,
+    required this.apiClient,
+    required this.auth,
     required this.onMarkAsHave,
     required this.onCancel,
   });
@@ -25,6 +29,8 @@ class IngredientActionBar extends StatelessWidget {
   final String recipeName;
   final String? recipeImage;
   final ShoppingListController shoppingListController;
+  final ApiClient apiClient;
+  final AuthController? auth;
   final VoidCallback onMarkAsHave;
   final VoidCallback onCancel;
 
@@ -170,6 +176,8 @@ class IngredientActionBar extends StatelessWidget {
             MaterialPageRoute(
               builder: (_) => ShoppingListScreen(
                 controller: shoppingListController,
+                apiClient: apiClient,
+                auth: auth,
               ),
             ),
           );

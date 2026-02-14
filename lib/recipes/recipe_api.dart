@@ -4,6 +4,7 @@ import "dart:io";
 import "package:http/http.dart" as http;
 
 import "../api/api_client.dart";
+import "../sharing/sharing_models.dart";
 import "comment_models.dart";
 import "recipe_detail_models.dart";
 
@@ -362,7 +363,7 @@ class RecipeApi {
   }
 
   /// Get trending recipes
-  /// 
+  ///
   /// [days] - Number of days to look back (1-30, default: 7)
   /// [limit] - Number of items per page (default: 20)
   /// [cursor] - Pagination cursor
@@ -380,5 +381,79 @@ class RecipeApi {
     // auth: true so viewer flags work; if no token, header won't be set
     final data = await api.get("/recipes/trending", query: queryParams, auth: true);
     return Map<String, dynamic>.from(data as Map);
+  }
+
+  // ==================== SHARING METHODS ====================
+
+  /// Share a recipe with followers
+  ///
+  /// [recipeId] - ID of the recipe to share
+  /// [userIds] - List of user IDs to share with (must be followers)
+  Future<void> shareRecipe(String recipeId, List<String> userIds) async {
+    await api.post(
+      "/recipes/$recipeId/share",
+      body: {"userIds": userIds},
+      auth: true,
+    );
+  }
+
+  /// Unshare a recipe from a specific user
+  ///
+  /// [recipeId] - ID of the recipe
+  /// [userId] - User ID to remove access from
+  Future<void> unshareRecipe(String recipeId, String userId) async {
+    await api.delete(
+      "/recipes/$recipeId/share/$userId",
+      auth: true,
+    );
+  }
+
+  /// Get recipes shared with the current user
+  ///
+  /// [limit] - Number of items per page (default: 20)
+  /// [cursor] - Pagination cursor for next page
+  /// Returns FeedResponse format (items list, nextCursor, etc.)
+  Future<Map<String, dynamic>> getSharedWithMeRecipes({
+    int limit = 20,
+    String? cursor,
+  }) async {
+    final queryParams = <String, String>{
+      "limit": limit.toString(),
+      if (cursor != null) "cursor": cursor,
+    };
+
+    final data = await api.get(
+      "/recipes/shared-with-me",
+      query: queryParams,
+      auth: true,
+    );
+    return Map<String, dynamic>.from(data as Map);
+  }
+
+  /// Get list of users who have access to a recipe
+  ///
+  /// [recipeId] - ID of the recipe
+  /// Returns list of SharedWithUser objects
+  Future<List<SharedWithUser>> getRecipeSharedWith(String recipeId) async {
+    final data = await api.get(
+      "/recipes/$recipeId/shared-with",
+      auth: true,
+    );
+
+    // Handle different response formats safely
+    if (data is List) {
+      return data
+          .map((e) => SharedWithUser.fromJson(Map<String, dynamic>.from(e as Map)))
+          .toList();
+    } else if (data is Map) {
+      final items = data["items"] ?? data["data"] ?? [];
+      if (items is List) {
+        return items
+            .map((e) => SharedWithUser.fromJson(Map<String, dynamic>.from(e as Map)))
+            .toList();
+      }
+    }
+
+    return [];
   }
 }

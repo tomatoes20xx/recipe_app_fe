@@ -99,6 +99,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         return Icons.bookmark;
       case notification_models.NotificationType.recipe:
         return Icons.restaurant_menu;
+      case notification_models.NotificationType.recipeShare:
+        return Icons.share;
+      case notification_models.NotificationType.shoppingListShare:
+        return Icons.shopping_basket;
       case notification_models.NotificationType.unknown:
         return Icons.notifications;
     }
@@ -116,6 +120,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         return Colors.purple;
       case notification_models.NotificationType.recipe:
         return Colors.green;
+      case notification_models.NotificationType.recipeShare:
+        return Colors.teal;
+      case notification_models.NotificationType.shoppingListShare:
+        return Colors.indigo;
       case notification_models.NotificationType.unknown:
         return Theme.of(context).colorScheme.primary;
     }
@@ -138,6 +146,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         return "$actor bookmarked your recipe";
       case notification_models.NotificationType.recipe:
         return "$actor posted a new recipe";
+      case notification_models.NotificationType.recipeShare:
+        return "$actor shared a recipe with you";
+      case notification_models.NotificationType.shoppingListShare:
+        return "$actor shared a shopping list with you";
       case notification_models.NotificationType.unknown:
         return notification.message ?? "New notification";
     }
@@ -165,6 +177,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         return notification.recipeTitle != null
             ? "Posted \"${notification.recipeTitle}\""
             : "Posted a new recipe";
+      case notification_models.NotificationType.recipeShare:
+        return notification.recipeTitle != null
+            ? "Shared \"${notification.recipeTitle}\""
+            : "Shared a recipe";
+      case notification_models.NotificationType.shoppingListShare:
+        return "You can now view their shopping list";
       default:
         return null;
     }
@@ -220,6 +238,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         break;
 
       case notification_models.NotificationType.recipe:
+      case notification_models.NotificationType.recipeShare:
         if (notification.recipeId != null) {
           Navigator.of(context).push(
             MaterialPageRoute(
@@ -232,6 +251,17 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             ),
           );
         }
+        break;
+
+      case notification_models.NotificationType.shoppingListShare:
+        // TODO: Navigate to shared shopping lists screen when created
+        // For now, just show a message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Tap on the menu to view shared shopping lists"),
+            duration: Duration(seconds: 3),
+          ),
+        );
         break;
 
       case notification_models.NotificationType.unknown:

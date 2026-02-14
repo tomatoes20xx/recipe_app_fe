@@ -1,6 +1,7 @@
 import "../feed/feed_models.dart";
 
 class UserSearchResult {
+  final String userId; // UUID
   final String username;
   final String? displayName;
   final String? avatarUrl;
@@ -8,6 +9,7 @@ class UserSearchResult {
   final bool viewerIsMe; // true if this is the current user
 
   UserSearchResult({
+    required this.userId,
     required this.username,
     this.displayName,
     this.avatarUrl,
@@ -17,6 +19,7 @@ class UserSearchResult {
 
   factory UserSearchResult.fromJson(Map<String, dynamic> json) {
     return UserSearchResult(
+      userId: json["user_id"]?.toString() ?? json["id"]?.toString() ?? "",
       username: json["username"].toString(),
       displayName: json["display_name"]?.toString(),
       avatarUrl: json["avatar_url"]?.toString(),
@@ -26,6 +29,7 @@ class UserSearchResult {
   }
 
   UserSearchResult copyWith({
+    String? userId,
     String? username,
     String? displayName,
     String? avatarUrl,
@@ -33,6 +37,7 @@ class UserSearchResult {
     bool? viewerIsMe,
   }) {
     return UserSearchResult(
+      userId: userId ?? this.userId,
       username: username ?? this.username,
       displayName: displayName ?? this.displayName,
       avatarUrl: avatarUrl ?? this.avatarUrl,
