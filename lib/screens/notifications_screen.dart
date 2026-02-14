@@ -7,6 +7,7 @@ import "../notifications/notification_controller.dart";
 import "../notifications/notification_models.dart" as notification_models;
 import "../recipes/recipe_detail_screen.dart";
 import "../screens/profile_screen.dart";
+import "../screens/shared_shopping_lists_screen.dart";
 import "../shopping/shopping_list_controller.dart";
 import "../utils/error_utils.dart";
 import "../utils/ui_utils.dart";
@@ -254,14 +255,16 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         break;
 
       case notification_models.NotificationType.shoppingListShare:
-        // TODO: Navigate to shared shopping lists screen when created
-        // For now, just show a message
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Tap on the menu to view shared shopping lists"),
-            duration: Duration(seconds: 3),
-          ),
-        );
+        if (mounted) {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => SharedShoppingListsScreen(
+                apiClient: widget.apiClient,
+                auth: widget.auth,
+              ),
+            ),
+          );
+        }
         break;
 
       case notification_models.NotificationType.unknown:
