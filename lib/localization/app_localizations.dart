@@ -490,6 +490,59 @@ class AppLocalizations {
   String get tourTapToContinue => _localizedValues[locale.languageCode]?["tourTapToContinue"] ?? "Tap the highlighted area to continue";
   String get tourAllSet => _localizedValues[locale.languageCode]?["tourAllSet"] ?? "You're all set! Enjoy using Yummy! 🎉";
 
+  // Date and Time - Month names
+  String get monthJanuary => _localizedValues[locale.languageCode]?["monthJanuary"] ?? "January";
+  String get monthFebruary => _localizedValues[locale.languageCode]?["monthFebruary"] ?? "February";
+  String get monthMarch => _localizedValues[locale.languageCode]?["monthMarch"] ?? "March";
+  String get monthApril => _localizedValues[locale.languageCode]?["monthApril"] ?? "April";
+  String get monthMay => _localizedValues[locale.languageCode]?["monthMay"] ?? "May";
+  String get monthJune => _localizedValues[locale.languageCode]?["monthJune"] ?? "June";
+  String get monthJuly => _localizedValues[locale.languageCode]?["monthJuly"] ?? "July";
+  String get monthAugust => _localizedValues[locale.languageCode]?["monthAugust"] ?? "August";
+  String get monthSeptember => _localizedValues[locale.languageCode]?["monthSeptember"] ?? "September";
+  String get monthOctober => _localizedValues[locale.languageCode]?["monthOctober"] ?? "October";
+  String get monthNovember => _localizedValues[locale.languageCode]?["monthNovember"] ?? "November";
+  String get monthDecember => _localizedValues[locale.languageCode]?["monthDecember"] ?? "December";
+
+  // Date and Time - Abbreviated month names
+  String get monthJan => _localizedValues[locale.languageCode]?["monthJan"] ?? "Jan";
+  String get monthFeb => _localizedValues[locale.languageCode]?["monthFeb"] ?? "Feb";
+  String get monthMar => _localizedValues[locale.languageCode]?["monthMar"] ?? "Mar";
+  String get monthApr => _localizedValues[locale.languageCode]?["monthApr"] ?? "Apr";
+  String get monthMayShort => _localizedValues[locale.languageCode]?["monthMayShort"] ?? "May";
+  String get monthJun => _localizedValues[locale.languageCode]?["monthJun"] ?? "Jun";
+  String get monthJul => _localizedValues[locale.languageCode]?["monthJul"] ?? "Jul";
+  String get monthAug => _localizedValues[locale.languageCode]?["monthAug"] ?? "Aug";
+  String get monthSep => _localizedValues[locale.languageCode]?["monthSep"] ?? "Sep";
+  String get monthOct => _localizedValues[locale.languageCode]?["monthOct"] ?? "Oct";
+  String get monthNov => _localizedValues[locale.languageCode]?["monthNov"] ?? "Nov";
+  String get monthDec => _localizedValues[locale.languageCode]?["monthDec"] ?? "Dec";
+
+  // Date and Time - Relative time
+  String get timeJustNow => _localizedValues[locale.languageCode]?["timeJustNow"] ?? "Just now";
+  String get timeMinutesAgo => _localizedValues[locale.languageCode]?["timeMinutesAgo"] ?? "m ago";
+  String get timeHoursAgo => _localizedValues[locale.languageCode]?["timeHoursAgo"] ?? "h ago";
+  String get timeDaysAgo => _localizedValues[locale.languageCode]?["timeDaysAgo"] ?? "d ago";
+  String get timeWeeksAgo => _localizedValues[locale.languageCode]?["timeWeeksAgo"] ?? "w ago";
+
+  // Helper method to get full month names by index (1-12)
+  String getMonthName(int month) {
+    final months = [
+      monthJanuary, monthFebruary, monthMarch, monthApril, monthMay, monthJune,
+      monthJuly, monthAugust, monthSeptember, monthOctober, monthNovember, monthDecember
+    ];
+    return months[month - 1];
+  }
+
+  // Helper method to get abbreviated month names by index (1-12)
+  String getMonthAbbr(int month) {
+    final months = [
+      monthJan, monthFeb, monthMar, monthApr, monthMayShort, monthJun,
+      monthJul, monthAug, monthSep, monthOct, monthNov, monthDec
+    ];
+    return months[month - 1];
+  }
+
   static const Map<String, Map<String, String>> _localizedValues = {
     "en": {
       "appTitle": "Yummy",
@@ -910,6 +963,35 @@ class AppLocalizations {
       "commentPostedSuccessfully": "Comment posted successfully",
       "skip": "Skip",
       "tapToAdd": "Tap to add",
+      "monthJanuary": "January",
+      "monthFebruary": "February",
+      "monthMarch": "March",
+      "monthApril": "April",
+      "monthMay": "May",
+      "monthJune": "June",
+      "monthJuly": "July",
+      "monthAugust": "August",
+      "monthSeptember": "September",
+      "monthOctober": "October",
+      "monthNovember": "November",
+      "monthDecember": "December",
+      "monthJan": "Jan",
+      "monthFeb": "Feb",
+      "monthMar": "Mar",
+      "monthApr": "Apr",
+      "monthMayShort": "May",
+      "monthJun": "Jun",
+      "monthJul": "Jul",
+      "monthAug": "Aug",
+      "monthSep": "Sep",
+      "monthOct": "Oct",
+      "monthNov": "Nov",
+      "monthDec": "Dec",
+      "timeJustNow": "Just now",
+      "timeMinutesAgo": "m ago",
+      "timeHoursAgo": "h ago",
+      "timeDaysAgo": "d ago",
+      "timeWeeksAgo": "w ago",
     },
     "ka": {
       "appTitle": "Yummy",
@@ -1330,6 +1412,35 @@ class AppLocalizations {
       "commentPostedSuccessfully": "კომენტარი წარმატებით დაიდო",
       "skip": "გამოტოვება",
       "tapToAdd": "დაამატეთ",
+      "monthJanuary": "იანვარი",
+      "monthFebruary": "თებერვალი",
+      "monthMarch": "მარტი",
+      "monthApril": "აპრილი",
+      "monthMay": "მაისი",
+      "monthJune": "ივნისი",
+      "monthJuly": "ივლისი",
+      "monthAugust": "აგვისტო",
+      "monthSeptember": "სექტემბერი",
+      "monthOctober": "ოქტომბერი",
+      "monthNovember": "ნოემბერი",
+      "monthDecember": "დეკემბერი",
+      "monthJan": "იან",
+      "monthFeb": "თებ",
+      "monthMar": "მარ",
+      "monthApr": "აპრ",
+      "monthMayShort": "მაი",
+      "monthJun": "ივნ",
+      "monthJul": "ივლ",
+      "monthAug": "აგვ",
+      "monthSep": "სექ",
+      "monthOct": "ოქტ",
+      "monthNov": "ნოე",
+      "monthDec": "დეკ",
+      "timeJustNow": "ახლახან",
+      "timeMinutesAgo": "წთ წინ",
+      "timeHoursAgo": "სთ წინ",
+      "timeDaysAgo": "დღე წინ",
+      "timeWeeksAgo": "კვ წინ",
     },
   };
 }

@@ -67,7 +67,7 @@ class _FullScreenFeedCardState extends State<FullScreenFeedCard> {
 
   @override
   Widget build(BuildContext context) {
-    final date = formatDate(widget.item.createdAt);
+    final date = formatDate(context, widget.item.createdAt);
     final hasMultipleImages = widget.item.images.length > 1;
 
     return Stack(

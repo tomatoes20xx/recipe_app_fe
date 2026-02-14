@@ -41,7 +41,7 @@ class _FeedCardState extends State<FeedCard> {
 
   @override
   Widget build(BuildContext context) {
-    final date = formatDate(widget.item.createdAt);
+    final date = formatDate(context, widget.item.createdAt);
     final firstImage = widget.item.images.isNotEmpty ? widget.item.images.first : null;
     final hasDescription = widget.item.description != null && widget.item.description!.trim().isNotEmpty;
 
