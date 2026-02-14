@@ -1,3 +1,4 @@
+import "dart:async";
 import "package:flutter/material.dart";
 import "../api/api_client.dart";
 import "../localization/app_localizations.dart";
@@ -154,6 +155,7 @@ class ErrorUtils {
   static void showSuccess(BuildContext context, String message) {
     final localizations = AppLocalizations.of(context);
     final scaffoldMessenger = ScaffoldMessenger.of(context);
+    scaffoldMessenger.clearSnackBars();
     scaffoldMessenger.showSnackBar(
       SnackBar(
         content: Row(
@@ -175,12 +177,18 @@ class ErrorUtils {
         ),
       ),
     );
+
+    // Add a manual timer to force dismiss after duration
+    Timer(const Duration(seconds: 3), () {
+      scaffoldMessenger.hideCurrentSnackBar();
+    });
   }
 
   /// Shows an error snackbar
   static void showError(BuildContext context, dynamic error) {
     final localizations = AppLocalizations.of(context);
     final scaffoldMessenger = ScaffoldMessenger.of(context);
+    scaffoldMessenger.clearSnackBars();
     scaffoldMessenger.showSnackBar(
       SnackBar(
         content: Row(
@@ -202,5 +210,99 @@ class ErrorUtils {
         ),
       ),
     );
+
+    // Add a manual timer to force dismiss after duration
+    Timer(const Duration(seconds: 3), () {
+      scaffoldMessenger.hideCurrentSnackBar();
+    });
+  }
+
+  /// Shows an info snackbar (for general informational messages)
+  static void showInfo(BuildContext context, String message, {
+    Duration duration = const Duration(seconds: 3),
+    String? actionLabel,
+    VoidCallback? onActionPressed,
+  }) {
+    final localizations = AppLocalizations.of(context);
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    scaffoldMessenger.clearSnackBars();
+    scaffoldMessenger.showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+        duration: duration,
+        action: SnackBarAction(
+          label: actionLabel ?? (localizations?.dismiss ?? "Dismiss"),
+          onPressed: onActionPressed ?? () {
+            scaffoldMessenger.hideCurrentSnackBar();
+          },
+        ),
+      ),
+    );
+
+    // Add a manual timer to force dismiss after duration
+    Timer(duration, () {
+      scaffoldMessenger.hideCurrentSnackBar();
+    });
+  }
+
+  /// Shows a generic customizable snackbar
+  static void showSnackBar(
+    BuildContext context,
+    String message, {
+    IconData? icon,
+    Color? backgroundColor,
+    Color? iconColor,
+    Duration duration = const Duration(seconds: 3),
+    String? actionLabel,
+    VoidCallback? onActionPressed,
+    bool showAction = true,
+  }) {
+    final localizations = AppLocalizations.of(context);
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+
+    final content = icon != null
+        ? Row(
+            children: [
+              Icon(icon, color: iconColor ?? Colors.white),
+              const SizedBox(width: 12),
+              Expanded(child: Text(message)),
+            ],
+          )
+        : Text(message);
+
+    // Wrap custom callback to ensure SnackBar is always dismissed
+    final wrappedCallback = onActionPressed != null
+        ? () {
+            scaffoldMessenger.hideCurrentSnackBar();
+            onActionPressed();
+          }
+        : () {
+            scaffoldMessenger.hideCurrentSnackBar();
+          };
+
+    // Clear any existing SnackBars to ensure clean state
+    scaffoldMessenger.clearSnackBars();
+
+    scaffoldMessenger.showSnackBar(
+      SnackBar(
+        content: content,
+        backgroundColor: backgroundColor,
+        behavior: SnackBarBehavior.floating,
+        duration: duration,
+        action: showAction
+            ? SnackBarAction(
+                label: actionLabel ?? (localizations?.dismiss ?? "Dismiss"),
+                textColor: iconColor ?? Colors.white,
+                onPressed: wrappedCallback,
+              )
+            : null,
+      ),
+    );
+
+    // Add a manual timer to force dismiss after duration
+    Timer(duration, () {
+      scaffoldMessenger.hideCurrentSnackBar();
+    });
   }
 }

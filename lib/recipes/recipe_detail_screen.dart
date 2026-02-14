@@ -215,19 +215,9 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
 
       if (!mounted) return;
       final localizations = AppLocalizations.of(this.context);
-      final scaffoldMessenger = ScaffoldMessenger.of(this.context);
-      scaffoldMessenger.showSnackBar(
-        SnackBar(
-          content: Text(localizations?.recipeDeletedSuccessfully ?? "Recipe deleted successfully"),
-          duration: const Duration(seconds: 3),
-          behavior: SnackBarBehavior.floating,
-          action: SnackBarAction(
-            label: localizations?.dismiss ?? "Dismiss",
-            onPressed: () {
-              scaffoldMessenger.hideCurrentSnackBar();
-            },
-          ),
-        ),
+      ErrorUtils.showSuccess(
+        this.context,
+        localizations?.recipeDeletedSuccessfully ?? "Recipe deleted successfully",
       );
       if (!mounted) return;
       Navigator.of(this.context).pop();

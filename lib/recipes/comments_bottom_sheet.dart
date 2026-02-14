@@ -707,9 +707,7 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
     final content = _commentController.text.trim();
     if (content.isEmpty) return;
     if (!(widget.auth?.isLoggedIn ?? false)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please log in to comment")),
-      );
+      ErrorUtils.showInfo(context, "Please log in to comment");
       return;
     }
 
