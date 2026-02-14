@@ -553,6 +553,11 @@ class AppLocalizations {
   String get collaborativeList => _localizedValues[locale.languageCode]?["collaborativeList"] ?? "Collaborative List";
   String get cannotModifyReadOnly => _localizedValues[locale.languageCode]?["cannotModifyReadOnly"] ?? "This list is view-only. You cannot modify items.";
   String get canCheckItemsCollaborative => _localizedValues[locale.languageCode]?["canCheckItemsCollaborative"] ?? "You can check/uncheck items to help manage this list.";
+  String get selectRecipesToShare => _localizedValues[locale.languageCode]?["selectRecipesToShare"] ?? "Select Recipes to Share";
+  String get selectRecipesDescription => _localizedValues[locale.languageCode]?["selectRecipesDescription"] ?? "Choose which recipe ingredients to share with your followers";
+  String get noRecipesInShoppingList => _localizedValues[locale.languageCode]?["noRecipesInShoppingList"] ?? "No recipes in shopping list";
+  String get selectRecipes => _localizedValues[locale.languageCode]?["selectRecipes"] ?? "Select Recipes";
+  String get shareSelectedRecipes => _localizedValues[locale.languageCode]?["shareSelectedRecipes"] ?? "Share Selected Recipes";
 
   // Date and Time - Relative time
   String get timeJustNow => _localizedValues[locale.languageCode]?["timeJustNow"] ?? "Just now";
@@ -1062,6 +1067,11 @@ class AppLocalizations {
       "collaborativeList": "Collaborative List",
       "cannotModifyReadOnly": "This list is view-only. You cannot modify items.",
       "canCheckItemsCollaborative": "You can check/uncheck items to help manage this list.",
+      "selectRecipesToShare": "Select Recipes to Share",
+      "selectRecipesDescription": "Choose which recipe ingredients to share with your followers",
+      "noRecipesInShoppingList": "No recipes in shopping list",
+      "selectRecipes": "Select Recipes",
+      "shareSelectedRecipes": "Share Selected Recipes",
     },
     "ka": {
       "appTitle": "Yummy",
@@ -1545,6 +1555,11 @@ class AppLocalizations {
       "collaborativeList": "თანამშრომლობითი სია",
       "cannotModifyReadOnly": "ეს სია მხოლოდ სანახავადაა. ვერ შეცვლით ელემენტებს.",
       "canCheckItemsCollaborative": "შეგიძლიათ მონიშნოთ/მოხსნათ ელემენტები ამ სიის მართვისთვის.",
+      "selectRecipesToShare": "აირჩიეთ რეცეპტები გასაზიარებლად",
+      "selectRecipesDescription": "აირჩიეთ რომელი რეცეპტის ინგრედიენტები გსურთ გაუზიაროთ თქვენს მიმდევრებს",
+      "noRecipesInShoppingList": "საყიდლების სიაში რეცეპტები არ არის",
+      "selectRecipes": "აირჩიეთ რეცეპტები",
+      "shareSelectedRecipes": "არჩეული რეცეპტების გაზიარება",
     },
   };
 }

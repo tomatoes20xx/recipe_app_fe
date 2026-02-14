@@ -198,3 +198,85 @@ class SharedUserShoppingList {
     };
   }
 }
+
+/// Shared recipe shopping list (recipe-specific sharing)
+class SharedRecipeShoppingList {
+  final String shareId;
+  final String shareType; // "read_only" or "collaborative"
+  final String recipeId;
+  final String recipeTitle;
+  final String? recipeImageUrl;
+  final String ownerId;
+  final String ownerUsername;
+  final String? ownerDisplayName;
+  final String? ownerAvatarUrl;
+  final int totalItems;
+  final int checkedItems;
+
+  SharedRecipeShoppingList({
+    required this.shareId,
+    required this.shareType,
+    required this.recipeId,
+    required this.recipeTitle,
+    this.recipeImageUrl,
+    required this.ownerId,
+    required this.ownerUsername,
+    this.ownerDisplayName,
+    this.ownerAvatarUrl,
+    required this.totalItems,
+    required this.checkedItems,
+  });
+
+  bool get isReadOnly => shareType == "read_only";
+  bool get isCollaborative => shareType == "collaborative";
+
+  factory SharedRecipeShoppingList.fromJson(Map<String, dynamic> json) {
+    // Extract recipe object
+    final recipe = json["recipe"] as Map<String, dynamic>? ?? {};
+
+    // Extract owner object
+    final owner = json["owner"] as Map<String, dynamic>? ?? {};
+
+    // Handle avatar URL
+    final avatarUrl = owner["avatarUrl"] ?? owner["avatar_url"];
+    final processedAvatarUrl = avatarUrl == null ||
+                               avatarUrl == "null" ||
+                               (avatarUrl is String && avatarUrl.isEmpty)
+        ? null
+        : avatarUrl.toString();
+
+    return SharedRecipeShoppingList(
+      shareId: (json["shareId"] ?? json["share_id"] ?? "").toString(),
+      shareType: (json["shareType"] ?? json["share_type"] ?? "read_only").toString(),
+      recipeId: (recipe["id"] ?? "").toString(),
+      recipeTitle: (recipe["title"] ?? "Unknown Recipe").toString(),
+      recipeImageUrl: recipe["imageUrl"]?.toString() ?? recipe["image_url"]?.toString(),
+      ownerId: (owner["userId"] ?? owner["user_id"] ?? "").toString(),
+      ownerUsername: (owner["username"] ?? "").toString(),
+      ownerDisplayName: (owner["displayName"] ?? owner["display_name"])?.toString(),
+      ownerAvatarUrl: processedAvatarUrl,
+      totalItems: json["totalItems"] ?? json["total_items"] ?? 0,
+      checkedItems: json["checkedItems"] ?? json["checked_items"] ?? 0,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      "share_id": shareId,
+      "share_type": shareType,
+      "recipe": {
+        "id": recipeId,
+        "title": recipeTitle,
+        "image_url": recipeImageUrl,
+      },
+      "owner": {
+        "user_id": ownerId,
+        "username": ownerUsername,
+        "display_name": ownerDisplayName,
+        "avatar_url": ownerAvatarUrl,
+      },
+      "total_items": totalItems,
+      "checked_items": checkedItems,
+    };
+  }
+}

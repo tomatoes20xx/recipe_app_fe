@@ -212,4 +212,129 @@ class ShoppingListApi {
 
     return ShoppingListItem.fromJson(Map<String, dynamic>.from(data as Map));
   }
+
+  // ==================== RECIPE-SPECIFIC SHARING METHODS ====================
+
+  /// Share specific recipe ingredients from shopping list
+  ///
+  /// [userIds] - List of user IDs to share with (must be followers)
+  /// [recipeIds] - List of recipe IDs to share ingredients from
+  /// [shareType] - "read_only" or "collaborative"
+  Future<void> shareRecipeIngredients({
+    required List<String> userIds,
+    required List<String> recipeIds,
+    required String shareType,
+  }) async {
+    await api.post(
+      "/shopping-list/share/recipes",
+      body: {
+        "userIds": userIds,
+        "recipeIds": recipeIds,
+        "shareType": shareType,
+      },
+      auth: true,
+    );
+  }
+
+  /// Get recipe shopping lists shared with the current user
+  ///
+  /// Returns list of shared recipe shopping lists grouped by recipe
+  Future<List<SharedRecipeShoppingList>> getSharedRecipeListsWithMe() async {
+    final data = await api.get(
+      "/shopping-list/recipes/shared-with-me",
+      auth: true,
+    );
+
+    // Handle different response formats
+    if (data is List) {
+      return data
+          .map((e) => SharedRecipeShoppingList.fromJson(Map<String, dynamic>.from(e as Map)))
+          .toList();
+    } else if (data is Map) {
+      final items = data["sharedRecipeLists"] ?? data["items"] ?? data["data"] ?? [];
+      if (items is List) {
+        return items
+            .map((e) => SharedRecipeShoppingList.fromJson(Map<String, dynamic>.from(e as Map)))
+            .toList();
+      }
+    }
+
+    return [];
+  }
+
+  /// Get shopping list items for a specific recipe from another user
+  ///
+  /// [userId] - Owner of the shopping list
+  /// [recipeId] - ID of the recipe
+  Future<Map<String, dynamic>> getUserRecipeShoppingList({
+    required String userId,
+    required String recipeId,
+  }) async {
+    final data = await api.get(
+      "/shopping-list/user/$userId/recipe/$recipeId",
+      auth: true,
+    );
+
+    if (data is Map<String, dynamic>) {
+      return data;
+    } else if (data is Map) {
+      return Map<String, dynamic>.from(data);
+    }
+
+    return {"items": [], "shareType": "read_only"};
+  }
+
+  /// Unshare a specific recipe shopping list
+  ///
+  /// [shareId] - ID of the share to remove
+  Future<void> revokeRecipeShare(String shareId) async {
+    await api.delete(
+      "/shopping-list/share/recipes/$shareId",
+      auth: true,
+    );
+  }
+
+  /// Get list of users who have access to specific recipes in shopping list
+  ///
+  /// Returns list of shares grouped by recipe
+  Future<List<Map<String, dynamic>>> getRecipeSharedWith() async {
+    final data = await api.get(
+      "/shopping-list/recipes/shared-with",
+      auth: true,
+    );
+
+    if (data is List) {
+      return data.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+    } else if (data is Map) {
+      final items = data["shares"] ?? data["items"] ?? data["data"] ?? [];
+      if (items is List) {
+        return items.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      }
+    }
+
+    return [];
+  }
+
+  /// Update an item in a collaborative recipe shopping list
+  ///
+  /// [userId] - Owner of the shopping list
+  /// [recipeId] - ID of the recipe
+  /// [itemId] - ID of the item to update
+  /// [isChecked] - New checked state
+  Future<ShoppingListItem?> updateCollaborativeRecipeItem({
+    required String userId,
+    required String recipeId,
+    required String itemId,
+    required bool isChecked,
+  }) async {
+    final data = await api.patch(
+      "/shopping-list/user/$userId/recipe/$recipeId/item/$itemId",
+      body: {"isChecked": isChecked},
+      auth: true,
+    );
+
+    if (data == null) return null;
+
+    return ShoppingListItem.fromJson(Map<String, dynamic>.from(data as Map));
+  }
 }
