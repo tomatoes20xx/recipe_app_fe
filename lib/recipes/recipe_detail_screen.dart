@@ -10,10 +10,13 @@ import "../utils/error_utils.dart";
 import "../utils/ui_utils.dart";
 import "../widgets/ingredient_action_bar.dart";
 import "../widgets/section_title_widget.dart";
+import "../widgets/sharing/follower_selection_bottom_sheet.dart";
+import "../widgets/sharing/shared_with_bottom_sheet.dart";
 import "comments_bottom_sheet.dart";
 import "recipe_api.dart";
 import "recipe_detail_controller.dart";
 import "recipe_detail_models.dart";
+import "recipe_sharing_controller.dart";
 
 class RecipeDetailScreen extends StatefulWidget {
   const RecipeDetailScreen({
@@ -36,6 +39,7 @@ class RecipeDetailScreen extends StatefulWidget {
 class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
   late final RecipeDetailController c;
   late final RecipeApi recipeApi;
+  late final RecipeSharingController _sharingController;
   bool _isLiking = false;
   bool _isBookmarking = false;
   bool? _viewerHasLiked;
@@ -54,6 +58,13 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     c = RecipeDetailController(api: recipeApi, recipeId: widget.recipeId);
     c.addListener(_onChanged);
     c.load();
+
+    // Initialize sharing controller
+    _sharingController = RecipeSharingController(
+      recipeApi: recipeApi,
+      recipeId: widget.recipeId,
+    );
+    _sharingController.addListener(_onSharingChanged);
   }
 
   void _onChanged() {
@@ -68,10 +79,16 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     }
   }
 
+  void _onSharingChanged() {
+    if (mounted) setState(() {});
+  }
+
   @override
   void dispose() {
     c.removeListener(_onChanged);
     c.dispose();
+    _sharingController.removeListener(_onSharingChanged);
+    _sharingController.dispose();
     super.dispose();
   }
 
@@ -178,6 +195,79 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
         setState(() => _isBookmarking = false);
       }
     }
+  }
+
+  Future<void> _onShareTap(bool isOwner) async {
+    if (!isOwner) return;
+    if (!(widget.auth?.isLoggedIn ?? false)) {
+      ErrorUtils.showError(context, "Please log in to share recipes");
+      return;
+    }
+
+    // Load shared-with list if not already loaded
+    if (_sharingController.sharedWith.isEmpty && !_sharingController.isLoading) {
+      await _sharingController.loadSharedWith();
+    }
+
+    if (!mounted) return;
+
+    await showFollowerSelectionBottomSheet(
+      context: context,
+      apiClient: widget.apiClient,
+      auth: widget.auth!,
+      alreadySharedWith: _sharingController.sharedWith.map((u) => u.userId).toList(),
+      showShareTypeSelector: false,
+      onShare: (userIds, _) async {
+        try {
+          await _sharingController.shareWith(userIds);
+          if (mounted) {
+            final localizations = AppLocalizations.of(context);
+            ErrorUtils.showSuccess(
+              context,
+              localizations?.recipeSharedSuccess ?? "Recipe shared successfully!",
+            );
+          }
+        } catch (e) {
+          if (mounted) {
+            ErrorUtils.showError(context, e);
+          }
+        }
+      },
+    );
+  }
+
+  Future<void> _onShareLongPress(bool isOwner) async {
+    if (!isOwner) return;
+    if (!(widget.auth?.isLoggedIn ?? false)) return;
+
+    // Load shared-with list if not already loaded
+    if (_sharingController.sharedWith.isEmpty && !_sharingController.isLoading) {
+      await _sharingController.loadSharedWith();
+    }
+
+    if (!mounted) return;
+
+    await showSharedWithBottomSheet(
+      context: context,
+      sharedWith: _sharingController.sharedWith,
+      isLoading: _sharingController.isLoading,
+      onUnshare: (userId) async {
+        try {
+          await _sharingController.unshareWith(userId);
+          if (mounted) {
+            final localizations = AppLocalizations.of(context);
+            ErrorUtils.showSuccess(
+              context,
+              localizations?.unshareConfirmation ?? "Access removed",
+            );
+          }
+        } catch (e) {
+          if (mounted) {
+            ErrorUtils.showError(context, e);
+          }
+        }
+      },
+    );
   }
 
   Future<void> _showDeleteConfirmation(BuildContext context, RecipeDetail recipe) async {
@@ -375,6 +465,10 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                                     selectedForShopping: _selectedForShopping,
                                     isSelectionMode: _isSelectionMode,
                                     onToggleIngredient: _toggleIngredient,
+                                    isOwner: isOwner,
+                                    shareCount: _sharingController.sharedCount,
+                                    onShareTap: () => _onShareTap(isOwner),
+                                    onShareLongPress: () => _onShareLongPress(isOwner),
                                   ),
                                 ),
                               ),
@@ -392,6 +486,8 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
               recipeName: r.title,
               recipeImage: r.images.isNotEmpty ? r.images.first.url : null,
               shoppingListController: widget.shoppingListController,
+              apiClient: widget.apiClient,
+              auth: widget.auth,
               onMarkAsHave: _markSelectedAsHave,
               onCancel: _exitSelectionMode,
             )
@@ -546,6 +642,10 @@ class _ContentBody extends StatelessWidget {
     required this.selectedForShopping,
     required this.isSelectionMode,
     required this.onToggleIngredient,
+    required this.isOwner,
+    required this.shareCount,
+    required this.onShareTap,
+    required this.onShareLongPress,
   });
 
   final RecipeDetail recipe;
@@ -564,6 +664,10 @@ class _ContentBody extends StatelessWidget {
   final Set<String> selectedForShopping;
   final bool isSelectionMode;
   final Function(String) onToggleIngredient;
+  final bool isOwner;
+  final int shareCount;
+  final VoidCallback onShareTap;
+  final VoidCallback onShareLongPress;
 
   @override
   Widget build(BuildContext context) {
@@ -621,6 +725,10 @@ class _ContentBody extends StatelessWidget {
             onLikeTap: onLikeTap,
             onBookmarkTap: onBookmarkTap,
             onCommentTap: onCommentTap,
+            isOwner: isOwner,
+            shareCount: shareCount,
+            onShareTap: onShareTap,
+            onShareLongPress: onShareLongPress,
           ),
           const SizedBox(height: 16),
 
@@ -778,6 +886,10 @@ class _EngagementBar extends StatelessWidget {
     required this.onLikeTap,
     required this.onBookmarkTap,
     required this.onCommentTap,
+    required this.isOwner,
+    required this.shareCount,
+    required this.onShareTap,
+    required this.onShareLongPress,
   });
 
   final RecipeCounts counts;
@@ -788,6 +900,10 @@ class _EngagementBar extends StatelessWidget {
   final VoidCallback onLikeTap;
   final VoidCallback onBookmarkTap;
   final VoidCallback onCommentTap;
+  final bool isOwner;
+  final int shareCount;
+  final VoidCallback onShareTap;
+  final VoidCallback onShareLongPress;
 
   @override
   Widget build(BuildContext context) {
@@ -828,6 +944,18 @@ class _EngagementBar extends StatelessWidget {
               activeColor: const Color(0xFFE53935),
             ),
           ),
+          if (isOwner) ...[
+            _VerticalDivider(),
+            Expanded(
+              child: _EngagementButton(
+                icon: Icons.person_add,
+                count: shareCount,
+                onTap: onShareTap,
+                onLongPress: onShareLongPress,
+                activeColor: Theme.of(context).colorScheme.primary,
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -839,6 +967,7 @@ class _EngagementButton extends StatelessWidget {
     required this.icon,
     required this.count,
     required this.onTap,
+    this.onLongPress,
     this.isActive = false,
     this.isLoading = false,
     this.activeColor,
@@ -847,6 +976,7 @@ class _EngagementButton extends StatelessWidget {
   final IconData icon;
   final int count;
   final VoidCallback onTap;
+  final VoidCallback? onLongPress;
   final bool isActive;
   final bool isLoading;
   final Color? activeColor;
@@ -861,6 +991,7 @@ class _EngagementButton extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: isLoading ? null : onTap,
+        onLongPress: isLoading ? null : onLongPress,
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 8),

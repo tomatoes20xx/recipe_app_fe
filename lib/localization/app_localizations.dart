@@ -518,6 +518,42 @@ class AppLocalizations {
   String get monthNov => _localizedValues[locale.languageCode]?["monthNov"] ?? "Nov";
   String get monthDec => _localizedValues[locale.languageCode]?["monthDec"] ?? "Dec";
 
+  // Sharing
+  String get share => _localizedValues[locale.languageCode]?["share"] ?? "Share";
+  String get shareRecipe => _localizedValues[locale.languageCode]?["shareRecipe"] ?? "Share Recipe";
+  String get shareShoppingList => _localizedValues[locale.languageCode]?["shareShoppingList"] ?? "Share Shopping List";
+  String get sharedWith => _localizedValues[locale.languageCode]?["sharedWith"] ?? "Shared with";
+  String get sharedBy => _localizedValues[locale.languageCode]?["sharedBy"] ?? "Shared by";
+  String get unshare => _localizedValues[locale.languageCode]?["unshare"] ?? "Unshare";
+  String get selectFollowers => _localizedValues[locale.languageCode]?["selectFollowers"] ?? "Select followers to share with";
+  String get searchFollowers => _localizedValues[locale.languageCode]?["searchFollowers"] ?? "Search followers";
+  String get noFollowersToShareWith => _localizedValues[locale.languageCode]?["noFollowersToShareWith"] ?? "No followers to share with";
+  String get alreadyShared => _localizedValues[locale.languageCode]?["alreadyShared"] ?? "Already shared";
+  String get shareWithPeople => _localizedValues[locale.languageCode]?["shareWithPeople"] ?? "Share with";
+  String get shareType => _localizedValues[locale.languageCode]?["shareType"] ?? "Share type";
+  String get readOnly => _localizedValues[locale.languageCode]?["readOnly"] ?? "Read Only";
+  String get collaborative => _localizedValues[locale.languageCode]?["collaborative"] ?? "Collaborative";
+  String get readOnlyDescription => _localizedValues[locale.languageCode]?["readOnlyDescription"] ?? "Others can view but not edit";
+  String get collaborativeDescription => _localizedValues[locale.languageCode]?["collaborativeDescription"] ?? "Others can check/uncheck items";
+  String get sharedRecipes => _localizedValues[locale.languageCode]?["sharedRecipes"] ?? "Shared Recipes";
+  String get sharedShoppingLists => _localizedValues[locale.languageCode]?["sharedShoppingLists"] ?? "Shared Shopping Lists";
+  String get recipesSharedWithYou => _localizedValues[locale.languageCode]?["recipesSharedWithYou"] ?? "Recipes shared with you";
+  String get listsSharedWithYou => _localizedValues[locale.languageCode]?["listsSharedWithYou"] ?? "Shopping lists shared with you";
+  String get noSharedRecipes => _localizedValues[locale.languageCode]?["noSharedRecipes"] ?? "No recipes shared with you yet";
+  String get noSharedShoppingLists => _localizedValues[locale.languageCode]?["noSharedShoppingLists"] ?? "No shopping lists shared with you yet";
+  String get recipeSharedSuccess => _localizedValues[locale.languageCode]?["recipeSharedSuccess"] ?? "Recipe shared successfully!";
+  String get shoppingListSharedSuccess => _localizedValues[locale.languageCode]?["shoppingListSharedSuccess"] ?? "Shopping list shared successfully!";
+  String get unshareConfirmation => _localizedValues[locale.languageCode]?["unshareConfirmation"] ?? "Access removed";
+  String get viewSharedWith => _localizedValues[locale.languageCode]?["viewSharedWith"] ?? "View who can access";
+  String get shoppingListOf => _localizedValues[locale.languageCode]?["shoppingListOf"] ?? "Shopping list of";
+  String get notSharedWithAnyone => _localizedValues[locale.languageCode]?["notSharedWithAnyone"] ?? "Not shared with anyone";
+  String get removeAccess => _localizedValues[locale.languageCode]?["removeAccess"] ?? "Remove Access";
+  String get removeAccessConfirm => _localizedValues[locale.languageCode]?["removeAccessConfirm"] ?? "Are you sure you want to remove access for this user?";
+  String get viewOnlyList => _localizedValues[locale.languageCode]?["viewOnlyList"] ?? "View Only List";
+  String get collaborativeList => _localizedValues[locale.languageCode]?["collaborativeList"] ?? "Collaborative List";
+  String get cannotModifyReadOnly => _localizedValues[locale.languageCode]?["cannotModifyReadOnly"] ?? "This list is view-only. You cannot modify items.";
+  String get canCheckItemsCollaborative => _localizedValues[locale.languageCode]?["canCheckItemsCollaborative"] ?? "You can check/uncheck items to help manage this list.";
+
   // Date and Time - Relative time
   String get timeJustNow => _localizedValues[locale.languageCode]?["timeJustNow"] ?? "Just now";
   String get timeMinutesAgo => _localizedValues[locale.languageCode]?["timeMinutesAgo"] ?? "m ago";
@@ -992,6 +1028,40 @@ class AppLocalizations {
       "timeHoursAgo": "h ago",
       "timeDaysAgo": "d ago",
       "timeWeeksAgo": "w ago",
+      "share": "Share",
+      "shareRecipe": "Share Recipe",
+      "shareShoppingList": "Share Shopping List",
+      "sharedWith": "Shared with",
+      "sharedBy": "Shared by",
+      "unshare": "Unshare",
+      "selectFollowers": "Select followers to share with",
+      "searchFollowers": "Search followers",
+      "noFollowersToShareWith": "No followers to share with",
+      "alreadyShared": "Already shared",
+      "shareWithPeople": "Share with",
+      "shareType": "Share type",
+      "readOnly": "Read Only",
+      "collaborative": "Collaborative",
+      "readOnlyDescription": "Others can view but not edit",
+      "collaborativeDescription": "Others can check/uncheck items",
+      "sharedRecipes": "Shared Recipes",
+      "sharedShoppingLists": "Shared Shopping Lists",
+      "recipesSharedWithYou": "Recipes shared with you",
+      "listsSharedWithYou": "Shopping lists shared with you",
+      "noSharedRecipes": "No recipes shared with you yet",
+      "noSharedShoppingLists": "No shopping lists shared with you yet",
+      "recipeSharedSuccess": "Recipe shared successfully!",
+      "shoppingListSharedSuccess": "Shopping list shared successfully!",
+      "unshareConfirmation": "Access removed",
+      "viewSharedWith": "View who can access",
+      "shoppingListOf": "Shopping list of",
+      "notSharedWithAnyone": "Not shared with anyone",
+      "removeAccess": "Remove Access",
+      "removeAccessConfirm": "Are you sure you want to remove access for this user?",
+      "viewOnlyList": "View Only List",
+      "collaborativeList": "Collaborative List",
+      "cannotModifyReadOnly": "This list is view-only. You cannot modify items.",
+      "canCheckItemsCollaborative": "You can check/uncheck items to help manage this list.",
     },
     "ka": {
       "appTitle": "Yummy",
@@ -1441,6 +1511,40 @@ class AppLocalizations {
       "timeHoursAgo": "სთ წინ",
       "timeDaysAgo": "დღე წინ",
       "timeWeeksAgo": "კვ წინ",
+      "share": "გაზიარება",
+      "shareRecipe": "რეცეპტის გაზიარება",
+      "shareShoppingList": "სიის გაზიარება",
+      "sharedWith": "გაზიარებულია",
+      "sharedBy": "გააზიარა",
+      "unshare": "წაშლა",
+      "selectFollowers": "აირჩიეთ ვისთან გაზიარება",
+      "searchFollowers": "მოწევრების ძებნა",
+      "noFollowersToShareWith": "არ გაქვთ მოწევრები გასაზიარებლად",
+      "alreadyShared": "უკვე გაზიარებული",
+      "shareWithPeople": "გაზიარება",
+      "shareType": "გაზიარების ტიპი",
+      "readOnly": "მხოლოდ ნახვა",
+      "collaborative": "თანამშრომლობითი",
+      "readOnlyDescription": "სხვებს შეუძლიათ ნახვა, მაგრამ ვერ შეცვლიან",
+      "collaborativeDescription": "სხვებს შეუძლიათ ელემენტების მონიშვნა/მოხსნა",
+      "sharedRecipes": "გაზიარებული რეცეპტები",
+      "sharedShoppingLists": "გაზიარებული სიები",
+      "recipesSharedWithYou": "თქვენთან გაზიარებული რეცეპტები",
+      "listsSharedWithYou": "თქვენთან გაზიარებული სიები",
+      "noSharedRecipes": "თქვენთან ჯერ არცერთი რეცეპტი არ არის გაზიარებული",
+      "noSharedShoppingLists": "თქვენთან ჯერ არცერთი სია არ არის გაზიარებული",
+      "recipeSharedSuccess": "რეცეპტი წარმატებით გაზიარდა!",
+      "shoppingListSharedSuccess": "სია წარმატებით გაზიარდა!",
+      "unshareConfirmation": "წვდომა ამოღებულია",
+      "viewSharedWith": "ნახეთ ვისთან არის გაზიარებული",
+      "shoppingListOf": "სიის მფლობელი",
+      "notSharedWithAnyone": "არავისთან არ არის გაზიარებული",
+      "removeAccess": "წვდომის ამოღება",
+      "removeAccessConfirm": "დარწმუნებული ხართ, რომ გსურთ წვდომის ამოღება ამ მომხმარებლისთვის?",
+      "viewOnlyList": "მხოლოდ სანახავად",
+      "collaborativeList": "თანამშრომლობითი სია",
+      "cannotModifyReadOnly": "ეს სია მხოლოდ სანახავადაა. ვერ შეცვლით ელემენტებს.",
+      "canCheckItemsCollaborative": "შეგიძლიათ მონიშნოთ/მოხსნათ ელემენტები ამ სიის მართვისთვის.",
     },
   };
 }

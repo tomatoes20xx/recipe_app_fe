@@ -1,24 +1,57 @@
 import "package:flutter/material.dart";
 
+import "../api/api_client.dart";
+import "../auth/auth_controller.dart";
 import "../localization/app_localizations.dart";
+import "../shopping/shopping_list_api.dart";
 import "../shopping/shopping_list_controller.dart";
 import "../shopping/shopping_list_models.dart";
+import "../shopping/shopping_list_sharing_controller.dart";
+import "../utils/error_utils.dart";
 import "../utils/ui_utils.dart";
 import "../widgets/empty_state_widget.dart";
+import "../widgets/sharing/follower_selection_bottom_sheet.dart";
+import "../widgets/sharing/shared_with_bottom_sheet.dart";
 
 class ShoppingListScreen extends StatefulWidget {
   const ShoppingListScreen({
     super.key,
     required this.controller,
+    required this.apiClient,
+    required this.auth,
   });
 
   final ShoppingListController controller;
+  final ApiClient apiClient;
+  final AuthController? auth;
 
   @override
   State<ShoppingListScreen> createState() => _ShoppingListScreenState();
 }
 
 class _ShoppingListScreenState extends State<ShoppingListScreen> {
+  late final ShoppingListSharingController _sharingController;
+
+  @override
+  void initState() {
+    super.initState();
+    _sharingController = ShoppingListSharingController(
+      shoppingListApi: ShoppingListApi(widget.apiClient),
+    );
+    _sharingController.addListener(_onSharingChanged);
+    _sharingController.loadSharedWith();
+  }
+
+  void _onSharingChanged() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    _sharingController.removeListener(_onSharingChanged);
+    _sharingController.dispose();
+    super.dispose();
+  }
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context);
@@ -50,6 +83,19 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
                   child: CircularProgressIndicator(strokeWidth: 2),
                 ),
               ),
+            ),
+          if (!widget.controller.isSyncing && widget.auth?.isLoggedIn == true)
+            IconButton(
+              icon: Badge(
+                label: _sharingController.sharedCount > 0
+                    ? Text("${_sharingController.sharedCount}")
+                    : null,
+                isLabelVisible: _sharingController.sharedCount > 0,
+                child: const Icon(Icons.person_add),
+              ),
+              onPressed: _onShareTap,
+              onLongPress: _onShareLongPress,
+              tooltip: localizations?.shareShoppingList ?? "Share Shopping List",
             ),
           if (!widget.controller.isSyncing && widget.controller.checkedCount > 0)
             TextButton.icon(
@@ -225,6 +271,66 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Future<void> _onShareTap() async {
+    if (!(widget.auth?.isLoggedIn ?? false)) {
+      ErrorUtils.showError(context, "Please log in to share your shopping list");
+      return;
+    }
+
+    await showFollowerSelectionBottomSheet(
+      context: context,
+      apiClient: widget.apiClient,
+      auth: widget.auth!,
+      alreadySharedWith: _sharingController.sharedWith.map((u) => u.userId).toList(),
+      showShareTypeSelector: true,
+      onShare: (userIds, shareType) async {
+        try {
+          await _sharingController.shareWith(
+            userIds: userIds,
+            shareType: shareType ?? "read_only",
+          );
+          if (mounted) {
+            final localizations = AppLocalizations.of(context);
+            ErrorUtils.showSuccess(
+              context,
+              localizations?.shoppingListSharedSuccess ?? "Shopping list shared successfully!",
+            );
+          }
+        } catch (e) {
+          if (mounted) {
+            ErrorUtils.showError(context, e);
+          }
+        }
+      },
+    );
+  }
+
+  Future<void> _onShareLongPress() async {
+    if (!(widget.auth?.isLoggedIn ?? false)) return;
+
+    await showSharedWithBottomSheet(
+      context: context,
+      sharedWith: _sharingController.sharedWith,
+      isLoading: _sharingController.isLoading,
+      onUnshare: (userId) async {
+        try {
+          await _sharingController.revokeAccess(userId);
+          if (mounted) {
+            final localizations = AppLocalizations.of(context);
+            ErrorUtils.showSuccess(
+              context,
+              localizations?.unshareConfirmation ?? "Access removed",
+            );
+          }
+        } catch (e) {
+          if (mounted) {
+            ErrorUtils.showError(context, e);
+          }
+        }
+      },
     );
   }
 
