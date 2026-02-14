@@ -6,6 +6,7 @@ import "../recipes/recipe_detail_models.dart";
 import "../screens/shopping_list_screen.dart";
 import "../shopping/shopping_list_controller.dart";
 import "../shopping/shopping_list_models.dart";
+import "../utils/error_utils.dart";
 
 class IngredientActionBar extends StatelessWidget {
   const IngredientActionBar({
@@ -128,7 +129,6 @@ class IngredientActionBar extends StatelessWidget {
 
   Future<void> _addToShoppingList(BuildContext context) async {
     final localizations = AppLocalizations.of(context);
-    final theme = Theme.of(context);
     const uuid = Uuid();
 
     // Convert selected ingredients to shopping list items
@@ -152,44 +152,28 @@ class IngredientActionBar extends StatelessWidget {
     // Show success snackbar
     if (context.mounted) {
       final count = items.length;
-      // Capture the navigator before calling onCancel
+      // Capture the navigator and scaffoldMessenger before calling onCancel
       final navigator = Navigator.of(context);
+      final scaffoldMessenger = ScaffoldMessenger.of(context);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              Icon(
-                Icons.check_circle,
-                color: theme.colorScheme.onInverseSurface,
-                size: 20,
+      ErrorUtils.showSnackBar(
+        context,
+        (localizations?.nItemsAddedToList ?? "{n} items added to shopping list")
+            .replaceAll("{n}", "$count"),
+        icon: Icons.check_circle,
+        backgroundColor: Colors.green,
+        duration: const Duration(seconds: 4),
+        actionLabel: localizations?.view ?? "View",
+        onActionPressed: () {
+          scaffoldMessenger.hideCurrentSnackBar();
+          navigator.push(
+            MaterialPageRoute(
+              builder: (_) => ShoppingListScreen(
+                controller: shoppingListController,
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  (localizations?.nItemsAddedToList ?? "{n} items added to shopping list")
-                      .replaceAll("{n}", "$count"),
-                ),
-              ),
-            ],
-          ),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          action: SnackBarAction(
-            label: localizations?.view ?? "View",
-            onPressed: () {
-              navigator.push(
-                MaterialPageRoute(
-                  builder: (_) => ShoppingListScreen(
-                    controller: shoppingListController,
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
+            ),
+          );
+        },
       );
 
       // Call onCancel to dismiss the action bar

@@ -15,6 +15,7 @@ import "../notifications/notification_controller.dart";
 import "../services/app_tour_service.dart";
 import "../shopping/shopping_list_controller.dart";
 import "../theme/theme_controller.dart";
+import "../utils/error_utils.dart";
 import "../utils/ui_utils.dart";
 import "analytics_stats_screen.dart";
 import "create_recipe_screen.dart";
@@ -540,23 +541,11 @@ class _FeedShellDrawer extends StatelessWidget {
               enabled: auth.isLoggedIn,
               onTap: () {
                 if (!auth.isLoggedIn) {
-                  final scaffoldMessenger = ScaffoldMessenger.of(context);
                   final localizations = AppLocalizations.of(context);
                   Navigator.of(context).pop();
-                  scaffoldMessenger.showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        localizations?.logInToSeeFollowingFeed ?? "Log in to see Following feed",
-                      ),
-                      duration: const Duration(seconds: 3),
-                      behavior: SnackBarBehavior.floating,
-                      action: SnackBarAction(
-                        label: localizations?.dismiss ?? "Dismiss",
-                        onPressed: () {
-                          scaffoldMessenger.hideCurrentSnackBar();
-                        },
-                      ),
-                    ),
+                  ErrorUtils.showInfo(
+                    context,
+                    localizations?.logInToSeeFollowingFeed ?? "Log in to see Following feed",
                   );
                   return;
                 }

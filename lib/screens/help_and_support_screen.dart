@@ -2,6 +2,7 @@ import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:url_launcher/url_launcher.dart";
 import "../localization/app_localizations.dart";
+import "../utils/error_utils.dart";
 import "../widgets/section_title_widget.dart";
 import "package:package_info_plus/package_info_plus.dart";
 
@@ -361,22 +362,10 @@ class _HelpAndSupportScreenState extends State<HelpAndSupportScreen> {
                   // Copy email to clipboard as fallback
                   await Clipboard.setData(ClipboardData(text: supportEmail));
                   if (context.mounted) {
-                    final scaffoldMessenger = ScaffoldMessenger.of(context);
-                    scaffoldMessenger.showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          localizations?.emailCopiedToClipboard ??
+                    ErrorUtils.showInfo(
+                      context,
+                      localizations?.emailCopiedToClipboard ??
                           "Email address copied to clipboard",
-                        ),
-                        duration: const Duration(seconds: 3),
-                        behavior: SnackBarBehavior.floating,
-                        action: SnackBarAction(
-                          label: localizations?.dismiss ?? "Dismiss",
-                          onPressed: () {
-                            scaffoldMessenger.hideCurrentSnackBar();
-                          },
-                        ),
-                      ),
                     );
                   }
                 }
@@ -384,22 +373,10 @@ class _HelpAndSupportScreenState extends State<HelpAndSupportScreen> {
                 // Copy email to clipboard as fallback
                 await Clipboard.setData(ClipboardData(text: supportEmail));
                 if (context.mounted) {
-                  final scaffoldMessenger = ScaffoldMessenger.of(context);
-                  scaffoldMessenger.showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        localizations?.emailCopiedToClipboard ??
+                  ErrorUtils.showInfo(
+                    context,
+                    localizations?.emailCopiedToClipboard ??
                         "Email address copied to clipboard",
-                      ),
-                      duration: const Duration(seconds: 3),
-                      behavior: SnackBarBehavior.floating,
-                      action: SnackBarAction(
-                        label: localizations?.dismiss ?? "Dismiss",
-                        onPressed: () {
-                          scaffoldMessenger.hideCurrentSnackBar();
-                        },
-                      ),
-                    ),
                   );
                 }
               }
@@ -419,22 +396,10 @@ class _HelpAndSupportScreenState extends State<HelpAndSupportScreen> {
             onTap: () async {
               await Clipboard.setData(ClipboardData(text: supportEmail));
               if (context.mounted) {
-                final scaffoldMessenger = ScaffoldMessenger.of(context);
-                scaffoldMessenger.showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      localizations?.emailCopiedToClipboard ??
+                ErrorUtils.showInfo(
+                  context,
+                  localizations?.emailCopiedToClipboard ??
                       "Email address copied to clipboard",
-                    ),
-                    duration: const Duration(seconds: 3),
-                    behavior: SnackBarBehavior.floating,
-                    action: SnackBarAction(
-                      label: localizations?.dismiss ?? "Dismiss",
-                      onPressed: () {
-                        scaffoldMessenger.hideCurrentSnackBar();
-                      },
-                    ),
-                  ),
                 );
               }
             },
@@ -479,22 +444,10 @@ class _HelpAndSupportScreenState extends State<HelpAndSupportScreen> {
                     if (snapshot.hasData) {
                       await Clipboard.setData(ClipboardData(text: version));
                       if (context.mounted) {
-                        final scaffoldMessenger = ScaffoldMessenger.of(context);
-                        scaffoldMessenger.showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              localizations?.versionCopiedToClipboard ??
+                        ErrorUtils.showInfo(
+                          context,
+                          localizations?.versionCopiedToClipboard ??
                               "Version copied to clipboard",
-                            ),
-                            duration: const Duration(seconds: 3),
-                            behavior: SnackBarBehavior.floating,
-                            action: SnackBarAction(
-                              label: localizations?.dismiss ?? "Dismiss",
-                              onPressed: () {
-                                scaffoldMessenger.hideCurrentSnackBar();
-                              },
-                            ),
-                          ),
                         );
                       }
                     }
