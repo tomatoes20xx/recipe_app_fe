@@ -61,6 +61,45 @@ class _SharedRecipesScreenState extends State<SharedRecipesScreen> {
     super.dispose();
   }
 
+  Future<void> _showDeleteConfirmation(String recipeId, String recipeTitle) async {
+    final localizations = AppLocalizations.of(context);
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(localizations?.removeSharedRecipe ?? "Remove Shared Recipe"),
+        content: Text(
+          localizations?.removeSharedRecipeConfirm ??
+              "Remove \"$recipeTitle\" from your shared recipes? This won't affect the original recipe.",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(localizations?.cancel ?? "Cancel"),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(localizations?.remove ?? "Remove"),
+          ),
+        ],
+      ),
+    );
+
+    if (result == true && mounted) {
+      try {
+        await controller.dismissRecipe(recipeId);
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(localizations?.error ?? "Error: ${e.toString()}"),
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+          );
+        }
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context);
@@ -148,20 +187,23 @@ class _SharedRecipesScreenState extends State<SharedRecipesScreen> {
 
                         final recipe = controller.items[index];
                         return RepaintBoundary(
-                          child: RecipeGridCard(
-                            recipe: recipe,
-                            onTap: () async {
-                              await Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (_) => RecipeDetailScreen(
-                                    recipeId: recipe.id,
-                                    apiClient: widget.apiClient,
-                                    auth: widget.auth,
-                                    shoppingListController: widget.shoppingListController,
+                          child: GestureDetector(
+                            onLongPress: () => _showDeleteConfirmation(recipe.id, recipe.title),
+                            child: RecipeGridCard(
+                              recipe: recipe,
+                              onTap: () async {
+                                await Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => RecipeDetailScreen(
+                                      recipeId: recipe.id,
+                                      apiClient: widget.apiClient,
+                                      auth: widget.auth,
+                                      shoppingListController: widget.shoppingListController,
+                                    ),
                                   ),
-                                ),
-                              );
-                            },
+                                );
+                              },
+                            ),
                           ),
                         );
                       },

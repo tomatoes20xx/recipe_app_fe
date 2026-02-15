@@ -47,6 +47,46 @@ class _SharedShoppingListsScreenState extends State<SharedShoppingListsScreen> {
     super.dispose();
   }
 
+  Future<bool?> _showDeleteConfirmation(String ownerName) async {
+    final localizations = AppLocalizations.of(context);
+    return await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(localizations?.removeSharedList ?? "Remove Shared List"),
+        content: Text(
+          localizations?.removeSharedListConfirm ??
+              "Remove all shared items from $ownerName? This won't affect the owner's list.",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(localizations?.cancel ?? "Cancel"),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(localizations?.remove ?? "Remove"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _dismissAllFromUser(String ownerId) async {
+    final localizations = AppLocalizations.of(context);
+    try {
+      await controller.dismissAllFromUser(ownerId);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(localizations?.error ?? "Error: ${e.toString()}"),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context);
@@ -112,19 +152,42 @@ class _SharedShoppingListsScreenState extends State<SharedShoppingListsScreen> {
               itemCount: controller.lists.length,
               itemBuilder: (context, index) {
                 final list = controller.lists[index];
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  clipBehavior: Clip.antiAlias,
-                  child: InkWell(
+                return Dismissible(
+                  key: Key('shared_list_${list.ownerId}'),
+                  direction: DismissDirection.endToStart,
+                  confirmDismiss: (direction) async {
+                    return await _showDeleteConfirmation(
+                      list.ownerDisplayName ?? list.ownerUsername,
+                    );
+                  },
+                  onDismissed: (direction) async {
+                    await _dismissAllFromUser(list.ownerId);
+                  },
+                  background: Container(
+                    alignment: Alignment.centerRight,
+                    padding: const EdgeInsets.only(right: 20),
+                    margin: const EdgeInsets.only(bottom: 12),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.error,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      Icons.delete,
+                      color: theme.colorScheme.onError,
+                    ),
+                  ),
+                  child: Card(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    clipBehavior: Clip.antiAlias,
+                    child: InkWell(
                     onTap: () {
                       Navigator.of(context).push(
                         MaterialPageRoute(
                           builder: (_) => SharedUserShoppingListScreen(
                             apiClient: widget.apiClient,
                             auth: widget.auth,
-                            userId: list.ownerId,
-                            ownerUsername: list.ownerUsername,
-                            shareType: list.shareType,
+                            userShares: list,
+                            controller: controller,
                           ),
                         ),
                       );
@@ -207,7 +270,7 @@ class _SharedShoppingListsScreenState extends State<SharedShoppingListsScreen> {
                                     ),
                                     const SizedBox(width: 4),
                                     Text(
-                                      "${list.itemCount} ${list.itemCount == 1 ? 'item' : 'items'}",
+                                      "${list.totalItems} ${list.totalItems == 1 ? 'item' : 'items'}",
                                       style: theme.textTheme.bodySmall?.copyWith(
                                         color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                                       ),
@@ -216,7 +279,7 @@ class _SharedShoppingListsScreenState extends State<SharedShoppingListsScreen> {
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  formatRelativeTime(context, list.sharedAt),
+                                  formatRelativeTime(context, list.latestSharedAt),
                                   style: theme.textTheme.bodySmall?.copyWith(
                                     color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
                                   ),
@@ -233,6 +296,7 @@ class _SharedShoppingListsScreenState extends State<SharedShoppingListsScreen> {
                         ],
                       ),
                     ),
+                  ),
                   ),
                 );
               },

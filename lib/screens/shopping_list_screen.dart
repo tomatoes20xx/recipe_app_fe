@@ -3,10 +3,10 @@ import "package:flutter/material.dart";
 import "../api/api_client.dart";
 import "../auth/auth_controller.dart";
 import "../localization/app_localizations.dart";
+import "../sharing/sharing_models.dart";
 import "../shopping/shopping_list_api.dart";
 import "../shopping/shopping_list_controller.dart";
 import "../shopping/shopping_list_models.dart";
-import "../shopping/shopping_list_sharing_controller.dart";
 import "../utils/error_utils.dart";
 import "../utils/ui_utils.dart";
 import "../widgets/empty_state_widget.dart";
@@ -31,28 +31,34 @@ class ShoppingListScreen extends StatefulWidget {
 }
 
 class _ShoppingListScreenState extends State<ShoppingListScreen> {
-  late final ShoppingListSharingController _sharingController;
+  /// Extract unique users who have access to any recipe in the shopping list
+  List<SharedWithUser> _getSharedWithUsers() {
+    final Map<String, SharedWithUser> uniqueUsers = {};
+
+    for (final item in widget.controller.items) {
+      for (final user in item.sharedWith) {
+        uniqueUsers[user.userId] = user;
+      }
+    }
+
+    return uniqueUsers.values.toList();
+  }
+
+  /// Get count of unique users who have access
+  int get _sharedCount => _getSharedWithUsers().length;
 
   @override
   void initState() {
     super.initState();
-    _sharingController = ShoppingListSharingController(
-      shoppingListApi: ShoppingListApi(widget.apiClient),
-    );
-    _sharingController.addListener(_onSharingChanged);
-    _sharingController.loadSharedWith();
+    // Refresh shopping list data when screen is first entered
+    // This ensures we see the latest state (e.g., items checked by collaborators)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!widget.controller.isLoading && !widget.controller.isSyncing) {
+        widget.controller.syncWithServer();
+      }
+    });
   }
 
-  void _onSharingChanged() {
-    if (mounted) setState(() {});
-  }
-
-  @override
-  void dispose() {
-    _sharingController.removeListener(_onSharingChanged);
-    _sharingController.dispose();
-    super.dispose();
-  }
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context);
@@ -60,20 +66,28 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(localizations?.shoppingList ?? "Shopping List"),
-            if (widget.controller.isSyncing)
-              Text(
-                "Syncing...",
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.primary,
+        title: ListenableBuilder(
+          listenable: widget.controller,
+          builder: (context, _) => Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(localizations?.shoppingList ?? "Shopping List"),
+              if (widget.controller.isSyncing)
+                Text(
+                  "Syncing...",
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.primary,
+                  ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
         actions: [
+          ListenableBuilder(
+            listenable: widget.controller,
+            builder: (context, _) => Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
           if (widget.controller.isSyncing)
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 16),
@@ -87,15 +101,8 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
             ),
           if (!widget.controller.isSyncing && widget.auth?.isLoggedIn == true)
             IconButton(
-              icon: Badge(
-                label: _sharingController.sharedCount > 0
-                    ? Text("${_sharingController.sharedCount}")
-                    : null,
-                isLabelVisible: _sharingController.sharedCount > 0,
-                child: const Icon(Icons.person_add),
-              ),
+              icon: const Icon(Icons.person_add),
               onPressed: _onShareTap,
-              onLongPress: _onShareLongPress,
               tooltip: localizations?.shareShoppingList ?? "Share Shopping List",
             ),
           if (!widget.controller.isSyncing && widget.controller.checkedCount > 0)
@@ -111,11 +118,29 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
             PopupMenuButton<String>(
               icon: const Icon(Icons.more_vert),
               onSelected: (value) {
-                if (value == "clear_all") {
+                if (value == "manage_sharing") {
+                  _showManageAllSharing();
+                } else if (value == "clear_all") {
                   _showClearAllDialog();
                 }
               },
               itemBuilder: (context) => [
+                if (widget.auth?.isLoggedIn == true && _sharedCount > 0)
+                  PopupMenuItem(
+                    value: "manage_sharing",
+                    child: Row(
+                      children: [
+                        Icon(Icons.people_outline, size: 20, color: theme.colorScheme.primary),
+                        const SizedBox(width: 12),
+                        Text(
+                          localizations?.manageSharing ?? "Manage Sharing",
+                          style: TextStyle(color: theme.colorScheme.primary),
+                        ),
+                      ],
+                    ),
+                  ),
+                if (widget.auth?.isLoggedIn == true && _sharedCount > 0)
+                  const PopupMenuDivider(),
                 PopupMenuItem(
                   value: "clear_all",
                   child: Row(
@@ -131,8 +156,11 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
                 ),
               ],
             ),
-        ],
-      ),
+          ],  // Close children array of Row
+        ),    // Close Row
+      ),      // Close ListenableBuilder
+    ],        // Close actions array
+  ),          // Close AppBar
       body: RefreshIndicator(
         onRefresh: () async {
           await widget.controller.syncWithServer();
@@ -235,6 +263,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
                 return _RecipeGroupCard(
                   group: group,
                   controller: widget.controller,
+                  apiClient: widget.apiClient,
                   onRemoveRecipe: () => _showRemoveRecipeDialog(group),
                 );
               },
@@ -319,21 +348,28 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
     );
   }
 
-  Future<void> _onShareLongPress() async {
+  Future<void> _showManageAllSharing() async {
     if (!(widget.auth?.isLoggedIn ?? false)) return;
 
     await showSharedWithBottomSheet(
       context: context,
-      sharedWith: _sharingController.sharedWith,
-      isLoading: _sharingController.isLoading,
+      sharedWith: _getSharedWithUsers(),
+      isLoading: false,
       onUnshare: (userId) async {
         try {
-          await _sharingController.revokeAccess(userId);
+          final api = ShoppingListApi(widget.apiClient);
+
+          // Revoke ALL shares with this user (bulk delete)
+          final deletedCount = await api.revokeAllSharesWithUser(userId);
+
+          // Refresh the shopping list to get updated sharing info
+          await widget.controller.syncWithServer();
+
           if (mounted) {
             final localizations = AppLocalizations.of(context);
             ErrorUtils.showSuccess(
               context,
-              localizations?.unshareConfirmation ?? "Access removed",
+              localizations?.unshareConfirmation ?? "Access removed successfully",
             );
           }
         } catch (e) {
@@ -436,20 +472,106 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
   }
 }
 
-class _RecipeGroupCard extends StatelessWidget {
+class _RecipeGroupCard extends StatefulWidget {
   const _RecipeGroupCard({
     required this.group,
     required this.controller,
     required this.onRemoveRecipe,
+    required this.apiClient,
   });
 
   final GroupedShoppingItems group;
   final ShoppingListController controller;
   final VoidCallback onRemoveRecipe;
+  final ApiClient apiClient;
+
+  @override
+  State<_RecipeGroupCard> createState() => _RecipeGroupCardState();
+}
+
+class _RecipeGroupCardState extends State<_RecipeGroupCard> {
+
+  /// Get users who have access to this specific recipe
+  List<SharedWithUser> _getSharedUsers() {
+    final Map<String, SharedWithUser> uniqueUsers = {};
+
+    // Get sharedWith from any item in this recipe group
+    for (final item in widget.group.items) {
+      for (final user in item.sharedWith) {
+        uniqueUsers[user.userId] = user;
+      }
+    }
+
+    return uniqueUsers.values.toList();
+  }
+
+  Future<void> _showManageSharing() async {
+    final sharedUsers = _getSharedUsers();
+
+    if (sharedUsers.isEmpty) {
+      ErrorUtils.showError(context, "This recipe is not shared with anyone");
+      return;
+    }
+
+    await showSharedWithBottomSheet(
+      context: context,
+      sharedWith: sharedUsers,
+      isLoading: false,
+      onUnshare: (userId) async {
+        try {
+          final api = ShoppingListApi(widget.apiClient);
+
+          // Get shareId from the inline sharedWith data
+          String? shareId;
+
+          // Look through items in this recipe group to find the shareId
+          for (final item in widget.group.items) {
+            try {
+              final sharedUser = item.sharedWith.firstWhere(
+                (u) => u.userId == userId,
+              );
+
+              if (sharedUser.shareId != null) {
+                shareId = sharedUser.shareId;
+                break;
+              }
+            } catch (e) {
+              // User not found in this item's sharedWith array, continue to next item
+              continue;
+            }
+          }
+
+          if (shareId == null) {
+            throw Exception("Could not find share ID for this user");
+          }
+
+          // Revoke this specific recipe share
+          await api.revokeRecipeShare(shareId);
+
+          // Refresh the shopping list to get updated sharing info
+          await widget.controller.syncWithServer();
+
+          if (mounted) {
+            final localizations = AppLocalizations.of(context);
+            ErrorUtils.showSuccess(
+              context,
+              localizations?.unshareConfirmation ?? "Access removed successfully",
+            );
+            Navigator.of(context).pop(); // Close the bottom sheet
+          }
+        } catch (e) {
+          if (mounted) {
+            ErrorUtils.showError(context, e);
+          }
+        }
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final sharedCount = _getSharedUsers().length;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
@@ -478,11 +600,11 @@ class _RecipeGroupCard extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  if (group.recipeImage != null)
+                  if (widget.group.recipeImage != null)
                     ClipRRect(
                       borderRadius: BorderRadius.circular(8),
                       child: Image.network(
-                        buildImageUrl(group.recipeImage!),
+                        buildImageUrl(widget.group.recipeImage!),
                         width: 48,
                         height: 48,
                         fit: BoxFit.cover,
@@ -519,7 +641,7 @@ class _RecipeGroupCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          group.recipeName,
+                          widget.group.recipeName,
                           style: theme.textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.w600,
                           ),
@@ -527,22 +649,41 @@ class _RecipeGroupCard extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 2),
-                        Text(
-                          "${group.checkedCount}/${group.totalCount} items",
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                          ),
+                        Row(
+                          children: [
+                            Text(
+                              "${widget.group.checkedCount}/${widget.group.totalCount} items",
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                              ),
+                            ),
+                            if (sharedCount > 0) ...[
+                              const SizedBox(width: 8),
+                              Icon(
+                                Icons.people_outline,
+                                size: 14,
+                                color: theme.colorScheme.primary,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                "$sharedCount",
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.colorScheme.primary,
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
                       ],
                     ),
                   ),
-                  if (group.allChecked)
+                  if (widget.group.allChecked)
                     Icon(
                       Icons.check_circle,
                       color: theme.colorScheme.primary,
                       size: 20,
                     )
-                  else if (group.someChecked)
+                  else if (widget.group.someChecked)
                     Icon(
                       Icons.check_circle_outline,
                       color: theme.colorScheme.primary,
@@ -556,11 +697,13 @@ class _RecipeGroupCard extends StatelessWidget {
                     ),
                     onSelected: (value) {
                       if (value == "check_all") {
-                        controller.toggleRecipeGroup(group.recipeId, true);
+                        widget.controller.toggleRecipeGroup(widget.group.recipeId, true);
                       } else if (value == "uncheck_all") {
-                        controller.toggleRecipeGroup(group.recipeId, false);
+                        widget.controller.toggleRecipeGroup(widget.group.recipeId, false);
+                      } else if (value == "manage_sharing") {
+                        _showManageSharing();
                       } else if (value == "remove") {
-                        onRemoveRecipe();
+                        widget.onRemoveRecipe();
                       }
                     },
                     itemBuilder: (context) => [
@@ -584,6 +727,22 @@ class _RecipeGroupCard extends StatelessWidget {
                           ],
                         ),
                       ),
+                      if (sharedCount > 0) ...[
+                        const PopupMenuDivider(),
+                        PopupMenuItem(
+                          value: "manage_sharing",
+                          child: Row(
+                            children: [
+                              Icon(Icons.people_outline, size: 20, color: theme.colorScheme.primary),
+                              const SizedBox(width: 12),
+                              Text(
+                                AppLocalizations.of(context)?.manageSharing ?? "Manage Sharing",
+                                style: TextStyle(color: theme.colorScheme.primary),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                       const PopupMenuDivider(),
                       PopupMenuItem(
                         value: "remove",
@@ -610,14 +769,14 @@ class _RecipeGroupCard extends StatelessWidget {
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             padding: const EdgeInsets.all(12),
-            itemCount: group.items.length,
+            itemCount: widget.group.items.length,
             separatorBuilder: (_, __) => const SizedBox(height: 4),
             itemBuilder: (context, index) {
-              final item = group.items[index];
+              final item = widget.group.items[index];
               return _ShoppingListItemTile(
                 item: item,
-                onToggle: () => controller.toggleItem(item.id),
-                onRemove: () => controller.removeItem(item.id),
+                onToggle: () => widget.controller.toggleItem(item.id),
+                onRemove: () => widget.controller.removeItem(item.id),
               );
             },
           ),

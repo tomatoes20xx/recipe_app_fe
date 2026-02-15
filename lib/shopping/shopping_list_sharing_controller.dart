@@ -48,7 +48,19 @@ class ShoppingListSharingController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      _sharedWith = await shoppingListApi.getShoppingListSharedWith();
+      _sharedWith = await shoppingListApi.getRecipeSharedWith().then((shares) {
+        // Convert recipe shares to SharedWithUser objects
+        // Group by user and take the latest share
+        final Map<String, SharedWithUser> uniqueUsers = {};
+        for (final share in shares) {
+          final owner = share["owner"] as Map<String, dynamic>? ?? {};
+          final userId = (owner["userId"] ?? owner["user_id"] ?? "").toString();
+          if (userId.isNotEmpty && !uniqueUsers.containsKey(userId)) {
+            uniqueUsers[userId] = SharedWithUser.fromJson(share);
+          }
+        }
+        return uniqueUsers.values.toList();
+      });
       _error = null;
     } catch (e) {
       _error = e.toString();
@@ -76,8 +88,9 @@ class ShoppingListSharingController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      await shoppingListApi.shareShoppingList(
+      await shoppingListApi.shareRecipeIngredients(
         userIds: userIds,
+        recipeIds: [], // Empty array means "all recipes"
         shareType: shareType,
       );
 
@@ -96,8 +109,7 @@ class ShoppingListSharingController extends ChangeNotifier {
 
   /// Revoke access for a specific user
   ///
-  /// Uses optimistic update - removes user from local list immediately,
-  /// then syncs with server. Rolls back on error.
+  /// Deletes all shares with this user (unified recipe-based system)
   Future<void> revokeAccess(String userId) async {
     if (_isSharing) return;
 
@@ -114,7 +126,22 @@ class ShoppingListSharingController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      await shoppingListApi.revokeShoppingListAccess(userId);
+      // Get all shares and find ones for this user
+      final allShares = await shoppingListApi.getRecipeSharedWith();
+      final userShares = allShares.where((share) {
+        final owner = share["owner"] as Map<String, dynamic>? ?? {};
+        final shareUserId = (owner["userId"] ?? owner["user_id"] ?? "").toString();
+        return shareUserId == userId;
+      }).toList();
+
+      // Delete each share
+      for (final share in userShares) {
+        final shareId = (share["shareId"] ?? share["share_id"] ?? "").toString();
+        if (shareId.isNotEmpty) {
+          await shoppingListApi.revokeRecipeShare(shareId);
+        }
+      }
+
       _error = null;
     } catch (e) {
       // Rollback on error
