@@ -1,3 +1,5 @@
+import "../sharing/sharing_models.dart";
+
 class ShoppingListItem {
   ShoppingListItem({
     required this.id,
@@ -10,6 +12,7 @@ class ShoppingListItem {
     this.recipeImage,
     this.isChecked = false,
     required this.addedAt,
+    this.sharedWith = const [],
   });
 
   final String id;
@@ -22,6 +25,7 @@ class ShoppingListItem {
   final String? recipeImage;
   bool isChecked;
   final DateTime addedAt;
+  final List<SharedWithUser> sharedWith;
 
   String get displayText {
     final qty = quantity == null ? "" : "${quantity}";
@@ -42,6 +46,7 @@ class ShoppingListItem {
       "recipeImage": recipeImage,
       "isChecked": isChecked,
       "addedAt": addedAt.toIso8601String(),
+      "sharedWith": sharedWith.map((u) => u.toJson()).toList(),
     };
   }
 
@@ -52,6 +57,21 @@ class ShoppingListItem {
       if (value is num) return value.toDouble();
       if (value is String) return double.tryParse(value);
       return null;
+    }
+
+    // Parse sharedWith array
+    final List<SharedWithUser> sharedWith = [];
+    final sharedWithData = json["sharedWith"];
+    if (sharedWithData is List) {
+      for (final item in sharedWithData) {
+        if (item is Map) {
+          try {
+            sharedWith.add(SharedWithUser.fromJson(Map<String, dynamic>.from(item)));
+          } catch (e) {
+            // Skip invalid shared user
+          }
+        }
+      }
     }
 
     return ShoppingListItem(
@@ -65,6 +85,7 @@ class ShoppingListItem {
       recipeImage: json["recipeImage"]?.toString(),
       isChecked: json["isChecked"] == true,
       addedAt: DateTime.parse(json["addedAt"].toString()),
+      sharedWith: sharedWith,
     );
   }
 
@@ -79,6 +100,7 @@ class ShoppingListItem {
     String? recipeImage,
     bool? isChecked,
     DateTime? addedAt,
+    List<SharedWithUser>? sharedWith,
   }) {
     return ShoppingListItem(
       id: id ?? this.id,
@@ -91,6 +113,7 @@ class ShoppingListItem {
       recipeImage: recipeImage ?? this.recipeImage,
       isChecked: isChecked ?? this.isChecked,
       addedAt: addedAt ?? this.addedAt,
+      sharedWith: sharedWith ?? this.sharedWith,
     );
   }
 }

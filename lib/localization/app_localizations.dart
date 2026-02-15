@@ -447,6 +447,9 @@ class AppLocalizations {
   String get completeYourProfile => _localizedValues[locale.languageCode]?["completeYourProfile"] ?? "Complete your profile to get started";
   String get profileSetupInfo => _localizedValues[locale.languageCode]?["profileSetupInfo"] ?? "Your username is permanent and cannot be changed. Display name and bio can be updated anytime from your profile.";
 
+  // Shopping List Sharing
+  String get manageSharing => _localizedValues[locale.languageCode]?["manageSharing"] ?? "Manage Sharing";
+
   // Shopping List
   String get shoppingList => _localizedValues[locale.languageCode]?["shoppingList"] ?? "Shopping List";
   String get manageYourShoppingList => _localizedValues[locale.languageCode]?["manageYourShoppingList"] ?? "Manage your shopping list";
@@ -558,6 +561,10 @@ class AppLocalizations {
   String get noRecipesInShoppingList => _localizedValues[locale.languageCode]?["noRecipesInShoppingList"] ?? "No recipes in shopping list";
   String get selectRecipes => _localizedValues[locale.languageCode]?["selectRecipes"] ?? "Select Recipes";
   String get shareSelectedRecipes => _localizedValues[locale.languageCode]?["shareSelectedRecipes"] ?? "Share Selected Recipes";
+  String get removeSharedRecipe => _localizedValues[locale.languageCode]?["removeSharedRecipe"] ?? "Remove Shared Recipe";
+  String get removeSharedRecipeConfirm => _localizedValues[locale.languageCode]?["removeSharedRecipeConfirm"] ?? "Remove this recipe from your shared recipes? This won't affect the original recipe.";
+  String get removeSharedList => _localizedValues[locale.languageCode]?["removeSharedList"] ?? "Remove Shared List";
+  String get removeSharedListConfirm => _localizedValues[locale.languageCode]?["removeSharedListConfirm"] ?? "Remove this shopping list from your shared lists? This won't affect the owner's list.";
 
   // Date and Time - Relative time
   String get timeJustNow => _localizedValues[locale.languageCode]?["timeJustNow"] ?? "Just now";
@@ -1036,6 +1043,7 @@ class AppLocalizations {
       "share": "Share",
       "shareRecipe": "Share Recipe",
       "shareShoppingList": "Share Shopping List",
+      "manageSharing": "Manage Sharing",
       "sharedWith": "Shared with",
       "sharedBy": "Shared by",
       "unshare": "Unshare",
@@ -1072,6 +1080,10 @@ class AppLocalizations {
       "noRecipesInShoppingList": "No recipes in shopping list",
       "selectRecipes": "Select Recipes",
       "shareSelectedRecipes": "Share Selected Recipes",
+      "removeSharedRecipe": "Remove Shared Recipe",
+      "removeSharedRecipeConfirm": "Remove this recipe from your shared recipes? This won't affect the original recipe.",
+      "removeSharedList": "Remove Shared List",
+      "removeSharedListConfirm": "Remove this shopping list from your shared lists? This won't affect the owner's list.",
     },
     "ka": {
       "appTitle": "Yummy",
@@ -1524,6 +1536,7 @@ class AppLocalizations {
       "share": "გაზიარება",
       "shareRecipe": "რეცეპტის გაზიარება",
       "shareShoppingList": "სიის გაზიარება",
+      "manageSharing": "გაზიარების მართვა",
       "sharedWith": "გაზიარებულია",
       "sharedBy": "გააზიარა",
       "unshare": "წაშლა",
@@ -1560,6 +1573,10 @@ class AppLocalizations {
       "noRecipesInShoppingList": "საყიდლების სიაში რეცეპტები არ არის",
       "selectRecipes": "აირჩიეთ რეცეპტები",
       "shareSelectedRecipes": "არჩეული რეცეპტების გაზიარება",
+      "removeSharedRecipe": "გაზიარებული რეცეპტის წაშლა",
+      "removeSharedRecipeConfirm": "წაიშალოს ეს რეცეპტი თქვენი გაზიარებული რეცეპტებიდან? ეს არ იმოქმედებს ორიგინალ რეცეპტზე.",
+      "removeSharedList": "გაზიარებული სიის წაშლა",
+      "removeSharedListConfirm": "წაიშალოს ეს სია თქვენი გაზიარებული სიებიდან? ეს არ იმოქმედებს მფლობელის სიაზე.",
     },
   };
 }

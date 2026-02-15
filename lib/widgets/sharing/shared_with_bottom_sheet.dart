@@ -208,10 +208,13 @@ class _SharedWithBottomSheetState extends State<_SharedWithBottomSheet> {
                       _ShareTypeBadge(shareType: user.shareType!),
                       const SizedBox(width: 8),
                     ],
-                    Text(
-                      formatRelativeTime(context, user.sharedAt),
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                    Expanded(
+                      child: Text(
+                        formatRelativeTime(context, user.sharedAt),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],

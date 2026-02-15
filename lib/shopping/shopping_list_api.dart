@@ -90,146 +90,47 @@ class ShoppingListApi {
     return await deleteItems(recipeItemIds);
   }
 
-  // ==================== SHARING METHODS ====================
+  // ==================== SHARING METHODS (UNIFIED RECIPE-BASED SYSTEM) ====================
 
-  /// Share shopping list with followers
-  ///
-  /// [userIds] - List of user IDs to share with (must be followers)
-  /// [shareType] - "read_only" or "collaborative"
-  Future<void> shareShoppingList({
-    required List<String> userIds,
-    required String shareType,
-  }) async {
-    await api.post(
-      "/shopping-list/share",
-      body: {
-        "userIds": userIds,
-        "shareType": shareType,
-      },
-      auth: true,
-    );
-  }
-
-  /// Revoke shopping list access from a specific user
-  ///
-  /// [userId] - User ID to remove access from
-  Future<void> revokeShoppingListAccess(String userId) async {
-    await api.delete(
-      "/shopping-list/share/$userId",
-      auth: true,
-    );
-  }
-
-  /// Get shopping lists shared with the current user
-  ///
-  /// Returns list of SharedShoppingList objects
-  Future<List<SharedShoppingList>> getSharedWithMeLists() async {
-    final data = await api.get(
-      "/shopping-list/shared-with-me",
-      auth: true,
-    );
-
-    // Handle different response formats
-    if (data is List) {
-      return data
-          .map((e) => SharedShoppingList.fromJson(Map<String, dynamic>.from(e as Map)))
-          .toList();
-    } else if (data is Map) {
-      // Response is wrapped - check common keys
-      final items = data["sharedLists"] ?? data["items"] ?? data["data"] ?? [];
-      if (items is List) {
-        return items
-            .map((e) => SharedShoppingList.fromJson(Map<String, dynamic>.from(e as Map)))
-            .toList();
-      }
-    }
-
-    return [];
-  }
-
-  /// Get list of users who have access to the current user's shopping list
-  ///
-  /// Returns list of SharedWithUser objects
-  Future<List<SharedWithUser>> getShoppingListSharedWith() async {
-    final data = await api.get(
-      "/shopping-list/shared-with",
-      auth: true,
-    );
-
-    // Handle different response formats safely
-    if (data is List) {
-      return data
-          .map((e) => SharedWithUser.fromJson(Map<String, dynamic>.from(e as Map)))
-          .toList();
-    } else if (data is Map) {
-      final items = data["items"] ?? data["data"] ?? [];
-      if (items is List) {
-        return items
-            .map((e) => SharedWithUser.fromJson(Map<String, dynamic>.from(e as Map)))
-            .toList();
-      }
-    }
-
-    return [];
-  }
-
-  /// Get another user's shopping list (if shared with you)
-  ///
-  /// [userId] - ID of the user whose list to fetch
-  /// Returns SharedUserShoppingList with all items
-  Future<SharedUserShoppingList> getUserShoppingList(String userId) async {
-    final data = await api.get(
-      "/shopping-list/user/$userId",
-      auth: true,
-    );
-
-    if (data is Map<String, dynamic>) {
-      return SharedUserShoppingList.fromJson(data);
-    } else if (data is Map) {
-      return SharedUserShoppingList.fromJson(Map<String, dynamic>.from(data));
-    } else {
-      throw Exception("Unexpected response format for getUserShoppingList: ${data.runtimeType}");
-    }
-  }
-
-  /// Update an item in a collaborative shopping list
-  ///
-  /// [userId] - Owner of the shopping list
-  /// [itemId] - ID of the item to update
-  /// [isChecked] - New checked state
-  Future<ShoppingListItem?> updateCollaborativeItem({
-    required String userId,
-    required String itemId,
-    required bool isChecked,
-  }) async {
-    final data = await api.patch(
-      "/shopping-list/user/$userId/item/$itemId",
-      body: {"isChecked": isChecked},
-      auth: true,
-    );
-
-    if (data == null) return null;
-
-    return ShoppingListItem.fromJson(Map<String, dynamic>.from(data as Map));
-  }
-
-  // ==================== RECIPE-SPECIFIC SHARING METHODS ====================
-
-  /// Share specific recipe ingredients from shopping list
+  /// Share recipe ingredients from shopping list (unified sharing method)
   ///
   /// [userIds] - List of user IDs to share with (must be followers)
   /// [recipeIds] - List of recipe IDs to share ingredients from
+  ///               Pass empty array [] to share ALL recipes
   /// [shareType] - "read_only" or "collaborative"
+  /// [itemIds] - Optional map of recipeId -> list of itemIds to share specific items
   Future<void> shareRecipeIngredients({
     required List<String> userIds,
     required List<String> recipeIds,
     required String shareType,
+    Map<String, List<String>>? itemIds,
   }) async {
+    // Build shares array in new format
+    final List<Map<String, dynamic>> shares;
+
+    if (recipeIds.isEmpty) {
+      // Empty array = share all recipes
+      shares = [];
+    } else {
+      // Build shares array with optional itemIds
+      shares = recipeIds.map((recipeId) {
+        final share = <String, dynamic>{"recipeId": recipeId};
+
+        // Add itemIds if specified for this recipe
+        if (itemIds != null && itemIds.containsKey(recipeId)) {
+          share["itemIds"] = itemIds[recipeId];
+        }
+        // No itemIds = share all items from this recipe
+
+        return share;
+      }).toList();
+    }
+
     await api.post(
       "/shopping-list/share/recipes",
       body: {
         "userIds": userIds,
-        "recipeIds": recipeIds,
+        "shares": shares,
         "shareType": shareType,
       },
       auth: true,
@@ -245,20 +146,40 @@ class ShoppingListApi {
       auth: true,
     );
 
+    print("=== SHARED LISTS RAW RESPONSE ===");
+    print("Response type: ${data.runtimeType}");
+    print("Response data: $data");
+    print("=================================");
+
     // Handle different response formats
     if (data is List) {
-      return data
+      print("Response is a List with ${data.length} items");
+      for (int i = 0; i < data.length; i++) {
+        print("Item $i: ${data[i]}");
+      }
+      final parsed = data
           .map((e) => SharedRecipeShoppingList.fromJson(Map<String, dynamic>.from(e as Map)))
           .toList();
+      print("Parsed ${parsed.length} SharedRecipeShoppingList objects");
+      return parsed;
     } else if (data is Map) {
+      print("Response is a Map with keys: ${data.keys.toList()}");
       final items = data["sharedRecipeLists"] ?? data["items"] ?? data["data"] ?? [];
+      print("Extracted items: $items (type: ${items.runtimeType})");
       if (items is List) {
-        return items
+        print("Items list has ${items.length} entries");
+        for (int i = 0; i < items.length; i++) {
+          print("Item $i: ${items[i]}");
+        }
+        final parsed = items
             .map((e) => SharedRecipeShoppingList.fromJson(Map<String, dynamic>.from(e as Map)))
             .toList();
+        print("Parsed ${parsed.length} SharedRecipeShoppingList objects");
+        return parsed;
       }
     }
 
+    print("No data found, returning empty list");
     return [];
   }
 
@@ -292,6 +213,23 @@ class ShoppingListApi {
       "/shopping-list/share/recipes/$shareId",
       auth: true,
     );
+  }
+
+  /// Unshare ALL recipes with a specific user (bulk delete)
+  ///
+  /// [userId] - ID of the user to revoke all shares from
+  /// Returns number of shares deleted
+  Future<int> revokeAllSharesWithUser(String userId) async {
+    final data = await api.delete(
+      "/shopping-list/share/user/$userId",
+      auth: true,
+    );
+
+    if (data is Map && data.containsKey("deleted")) {
+      return data["deleted"] as int? ?? 0;
+    }
+
+    return 0;
   }
 
   /// Get list of users who have access to specific recipes in shopping list
@@ -336,5 +274,15 @@ class ShoppingListApi {
     if (data == null) return null;
 
     return ShoppingListItem.fromJson(Map<String, dynamic>.from(data as Map));
+  }
+
+  /// Dismiss/remove a shared recipe list (works for both specific recipes and "all recipes" shares)
+  ///
+  /// [shareId] - ID of the share to dismiss
+  Future<void> dismissSharedRecipeList(String shareId) async {
+    await api.delete(
+      "/shopping-list/share/recipes/$shareId",
+      auth: true,
+    );
   }
 }

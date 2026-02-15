@@ -456,4 +456,14 @@ class RecipeApi {
 
     return [];
   }
+
+  /// Dismiss/remove a recipe that was shared with you
+  ///
+  /// [recipeId] - ID of the shared recipe to dismiss
+  Future<void> dismissSharedRecipe(String recipeId) async {
+    await api.delete(
+      "/recipes/shared-with-me/$recipeId",
+      auth: true,
+    );
+  }
 }
