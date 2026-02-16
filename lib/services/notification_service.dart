@@ -7,7 +7,6 @@ import "package:flutter_local_notifications/flutter_local_notifications.dart";
 /// Top-level function to handle background messages
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  debugPrint('Handling background message: ${message.messageId}');
   // Handle background message here
 }
 
@@ -37,12 +36,10 @@ class NotificationService {
 
     // Get FCM token
     _fcmToken = await _firebaseMessaging.getToken();
-    debugPrint('FCM Token: $_fcmToken');
 
     // Listen for token refresh
     _firebaseMessaging.onTokenRefresh.listen((token) {
       _fcmToken = token;
-      debugPrint('FCM Token refreshed: $token');
       // TODO: Send token to backend
     });
 
@@ -68,7 +65,6 @@ class NotificationService {
         sound: true,
         provisional: false,
       );
-      debugPrint('User granted permission: ${settings.authorizationStatus}');
     }
   }
 
@@ -114,8 +110,6 @@ class NotificationService {
 
   /// Handle foreground messages
   Future<void> _handleForegroundMessage(RemoteMessage message) async {
-    debugPrint('Foreground message: ${message.messageId}');
-
     final notification = message.notification;
     final data = message.data;
 
@@ -131,7 +125,6 @@ class NotificationService {
 
   /// Handle notification tap
   void _handleNotificationTap(RemoteMessage message) {
-    debugPrint('Notification tapped: ${message.messageId}');
     final data = message.data;
 
     // Navigate based on notification type
@@ -188,12 +181,10 @@ class NotificationService {
   /// Subscribe to a topic
   Future<void> subscribeToTopic(String topic) async {
     await _firebaseMessaging.subscribeToTopic(topic);
-    debugPrint('Subscribed to topic: $topic');
   }
 
   /// Unsubscribe from a topic
   Future<void> unsubscribeFromTopic(String topic) async {
     await _firebaseMessaging.unsubscribeFromTopic(topic);
-    debugPrint('Unsubscribed from topic: $topic');
   }
 }

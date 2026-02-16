@@ -446,9 +446,6 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
             await api.deleteRecipeImage(widget.recipeId!, imageId);
           } catch (e) {
             // Continue even if deletion fails for one image
-            if (mounted) {
-              print("Failed to delete image $imageId: $e");
-            }
           }
         }
 
@@ -463,9 +460,6 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
             await api.addRecipeImage(widget.recipeId!, imageFiles[i]);
           } catch (e) {
             // Continue even if one image upload fails
-            if (mounted) {
-              print("Failed to upload image ${i + 1}: $e");
-            }
           }
         }
 
@@ -476,9 +470,7 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
           try {
             await api.reorderRecipeImages(widget.recipeId!, allImageIds);
           } catch (e) {
-            if (mounted) {
-              print("Failed to reorder images: $e");
-            }
+            // Ignore reorder errors
           }
         }
       } else {

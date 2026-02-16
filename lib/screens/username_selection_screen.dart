@@ -136,7 +136,6 @@ class _UsernameSelectionScreenState extends State<UsernameSelectionScreen> {
         } catch (e) {
           // Don't block signup if avatar upload fails
           // User can upload avatar later from profile
-          debugPrint('Avatar upload failed: $e');
         }
       }
 

@@ -78,11 +78,9 @@ class ShoppingListController extends ChangeNotifier {
           await prefs.setString(_lastSyncKey, _lastSyncTime!.toIso8601String());
         } on SocketException {
           // No internet - load from cache
-          debugPrint("No internet connection, loading from cache");
           await _loadFromCache();
         } catch (e) {
           // API error - fallback to cache
-          debugPrint("Error loading from API: $e, falling back to cache");
           await _loadFromCache();
         }
       } else {
@@ -90,7 +88,7 @@ class ShoppingListController extends ChangeNotifier {
         await _loadFromCache();
       }
     } catch (e) {
-      debugPrint("Error loading shopping list: $e");
+      // Error loading shopping list
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -108,7 +106,7 @@ class ShoppingListController extends ChangeNotifier {
         _items = jsonList.map((json) => ShoppingListItem.fromJson(json)).toList();
       }
     } catch (e) {
-      debugPrint("Error loading from cache: $e");
+      // Error loading from cache
     }
   }
 
@@ -119,7 +117,7 @@ class ShoppingListController extends ChangeNotifier {
       final jsonList = _items.map((item) => item.toJson()).toList();
       await prefs.setString(_storageKey, json.encode(jsonList));
     } catch (e) {
-      debugPrint("Error saving to cache: $e");
+      // Error saving to cache
     }
   }
 
@@ -139,7 +137,7 @@ class ShoppingListController extends ChangeNotifier {
       await prefs.setString(_lastSyncKey, _lastSyncTime!.toIso8601String());
       await _saveToCache();
     } catch (e) {
-      debugPrint("Error syncing with server: $e");
+      // Error syncing with server
     } finally {
       _isSyncing = false;
       notifyListeners();
@@ -181,9 +179,7 @@ class ShoppingListController extends ChangeNotifier {
         notifyListeners();
       } on SocketException {
         // Offline - items are already added locally, will sync later
-        debugPrint("Offline: Items added to local cache, will sync when online");
       } catch (e) {
-        debugPrint("Error syncing added items to server: $e");
         // Items remain in local cache
       }
     }
@@ -215,9 +211,8 @@ class ShoppingListController extends ChangeNotifier {
         }
       } on SocketException {
         // Offline - change is saved locally
-        debugPrint("Offline: Item toggled locally, will sync when online");
       } catch (e) {
-        debugPrint("Error syncing toggle to server: $e");
+        // Error syncing toggle to server
       }
     }
   }
@@ -245,9 +240,9 @@ class ShoppingListController extends ChangeNotifier {
           await api!.updateItem(itemId, isChecked: checked);
         }
       } on SocketException {
-        debugPrint("Offline: Recipe group toggled locally");
+        // Offline - recipe group toggled locally
       } catch (e) {
-        debugPrint("Error syncing recipe group toggle: $e");
+        // Error syncing recipe group toggle
       }
     }
   }
@@ -267,9 +262,9 @@ class ShoppingListController extends ChangeNotifier {
       try {
         await api!.deleteItem(itemId);
       } on SocketException {
-        debugPrint("Offline: Item removed locally");
+        // Offline - item removed locally
       } catch (e) {
-        debugPrint("Error syncing item deletion: $e");
+        // Error syncing item deletion
       }
     }
   }
@@ -288,9 +283,9 @@ class ShoppingListController extends ChangeNotifier {
       try {
         await api!.deleteItems(itemsToRemove);
       } on SocketException {
-        debugPrint("Offline: Recipe items removed locally");
+        // Offline - recipe items removed locally
       } catch (e) {
-        debugPrint("Error syncing recipe items deletion: $e");
+        // Error syncing recipe items deletion
       }
     }
   }
@@ -309,9 +304,9 @@ class ShoppingListController extends ChangeNotifier {
       try {
         await api!.deleteItems(checkedItemIds);
       } on SocketException {
-        debugPrint("Offline: Checked items cleared locally");
+        // Offline - checked items cleared locally
       } catch (e) {
-        debugPrint("Error syncing checked items deletion: $e");
+        // Error syncing checked items deletion
       }
     }
   }
@@ -330,9 +325,9 @@ class ShoppingListController extends ChangeNotifier {
       try {
         await api!.deleteItems(allItemIds);
       } on SocketException {
-        debugPrint("Offline: All items cleared locally");
+        // Offline - all items cleared locally
       } catch (e) {
-        debugPrint("Error syncing clear all: $e");
+        // Error syncing clear all
       }
     }
   }

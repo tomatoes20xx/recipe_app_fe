@@ -87,22 +87,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final currentUsername = widget.auth.me?["username"]?.toString();
     if (currentUsername == null) return;
 
-    // Debug: Log auth.me data
-    print("🔍 DEBUG: auth.me data = ${widget.auth.me}");
-
     try {
       final userApi = UserApi(widget.apiClient);
       final profile = await userApi.getUserProfile(currentUsername);
-
-      // Debug: Log loaded profile
-      print("🔍 DEBUG: Loaded profile - username: ${profile.username}, displayName: ${profile.displayName}, bio: ${profile.bio}");
 
       setState(() {
         _userProfile = profile;
       });
     } catch (e) {
       // Silently fail - not critical for own profile
-      print("🔍 DEBUG: Failed to load own profile: $e");
     }
   }
 
@@ -724,9 +717,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final displayName = user["display_name"]?.toString(); // Fixed: was "displayName", should be "display_name"
     final email = user["email"]?.toString() ?? "";
     final avatarUrl = user["avatar_url"]?.toString();
-
-    // Debug: Log what we're displaying
-    print("🔍 DEBUG: Displaying profile - username: $username, displayName: $displayName, email: $email");
 
     final theme = Theme.of(context);
 

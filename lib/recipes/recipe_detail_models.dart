@@ -74,8 +74,6 @@ class RecipeCounts {
   RecipeCounts({required this.likes, required this.comments, required this.bookmarks, required this.shares});
 
   factory RecipeCounts.fromJson(Map<String, dynamic> json) {
-    print("🔍 RecipeCounts.fromJson - Raw JSON: $json");
-    print("🔍 shares value: ${json["shares"]} (type: ${json["shares"].runtimeType})");
     return RecipeCounts(
       likes: _asInt(json["likes"]),
       comments: _asInt(json["comments"]),
@@ -179,10 +177,8 @@ class RecipeDetail {
   });
 
   factory RecipeDetail.fromJson(Map<String, dynamic> json) {
-    print("🔍 RecipeDetail.fromJson - Recipe ID: ${json["id"]}");
     final tagsRaw = (json["tags"] as List?) ?? const [];
     final countsRaw = Map<String, dynamic>.from(json["counts"] as Map);
-    print("🔍 RecipeDetail counts raw: $countsRaw");
 
     final ingredientsRaw = (json["ingredients"] as List?) ?? const [];
     final stepsRaw = (json["steps"] as List?) ?? const [];
