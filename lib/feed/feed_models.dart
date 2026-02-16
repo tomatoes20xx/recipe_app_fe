@@ -39,6 +39,7 @@ class FeedItem {
   final int likes;
   final int comments;
   final int bookmarks;
+  final int shares;
 
   final bool viewerHasLiked;
   final bool viewerHasBookmarked;
@@ -62,6 +63,7 @@ class FeedItem {
     required this.likes,
     required this.comments,
     required this.bookmarks,
+    required this.shares,
     required this.viewerHasLiked,
     required this.viewerHasBookmarked,
     this.likesWindow,
@@ -69,6 +71,8 @@ class FeedItem {
   });
 
   factory FeedItem.fromJson(Map<String, dynamic> json) {
+    print("🔍 FeedItem.fromJson - Recipe ID: ${json["id"]}");
+    print("🔍 FeedItem likes: ${json["likes"]}, comments: ${json["comments"]}, bookmarks: ${json["bookmarks"]}, shares: ${json["shares"]}");
     final imagesRaw = (json["images"] as List?) ?? [];
     final images = imagesRaw
         .map((e) => RecipeImage.fromJson(Map<String, dynamic>.from(e as Map)))
@@ -89,6 +93,7 @@ class FeedItem {
       likes: (json["likes"] ?? 0) as int,
       comments: (json["comments"] ?? 0) as int,
       bookmarks: (json["bookmarks"] ?? 0) as int,
+      shares: (json["shares"] ?? 0) as int,
       viewerHasLiked: (json["viewer_has_liked"] ?? false) as bool,
       viewerHasBookmarked: (json["viewer_has_bookmarked"] ?? false) as bool,
       likesWindow: json["likes_window"] is int ? json["likes_window"] as int : null,
@@ -100,6 +105,7 @@ class FeedItem {
     int? likes,
     int? comments,
     int? bookmarks,
+    int? shares,
     bool? viewerHasLiked,
     bool? viewerHasBookmarked,
     int? likesWindow,
@@ -120,6 +126,7 @@ class FeedItem {
       likes: likes ?? this.likes,
       comments: comments ?? this.comments,
       bookmarks: bookmarks ?? this.bookmarks,
+      shares: shares ?? this.shares,
       viewerHasLiked: viewerHasLiked ?? this.viewerHasLiked,
       viewerHasBookmarked: viewerHasBookmarked ?? this.viewerHasBookmarked,
       likesWindow: likesWindow ?? this.likesWindow,

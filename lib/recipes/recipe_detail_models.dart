@@ -39,18 +39,48 @@ class RecipeImage {
   }
 }
 
+class LikedByUser {
+  final String userId;
+  final String username;
+  final String? displayName;
+  final String? avatarUrl;
+  final DateTime likedAt;
+
+  LikedByUser({
+    required this.userId,
+    required this.username,
+    this.displayName,
+    this.avatarUrl,
+    required this.likedAt,
+  });
+
+  factory LikedByUser.fromJson(Map<String, dynamic> json) {
+    return LikedByUser(
+      userId: json["userId"].toString(),
+      username: json["username"].toString(),
+      displayName: json["displayName"]?.toString(),
+      avatarUrl: json["avatarUrl"]?.toString(),
+      likedAt: DateTime.parse(json["likedAt"].toString()),
+    );
+  }
+}
+
 class RecipeCounts {
   final int likes;
   final int comments;
   final int bookmarks;
+  final int shares;
 
-  RecipeCounts({required this.likes, required this.comments, required this.bookmarks});
+  RecipeCounts({required this.likes, required this.comments, required this.bookmarks, required this.shares});
 
   factory RecipeCounts.fromJson(Map<String, dynamic> json) {
+    print("🔍 RecipeCounts.fromJson - Raw JSON: $json");
+    print("🔍 shares value: ${json["shares"]} (type: ${json["shares"].runtimeType})");
     return RecipeCounts(
       likes: _asInt(json["likes"]),
       comments: _asInt(json["comments"]),
       bookmarks: _asInt(json["bookmarks"]),
+      shares: _asInt(json["shares"]),
     );
   }
 }
@@ -123,6 +153,8 @@ class RecipeDetail {
   final bool? viewerHasLiked;
   /// Whether the current viewer has bookmarked this recipe (from API when loaded while logged in).
   final bool? viewerHasBookmarked;
+  /// List of users who liked this recipe (only present for recipe owners).
+  final List<LikedByUser>? likedBy;
 
   RecipeDetail({
     required this.id,
@@ -143,11 +175,14 @@ class RecipeDetail {
     required this.images,
     this.viewerHasLiked,
     this.viewerHasBookmarked,
+    this.likedBy,
   });
 
   factory RecipeDetail.fromJson(Map<String, dynamic> json) {
+    print("🔍 RecipeDetail.fromJson - Recipe ID: ${json["id"]}");
     final tagsRaw = (json["tags"] as List?) ?? const [];
     final countsRaw = Map<String, dynamic>.from(json["counts"] as Map);
+    print("🔍 RecipeDetail counts raw: $countsRaw");
 
     final ingredientsRaw = (json["ingredients"] as List?) ?? const [];
     final stepsRaw = (json["steps"] as List?) ?? const [];
@@ -156,6 +191,13 @@ class RecipeDetail {
         .map((e) => RecipeImage.fromJson(Map<String, dynamic>.from(e as Map)))
         .toList()
       ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+
+    final likedByRaw = (json["likedBy"] as List?) ?? [];
+    final likedBy = likedByRaw.isNotEmpty
+        ? likedByRaw
+            .map((e) => LikedByUser.fromJson(Map<String, dynamic>.from(e as Map)))
+            .toList()
+        : null;
 
     return RecipeDetail(
       id: json["id"].toString(),
@@ -180,6 +222,7 @@ class RecipeDetail {
       images: images,
       viewerHasLiked: json["viewer_has_liked"] is bool ? json["viewer_has_liked"] as bool : null,
       viewerHasBookmarked: json["viewer_has_bookmarked"] is bool ? json["viewer_has_bookmarked"] as bool : null,
+      likedBy: likedBy,
     );
   }
 }

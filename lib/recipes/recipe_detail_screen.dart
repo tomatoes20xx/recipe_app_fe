@@ -11,8 +11,8 @@ import "../utils/ui_utils.dart";
 import "../widgets/ingredient_action_bar.dart";
 import "../widgets/section_title_widget.dart";
 import "../widgets/sharing/follower_selection_bottom_sheet.dart";
-import "../widgets/sharing/shared_with_bottom_sheet.dart";
 import "comments_bottom_sheet.dart";
+import "liked_by_bottom_sheet.dart";
 import "recipe_api.dart";
 import "recipe_detail_controller.dart";
 import "recipe_detail_models.dart";
@@ -64,7 +64,6 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
       recipeApi: recipeApi,
       recipeId: widget.recipeId,
     );
-    _sharingController.addListener(_onSharingChanged);
   }
 
   void _onChanged() {
@@ -79,15 +78,10 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     }
   }
 
-  void _onSharingChanged() {
-    if (mounted) setState(() {});
-  }
-
   @override
   void dispose() {
     c.removeListener(_onChanged);
     c.dispose();
-    _sharingController.removeListener(_onSharingChanged);
     _sharingController.dispose();
     super.dispose();
   }
@@ -197,8 +191,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     }
   }
 
-  Future<void> _onShareTap(bool isOwner) async {
-    if (!isOwner) return;
+  Future<void> _onShareTap() async {
     if (!(widget.auth?.isLoggedIn ?? false)) {
       ErrorUtils.showError(context, "Please log in to share recipes");
       return;
@@ -226,6 +219,8 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
               context,
               localizations?.recipeSharedSuccess ?? "Recipe shared successfully!",
             );
+            // Refresh recipe to get updated share count
+            c.refresh();
           }
         } catch (e) {
           if (mounted) {
@@ -236,37 +231,13 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     );
   }
 
-  Future<void> _onShareLongPress(bool isOwner) async {
-    if (!isOwner) return;
-    if (!(widget.auth?.isLoggedIn ?? false)) return;
+  Future<void> _onLikeLongPress() async {
+    final r = c.recipe;
+    if (r == null || r.likedBy == null) return;
 
-    // Load shared-with list if not already loaded
-    if (_sharingController.sharedWith.isEmpty && !_sharingController.isLoading) {
-      await _sharingController.loadSharedWith();
-    }
-
-    if (!mounted) return;
-
-    await showSharedWithBottomSheet(
+    await showLikedByBottomSheet(
       context: context,
-      sharedWith: _sharingController.sharedWith,
-      isLoading: _sharingController.isLoading,
-      onUnshare: (userId) async {
-        try {
-          await _sharingController.unshareWith(userId);
-          if (mounted) {
-            final localizations = AppLocalizations.of(context);
-            ErrorUtils.showSuccess(
-              context,
-              localizations?.unshareConfirmation ?? "Access removed",
-            );
-          }
-        } catch (e) {
-          if (mounted) {
-            ErrorUtils.showError(context, e);
-          }
-        }
-      },
+      likedBy: r.likedBy!,
     );
   }
 
@@ -439,12 +410,14 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                                       likes: _localLikes ?? r.counts.likes,
                                       comments: _localComments ?? r.counts.comments,
                                       bookmarks: _localBookmarks ?? r.counts.bookmarks,
+                                      shares: r.counts.shares,
                                     ),
                                     viewerHasLiked: _viewerHasLiked ?? false,
                                     viewerHasBookmarked: _viewerHasBookmarked ?? false,
                                     isLiking: _isLiking,
                                     isBookmarking: _isBookmarking,
                                     onLikeTap: _toggleLike,
+                                    onLikeLongPress: r.likedBy != null ? _onLikeLongPress : null,
                                     onBookmarkTap: _toggleBookmark,
                                     onCommentTap: () {
                                       showCommentsBottomSheet(
@@ -466,9 +439,8 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                                     isSelectionMode: _isSelectionMode,
                                     onToggleIngredient: _toggleIngredient,
                                     isOwner: isOwner,
-                                    shareCount: _sharingController.sharedCount,
-                                    onShareTap: () => _onShareTap(isOwner),
-                                    onShareLongPress: () => _onShareLongPress(isOwner),
+                                    shareCount: r.counts.shares,
+                                    onShareTap: _onShareTap,
                                   ),
                                 ),
                               ),
@@ -636,6 +608,7 @@ class _ContentBody extends StatelessWidget {
     required this.isLiking,
     required this.isBookmarking,
     required this.onLikeTap,
+    this.onLikeLongPress,
     required this.onBookmarkTap,
     required this.onCommentTap,
     required this.checkedIngredients,
@@ -645,7 +618,6 @@ class _ContentBody extends StatelessWidget {
     required this.isOwner,
     required this.shareCount,
     required this.onShareTap,
-    required this.onShareLongPress,
   });
 
   final RecipeDetail recipe;
@@ -658,6 +630,7 @@ class _ContentBody extends StatelessWidget {
   final bool isLiking;
   final bool isBookmarking;
   final VoidCallback onLikeTap;
+  final VoidCallback? onLikeLongPress;
   final VoidCallback onBookmarkTap;
   final VoidCallback onCommentTap;
   final Set<String> checkedIngredients;
@@ -667,7 +640,6 @@ class _ContentBody extends StatelessWidget {
   final bool isOwner;
   final int shareCount;
   final VoidCallback onShareTap;
-  final VoidCallback onShareLongPress;
 
   @override
   Widget build(BuildContext context) {
@@ -723,12 +695,12 @@ class _ContentBody extends StatelessWidget {
             isLiking: isLiking,
             isBookmarking: isBookmarking,
             onLikeTap: onLikeTap,
+            onLikeLongPress: onLikeLongPress,
             onBookmarkTap: onBookmarkTap,
             onCommentTap: onCommentTap,
             isOwner: isOwner,
             shareCount: shareCount,
             onShareTap: onShareTap,
-            onShareLongPress: onShareLongPress,
           ),
           const SizedBox(height: 16),
 
@@ -884,12 +856,12 @@ class _EngagementBar extends StatelessWidget {
     required this.isLiking,
     required this.isBookmarking,
     required this.onLikeTap,
+    this.onLikeLongPress,
     required this.onBookmarkTap,
     required this.onCommentTap,
     required this.isOwner,
     required this.shareCount,
     required this.onShareTap,
-    required this.onShareLongPress,
   });
 
   final RecipeCounts counts;
@@ -898,12 +870,12 @@ class _EngagementBar extends StatelessWidget {
   final bool isLiking;
   final bool isBookmarking;
   final VoidCallback onLikeTap;
+  final VoidCallback? onLikeLongPress;
   final VoidCallback onBookmarkTap;
   final VoidCallback onCommentTap;
   final bool isOwner;
   final int shareCount;
   final VoidCallback onShareTap;
-  final VoidCallback onShareLongPress;
 
   @override
   Widget build(BuildContext context) {
@@ -922,6 +894,7 @@ class _EngagementBar extends StatelessWidget {
               isActive: viewerHasLiked,
               isLoading: isLiking,
               onTap: onLikeTap,
+              onLongPress: onLikeLongPress,
               activeColor: const Color(0xFFE53935),
             ),
           ),
@@ -944,18 +917,15 @@ class _EngagementBar extends StatelessWidget {
               activeColor: const Color(0xFFE53935),
             ),
           ),
-          if (isOwner) ...[
-            _VerticalDivider(),
-            Expanded(
-              child: _EngagementButton(
-                icon: Icons.person_add,
-                count: shareCount,
-                onTap: onShareTap,
-                onLongPress: onShareLongPress,
-                activeColor: Theme.of(context).colorScheme.primary,
-              ),
+          _VerticalDivider(),
+          Expanded(
+            child: _EngagementButton(
+              icon: Icons.send,
+              count: shareCount,
+              onTap: onShareTap,
+              activeColor: Theme.of(context).colorScheme.primary,
             ),
-          ],
+          ),
         ],
       ),
     );
