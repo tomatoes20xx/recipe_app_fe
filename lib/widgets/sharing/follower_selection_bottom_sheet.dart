@@ -9,7 +9,7 @@ import "../../users/user_api.dart";
 import "../../users/user_models.dart";
 import "../../utils/ui_utils.dart";
 
-/// Shows a bottom sheet for selecting followers to share content with
+/// Shows a bottom sheet for selecting followers (people who follow you) to share content with
 ///
 /// [alreadySharedWith] - List of user IDs that already have access (will be disabled)
 /// [onShare] - Callback when user confirms sharing (userIds, shareType)
@@ -82,7 +82,7 @@ class _FollowerSelectionBottomSheetState extends State<_FollowerSelectionBottomS
 
     try {
       final username = widget.auth.me?["username"]?.toString() ?? "";
-      final response = await userApi.getFollowing(username: username, limit: 50);
+      final response = await userApi.getFollowers(username: username, limit: 50);
 
       setState(() {
         _followers = response.items;
