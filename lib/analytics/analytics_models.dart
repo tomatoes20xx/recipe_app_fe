@@ -91,6 +91,7 @@ class TopRecipe {
   final int likes;
   final int bookmarks;
   final int comments;
+  final int shares;
 
   TopRecipe({
     required this.recipeId,
@@ -102,6 +103,7 @@ class TopRecipe {
     required this.likes,
     required this.bookmarks,
     required this.comments,
+    required this.shares,
   });
 
   factory TopRecipe.fromJson(Map<String, dynamic> json) {
@@ -115,6 +117,7 @@ class TopRecipe {
       likes: (json["likes"] ?? 0) as int,
       bookmarks: (json["bookmarks"] ?? 0) as int,
       comments: (json["comments"] ?? 0) as int,
+      shares: (json["shares"] ?? 0) as int,
     );
   }
 }
@@ -126,6 +129,7 @@ class DailyEvent {
   final int likes;
   final int bookmarks;
   final int comments;
+  final int shares;
 
   DailyEvent({
     required this.date,
@@ -134,6 +138,7 @@ class DailyEvent {
     required this.likes,
     required this.bookmarks,
     required this.comments,
+    required this.shares,
   });
 
   factory DailyEvent.fromJson(Map<String, dynamic> json) {
@@ -144,6 +149,7 @@ class DailyEvent {
       likes: (json["likes"] ?? 0) as int,
       bookmarks: (json["bookmarks"] ?? 0) as int,
       comments: (json["comments"] ?? 0) as int,
+      shares: (json["shares"] ?? 0) as int,
     );
   }
 }

@@ -267,6 +267,8 @@ class AppLocalizations {
   String get recipeDeletedSuccessfully => _localizedValues[locale.languageCode]?["recipeDeletedSuccessfully"] ?? "Recipe deleted successfully";
   String get recipeCreatedSuccessfully => _localizedValues[locale.languageCode]?["recipeCreatedSuccessfully"] ?? "Recipe created successfully";
   String get recipeUpdatedSuccessfully => _localizedValues[locale.languageCode]?["recipeUpdatedSuccessfully"] ?? "Recipe updated successfully";
+  String get likedBy => _localizedValues[locale.languageCode]?["likedBy"] ?? "Liked by";
+  String get noLikesYet => _localizedValues[locale.languageCode]?["noLikesYet"] ?? "No likes yet";
   String get notFound => _localizedValues[locale.languageCode]?["notFound"] ?? "Not found";
   String get somethingWentWrong => _localizedValues[locale.languageCode]?["somethingWentWrong"] ?? "Something went wrong";
   String get steps => _localizedValues[locale.languageCode]?["steps"] ?? "Steps";
@@ -789,6 +791,8 @@ class AppLocalizations {
       "recipeDeletedSuccessfully": "Recipe deleted successfully",
       "recipeCreatedSuccessfully": "Recipe created successfully",
       "recipeUpdatedSuccessfully": "Recipe updated successfully",
+      "likedBy": "Liked by",
+      "noLikesYet": "No likes yet",
       "notFound": "Not found",
       "somethingWentWrong": "Something went wrong",
       "steps": "Steps",
@@ -1282,6 +1286,8 @@ class AppLocalizations {
       "recipeDeletedSuccessfully": "რეცეპტი წარმატებით წაიშალა",
       "recipeCreatedSuccessfully": "რეცეპტი წარმატებით შეიქმნა",
       "recipeUpdatedSuccessfully": "რეცეპტი წარმატებით განახლდა",
+      "likedBy": "მოწონებულია",
+      "noLikesYet": "ჯერ არ არის მოწონებული",
       "notFound": "არ მოიძებნა",
       "somethingWentWrong": "რაღაც შეცდომა მოხდა",
       "steps": "ნაბიჯები",
