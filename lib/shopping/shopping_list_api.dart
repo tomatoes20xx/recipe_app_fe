@@ -146,40 +146,22 @@ class ShoppingListApi {
       auth: true,
     );
 
-    print("=== SHARED LISTS RAW RESPONSE ===");
-    print("Response type: ${data.runtimeType}");
-    print("Response data: $data");
-    print("=================================");
-
     // Handle different response formats
     if (data is List) {
-      print("Response is a List with ${data.length} items");
-      for (int i = 0; i < data.length; i++) {
-        print("Item $i: ${data[i]}");
-      }
       final parsed = data
           .map((e) => SharedRecipeShoppingList.fromJson(Map<String, dynamic>.from(e as Map)))
           .toList();
-      print("Parsed ${parsed.length} SharedRecipeShoppingList objects");
       return parsed;
     } else if (data is Map) {
-      print("Response is a Map with keys: ${data.keys.toList()}");
       final items = data["sharedRecipeLists"] ?? data["items"] ?? data["data"] ?? [];
-      print("Extracted items: $items (type: ${items.runtimeType})");
       if (items is List) {
-        print("Items list has ${items.length} entries");
-        for (int i = 0; i < items.length; i++) {
-          print("Item $i: ${items[i]}");
-        }
         final parsed = items
             .map((e) => SharedRecipeShoppingList.fromJson(Map<String, dynamic>.from(e as Map)))
             .toList();
-        print("Parsed ${parsed.length} SharedRecipeShoppingList objects");
         return parsed;
       }
     }
 
-    print("No data found, returning empty list");
     return [];
   }
 

@@ -195,26 +195,14 @@ class _SharedUserShoppingListScreenState extends State<SharedUserShoppingListScr
     final freshUserShares = widget.controller.lists
         .firstWhere((u) => u.ownerId == widget.userShares.ownerId);
 
-    print("=== GROUPING ITEMS BY RECIPE IN DETAIL SCREEN ===");
-    print("User: ${freshUserShares.ownerUsername}");
-    print("Total shares: ${freshUserShares.shares.length}");
-
     final Map<String, List<MapEntry<String, ShoppingListItem>>> grouped = {};
 
     for (final share in freshUserShares.shares) {
-      print("Share ${share.shareId}: ${share.items.length} items");
       for (final item in share.items) {
-        print("  Item: ${item.name} (recipeId: ${item.recipeId})");
         final key = item.recipeId ?? "__no_recipe__";
         grouped.putIfAbsent(key, () => []).add(MapEntry(share.shareId, item));
       }
     }
-
-    print("Grouped into ${grouped.length} recipe groups");
-    for (final entry in grouped.entries) {
-      print("  Recipe ${entry.key}: ${entry.value.length} items");
-    }
-    print("=================================================");
 
     return grouped;
   }

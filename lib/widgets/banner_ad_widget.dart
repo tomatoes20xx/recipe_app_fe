@@ -48,13 +48,12 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
         onAdFailedToLoad: (ad, error) {
           // Dispose the ad if it fails to load
           ad.dispose();
-          debugPrint("Banner ad failed to load: $error");
         },
         onAdOpened: (_) {
-          debugPrint("Banner ad opened");
+          // Banner ad opened
         },
         onAdClosed: (_) {
-          debugPrint("Banner ad closed");
+          // Banner ad closed
         },
       ),
     );

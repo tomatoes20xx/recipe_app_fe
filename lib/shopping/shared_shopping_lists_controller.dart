@@ -72,17 +72,11 @@ class SharedShoppingListsController extends ChangeNotifier {
 
   /// Group shares by owner user ID
   void _groupSharesByUser() {
-    print("=== GROUPING SHARES BY USER ===");
-    print("Total shares to group: ${_allShares.length}");
-
     final Map<String, List<SharedRecipeShoppingList>> grouped = {};
 
     for (final share in _allShares) {
-      print("Share: ${share.shareId}, Owner: ${share.ownerId}, Items: ${share.items.length}");
       grouped.putIfAbsent(share.ownerId, () => []).add(share);
     }
-
-    print("Grouped into ${grouped.length} users");
 
     _groupedShares = grouped.entries.map((entry) {
       final shares = entry.value;
@@ -90,7 +84,6 @@ class SharedShoppingListsController extends ChangeNotifier {
       shares.sort((a, b) => b.sharedAt.compareTo(a.sharedAt));
 
       final totalItems = shares.fold(0, (sum, share) => sum + share.totalItems);
-      print("User ${entry.key}: ${shares.length} shares, $totalItems total items");
 
       return UserShares(
         ownerId: entry.key,
@@ -105,12 +98,6 @@ class SharedShoppingListsController extends ChangeNotifier {
 
     // Sort by latest share date descending
     _groupedShares.sort((a, b) => b.latestSharedAt.compareTo(a.latestSharedAt));
-
-    print("Final grouped shares: ${_groupedShares.length}");
-    for (final userShare in _groupedShares) {
-      print("  - ${userShare.ownerUsername}: ${userShare.shares.length} shares, ${userShare.totalItems} items");
-    }
-    print("================================");
   }
 
   /// Refresh the shared shopping lists (pull to refresh)

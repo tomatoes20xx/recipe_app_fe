@@ -71,8 +71,6 @@ class FeedItem {
   });
 
   factory FeedItem.fromJson(Map<String, dynamic> json) {
-    print("🔍 FeedItem.fromJson - Recipe ID: ${json["id"]}");
-    print("🔍 FeedItem likes: ${json["likes"]}, comments: ${json["comments"]}, bookmarks: ${json["bookmarks"]}, shares: ${json["shares"]}");
     final imagesRaw = (json["images"] as List?) ?? [];
     final images = imagesRaw
         .map((e) => RecipeImage.fromJson(Map<String, dynamic>.from(e as Map)))

@@ -241,12 +241,8 @@ class SharedRecipeShoppingList {
   int get checkedItems => items.where((item) => item.isChecked).length;
 
   factory SharedRecipeShoppingList.fromJson(Map<String, dynamic> json) {
-    print("=== PARSING SharedRecipeShoppingList ===");
-    print("Raw JSON: $json");
-
     // Extract owner object
     final owner = json["owner"] as Map<String, dynamic>? ?? {};
-    print("Owner: $owner");
 
     // Handle avatar URL
     final avatarUrl = owner["avatarUrl"] ?? owner["avatar_url"];
@@ -262,26 +258,21 @@ class SharedRecipeShoppingList {
     if (recipeIdsData is List) {
       recipeIds.addAll(recipeIdsData.map((id) => id.toString()));
     }
-    print("RecipeIds: $recipeIds");
 
     // Handle items
     final itemsData = json["items"];
-    print("Items data type: ${itemsData.runtimeType}");
-    print("Items data: $itemsData");
     final List<ShoppingListItem> items = [];
     if (itemsData is List) {
-      print("Processing ${itemsData.length} items");
       for (final item in itemsData) {
         if (item is Map) {
           try {
             items.add(ShoppingListItem.fromJson(Map<String, dynamic>.from(item)));
           } catch (e) {
-            print("Error parsing item: $e");
+            // Ignore parsing errors
           }
         }
       }
     }
-    print("Parsed ${items.length} items successfully");
 
     // Handle date parsing safely
     final sharedAtStr = json["sharedAt"]?.toString() ?? json["shared_at"]?.toString();
@@ -300,9 +291,6 @@ class SharedRecipeShoppingList {
       sharedAt: sharedAt,
       items: items,
     );
-
-    print("Created share with shareId: ${result.shareId}, items: ${result.items.length}");
-    print("========================================");
 
     return result;
   }

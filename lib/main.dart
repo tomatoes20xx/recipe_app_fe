@@ -66,7 +66,6 @@ void main() async {
     );
   } catch (e) {
     // Ignore initialization errors
-    debugPrint('Google Sign-In initialization error: $e');
   }
   
   // Initialize sqflite_common_ffi for Windows/Linux/macOS desktop support
