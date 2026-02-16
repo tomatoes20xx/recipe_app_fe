@@ -17,6 +17,7 @@ class Notification {
   final String? title;
   final String? message;
   final String? actorUsername;      // User who triggered the notification
+  final String? actorDisplayName;   // Display name of the user
   final String? actorAvatarUrl;     // Avatar of the user who triggered it
   final String? recipeId;           // Related recipe (for likes, comments)
   final String? recipeTitle;        // Recipe title (for context)
@@ -29,6 +30,7 @@ class Notification {
     this.title,
     this.message,
     this.actorUsername,
+    this.actorDisplayName,
     this.actorAvatarUrl,
     this.recipeId,
     this.recipeTitle,
@@ -80,6 +82,7 @@ class Notification {
       title: json["title"]?.toString(),
       message: json["message"]?.toString(),
       actorUsername: json["actor_username"]?.toString(),
+      actorDisplayName: json["actor_display_name"]?.toString(),
       actorAvatarUrl: actorAvatarUrl,
       recipeId: json["recipe_id"]?.toString(),
       recipeTitle: json["recipe_title"]?.toString(),
@@ -94,6 +97,7 @@ class Notification {
     String? title,
     String? message,
     String? actorUsername,
+    String? actorDisplayName,
     String? actorAvatarUrl,
     String? recipeId,
     String? recipeTitle,
@@ -106,6 +110,7 @@ class Notification {
       title: title ?? this.title,
       message: message ?? this.message,
       actorUsername: actorUsername ?? this.actorUsername,
+      actorDisplayName: actorDisplayName ?? this.actorDisplayName,
       actorAvatarUrl: actorAvatarUrl ?? this.actorAvatarUrl,
       recipeId: recipeId ?? this.recipeId,
       recipeTitle: recipeTitle ?? this.recipeTitle,

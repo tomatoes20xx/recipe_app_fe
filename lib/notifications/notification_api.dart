@@ -45,4 +45,15 @@ class NotificationApi {
       return 0;
     }
   }
+
+  /// Delete a single notification
+  Future<void> deleteNotification(String notificationId) async {
+    await api.delete("/notifications/$notificationId", auth: true);
+  }
+
+  /// Delete all notifications
+  Future<Map<String, dynamic>> deleteAllNotifications() async {
+    final data = await api.delete("/notifications", auth: true);
+    return Map<String, dynamic>.from(data as Map);
+  }
 }

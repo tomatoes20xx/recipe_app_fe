@@ -130,63 +130,58 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }
   }
 
-  String _getNotificationTitle(notification_models.Notification notification) {
-    if (notification.title != null && notification.title!.isNotEmpty) {
-      return notification.title!;
-    }
+  String _getNotificationTitle(notification_models.Notification notification, BuildContext context) {
+    final localizations = AppLocalizations.of(context);
 
-    final actor = notification.actorUsername ?? "Someone";
+    // Use display name if available, otherwise fall back to username
+    final actor = notification.actorDisplayName ?? notification.actorUsername ?? "Someone";
+    final recipe = notification.recipeTitle ?? "";
+
     switch (notification.type) {
       case notification_models.NotificationType.follow:
-        return "$actor started following you";
+        return localizations?.notificationFollowed(actor) ?? "$actor started following you";
+
       case notification_models.NotificationType.like:
-        return "$actor liked your recipe";
+        if (recipe.isNotEmpty) {
+          return localizations?.notificationLikedRecipe(actor, recipe) ?? "$actor liked \"$recipe\"";
+        }
+        return localizations?.notificationLiked(actor) ?? "$actor liked your recipe";
+
       case notification_models.NotificationType.comment:
-        return "$actor commented on your recipe";
+        if (recipe.isNotEmpty) {
+          return localizations?.notificationCommentedRecipe(actor, recipe) ?? "$actor commented on \"$recipe\"";
+        }
+        return localizations?.notificationCommented(actor) ?? "$actor commented on your recipe";
+
       case notification_models.NotificationType.bookmark:
-        return "$actor bookmarked your recipe";
+        if (recipe.isNotEmpty) {
+          return localizations?.notificationBookmarkedRecipe(actor, recipe) ?? "$actor bookmarked \"$recipe\"";
+        }
+        return localizations?.notificationBookmarked(actor) ?? "$actor bookmarked your recipe";
+
       case notification_models.NotificationType.recipe:
-        return "$actor posted a new recipe";
+        if (recipe.isNotEmpty) {
+          return localizations?.notificationPostedRecipe(actor, recipe) ?? "$actor posted \"$recipe\"";
+        }
+        return localizations?.notificationLiked(actor) ?? "$actor posted a new recipe";
+
       case notification_models.NotificationType.recipeShare:
+        if (recipe.isNotEmpty) {
+          return localizations?.notificationSharedRecipe(actor, recipe) ?? "$actor shared \"$recipe\" with you";
+        }
         return "$actor shared a recipe with you";
+
       case notification_models.NotificationType.shoppingListShare:
-        return "$actor shared a shopping list with you";
+        return localizations?.notificationSharedShoppingList(actor) ?? "$actor shared a shopping list with you";
+
       case notification_models.NotificationType.unknown:
-        return notification.message ?? "New notification";
+        return notification.message ?? notification.title ?? "New notification";
     }
   }
 
   String? _getNotificationMessage(notification_models.Notification notification) {
-    if (notification.message != null && notification.message!.isNotEmpty) {
-      return notification.message;
-    }
-
-    switch (notification.type) {
-      case notification_models.NotificationType.comment:
-        return notification.recipeTitle != null
-            ? "Commented on \"${notification.recipeTitle}\""
-            : "Commented on your recipe";
-      case notification_models.NotificationType.like:
-        return notification.recipeTitle != null
-            ? "Liked \"${notification.recipeTitle}\""
-            : "Liked your recipe";
-      case notification_models.NotificationType.bookmark:
-        return notification.recipeTitle != null
-            ? "Bookmarked \"${notification.recipeTitle}\""
-            : "Bookmarked your recipe";
-      case notification_models.NotificationType.recipe:
-        return notification.recipeTitle != null
-            ? "Posted \"${notification.recipeTitle}\""
-            : "Posted a new recipe";
-      case notification_models.NotificationType.recipeShare:
-        return notification.recipeTitle != null
-            ? "Shared \"${notification.recipeTitle}\""
-            : "Shared a recipe";
-      case notification_models.NotificationType.shoppingListShare:
-        return "You can now view their shopping list";
-      default:
-        return null;
-    }
+    // Messages are now combined into the title, so return null
+    return null;
   }
 
   Future<void> _handleNotificationTap(notification_models.Notification notification) async {
@@ -273,6 +268,87 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }
   }
 
+  Future<bool> _confirmDeleteNotification() async {
+    final localizations = AppLocalizations.of(context);
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(localizations?.deleteNotificationTitle ?? "Delete notification?"),
+        content: Text(localizations?.deleteNotificationMessage ?? "Are you sure you want to delete this notification?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(localizations?.cancel ?? "Cancel"),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.error,
+            ),
+            child: Text(localizations?.delete ?? "Delete"),
+          ),
+        ],
+      ),
+    );
+    return result ?? false;
+  }
+
+  Future<void> _handleDeleteNotification(notification_models.Notification notification) async {
+    final confirmed = await _confirmDeleteNotification();
+    if (!confirmed) return;
+
+    try {
+      await widget.notificationController.deleteNotification(notification.id);
+      if (!mounted) return;
+      final localizations = AppLocalizations.of(context);
+      ErrorUtils.showSuccess(context, localizations?.notificationDeleted ?? "Notification deleted");
+    } catch (e) {
+      if (!mounted) return;
+      ErrorUtils.showError(context, e);
+    }
+  }
+
+  Future<bool> _confirmClearAllNotifications() async {
+    final localizations = AppLocalizations.of(context);
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(localizations?.clearAllNotificationsTitle ?? "Clear all notifications?"),
+        content: Text(localizations?.clearAllNotificationsMessage ?? "Are you sure you want to delete all notifications? This action cannot be undone."),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(localizations?.cancel ?? "Cancel"),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.error,
+            ),
+            child: Text(localizations?.clearAll ?? "Clear all"),
+          ),
+        ],
+      ),
+    );
+    return result ?? false;
+  }
+
+  Future<void> _handleClearAllNotifications() async {
+    final confirmed = await _confirmClearAllNotifications();
+    if (!confirmed) return;
+
+    try {
+      final deleted = await widget.notificationController.deleteAllNotifications();
+      if (!mounted) return;
+      final localizations = AppLocalizations.of(context);
+      final message = localizations?.notificationsCleared ?? "Cleared $deleted notification(s)";
+      ErrorUtils.showSuccess(context, message.replaceAll("{count}", deleted.toString()));
+    } catch (e) {
+      if (!mounted) return;
+      ErrorUtils.showError(context, e);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -305,11 +381,15 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               ),
             ),
           PopupMenuButton<String>(
-            onSelected: (value) {
-              setState(() {
-                _showUnreadOnly = value == "unread";
-              });
-              widget.notificationController.loadInitial(unreadOnly: _showUnreadOnly);
+            onSelected: (value) async {
+              if (value == "clear_all") {
+                await _handleClearAllNotifications();
+              } else {
+                setState(() {
+                  _showUnreadOnly = value == "unread";
+                });
+                widget.notificationController.loadInitial(unreadOnly: _showUnreadOnly);
+              }
             },
             itemBuilder: (context) {
               final localizations = AppLocalizations.of(context);
@@ -331,6 +411,20 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       const Icon(Icons.mark_email_unread, size: 18),
                       const SizedBox(width: 8),
                       Text(localizations?.unreadOnly ?? "Unread only"),
+                    ],
+                  ),
+                ),
+                const PopupMenuDivider(),
+                PopupMenuItem(
+                  value: "clear_all",
+                  child: Row(
+                    children: [
+                      Icon(Icons.delete_sweep, size: 18, color: Theme.of(context).colorScheme.error),
+                      const SizedBox(width: 8),
+                      Text(
+                        localizations?.clearAllNotifications ?? "Clear all notifications",
+                        style: TextStyle(color: Theme.of(context).colorScheme.error),
+                      ),
                     ],
                   ),
                 ),
@@ -400,99 +494,128 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   Widget _buildNotificationItem(notification_models.Notification notification) {
     final iconColor = _getNotificationColor(notification.type, context);
     final icon = _getNotificationIcon(notification.type);
-    final title = _getNotificationTitle(notification);
+    final title = _getNotificationTitle(notification, context);
     final message = _getNotificationMessage(notification);
     final date = _formatDate(notification.createdAt, context);
 
-    return InkWell(
-      onTap: () => _handleNotificationTap(notification),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: notification.isRead
-              ? Theme.of(context).colorScheme.surface
-              : Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.15),
-          border: Border(
-            left: BorderSide(
-              color: notification.isRead
-                  ? Colors.transparent
-                  : iconColor,
-              width: 3,
+    return Dismissible(
+      key: Key(notification.id),
+      direction: DismissDirection.endToStart,
+      confirmDismiss: (direction) async {
+        return await _confirmDeleteNotification();
+      },
+      onDismissed: (direction) async {
+        try {
+          await widget.notificationController.deleteNotification(notification.id);
+          if (mounted) {
+            final localizations = AppLocalizations.of(context);
+            ErrorUtils.showSuccess(context, localizations?.notificationDeleted ?? "Notification deleted");
+          }
+        } catch (e) {
+          if (mounted) {
+            ErrorUtils.showError(context, e);
+          }
+        }
+      },
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 20),
+        color: Theme.of(context).colorScheme.error,
+        child: const Icon(
+          Icons.delete,
+          color: Colors.white,
+        ),
+      ),
+      child: InkWell(
+        onTap: () => _handleNotificationTap(notification),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: notification.isRead
+                ? Theme.of(context).colorScheme.surface
+                : Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.15),
+            border: Border(
+              left: BorderSide(
+                color: notification.isRead
+                    ? Colors.transparent
+                    : iconColor,
+                width: 3,
+              ),
             ),
           ),
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Avatar or icon
-            if (notification.actorAvatarUrl != null)
-              buildUserAvatar(
-                context,
-                notification.actorAvatarUrl,
-                notification.actorUsername ?? "",
-                radius: 24,
-              )
-            else
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: iconColor.withValues(alpha: 0.2),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  icon,
-                  color: iconColor,
-                  size: 24,
-                ),
-              ),
-            const SizedBox(width: 12),
-            // Content
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontWeight: notification.isRead ? FontWeight.normal : FontWeight.w600,
-                      fontSize: 14,
-                    ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Avatar or icon
+              if (notification.actorAvatarUrl != null)
+                buildUserAvatar(
+                  context,
+                  notification.actorAvatarUrl,
+                  notification.actorUsername ?? "",
+                  radius: 24,
+                )
+              else
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: iconColor.withValues(alpha: 0.2),
+                    shape: BoxShape.circle,
                   ),
-                  if (message != null) ...[
+                  child: Icon(
+                    icon,
+                    color: iconColor,
+                    size: 24,
+                  ),
+                ),
+              const SizedBox(width: 12),
+              // Content
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontWeight: notification.isRead ? FontWeight.normal : FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
+                    if (message != null) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        message,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                            ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                     const SizedBox(height: 4),
                     Text(
-                      message,
+                      date,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                            fontSize: 11,
                           ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
-                  const SizedBox(height: 4),
-                  Text(
-                    date,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
-                          fontSize: 11,
-                        ),
-                  ),
-                ],
-              ),
-            ),
-            // Unread indicator
-            if (!notification.isRead)
-              Container(
-                width: 8,
-                height: 8,
-                margin: const EdgeInsets.only(left: 8),
-                decoration: BoxDecoration(
-                  color: iconColor,
-                  shape: BoxShape.circle,
                 ),
               ),
-          ],
+              // Unread indicator
+              if (!notification.isRead)
+                Container(
+                  width: 8,
+                  height: 8,
+                  margin: const EdgeInsets.only(left: 8),
+                  decoration: BoxDecoration(
+                    color: iconColor,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
