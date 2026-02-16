@@ -141,6 +141,60 @@ class NotificationController extends ChangeNotifier {
     }
   }
 
+  /// Delete a single notification
+  Future<void> deleteNotification(String notificationId) async {
+    final index = items.indexWhere((n) => n.id == notificationId);
+    if (index < 0) return;
+
+    // Save for rollback
+    final deletedNotification = items[index];
+    final wasUnread = !deletedNotification.isRead;
+
+    // Optimistic update
+    items.removeAt(index);
+    if (wasUnread && unreadCount > 0) {
+      unreadCount--;
+    }
+    _notify();
+
+    try {
+      await notificationApi.deleteNotification(notificationId);
+    } catch (e) {
+      // Rollback on error
+      items.insert(index, deletedNotification);
+      if (wasUnread) {
+        unreadCount++;
+      }
+      _notify();
+      rethrow;
+    }
+  }
+
+  /// Delete all notifications
+  Future<int> deleteAllNotifications() async {
+    // Save for rollback
+    final previousItems = List<notification_models.Notification>.from(items);
+    final previousUnreadCount = unreadCount;
+
+    // Optimistic update
+    items.clear();
+    unreadCount = 0;
+    nextCursor = null;
+    _notify();
+
+    try {
+      final result = await notificationApi.deleteAllNotifications();
+      final deleted = result["deleted"] as int? ?? 0;
+      return deleted;
+    } catch (e) {
+      // Rollback on error
+      items.addAll(previousItems);
+      unreadCount = previousUnreadCount;
+      _notify();
+      rethrow;
+    }
+  }
+
   /// Clear all notifications
   void clear() {
     items.clear();

@@ -49,6 +49,26 @@ class AppLocalizations {
   String get markAllRead => _localizedValues[locale.languageCode]?["markAllRead"] ?? "Mark all read";
   String get allNotifications => _localizedValues[locale.languageCode]?["allNotifications"] ?? "All notifications";
   String get unreadOnly => _localizedValues[locale.languageCode]?["unreadOnly"] ?? "Unread only";
+  String get clearAllNotifications => _localizedValues[locale.languageCode]?["clearAllNotifications"] ?? "Clear all notifications";
+  String get deleteNotificationTitle => _localizedValues[locale.languageCode]?["deleteNotificationTitle"] ?? "Delete notification?";
+  String get deleteNotificationMessage => _localizedValues[locale.languageCode]?["deleteNotificationMessage"] ?? "Are you sure you want to delete this notification?";
+  String get notificationDeleted => _localizedValues[locale.languageCode]?["notificationDeleted"] ?? "Notification deleted";
+  String get clearAllNotificationsTitle => _localizedValues[locale.languageCode]?["clearAllNotificationsTitle"] ?? "Clear all notifications?";
+  String get clearAllNotificationsMessage => _localizedValues[locale.languageCode]?["clearAllNotificationsMessage"] ?? "Are you sure you want to delete all notifications? This action cannot be undone.";
+  String get notificationsCleared => _localizedValues[locale.languageCode]?["notificationsCleared"] ?? "Cleared {count} notification(s)";
+
+  // Notification messages
+  String notificationFollowed(String name) => _localizedValues[locale.languageCode]?["notificationFollowed"]?.replaceAll("{name}", name) ?? "$name started following you";
+  String notificationLiked(String name) => _localizedValues[locale.languageCode]?["notificationLiked"]?.replaceAll("{name}", name) ?? "$name liked your recipe";
+  String notificationLikedRecipe(String name, String recipe) => _localizedValues[locale.languageCode]?["notificationLikedRecipe"]?.replaceAll("{name}", name).replaceAll("{recipe}", recipe) ?? "$name liked \"$recipe\"";
+  String notificationCommented(String name) => _localizedValues[locale.languageCode]?["notificationCommented"]?.replaceAll("{name}", name) ?? "$name commented on your recipe";
+  String notificationCommentedRecipe(String name, String recipe) => _localizedValues[locale.languageCode]?["notificationCommentedRecipe"]?.replaceAll("{name}", name).replaceAll("{recipe}", recipe) ?? "$name commented on \"$recipe\"";
+  String notificationBookmarked(String name) => _localizedValues[locale.languageCode]?["notificationBookmarked"]?.replaceAll("{name}", name) ?? "$name bookmarked your recipe";
+  String notificationBookmarkedRecipe(String name, String recipe) => _localizedValues[locale.languageCode]?["notificationBookmarkedRecipe"]?.replaceAll("{name}", name).replaceAll("{recipe}", recipe) ?? "$name bookmarked \"$recipe\"";
+  String notificationPostedRecipe(String name, String recipe) => _localizedValues[locale.languageCode]?["notificationPostedRecipe"]?.replaceAll("{name}", name).replaceAll("{recipe}", recipe) ?? "$name posted \"$recipe\"";
+  String notificationSharedRecipe(String name, String recipe) => _localizedValues[locale.languageCode]?["notificationSharedRecipe"]?.replaceAll("{name}", name).replaceAll("{recipe}", recipe) ?? "$name shared \"$recipe\" with you";
+  String notificationSharedShoppingList(String name) => _localizedValues[locale.languageCode]?["notificationSharedShoppingList"]?.replaceAll("{name}", name) ?? "$name shared a shopping list with you";
+
   String get search => _localizedValues[locale.languageCode]?["search"] ?? "Search";
   String get logout => _localizedValues[locale.languageCode]?["logout"] ?? "Logout";
   String get logoutConfirmation => _localizedValues[locale.languageCode]?["logoutConfirmation"] ?? "Are you sure you want to log out?";
@@ -623,6 +643,23 @@ class AppLocalizations {
       "markAllRead": "Mark all read",
       "allNotifications": "All notifications",
       "unreadOnly": "Unread only",
+      "clearAllNotifications": "Clear all notifications",
+      "deleteNotificationTitle": "Delete notification?",
+      "deleteNotificationMessage": "Are you sure you want to delete this notification?",
+      "notificationDeleted": "Notification deleted",
+      "clearAllNotificationsTitle": "Clear all notifications?",
+      "clearAllNotificationsMessage": "Are you sure you want to delete all notifications? This action cannot be undone.",
+      "notificationsCleared": "Cleared {count} notification(s)",
+      "notificationFollowed": "{name} started following you",
+      "notificationLiked": "{name} liked your recipe",
+      "notificationLikedRecipe": "{name} liked \"{recipe}\"",
+      "notificationCommented": "{name} commented on your recipe",
+      "notificationCommentedRecipe": "{name} commented on \"{recipe}\"",
+      "notificationBookmarked": "{name} bookmarked your recipe",
+      "notificationBookmarkedRecipe": "{name} bookmarked \"{recipe}\"",
+      "notificationPostedRecipe": "{name} posted \"{recipe}\"",
+      "notificationSharedRecipe": "{name} shared \"{recipe}\" with you",
+      "notificationSharedShoppingList": "{name} shared a shopping list with you",
       "search": "Search",
       "logout": "Logout",
       "logoutConfirmation": "Are you sure you want to log out?",
@@ -1118,6 +1155,23 @@ class AppLocalizations {
       "markAllRead": "ყველას წაკითხულად მონიშვნა",
       "allNotifications": "ყველა შეტყობინება",
       "unreadOnly": "მხოლოდ წაუკითხავი",
+      "clearAllNotifications": "ყველა შეტყობინების წაშლა",
+      "deleteNotificationTitle": "შეტყობინების წაშლა?",
+      "deleteNotificationMessage": "დარწმუნებული ხართ, რომ გსურთ ამ შეტყობინების წაშლა?",
+      "notificationDeleted": "შეტყობინება წაშლილია",
+      "clearAllNotificationsTitle": "ყველა შეტყობინების წაშლა?",
+      "clearAllNotificationsMessage": "დარწმუნებული ხართ, რომ გსურთ ყველა შეტყობინების წაშლა? ეს მოქმედება შეუქცევადია.",
+      "notificationsCleared": "წაშლილია {count} შეტყობინება",
+      "notificationFollowed": "{name}-მა დაიწყო თქვენი გამოწერა",
+      "notificationLiked": "{name}-მა მოიწონა თქვენი რეცეპტი",
+      "notificationLikedRecipe": "{name}-მა მოიწონა \"{recipe}\"",
+      "notificationCommented": "{name}-მა დააკომენტარა თქვენი რეცეპტი",
+      "notificationCommentedRecipe": "{name}-მა დააკომენტარა \"{recipe}\"",
+      "notificationBookmarked": "{name}-მა დაამატა თქვენი რეცეპტი ფავორიტებში",
+      "notificationBookmarkedRecipe": "{name}-მა დაამატა \"{recipe}\" ფავორიტებში",
+      "notificationPostedRecipe": "{name}-მა გამოაქვეყნა \"{recipe}\"",
+      "notificationSharedRecipe": "{name}-მა გაგიზიარათ \"{recipe}\"",
+      "notificationSharedShoppingList": "{name}-მა გაგიზიარათ საყიდლების სია",
       "search": "ძიება",
       "logout": "გასვლა",
       "logoutConfirmation": "დარწმუნებული ხართ, რომ გსურთ გასვლა?",
