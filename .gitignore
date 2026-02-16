@@ -93,7 +93,7 @@ app.*.map.json
 .cursor/
 .aider*
 .copilot/
-CLAUDE_CONTEXT.md
+CLAUDE.md
 
 # Environment files
 .env
