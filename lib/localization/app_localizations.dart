@@ -626,6 +626,32 @@ class AppLocalizations {
   String get flaggedContentMessage => _localizedValues[locale.languageCode]?["flaggedContentMessage"] ?? "This content has been flagged by multiple users";
   String get showAnyway => _localizedValues[locale.languageCode]?["showAnyway"] ?? "Show anyway";
 
+  // Comments Screen
+  String get deleteCommentTitle => _localizedValues[locale.languageCode]?["deleteCommentTitle"] ?? "Delete comment?";
+  String get deleteCommentMessage => _localizedValues[locale.languageCode]?["deleteCommentMessage"] ?? "This will also delete all replies to this comment.";
+  String get pleaseLogInToReportComments => _localizedValues[locale.languageCode]?["pleaseLogInToReportComments"] ?? "Please log in to report comments";
+  String get youLabel => _localizedValues[locale.languageCode]?["youLabel"] ?? "You";
+  String get replyAction => _localizedValues[locale.languageCode]?["replyAction"] ?? "Reply";
+  String get hideReplies => _localizedValues[locale.languageCode]?["hideReplies"] ?? "Hide";
+  String get noCommentsYet => _localizedValues[locale.languageCode]?["noCommentsYet"] ?? "No comments yet";
+  String get beFirstToComment => _localizedValues[locale.languageCode]?["beFirstToComment"] ?? "Be the first to share your thoughts!";
+  String get pleaseLogInToComment => _localizedValues[locale.languageCode]?["pleaseLogInToComment"] ?? "Please log in to comment";
+  String get couldntLoadComments => _localizedValues[locale.languageCode]?["couldntLoadComments"] ?? "Couldn't load comments";
+  String get replyingTo => _localizedValues[locale.languageCode]?["replyingTo"] ?? "Replying to ";
+  String get writeAReply => _localizedValues[locale.languageCode]?["writeAReply"] ?? "Write a reply...";
+  String get shareYourThoughts => _localizedValues[locale.languageCode]?["shareYourThoughts"] ?? "Share your thoughts...";
+  String get postComment => _localizedValues[locale.languageCode]?["postComment"] ?? "Post comment";
+  String get logInToComment => _localizedValues[locale.languageCode]?["logInToComment"] ?? "Log in to comment";
+  String commentCount(int count) => count == 1
+      ? (_localizedValues[locale.languageCode]?["commentCountSingular"]?.replaceAll("{count}", count.toString()) ?? "$count comment")
+      : (_localizedValues[locale.languageCode]?["commentCountPlural"]?.replaceAll("{count}", count.toString()) ?? "$count comments");
+  String replyCount(int count) => count == 1
+      ? (_localizedValues[locale.languageCode]?["replyCountSingular"]?.replaceAll("{count}", count.toString()) ?? "$count reply")
+      : (_localizedValues[locale.languageCode]?["replyCountPlural"]?.replaceAll("{count}", count.toString()) ?? "$count replies");
+  String showMoreReplies(int count) => count == 1
+      ? (_localizedValues[locale.languageCode]?["showMoreRepliesSingular"]?.replaceAll("{count}", count.toString()) ?? "Show $count more reply")
+      : (_localizedValues[locale.languageCode]?["showMoreRepliesPlural"]?.replaceAll("{count}", count.toString()) ?? "Show $count more replies");
+
   // Helper method to get full month names by index (1-12)
   String getMonthName(int month) {
     final months = [
@@ -1187,6 +1213,29 @@ class AppLocalizations {
       "flaggedContent": "Flagged Content",
       "flaggedContentMessage": "This content has been flagged by multiple users",
       "showAnyway": "Show anyway",
+
+      // Comments Screen
+      "deleteCommentTitle": "Delete comment?",
+      "deleteCommentMessage": "This will also delete all replies to this comment.",
+      "pleaseLogInToReportComments": "Please log in to report comments",
+      "youLabel": "You",
+      "replyAction": "Reply",
+      "hideReplies": "Hide",
+      "noCommentsYet": "No comments yet",
+      "beFirstToComment": "Be the first to share your thoughts!",
+      "pleaseLogInToComment": "Please log in to comment",
+      "couldntLoadComments": "Couldn't load comments",
+      "replyingTo": "Replying to ",
+      "writeAReply": "Write a reply...",
+      "shareYourThoughts": "Share your thoughts...",
+      "postComment": "Post comment",
+      "logInToComment": "Log in to comment",
+      "commentCountSingular": "{count} comment",
+      "commentCountPlural": "{count} comments",
+      "replyCountSingular": "{count} reply",
+      "replyCountPlural": "{count} replies",
+      "showMoreRepliesSingular": "Show {count} more reply",
+      "showMoreRepliesPlural": "Show {count} more replies",
     },
     "ka": {
       "appTitle": "Yummy",
@@ -1727,9 +1776,32 @@ class AppLocalizations {
       "reportPleaseSelectReason": "გთხოვთ აირჩიოთ დარეპორტების მიზეზი",
       "reportConfirmTitle": "გავაგზავნო რეპორტი?",
       "reportConfirmMessage": "დარწმუნებული ხართ, რომ გსურთ ამ კონტენტის დარეპორტება? ეს ქმედება ეხმარება ჩვენი საზოგადოების უსაფრთხოებას.",
-      "flaggedContent": "მონიშნული კონტენტი",
-      "flaggedContentMessage": "ეს კონტენტი მონიშნულია მრავალი მომხმარებლის მიერ",
+      "flaggedContent": "დარეპორტებული კონტენტი",
+      "flaggedContentMessage": "ეს კონტენტი დარეპორტებულია მრავალი მომხმარებლის მიერ",
       "showAnyway": "მაინც ნახვა",
+
+      // Comments Screen
+      "deleteCommentTitle": "კომენტარის წაშლა?",
+      "deleteCommentMessage": "ეს წაშლის ამ კომენტარის ყველა პასუხსაც.",
+      "pleaseLogInToReportComments": "კომენტარის დასარეპორტებლად გთხოვთ გაიაროთ ავტორიზაცია",
+      "youLabel": "შენ",
+      "replyAction": "პასუხი",
+      "hideReplies": "დამალვა",
+      "noCommentsYet": "კომენტარები ჯერ არ არის",
+      "beFirstToComment": "იყავი პირველი, ვინც გაუზიარებს თავის მოსაზრებებს!",
+      "pleaseLogInToComment": "კომენტარის დასამატებლად გთხოვთ გაიაროთ ავტორიზაცია",
+      "couldntLoadComments": "კომენტარების ჩატვირთვა ვერ მოხერხდა",
+      "replyingTo": "პასუხი: ",
+      "writeAReply": "დაწერეთ პასუხი...",
+      "shareYourThoughts": "გააზიარეთ თქვენი აზრი...",
+      "postComment": "კომენტარის გამოქვეყნება",
+      "logInToComment": "კომენტარისთვის შედით სისტემაში",
+      "commentCountSingular": "{count} კომენტარი",
+      "commentCountPlural": "{count} კომენტარი",
+      "replyCountSingular": "{count} პასუხი",
+      "replyCountPlural": "{count} პასუხი",
+      "showMoreRepliesSingular": "კიდევ {count} პასუხის ჩვენება",
+      "showMoreRepliesPlural": "კიდევ {count} პასუხის ჩვენება",
     },
   };
 }

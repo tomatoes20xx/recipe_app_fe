@@ -300,16 +300,17 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
 
   Future<void> _onDeleteComment(String commentId) async {
     HapticFeedback.mediumImpact();
+    final localizations = AppLocalizations.of(context);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text("Delete comment?"),
-        content: const Text("This will also delete all replies to this comment."),
+        title: Text(localizations?.deleteCommentTitle ?? "Delete comment?"),
+        content: Text(localizations?.deleteCommentMessage ?? "This will also delete all replies to this comment."),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text("Cancel"),
+            child: Text(localizations?.cancel ?? "Cancel"),
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
@@ -317,7 +318,7 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
               backgroundColor: Theme.of(context).colorScheme.error,
               foregroundColor: Theme.of(context).colorScheme.onError,
             ),
-            child: const Text("Delete"),
+            child: Text(localizations?.delete ?? "Delete"),
           ),
         ],
       ),
@@ -343,7 +344,8 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
     HapticFeedback.lightImpact();
 
     if (!(widget.auth?.isLoggedIn ?? false)) {
-      ErrorUtils.showError(context, "Please log in to report comments");
+      final localizations = AppLocalizations.of(context);
+      ErrorUtils.showError(context, localizations?.pleaseLogInToReportComments ?? "Please log in to report comments");
       return;
     }
 
@@ -409,6 +411,7 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
     final cappedDepth = replyDepth > maxDepth ? maxDepth : replyDepth;
     final leftMargin = indentPerLevel * cappedDepth;
     final threadColor = _threadColors[(replyDepth - 1) % _threadColors.length];
+    final localizations = AppLocalizations.of(context);
 
     return Container(
       margin: EdgeInsets.only(left: leftMargin),
@@ -422,7 +425,7 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
         onPressed: () => _onShowMoreReplies(node.comment.id),
         icon: const Icon(Icons.subdirectory_arrow_right_rounded, size: 16),
         label: Text(
-          "Show $remainingCount more ${remainingCount == 1 ? 'reply' : 'replies'}",
+          localizations?.showMoreReplies(remainingCount) ?? "Show $remainingCount more ${remainingCount == 1 ? 'reply' : 'replies'}",
           style: Theme.of(context).textTheme.labelMedium?.copyWith(
             fontWeight: FontWeight.w600,
           ),
@@ -444,7 +447,6 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
     final isCollapsed = _collapsedIds.contains(c.id);
     final isLoggedIn = widget.auth?.isLoggedIn ?? false;
     final totalReplyCount = _countAllReplies(node);
-    final replyLabel = totalReplyCount == 1 ? 'reply' : 'replies';
     final displayName = c.authorDisplayName ?? c.authorUsername;
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
@@ -571,7 +573,7 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
-                        "You",
+                        localizations?.youLabel ?? "You",
                         style: textTheme.labelSmall?.copyWith(
                           color: colorScheme.primary,
                           fontWeight: FontWeight.w600,
@@ -605,7 +607,7 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
                   if (isLoggedIn)
                     _CommentActionButton(
                       icon: Icons.reply_rounded,
-                      label: "Reply",
+                      label: localizations?.replyAction ?? "Reply",
                       onTap: () => _onReply(c),
                       color: colorScheme.onSurface.withValues(alpha: 0.5),
                     ),
@@ -613,7 +615,7 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
                     if (isLoggedIn) const SizedBox(width: 16),
                     _CommentActionButton(
                       icon: Icons.delete_outline_rounded,
-                      label: "Delete",
+                      label: localizations?.delete ?? "Delete",
                       onTap: () => _onDeleteComment(c.id),
                       color: colorScheme.error.withValues(alpha: 0.7),
                     ),
@@ -623,7 +625,7 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
                     const SizedBox(width: 16),
                     _CommentActionButton(
                       icon: Icons.flag_outlined,
-                      label: "Report",
+                      label: localizations?.report ?? "Report",
                       onTap: () => _onReportComment(c.id),
                       color: colorScheme.onSurface.withValues(alpha: 0.5),
                     ),
@@ -632,7 +634,9 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
                     if (isLoggedIn || c.viewerIsMe) const SizedBox(width: 16),
                     _CommentActionButton(
                       icon: isCollapsed ? Icons.expand_more_rounded : Icons.expand_less_rounded,
-                      label: isCollapsed ? "$totalReplyCount $replyLabel" : "Hide",
+                      label: isCollapsed
+                          ? (localizations?.replyCount(totalReplyCount) ?? "$totalReplyCount ${totalReplyCount == 1 ? 'reply' : 'replies'}")
+                          : (localizations?.hideReplies ?? "Hide"),
                       onTap: () => _onToggleCollapse(c.id),
                       color: colorScheme.primary,
                     ),
@@ -792,6 +796,7 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
   Widget _buildEmptyState(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    final localizations = AppLocalizations.of(context);
 
     return Center(
       child: Padding(
@@ -806,7 +811,7 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
             ),
             const SizedBox(height: 16),
             Text(
-              "No comments yet",
+              localizations?.noCommentsYet ?? "No comments yet",
               style: textTheme.titleSmall?.copyWith(
                 color: colorScheme.onSurface.withValues(alpha: 0.5),
                 fontWeight: FontWeight.w600,
@@ -814,7 +819,7 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
             ),
             const SizedBox(height: 6),
             Text(
-              "Be the first to share your thoughts!",
+              localizations?.beFirstToComment ?? "Be the first to share your thoughts!",
               style: textTheme.bodySmall?.copyWith(
                 color: colorScheme.onSurface.withValues(alpha: 0.35),
               ),
@@ -830,7 +835,8 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
     final content = _commentController.text.trim();
     if (content.isEmpty) return;
     if (!(widget.auth?.isLoggedIn ?? false)) {
-      ErrorUtils.showInfo(context, "Please log in to comment");
+      final localizations = AppLocalizations.of(context);
+      ErrorUtils.showInfo(context, localizations?.pleaseLogInToComment ?? "Please log in to comment");
       return;
     }
 
@@ -898,6 +904,7 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
     final username = widget.auth?.me?["username"]?.toString() ?? "";
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    final localizations = AppLocalizations.of(context);
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 100),
@@ -929,7 +936,7 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
                 const SizedBox(width: 48), // Balance the close button
                 Expanded(
                   child: Text(
-                    "Comments",
+                    localizations?.comments ?? "Comments",
                     style: textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w700,
                     ),
@@ -951,7 +958,7 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
           Padding(
             padding: const EdgeInsets.only(bottom: 8),
             child: Text(
-              "${widget.commentsController.comments.length} ${widget.commentsController.comments.length == 1 ? 'comment' : 'comments'}",
+              localizations?.commentCount(widget.commentsController.comments.length) ?? "${widget.commentsController.comments.length} ${widget.commentsController.comments.length == 1 ? 'comment' : 'comments'}",
               style: textTheme.labelSmall?.copyWith(
                 color: colorScheme.onSurface.withValues(alpha: 0.4),
                 letterSpacing: 0.3,
@@ -975,7 +982,7 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
                             ),
                             const SizedBox(height: 12),
                             Text(
-                              "Couldn't load comments",
+                              localizations?.couldntLoadComments ?? "Couldn't load comments",
                               style: textTheme.bodyMedium?.copyWith(
                                 color: colorScheme.onSurface.withValues(alpha: 0.6),
                               ),
@@ -984,7 +991,7 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
                             FilledButton.tonalIcon(
                               onPressed: () => widget.commentsController.load(),
                               icon: const Icon(Icons.refresh_rounded, size: 18),
-                              label: const Text("Retry"),
+                              label: Text(localizations?.retry ?? "Retry"),
                             ),
                           ],
                         ),
@@ -1037,7 +1044,7 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
                                           color: colorScheme.onSurface.withValues(alpha: 0.7),
                                         ),
                                         children: [
-                                          const TextSpan(text: "Replying to "),
+                                          TextSpan(text: localizations?.replyingTo ?? "Replying to "),
                                           TextSpan(
                                             text: "@$_replyingToUsername",
                                             style: TextStyle(
@@ -1094,8 +1101,8 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
                             style: textTheme.bodyMedium,
                             decoration: InputDecoration(
                               hintText: _replyingToId != null
-                                  ? "Write a reply..."
-                                  : "Share your thoughts...",
+                                  ? (localizations?.writeAReply ?? "Write a reply...")
+                                  : (localizations?.shareYourThoughts ?? "Share your thoughts..."),
                               hintStyle: textTheme.bodyMedium?.copyWith(
                                 color: colorScheme.onSurface.withValues(alpha: 0.35),
                               ),
@@ -1158,7 +1165,7 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
                                           shape: const CircleBorder(),
                                           fixedSize: const Size(40, 40),
                                         ),
-                                        tooltip: "Post comment",
+                                        tooltip: localizations?.postComment ?? "Post comment",
                                       )
                                     : const SizedBox(key: ValueKey("empty"), width: 40, height: 40),
                           ),
@@ -1174,7 +1181,7 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
             Padding(
               padding: const EdgeInsets.all(16),
               child: Text(
-                "Log in to comment",
+                localizations?.logInToComment ?? "Log in to comment",
                 style: textTheme.bodyMedium?.copyWith(
                   color: colorScheme.onSurface.withValues(alpha: 0.45),
                 ),
