@@ -11,6 +11,8 @@ import "../utils/ui_utils.dart";
 import "../widgets/ingredient_action_bar.dart";
 import "../widgets/section_title_widget.dart";
 import "../widgets/sharing/follower_selection_bottom_sheet.dart";
+import "../reports/report_bottom_sheet.dart";
+import "../reports/report_models.dart";
 import "comments_bottom_sheet.dart";
 import "liked_by_bottom_sheet.dart";
 import "recipe_api.dart";
@@ -288,6 +290,25 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     }
   }
 
+  Future<void> _handleReportRecipe() async {
+    final r = c.recipe;
+    if (r == null) return;
+
+    if (!(widget.auth?.isLoggedIn ?? false)) {
+      ErrorUtils.showError(context, "Please log in to report recipes");
+      return;
+    }
+
+    await showReportBottomSheet(
+      context: context,
+      targetType: ReportTargetType.recipe,
+      targetId: r.id,
+      apiClient: widget.apiClient,
+    );
+    // Success feedback is already shown in the bottom sheet
+    // No additional action needed since backend is idempotent
+  }
+
   @override
   Widget build(BuildContext context) {
     final r = c.recipe;
@@ -353,6 +374,20 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
               ),
             ),
           ],
+          // Show report button for non-owners who are logged in
+          if (!isOwner && widget.auth?.isLoggedIn == true && r != null)
+            Container(
+              margin: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.5),
+                shape: BoxShape.circle,
+              ),
+              child: IconButton(
+                icon: const Icon(Icons.flag_outlined, color: Colors.white),
+                tooltip: AppLocalizations.of(context)?.reportRecipe ?? "Report Recipe",
+                onPressed: _handleReportRecipe,
+              ),
+            ),
         ],
       ),
       body: c.isLoading

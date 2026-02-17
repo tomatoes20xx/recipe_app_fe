@@ -92,6 +92,7 @@ class UserRecipesResponse {
 }
 
 class UserProfile {
+  final String id; // UUID - used for reporting
   final String username;
   final String? displayName;
   final String? avatarUrl;
@@ -105,6 +106,7 @@ class UserProfile {
   final UserPrivacySettings? privacy; // Only visible to the user themselves
 
   UserProfile({
+    required this.id,
     required this.username,
     this.displayName,
     this.avatarUrl,
@@ -124,6 +126,7 @@ class UserProfile {
     final privacyRaw = json["privacy"] as Map<String, dynamic>?;
 
     return UserProfile(
+      id: json["id"].toString(),
       username: json["username"].toString(),
       displayName: json["display_name"]?.toString(),
       avatarUrl: json["avatar_url"]?.toString(),
@@ -139,6 +142,7 @@ class UserProfile {
   }
 
   UserProfile copyWith({
+    String? id,
     String? username,
     String? displayName,
     String? avatarUrl,
@@ -152,6 +156,7 @@ class UserProfile {
     UserPrivacySettings? privacy,
   }) {
     return UserProfile(
+      id: id ?? this.id,
       username: username ?? this.username,
       displayName: displayName ?? this.displayName,
       avatarUrl: avatarUrl ?? this.avatarUrl,

@@ -8,6 +8,8 @@ import "../auth/auth_api.dart";
 import "../auth/auth_controller.dart";
 import "../localization/app_localizations.dart";
 import "../recipes/recipe_detail_screen.dart";
+import "../reports/report_bottom_sheet.dart";
+import "../reports/report_models.dart";
 import "../shopping/shopping_list_controller.dart";
 import "../users/user_api.dart";
 import "../users/user_models.dart";
@@ -333,6 +335,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
 
+  Future<void> _handleReportUser() async {
+    final profile = _userProfile;
+    if (profile == null) return;
+
+    await showReportBottomSheet(
+      context: context,
+      targetType: ReportTargetType.user,
+      targetId: profile.id,
+      apiClient: widget.apiClient,
+    );
+    // Success feedback is already shown in the bottom sheet
+    // No additional action needed since backend is idempotent
+  }
+
   @override
   Widget build(BuildContext context) {
     // If viewing another user's profile
@@ -409,6 +425,39 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 scrolledUnderElevation: 0.5,
                 backgroundColor: theme.colorScheme.surface,
                 expandedHeight: 200,
+                actions: [
+                  if (widget.auth.isLoggedIn && !_userProfile!.isViewer)
+                    PopupMenuButton<String>(
+                      icon: const Icon(Icons.more_vert),
+                      onSelected: (value) {
+                        if (value == "report") _handleReportUser();
+                      },
+                      itemBuilder: (context) {
+                        final localizations = AppLocalizations.of(context);
+                        return [
+                          PopupMenuItem(
+                            value: "report",
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.flag_outlined,
+                                  size: 20,
+                                  color: theme.colorScheme.error,
+                                ),
+                                const SizedBox(width: 12),
+                                Flexible(
+                                  child: Text(
+                                    localizations?.reportUser ?? "Report User",
+                                    style: TextStyle(color: theme.colorScheme.error),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ];
+                      },
+                    ),
+                ],
                 flexibleSpace: FlexibleSpaceBar(
                   background: Container(
                     decoration: BoxDecoration(

@@ -3,6 +3,9 @@ import "package:flutter/services.dart";
 
 import "../api/api_client.dart";
 import "../auth/auth_controller.dart";
+import "../localization/app_localizations.dart";
+import "../reports/report_bottom_sheet.dart";
+import "../reports/report_models.dart";
 import "../utils/error_utils.dart";
 import "../utils/ui_utils.dart";
 import "comment_models.dart";
@@ -139,6 +142,7 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
   bool _hasText = false;
   String? _replyingToId;
   String? _replyingToUsername;
+  final Set<String> _showFlaggedComments = {}; // Track which flagged comments user wants to see
 
   // Get or create UI state for this recipe
   _CommentsUIState get _uiState => _commentsUIStateCache.putIfAbsent(
@@ -335,6 +339,24 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
     }
   }
 
+  Future<void> _onReportComment(String commentId) async {
+    HapticFeedback.lightImpact();
+
+    if (!(widget.auth?.isLoggedIn ?? false)) {
+      ErrorUtils.showError(context, "Please log in to report comments");
+      return;
+    }
+
+    await showReportBottomSheet(
+      context: context,
+      targetType: ReportTargetType.comment,
+      targetId: commentId,
+      apiClient: widget.commentsController.recipeApi.api,
+    );
+    // Success feedback is already shown in the bottom sheet
+    // No additional action needed since backend is idempotent
+  }
+
   int _countAllReplies(_CommentNode node) {
     int count = node.children.length;
     for (final child in node.children) {
@@ -416,6 +438,7 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
 
   Widget _buildCommentBlock(_CommentNode node, int depth, {String? parentCommentId, bool isLastChild = false}) {
     final c = node.comment;
+    final localizations = AppLocalizations.of(context);
     final timeAgo = formatRelativeTime(context, c.createdAt);
     final hasReplies = node.children.isNotEmpty;
     final isCollapsed = _collapsedIds.contains(c.id);
@@ -425,6 +448,96 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
     final displayName = c.authorDisplayName ?? c.authorUsername;
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+
+    // Handle flagged comments (5+ reports) - hide by default with "Show anyway" option
+    // Note: comments with 10+ reports are soft-deleted server-side and excluded from responses entirely
+    final shouldShowFlagged = _showFlaggedComments.contains(c.id);
+    if (c.isFlagged && !shouldShowFlagged) {
+      Widget flaggedContent = Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: colorScheme.errorContainer.withValues(alpha: 0.3),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: colorScheme.error.withValues(alpha: 0.3),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              Icons.flag_outlined,
+              size: 20,
+              color: colorScheme.error.withValues(alpha: 0.7),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    localizations?.flaggedContent ?? "Flagged Content",
+                    style: textTheme.labelMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: colorScheme.error,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    localizations?.flaggedContentMessage ??
+                        "This content has been flagged by multiple users",
+                    style: textTheme.labelSmall?.copyWith(
+                      color: colorScheme.onSurface.withValues(alpha: 0.6),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  _showFlaggedComments.add(c.id);
+                });
+              },
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: Text(
+                localizations?.showAnyway ?? "Show anyway",
+                style: const TextStyle(fontSize: 13),
+              ),
+            ),
+          ],
+        ),
+      );
+
+      if (depth >= 1) {
+        const maxDepth = 4;
+        const indentPerLevel = 16.0;
+        final cappedDepth = depth > maxDepth ? maxDepth : depth;
+        final leftMargin = indentPerLevel * cappedDepth;
+        final threadColor = _threadColors[(depth - 1) % _threadColors.length];
+
+        flaggedContent = Container(
+          margin: EdgeInsets.only(left: leftMargin),
+          padding: const EdgeInsets.only(left: 12, bottom: 14),
+          decoration: BoxDecoration(
+            border: Border(
+              left: BorderSide(color: threadColor.withValues(alpha: 0.4), width: 2),
+            ),
+          ),
+          child: flaggedContent,
+        );
+      }
+
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 14),
+        child: flaggedContent,
+      );
+    }
 
     Widget commentContent = Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -503,6 +616,16 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
                       label: "Delete",
                       onTap: () => _onDeleteComment(c.id),
                       color: colorScheme.error.withValues(alpha: 0.7),
+                    ),
+                  ],
+                  // Add report button for non-owner comments when logged in
+                  if (isLoggedIn && !c.viewerIsMe) ...[
+                    const SizedBox(width: 16),
+                    _CommentActionButton(
+                      icon: Icons.flag_outlined,
+                      label: "Report",
+                      onTap: () => _onReportComment(c.id),
+                      color: colorScheme.onSurface.withValues(alpha: 0.5),
                     ),
                   ],
                   if (hasReplies) ...[

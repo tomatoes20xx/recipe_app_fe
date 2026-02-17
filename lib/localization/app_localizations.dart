@@ -595,6 +595,37 @@ class AppLocalizations {
   String get timeDaysAgo => _localizedValues[locale.languageCode]?["timeDaysAgo"] ?? "d ago";
   String get timeWeeksAgo => _localizedValues[locale.languageCode]?["timeWeeksAgo"] ?? "w ago";
 
+  // Reporting
+  String get report => _localizedValues[locale.languageCode]?["report"] ?? "Report";
+  String get reportRecipe => _localizedValues[locale.languageCode]?["reportRecipe"] ?? "Report Recipe";
+  String get reportComment => _localizedValues[locale.languageCode]?["reportComment"] ?? "Report Comment";
+  String get reportUser => _localizedValues[locale.languageCode]?["reportUser"] ?? "Report User";
+  String get reportContent => _localizedValues[locale.languageCode]?["reportContent"] ?? "Report Content";
+  String get reportReason => _localizedValues[locale.languageCode]?["reportReason"] ?? "Report Reason";
+  String get whyReporting => _localizedValues[locale.languageCode]?["whyReporting"] ?? "Why are you reporting this?";
+  String get selectReportReason => _localizedValues[locale.languageCode]?["selectReportReason"] ?? "Select a reason";
+  String get reportReasonSpam => _localizedValues[locale.languageCode]?["reportReasonSpam"] ?? "Spam or misleading content";
+  String get reportReasonInappropriate => _localizedValues[locale.languageCode]?["reportReasonInappropriate"] ?? "Inappropriate or offensive content";
+  String get reportReasonHarassment => _localizedValues[locale.languageCode]?["reportReasonHarassment"] ?? "Harassment or bullying";
+  String get reportReasonCopyright => _localizedValues[locale.languageCode]?["reportReasonCopyright"] ?? "Copyright violation";
+  String get reportReasonMisinformation => _localizedValues[locale.languageCode]?["reportReasonMisinformation"] ?? "Misinformation or harmful advice";
+  String get reportReasonOther => _localizedValues[locale.languageCode]?["reportReasonOther"] ?? "Other";
+  String get reportAdditionalDetails => _localizedValues[locale.languageCode]?["reportAdditionalDetails"] ?? "Additional details (optional)";
+  String get reportAdditionalDetailsHint => _localizedValues[locale.languageCode]?["reportAdditionalDetailsHint"] ?? "Provide more context if needed";
+  String get reportSubmit => _localizedValues[locale.languageCode]?["reportSubmit"] ?? "Submit Report";
+  String get reportSubmitting => _localizedValues[locale.languageCode]?["reportSubmitting"] ?? "Submitting...";
+  String get reportSuccess => _localizedValues[locale.languageCode]?["reportSuccess"] ?? "Report submitted successfully";
+  String get reportSuccessMessage => _localizedValues[locale.languageCode]?["reportSuccessMessage"] ?? "Thank you for your report. We'll review it as soon as possible.";
+  String get reportFailed => _localizedValues[locale.languageCode]?["reportFailed"] ?? "Failed to submit report";
+  String get reportContentNotFound => _localizedValues[locale.languageCode]?["reportContentNotFound"] ?? "Content not found";
+  String get reportLoginRequired => _localizedValues[locale.languageCode]?["reportLoginRequired"] ?? "Please log in to report content";
+  String get reportPleaseSelectReason => _localizedValues[locale.languageCode]?["reportPleaseSelectReason"] ?? "Please select a reason for reporting";
+  String get reportConfirmTitle => _localizedValues[locale.languageCode]?["reportConfirmTitle"] ?? "Submit Report?";
+  String get reportConfirmMessage => _localizedValues[locale.languageCode]?["reportConfirmMessage"] ?? "Are you sure you want to report this content? This action helps keep our community safe.";
+  String get flaggedContent => _localizedValues[locale.languageCode]?["flaggedContent"] ?? "Flagged Content";
+  String get flaggedContentMessage => _localizedValues[locale.languageCode]?["flaggedContentMessage"] ?? "This content has been flagged by multiple users";
+  String get showAnyway => _localizedValues[locale.languageCode]?["showAnyway"] ?? "Show anyway";
+
   // Helper method to get full month names by index (1-12)
   String getMonthName(int month) {
     final months = [
@@ -1125,6 +1156,37 @@ class AppLocalizations {
       "removeSharedRecipeConfirm": "Remove this recipe from your shared recipes? This won't affect the original recipe.",
       "removeSharedList": "Remove Shared List",
       "removeSharedListConfirm": "Remove this shopping list from your shared lists? This won't affect the owner's list.",
+
+      // Reporting
+      "report": "Report",
+      "reportRecipe": "Report Recipe",
+      "reportComment": "Report Comment",
+      "reportUser": "Report User",
+      "reportContent": "Report Content",
+      "reportReason": "Report Reason",
+      "whyReporting": "Why are you reporting this?",
+      "selectReportReason": "Select a reason",
+      "reportReasonSpam": "Spam or misleading content",
+      "reportReasonInappropriate": "Inappropriate or offensive content",
+      "reportReasonHarassment": "Harassment or bullying",
+      "reportReasonCopyright": "Copyright violation",
+      "reportReasonMisinformation": "Misinformation or harmful advice",
+      "reportReasonOther": "Other",
+      "reportAdditionalDetails": "Additional details (optional)",
+      "reportAdditionalDetailsHint": "Provide more context if needed",
+      "reportSubmit": "Submit Report",
+      "reportSubmitting": "Submitting...",
+      "reportSuccess": "Report submitted successfully",
+      "reportSuccessMessage": "Thank you for your report. We'll review it as soon as possible.",
+      "reportFailed": "Failed to submit report",
+      "reportContentNotFound": "Content not found",
+      "reportLoginRequired": "Please log in to report content",
+      "reportPleaseSelectReason": "Please select a reason for reporting",
+      "reportConfirmTitle": "Submit Report?",
+      "reportConfirmMessage": "Are you sure you want to report this content? This action helps keep our community safe.",
+      "flaggedContent": "Flagged Content",
+      "flaggedContentMessage": "This content has been flagged by multiple users",
+      "showAnyway": "Show anyway",
     },
     "ka": {
       "appTitle": "Yummy",
@@ -1637,6 +1699,37 @@ class AppLocalizations {
       "removeSharedRecipeConfirm": "წაიშალოს ეს რეცეპტი თქვენი გაზიარებული რეცეპტებიდან? ეს არ იმოქმედებს ორიგინალ რეცეპტზე.",
       "removeSharedList": "გაზიარებული სიის წაშლა",
       "removeSharedListConfirm": "წაიშალოს ეს სია თქვენი გაზიარებული სიებიდან? ეს არ იმოქმედებს მფლობელის სიაზე.",
+
+      // Reporting
+      "report": "დარეპორტება",
+      "reportRecipe": "რეცეპტის დარეპორტება",
+      "reportComment": "კომენტარის დარეპორტება",
+      "reportUser": "მომხმარებლის დარეპორტება",
+      "reportContent": "კონტენტის დარეპორტება",
+      "reportReason": "დარეპორტების მიზეზი",
+      "whyReporting": "რატომ აძლევთ რეპორტს ამ კონტენტს?",
+      "selectReportReason": "აირჩიეთ მიზეზი",
+      "reportReasonSpam": "სპამი ან შეცდომაში შემყვანი კონტენტი",
+      "reportReasonInappropriate": "არაადეკვატური ან შეურაცხმყოფელი კონტენტი",
+      "reportReasonHarassment": "შევიწროება ან ბულინგი",
+      "reportReasonCopyright": "საავტორო უფლებების დარღვევა",
+      "reportReasonMisinformation": "მცდარი ინფორმაცია ან საზიანო რჩევა",
+      "reportReasonOther": "სხვა",
+      "reportAdditionalDetails": "დამატებითი დეტალები (არასავალდებულო)",
+      "reportAdditionalDetailsHint": "მიუთითეთ დამატებითი კონტექსტი საჭიროების შემთხვევაში",
+      "reportSubmit": "რეპორტის გაგზავნა",
+      "reportSubmitting": "იგზავნება...",
+      "reportSuccess": "რეპორტი წარმატებით გაიგზავნა",
+      "reportSuccessMessage": "მადლობა თქვენი რეპორტისთვის. ჩვენ განვიხილავთ მას რაც შეიძლება მალე.",
+      "reportFailed": "რეპორტის გაგზავნა ვერ მოხერხდა",
+      "reportContentNotFound": "კონტენტი ვერ მოიძებნა",
+      "reportLoginRequired": "რეპორტის გასაგზავნად გთხოვთ გაიაროთ ავტორიზაცია",
+      "reportPleaseSelectReason": "გთხოვთ აირჩიოთ დარეპორტების მიზეზი",
+      "reportConfirmTitle": "გავაგზავნო რეპორტი?",
+      "reportConfirmMessage": "დარწმუნებული ხართ, რომ გსურთ ამ კონტენტის დარეპორტება? ეს ქმედება ეხმარება ჩვენი საზოგადოების უსაფრთხოებას.",
+      "flaggedContent": "მონიშნული კონტენტი",
+      "flaggedContentMessage": "ეს კონტენტი მონიშნულია მრავალი მომხმარებლის მიერ",
+      "showAnyway": "მაინც ნახვა",
     },
   };
 }
