@@ -9,6 +9,9 @@ class Comment {
   final String? authorAvatarUrl;
   /// Whether the current viewer is the author of this comment.
   final bool viewerIsMe;
+  /// Whether this comment is flagged (5+ reports). Hidden by default with "Show anyway" option.
+  /// At 10 reports, the comment is soft-deleted server-side and excluded from API responses entirely.
+  final bool isFlagged;
 
   Comment({
     required this.id,
@@ -19,6 +22,7 @@ class Comment {
     this.parentId,
     this.authorAvatarUrl,
     this.viewerIsMe = false,
+    this.isFlagged = false,
   });
 
   factory Comment.fromJson(Map<String, dynamic> json) {
@@ -33,6 +37,7 @@ class Comment {
       parentId: json["parent_id"]?.toString(),
       authorAvatarUrl: json["author_avatar_url"]?.toString(),
       viewerIsMe: json["viewer_is_me"] == true,
+      isFlagged: json["is_flagged"] == true,
     );
   }
 }
