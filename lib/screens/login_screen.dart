@@ -190,6 +190,25 @@ class _LoginScreenState extends State<LoginScreen>
       await widget.auth.login(_emailController.text.trim(), _passwordController.text);
       await _saveRememberMePreference();
     } on ApiException catch (e) {
+      if (e.statusCode == 403) {
+        if (!mounted) return;
+        final localizations = AppLocalizations.of(context);
+        await showDialog<void>(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => AlertDialog(
+            title: Text(localizations?.accountPermanentlyBanned ?? "Account Permanently Suspended"),
+            content: Text(localizations?.accountPermanentlyBannedMessage ?? "Your account has been permanently suspended due to repeated violations of our community guidelines."),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text(localizations?.ok ?? "OK"),
+              ),
+            ],
+          ),
+        );
+        return;
+      }
       setState(() => error = e.message);
     } catch (_) {
       setState(() => error = "Something went wrong.");
