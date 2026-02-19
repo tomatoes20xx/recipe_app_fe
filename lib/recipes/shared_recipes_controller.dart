@@ -98,11 +98,11 @@ class SharedRecipesController extends ChangeNotifier {
   }
 
   /// Dismiss a shared recipe (remove from your view)
-  Future<void> dismissRecipe(String recipeId) async {
+  Future<void> dismissRecipe(String shareId) async {
     try {
-      await recipeApi.dismissSharedRecipe(recipeId);
+      await recipeApi.dismissSharedRecipe(shareId);
       // Remove from local list
-      _items.removeWhere((item) => item.id == recipeId);
+      _items.removeWhere((item) => item.shareId == shareId);
       notifyListeners();
     } catch (e) {
       rethrow;

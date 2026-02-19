@@ -170,13 +170,7 @@ class _SharedUserShoppingListScreenState extends State<SharedUserShoppingListScr
     if (result == true && mounted) {
       try {
         await widget.controller.dismissShare(shareId);
-
-        // If no more shares from this user, go back
-        if (widget.userShares.shares.length == 1) {
-          if (mounted) Navigator.of(context).pop();
-        } else {
-          if (mounted) setState(() {});
-        }
+        // build() handles popping if no shares remain for this user
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -190,11 +184,7 @@ class _SharedUserShoppingListScreenState extends State<SharedUserShoppingListScr
     }
   }
 
-  Map<String, List<MapEntry<String, ShoppingListItem>>> _groupItemsByRecipe() {
-    // Get fresh data from controller
-    final freshUserShares = widget.controller.lists
-        .firstWhere((u) => u.ownerId == widget.userShares.ownerId);
-
+  Map<String, List<MapEntry<String, ShoppingListItem>>> _groupItemsByRecipe(UserShares freshUserShares) {
     final Map<String, List<MapEntry<String, ShoppingListItem>>> grouped = {};
 
     for (final share in freshUserShares.shares) {
@@ -212,11 +202,20 @@ class _SharedUserShoppingListScreenState extends State<SharedUserShoppingListScr
     final localizations = AppLocalizations.of(context);
     final theme = Theme.of(context);
 
-    // Get fresh data from controller
+    // Get fresh data from controller — may be null if all shares were dismissed
     final freshUserShares = widget.controller.lists
-        .firstWhere((u) => u.ownerId == widget.userShares.ownerId);
+        .cast<UserShares?>()
+        .firstWhere((u) => u?.ownerId == widget.userShares.ownerId, orElse: () => null);
 
-    final groupedItems = _groupItemsByRecipe();
+    if (freshUserShares == null) {
+      // All shares from this user were dismissed; pop on next frame
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) Navigator.of(context).pop();
+      });
+      return const SizedBox.shrink();
+    }
+
+    final groupedItems = _groupItemsByRecipe(freshUserShares);
 
     return Scaffold(
       appBar: AppBar(

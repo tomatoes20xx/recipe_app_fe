@@ -585,6 +585,7 @@ class AppLocalizations {
   String get shareSelectedRecipes => _localizedValues[locale.languageCode]?["shareSelectedRecipes"] ?? "Share Selected Recipes";
   String get removeSharedRecipe => _localizedValues[locale.languageCode]?["removeSharedRecipe"] ?? "Remove Shared Recipe";
   String get removeSharedRecipeConfirm => _localizedValues[locale.languageCode]?["removeSharedRecipeConfirm"] ?? "Remove this recipe from your shared recipes? This won't affect the original recipe.";
+  String get sharedRecipeRemoved => _localizedValues[locale.languageCode]?["sharedRecipeRemoved"] ?? "Recipe removed from your shared list";
   String get removeSharedList => _localizedValues[locale.languageCode]?["removeSharedList"] ?? "Remove Shared List";
   String get removeSharedListConfirm => _localizedValues[locale.languageCode]?["removeSharedListConfirm"] ?? "Remove this shopping list from your shared lists? This won't affect the owner's list.";
 
@@ -1191,6 +1192,7 @@ class AppLocalizations {
       "shareSelectedRecipes": "Share Selected Recipes",
       "removeSharedRecipe": "Remove Shared Recipe",
       "removeSharedRecipeConfirm": "Remove this recipe from your shared recipes? This won't affect the original recipe.",
+      "sharedRecipeRemoved": "Recipe removed from your shared list",
       "removeSharedList": "Remove Shared List",
       "removeSharedListConfirm": "Remove this shopping list from your shared lists? This won't affect the owner's list.",
 
@@ -1768,6 +1770,7 @@ class AppLocalizations {
       "shareSelectedRecipes": "არჩეული რეცეპტების გაზიარება",
       "removeSharedRecipe": "გაზიარებული რეცეპტის წაშლა",
       "removeSharedRecipeConfirm": "წაიშალოს ეს რეცეპტი თქვენი გაზიარებული რეცეპტებიდან? ეს არ იმოქმედებს ორიგინალ რეცეპტზე.",
+      "sharedRecipeRemoved": "რეცეპტი წაიშალა თქვენი გაზიარებული სიიდან",
       "removeSharedList": "გაზიარებული სიის წაშლა",
       "removeSharedListConfirm": "წაიშალოს ეს სია თქვენი გაზიარებული სიებიდან? ეს არ იმოქმედებს მფლობელის სიაზე.",
 

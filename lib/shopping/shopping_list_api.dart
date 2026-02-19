@@ -263,7 +263,7 @@ class ShoppingListApi {
   /// [shareId] - ID of the share to dismiss
   Future<void> dismissSharedRecipeList(String shareId) async {
     await api.delete(
-      "/shopping-list/share/recipes/$shareId",
+      "/shopping-list/shared-with-me/$shareId",
       auth: true,
     );
   }

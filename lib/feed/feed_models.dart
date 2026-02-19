@@ -49,6 +49,9 @@ class FeedItem {
 
   final List<RecipeImage> images;
 
+  // present only when this item comes from shared-with-me feed
+  final String? shareId;
+
   FeedItem({
     required this.id,
     required this.title,
@@ -68,6 +71,7 @@ class FeedItem {
     required this.viewerHasBookmarked,
     this.likesWindow,
     required this.images,
+    this.shareId,
   });
 
   factory FeedItem.fromJson(Map<String, dynamic> json) {
@@ -96,6 +100,7 @@ class FeedItem {
       viewerHasBookmarked: (json["viewer_has_bookmarked"] ?? false) as bool,
       likesWindow: json["likes_window"] is int ? json["likes_window"] as int : null,
       images: images,
+      shareId: json["share_id"]?.toString(),
     );
   }
 

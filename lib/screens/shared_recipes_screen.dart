@@ -5,6 +5,7 @@ import "../auth/auth_controller.dart";
 import "../recipes/recipe_detail_screen.dart";
 import "../widgets/common/recipe_grid_card.dart";
 import "../localization/app_localizations.dart";
+import "../utils/error_utils.dart";
 import "../recipes/recipe_api.dart";
 import "../recipes/shared_recipes_controller.dart";
 import "../shopping/shopping_list_controller.dart";
@@ -61,7 +62,7 @@ class _SharedRecipesScreenState extends State<SharedRecipesScreen> {
     super.dispose();
   }
 
-  Future<void> _showDeleteConfirmation(String recipeId, String recipeTitle) async {
+  Future<void> _showDeleteConfirmation(String shareId, String recipeTitle) async {
     final localizations = AppLocalizations.of(context);
     final result = await showDialog<bool>(
       context: context,
@@ -86,7 +87,10 @@ class _SharedRecipesScreenState extends State<SharedRecipesScreen> {
 
     if (result == true && mounted) {
       try {
-        await controller.dismissRecipe(recipeId);
+        await controller.dismissRecipe(shareId);
+        if (mounted) {
+          ErrorUtils.showSuccess(context, localizations?.sharedRecipeRemoved ?? "Recipe removed from your shared list");
+        }
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -188,7 +192,11 @@ class _SharedRecipesScreenState extends State<SharedRecipesScreen> {
                         final recipe = controller.items[index];
                         return RepaintBoundary(
                           child: GestureDetector(
-                            onLongPress: () => _showDeleteConfirmation(recipe.id, recipe.title),
+                            onLongPress: () {
+                              if (recipe.shareId != null) {
+                                _showDeleteConfirmation(recipe.shareId!, recipe.title);
+                              }
+                            },
                             child: RecipeGridCard(
                               recipe: recipe,
                               onTap: () async {
