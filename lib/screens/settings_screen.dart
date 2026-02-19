@@ -33,8 +33,11 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   String _appVersion = "";
-  UserPrivacySettings? _privacySettings;
-  bool _isLoadingPrivacy = false;
+  UserPrivacySettings _privacySettings = UserPrivacySettings(
+    followersPrivate: false,
+    followingPrivate: false,
+  );
+  bool _isLoadingPrivacy = true;
 
   @override
   void initState() {
@@ -66,9 +69,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final username = widget.auth?.me?["username"]?.toString();
       if (username != null) {
         final profile = await userApi.getUserProfile(username);
-        if (mounted && profile.privacy != null) {
+        if (mounted) {
           setState(() {
-            _privacySettings = profile.privacy;
+            if (profile.privacy != null) {
+              _privacySettings = profile.privacy!;
+            }
             _isLoadingPrivacy = false;
           });
         }
@@ -455,14 +460,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
         color: theme.colorScheme.onSurface.withValues(alpha: 0.04),
         borderRadius: BorderRadius.circular(16),
       ),
-      child: _privacySettings == null
-          ? _buildPrivacySettingsSkeleton(theme)
-          : Column(
+      child: Column(
               children: [
                 SwitchListTile(
                   title: Text(localizations?.privateFollowers ?? "Private Followers"),
                   subtitle: Text(localizations?.hideYourFollowersListFromOthers ?? "Hide your followers list from others"),
-                  value: _privacySettings!.followersPrivate,
+                  value: _privacySettings.followersPrivate,
                   onChanged: _isLoadingPrivacy
                       ? null
                       : (value) {
@@ -482,7 +485,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 SwitchListTile(
                   title: Text(localizations?.privateFollowing ?? "Private Following"),
                   subtitle: Text(localizations?.hideYourFollowingListFromOthers ?? "Hide your following list from others"),
-                  value: _privacySettings!.followingPrivate,
+                  value: _privacySettings.followingPrivate,
                   onChanged: _isLoadingPrivacy
                       ? null
                       : (value) {
@@ -495,108 +498,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ],
             ),
-    );
-  }
-
-  Widget _buildPrivacySettingsSkeleton(ThemeData theme) {
-    return Column(
-      children: [
-        // First skeleton tile
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Title skeleton
-                    Container(
-                      height: 16,
-                      width: 140,
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    // Subtitle skeleton
-                    Container(
-                      height: 12,
-                      width: 220,
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.06),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 12),
-              // Switch skeleton
-              Container(
-                width: 48,
-                height: 28,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-              ),
-            ],
-          ),
-        ),
-        // Divider
-        Divider(
-          height: 1,
-          indent: 16,
-          endIndent: 16,
-          color: theme.colorScheme.onSurface.withValues(alpha: 0.08),
-        ),
-        // Second skeleton tile
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Title skeleton
-                    Container(
-                      height: 16,
-                      width: 130,
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    // Subtitle skeleton
-                    Container(
-                      height: 12,
-                      width: 210,
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.06),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 12),
-              // Switch skeleton
-              Container(
-                width: 48,
-                height: 28,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
     );
   }
 
@@ -689,17 +590,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Column(
       children: [
         // App Icon
-        Container(
-          width: 56,
-          height: 56,
-          decoration: BoxDecoration(
-            color: theme.colorScheme.primary.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: Icon(
-            Icons.restaurant_menu_rounded,
-            size: 28,
-            color: theme.colorScheme.primary,
+        ClipRRect(
+          borderRadius: BorderRadius.circular(14),
+          child: Image.asset(
+            "assets/icon/app_icon.png",
+            width: 56,
+            height: 56,
           ),
         ),
         const SizedBox(height: 12),
