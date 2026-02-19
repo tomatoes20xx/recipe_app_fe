@@ -131,6 +131,7 @@ class _LoginScreenState extends State<LoginScreen>
   }
 
   Future<void> _handleGoogleSignIn() async {
+    final localizations = AppLocalizations.of(context);
     setState(() => error = null);
 
     try {
@@ -169,6 +170,24 @@ class _LoginScreenState extends State<LoginScreen>
         // Navigation handled by AuthGate (watches authController)
       }
     } on ApiException catch (e) {
+      if (e.statusCode == 403) {
+        if (!mounted) return;
+        await showDialog<void>(
+          context: context,
+          barrierDismissible: false,
+          builder: (ctx) => AlertDialog(
+            title: Text(localizations?.accountPermanentlyBanned ?? "Account Permanently Suspended"),
+            content: Text(localizations?.accountPermanentlyBannedMessage ?? "Your account has been permanently suspended due to repeated violations of our community guidelines."),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: Text(localizations?.ok ?? "OK"),
+              ),
+            ],
+          ),
+        );
+        return;
+      }
       setState(() => error = e.message);
       if (mounted) {
         ErrorUtils.showError(context, e);
@@ -177,13 +196,13 @@ class _LoginScreenState extends State<LoginScreen>
       const errorMessage = "Google Sign-In failed. Please try again.";
       setState(() => error = errorMessage);
       if (mounted) {
-        final localizations = AppLocalizations.of(context);
         ErrorUtils.showError(context, localizations?.googleSignInFailed ?? errorMessage);
       }
     }
   }
 
   Future<void> _handleEmailLogin() async {
+    final localizations = AppLocalizations.of(context);
     setState(() => error = null);
 
     try {
@@ -192,16 +211,15 @@ class _LoginScreenState extends State<LoginScreen>
     } on ApiException catch (e) {
       if (e.statusCode == 403) {
         if (!mounted) return;
-        final localizations = AppLocalizations.of(context);
         await showDialog<void>(
           context: context,
           barrierDismissible: false,
-          builder: (context) => AlertDialog(
+          builder: (ctx) => AlertDialog(
             title: Text(localizations?.accountPermanentlyBanned ?? "Account Permanently Suspended"),
             content: Text(localizations?.accountPermanentlyBannedMessage ?? "Your account has been permanently suspended due to repeated violations of our community guidelines."),
             actions: [
               TextButton(
-                onPressed: () => Navigator.of(context).pop(),
+                onPressed: () => Navigator.of(ctx).pop(),
                 child: Text(localizations?.ok ?? "OK"),
               ),
             ],
