@@ -214,6 +214,28 @@ class _FeedShellScreenState extends State<FeedShellScreen> {
             onHomeTap: () => _setPage(0),
             onNotificationsTap: () => _setPage(1),
             onAddRecipeTap: () async {
+              if (widget.auth.isSoftBanned || widget.auth.isPermanentlyBanned) {
+                final localizations = AppLocalizations.of(context);
+                final bannedUntil = widget.auth.softBannedUntil;
+                await showDialog<void>(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: Text(bannedUntil != null
+                        ? (localizations?.accountSoftBanned ?? "Account Temporarily Suspended")
+                        : (localizations?.accountPermanentlyBanned ?? "Account Permanently Suspended")),
+                    content: Text(bannedUntil != null
+                        ? (localizations?.accountSoftBannedUntil(formatDate(context, bannedUntil)) ?? "Your account is suspended.")
+                        : (localizations?.accountPermanentlyBannedMessage ?? "Your account has been permanently suspended.")),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: Text(localizations?.ok ?? "OK"),
+                      ),
+                    ],
+                  ),
+                );
+                return;
+              }
               final result = await Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (_) => CreateRecipeScreen(apiClient: widget.apiClient),

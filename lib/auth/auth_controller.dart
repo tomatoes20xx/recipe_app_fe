@@ -18,6 +18,35 @@ class AuthController extends ChangeNotifier {
 
   bool get isLoggedIn => token != null && token!.isNotEmpty;
 
+  /// Whether the account is permanently banned (is_active = false)
+  bool get isPermanentlyBanned => me?["is_active"] == false;
+
+  /// When the soft ban expires, or null if not soft-banned
+  DateTime? get softBannedUntil {
+    final raw = me?["soft_banned_until"];
+    if (raw == null) return null;
+    try {
+      final dt = DateTime.parse(raw.toString());
+      return dt.isAfter(DateTime.now()) ? dt : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Whether the account is currently soft-banned (can't post or comment)
+  bool get isSoftBanned => softBannedUntil != null;
+
+  /// Whether the account can post recipes and comments
+  bool get canPost => isLoggedIn && !isSoftBanned && !isPermanentlyBanned;
+
+  /// Number of violations (0–5)
+  int get violationCount {
+    final raw = me?["violation_count"];
+    if (raw is int) return raw;
+    if (raw is num) return raw.toInt();
+    return 0;
+  }
+
   Future<void> bootstrap() async {
     try {
       token = await tokenStorage.readToken();

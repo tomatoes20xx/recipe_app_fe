@@ -901,6 +901,38 @@ class _ProfileScreenState extends State<ProfileScreen> {
               padding: const EdgeInsets.all(20),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
+                  // Ban / violation warning banner
+                  Builder(
+                    builder: (context) {
+                      final localizations = AppLocalizations.of(context);
+                      if (widget.auth.isPermanentlyBanned) {
+                        return _BanBanner(
+                          message: localizations?.accountPermanentlyBannedMessage ?? "Your account has been permanently suspended.",
+                          color: theme.colorScheme.error,
+                        );
+                      }
+                      if (widget.auth.isSoftBanned) {
+                        return _BanBanner(
+                          message: localizations?.accountSoftBannedUntil(formatDate(context, widget.auth.softBannedUntil!)) ?? "Your account is temporarily suspended.",
+                          color: theme.colorScheme.error,
+                        );
+                      }
+                      if (widget.auth.violationCount == 2) {
+                        return _BanBanner(
+                          message: localizations?.violationWarning2 ?? "Warning: 1 more violation will result in a 7-day suspension",
+                          color: Colors.orange,
+                        );
+                      }
+                      if (widget.auth.violationCount == 5) {
+                        return _BanBanner(
+                          message: localizations?.violationWarning5 ?? "Warning: 1 more violation will result in a permanent ban",
+                          color: theme.colorScheme.error,
+                        );
+                      }
+                      return const SizedBox.shrink();
+                    },
+                  ),
+
                   // Edit Profile Button
                   SizedBox(
                     width: double.infinity,
@@ -1242,6 +1274,38 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: Center(child: CircularProgressIndicator()),
           ),
       ],
+    );
+  }
+}
+
+class _BanBanner extends StatelessWidget {
+  const _BanBanner({required this.message, required this.color});
+
+  final String message;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.4)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.warning_amber_rounded, color: color, size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              message,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: color),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

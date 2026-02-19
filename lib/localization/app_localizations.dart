@@ -620,6 +620,17 @@ class AppLocalizations {
   String get reportContentNotFound => _localizedValues[locale.languageCode]?["reportContentNotFound"] ?? "Content not found";
   String get reportLoginRequired => _localizedValues[locale.languageCode]?["reportLoginRequired"] ?? "Please log in to report content";
   String get reportPleaseSelectReason => _localizedValues[locale.languageCode]?["reportPleaseSelectReason"] ?? "Please select a reason for reporting";
+
+  // Ban / Account restrictions
+  String get accountPermanentlyBanned => _localizedValues[locale.languageCode]?["accountPermanentlyBanned"] ?? "Account Permanently Suspended";
+  String get accountPermanentlyBannedMessage => _localizedValues[locale.languageCode]?["accountPermanentlyBannedMessage"] ?? "Your account has been permanently suspended due to repeated violations of our community guidelines.";
+  String get accountSoftBanned => _localizedValues[locale.languageCode]?["accountSoftBanned"] ?? "Account Temporarily Suspended";
+  String accountSoftBannedUntil(String date) => (_localizedValues[locale.languageCode]?["accountSoftBannedUntil"] ?? "Your account is suspended until {date}. You can browse but cannot post or comment.").replaceAll("{date}", date);
+  String get cannotPostWhileBanned => _localizedValues[locale.languageCode]?["cannotPostWhileBanned"] ?? "You cannot post while your account is suspended";
+  String get cannotCommentWhileBanned => _localizedValues[locale.languageCode]?["cannotCommentWhileBanned"] ?? "You cannot comment while your account is suspended";
+  String get violationWarning2 => _localizedValues[locale.languageCode]?["violationWarning2"] ?? "Warning: 1 more violation will result in a 7-day suspension";
+  String get violationWarning5 => _localizedValues[locale.languageCode]?["violationWarning5"] ?? "Warning: 1 more violation will result in a permanent ban";
+  String get ok => _localizedValues[locale.languageCode]?["ok"] ?? "OK";
   String get reportConfirmTitle => _localizedValues[locale.languageCode]?["reportConfirmTitle"] ?? "Submit Report?";
   String get reportConfirmMessage => _localizedValues[locale.languageCode]?["reportConfirmMessage"] ?? "Are you sure you want to report this content? This action helps keep our community safe.";
   String get flaggedContent => _localizedValues[locale.languageCode]?["flaggedContent"] ?? "Flagged Content";
@@ -1207,6 +1218,17 @@ class AppLocalizations {
       "reportFailed": "Failed to submit report",
       "reportContentNotFound": "Content not found",
       "reportLoginRequired": "Please log in to report content",
+
+      // Ban / Account restrictions
+      "accountPermanentlyBanned": "Account Permanently Suspended",
+      "accountPermanentlyBannedMessage": "Your account has been permanently suspended due to repeated violations of our community guidelines.",
+      "accountSoftBanned": "Account Temporarily Suspended",
+      "accountSoftBannedUntil": "Your account is suspended until {date}. You can browse but cannot post or comment.",
+      "cannotPostWhileBanned": "You cannot post while your account is suspended",
+      "cannotCommentWhileBanned": "You cannot comment while your account is suspended",
+      "violationWarning2": "Warning: 1 more violation will result in a 7-day suspension",
+      "violationWarning5": "Warning: 1 more violation will result in a permanent ban",
+      "ok": "OK",
       "reportPleaseSelectReason": "Please select a reason for reporting",
       "reportConfirmTitle": "Submit Report?",
       "reportConfirmMessage": "Are you sure you want to report this content? This action helps keep our community safe.",
@@ -1773,6 +1795,17 @@ class AppLocalizations {
       "reportFailed": "რეპორტის გაგზავნა ვერ მოხერხდა",
       "reportContentNotFound": "კონტენტი ვერ მოიძებნა",
       "reportLoginRequired": "რეპორტის გასაგზავნად გთხოვთ გაიაროთ ავტორიზაცია",
+
+      // Ban / Account restrictions
+      "accountPermanentlyBanned": "ანგარიში სამუდამოდ შეჩერებულია",
+      "accountPermanentlyBannedMessage": "თქვენი ანგარიში სამუდამოდ შეჩერდა ჩვენი საზოგადოების წესების განმეორებითი დარღვევის გამო.",
+      "accountSoftBanned": "ანგარიში დროებით შეჩერებულია",
+      "accountSoftBannedUntil": "თქვენი ანგარიში შეჩერებულია {date}-მდე. შეგიძლიათ დაათვალიეროთ, მაგრამ ვერ განათავსებთ ან დააკომენტარებთ.",
+      "cannotPostWhileBanned": "შეჩერებული ანგარიშით ვერ განათავსებთ",
+      "cannotCommentWhileBanned": "შეჩერებული ანგარიშით ვერ დააკომენტარებთ",
+      "violationWarning2": "გაფრთხილება: კიდევ 1 დარღვევა გამოიწვევს 7-დღიან შეჩერებას",
+      "violationWarning5": "გაფრთხილება: კიდევ 1 დარღვევა გამოიწვევს სამუდამო ბანს",
+      "ok": "კარგი",
       "reportPleaseSelectReason": "გთხოვთ აირჩიოთ დარეპორტების მიზეზი",
       "reportConfirmTitle": "გავაგზავნო რეპორტი?",
       "reportConfirmMessage": "დარწმუნებული ხართ, რომ გსურთ ამ კონტენტის დარეპორტება? ეს ქმედება ეხმარება ჩვენი საზოგადოების უსაფრთხოებას.",

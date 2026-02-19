@@ -839,6 +839,11 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
       ErrorUtils.showInfo(context, localizations?.pleaseLogInToComment ?? "Please log in to comment");
       return;
     }
+    if (widget.auth?.isSoftBanned == true || widget.auth?.isPermanentlyBanned == true) {
+      final localizations = AppLocalizations.of(context);
+      ErrorUtils.showError(context, localizations?.cannotCommentWhileBanned ?? "You cannot comment while your account is suspended");
+      return;
+    }
 
     HapticFeedback.lightImpact();
 
@@ -900,6 +905,7 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
     final sheetHeight = screenHeight * 0.75;
 
     final isLoggedIn = widget.auth?.isLoggedIn ?? false;
+    final isBanned = widget.auth?.isSoftBanned == true || widget.auth?.isPermanentlyBanned == true;
     final userAvatar = widget.auth?.me?["avatar_url"]?.toString();
     final username = widget.auth?.me?["username"]?.toString() ?? "";
     final colorScheme = Theme.of(context).colorScheme;
@@ -1008,7 +1014,37 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
                           ),
           ),
           // Comment input
-          if (isLoggedIn) ...[
+          if (isBanned) ...[
+            Divider(height: 1, color: colorScheme.outlineVariant.withValues(alpha: 0.3)),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.block_rounded,
+                    size: 20,
+                    color: colorScheme.error,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      widget.auth?.isPermanentlyBanned == true
+                          ? (localizations?.accountPermanentlyBanned ?? "Account Permanently Suspended")
+                          : widget.auth?.softBannedUntil != null
+                              ? localizations?.accountSoftBannedUntil(
+                                    formatDate(context, widget.auth!.softBannedUntil!),
+                                  ) ??
+                                  "Account Temporarily Suspended"
+                              : (localizations?.cannotCommentWhileBanned ?? "You cannot comment while your account is suspended"),
+                      style: textTheme.bodySmall?.copyWith(
+                        color: colorScheme.error,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ] else if (isLoggedIn) ...[
             Divider(height: 1, color: colorScheme.outlineVariant.withValues(alpha: 0.3)),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
