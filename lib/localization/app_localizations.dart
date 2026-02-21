@@ -146,6 +146,7 @@ class AppLocalizations {
   String get justNow => _localizedValues[locale.languageCode]?["justNow"] ?? "Just now";
   String get minutesAgo => _localizedValues[locale.languageCode]?["minutesAgo"] ?? "m ago";
   String get hoursAgo => _localizedValues[locale.languageCode]?["hoursAgo"] ?? "h ago";
+  String get today => _localizedValues[locale.languageCode]?["today"] ?? "Today";
   String get yesterday => _localizedValues[locale.languageCode]?["yesterday"] ?? "Yesterday";
   String get daysAgo => _localizedValues[locale.languageCode]?["daysAgo"] ?? "d ago";
   String get error => _localizedValues[locale.languageCode]?["error"] ?? "Error";
@@ -555,6 +556,9 @@ class AppLocalizations {
   String get noFollowersToShareWith => _localizedValues[locale.languageCode]?["noFollowersToShareWith"] ?? "No followers to share with";
   String get alreadyShared => _localizedValues[locale.languageCode]?["alreadyShared"] ?? "Already shared";
   String get shareWithPeople => _localizedValues[locale.languageCode]?["shareWithPeople"] ?? "Share with";
+  String shareWithNPeople(int count) => count == 1
+      ? (_localizedValues[locale.languageCode]?["shareWithNPeopleSingular"]?.replaceAll("{count}", count.toString()) ?? "Share with $count person")
+      : (_localizedValues[locale.languageCode]?["shareWithNPeoplePlural"]?.replaceAll("{count}", count.toString()) ?? "Share with $count people");
   String get shareType => _localizedValues[locale.languageCode]?["shareType"] ?? "Share type";
   String get readOnly => _localizedValues[locale.languageCode]?["readOnly"] ?? "Read Only";
   String get collaborative => _localizedValues[locale.languageCode]?["collaborative"] ?? "Collaborative";
@@ -798,6 +802,7 @@ class AppLocalizations {
       "justNow": "Just now",
       "minutesAgo": "m ago",
       "hoursAgo": "h ago",
+      "today": "Today",
       "yesterday": "Yesterday",
       "daysAgo": "d ago",
       "error": "Error",
@@ -1162,6 +1167,8 @@ class AppLocalizations {
       "noFollowersToShareWith": "No followers to share with",
       "alreadyShared": "Already shared",
       "shareWithPeople": "Share with",
+      "shareWithNPeopleSingular": "Share with {count} person",
+      "shareWithNPeoplePlural": "Share with {count} people",
       "shareType": "Share type",
       "readOnly": "Read Only",
       "collaborative": "Collaborative",
@@ -1376,6 +1383,7 @@ class AppLocalizations {
       "justNow": "ახლა",
       "minutesAgo": "წუთის წინ",
       "hoursAgo": "საათის წინ",
+      "today": "დღეს",
       "yesterday": "გუშინ",
       "daysAgo": "დღის წინ",
       "error": "შეცდომა",
@@ -1740,6 +1748,8 @@ class AppLocalizations {
       "noFollowersToShareWith": "არ გაქვთ მოწევრები გასაზიარებლად",
       "alreadyShared": "უკვე გაზიარებული",
       "shareWithPeople": "გაზიარება",
+      "shareWithNPeopleSingular": "{count} ადამიანთან გაზიარება",
+      "shareWithNPeoplePlural": "{count} ადამიანთან გაზიარება",
       "shareType": "გაზიარების ტიპი",
       "readOnly": "მხოლოდ ნახვა",
       "collaborative": "კოლაბორაციული",

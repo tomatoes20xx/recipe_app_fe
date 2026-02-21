@@ -2,14 +2,22 @@ import "package:flutter/material.dart";
 
 import "../api/api_client.dart";
 import "../auth/auth_controller.dart";
+import "../feed/feed_models.dart";
 import "../recipes/recipe_detail_screen.dart";
 import "../widgets/common/recipe_grid_card.dart";
 import "../localization/app_localizations.dart";
 import "../utils/error_utils.dart";
+import "../utils/ui_utils.dart";
 import "../recipes/recipe_api.dart";
 import "../recipes/shared_recipes_controller.dart";
 import "../shopping/shopping_list_controller.dart";
 import "../widgets/empty_state_widget.dart";
+
+class _DateGroup {
+  final String label;
+  final List<FeedItem> recipes;
+  const _DateGroup(this.label, this.recipes);
+}
 
 class SharedRecipesScreen extends StatefulWidget {
   const SharedRecipesScreen({
@@ -60,6 +68,37 @@ class _SharedRecipesScreenState extends State<SharedRecipesScreen> {
     controller.removeListener(_onChanged);
     controller.dispose();
     super.dispose();
+  }
+
+  List<_DateGroup> _buildGroups(AppLocalizations? localizations) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = today.subtract(const Duration(days: 1));
+
+    final groupMap = <DateTime, List<FeedItem>>{};
+
+    for (final item in controller.items) {
+      final itemDate = DateTime(
+        item.createdAt.year,
+        item.createdAt.month,
+        item.createdAt.day,
+      );
+      groupMap[itemDate] ??= [];
+      groupMap[itemDate]!.add(item);
+    }
+
+    return groupMap.entries.map((entry) {
+      final date = entry.key;
+      final String label;
+      if (date == today) {
+        label = localizations?.today ?? "Today";
+      } else if (date == yesterday) {
+        label = localizations?.yesterday ?? "Yesterday";
+      } else {
+        label = formatDate(context, date);
+      }
+      return _DateGroup(label, entry.value);
+    }).toList();
   }
 
   Future<void> _showDeleteConfirmation(String shareId, String recipeTitle) async {
@@ -164,61 +203,76 @@ class _SharedRecipesScreenState extends State<SharedRecipesScreen> {
               );
             }
 
+            final groups = _buildGroups(localizations);
+
             return CustomScrollView(
               controller: _scrollController,
               physics: const AlwaysScrollableScrollPhysics(),
               slivers: [
-                SliverPadding(
-                  padding: const EdgeInsets.all(16),
-                  sliver: SliverGrid(
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 3,
-                      crossAxisSpacing: 2,
-                      mainAxisSpacing: 2,
-                      childAspectRatio: 0.75,
-                    ),
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        if (index >= controller.items.length) {
-                          if (controller.isLoadingMore) {
-                            return Container(
-                              color: theme.colorScheme.surfaceContainerHighest,
-                              child: const Center(child: CircularProgressIndicator()),
-                            );
-                          }
-                          return null;
-                        }
-
-                        final recipe = controller.items[index];
-                        return RepaintBoundary(
-                          child: GestureDetector(
-                            onLongPress: () {
-                              if (recipe.shareId != null) {
-                                _showDeleteConfirmation(recipe.shareId!, recipe.title);
-                              }
-                            },
-                            child: RecipeGridCard(
-                              recipe: recipe,
-                              onTap: () async {
-                                await Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (_) => RecipeDetailScreen(
-                                      recipeId: recipe.id,
-                                      apiClient: widget.apiClient,
-                                      auth: widget.auth,
-                                      shoppingListController: widget.shoppingListController,
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                        );
-                      },
-                      childCount: controller.items.length + (controller.isLoadingMore ? 1 : 0),
+                for (final group in groups) ...[
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+                      child: Text(
+                        group.label,
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
+                          letterSpacing: 0.3,
+                        ),
+                      ),
                     ),
                   ),
-                ),
+                  SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    sliver: SliverGrid(
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 3,
+                        crossAxisSpacing: 2,
+                        mainAxisSpacing: 2,
+                        childAspectRatio: 0.75,
+                      ),
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) {
+                          final recipe = group.recipes[index];
+                          return RepaintBoundary(
+                            child: GestureDetector(
+                              onLongPress: () {
+                                if (recipe.shareId != null) {
+                                  _showDeleteConfirmation(recipe.shareId!, recipe.title);
+                                }
+                              },
+                              child: RecipeGridCard(
+                                recipe: recipe,
+                                onTap: () async {
+                                  await Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) => RecipeDetailScreen(
+                                        recipeId: recipe.id,
+                                        apiClient: widget.apiClient,
+                                        auth: widget.auth,
+                                        shoppingListController: widget.shoppingListController,
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          );
+                        },
+                        childCount: group.recipes.length,
+                      ),
+                    ),
+                  ),
+                ],
+                if (controller.isLoadingMore)
+                  const SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.all(24),
+                      child: Center(child: CircularProgressIndicator()),
+                    ),
+                  ),
+                const SliverToBoxAdapter(child: SizedBox(height: 24)),
               ],
             );
           },
