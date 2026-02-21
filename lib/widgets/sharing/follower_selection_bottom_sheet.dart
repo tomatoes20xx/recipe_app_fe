@@ -289,7 +289,7 @@ class _FollowerSelectionBottomSheetState extends State<_FollowerSelectionBottomS
                         : Text(
                             _selectedUserIds.isEmpty
                                 ? (localizations?.selectFollowers ?? "Select followers")
-                                : "${localizations?.shareWithPeople ?? "Share with"} ${_selectedUserIds.length} ${_selectedUserIds.length == 1 ? "person" : "people"}",
+                                : localizations?.shareWithNPeople(_selectedUserIds.length) ?? "Share with ${_selectedUserIds.length} ${_selectedUserIds.length == 1 ? "person" : "people"}",
                           ),
                   ),
                 ),
