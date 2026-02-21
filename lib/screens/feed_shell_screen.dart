@@ -1,7 +1,6 @@
 import "dart:async";
 
 import "package:flutter/material.dart";
-import "package:animations/animations.dart";
 
 import "../api/api_client.dart";
 import "../auth/auth_controller.dart";
@@ -52,8 +51,8 @@ class FeedShellScreen extends StatefulWidget {
 class _FeedShellScreenState extends State<FeedShellScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   late final FeedController feed;
+  final ScrollController _feedScrollController = ScrollController();
   int _currentIndex = 0;
-  int _previousIndex = 0;
 
   late final NotificationController _notificationController;
   Timer? _notificationTimer;
@@ -112,6 +111,7 @@ class _FeedShellScreenState extends State<FeedShellScreen> {
   @override
   void dispose() {
     feed.dispose();
+    _feedScrollController.dispose();
     _notificationController.dispose();
     _notificationTimer?.cancel();
     super.dispose();
@@ -128,54 +128,31 @@ class _FeedShellScreenState extends State<FeedShellScreen> {
   void _setPage(int index) {
     if (index == _currentIndex) return;
     setState(() {
-      _previousIndex = _currentIndex;
       _currentIndex = index;
     });
+  }
+
+  void _onHomeTap() {
+    if (_currentIndex == 0) {
+      if (_feedScrollController.hasClients) {
+        _feedScrollController.animateTo(
+          0,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
+    } else {
+      _setPage(0);
+    }
   }
 
   void _changeFeedScope(String scope) {
     setState(() {
       feed.setScope(scope);
       if (_currentIndex != 0) {
-        _previousIndex = _currentIndex;
         _currentIndex = 0;
       }
     });
-  }
-
-  Widget _buildPage(int index) {
-    switch (index) {
-      case 0:
-        return HomeScreen(
-          key: const ValueKey("home"),
-          auth: widget.auth,
-          apiClient: widget.apiClient,
-          themeController: widget.themeController,
-          languageController: widget.languageController,
-          feed: feed,
-          onNotificationRefresh: _notificationController.refreshUnreadCount,
-          sortDropdownKey: _sortDropdownKey,
-          viewToggleKey: _viewToggleKey,
-          shoppingListController: widget.shoppingListController,
-        );
-      case 1:
-        return NotificationsScreen(
-          key: const ValueKey("notifications"),
-          apiClient: widget.apiClient,
-          auth: widget.auth,
-          notificationController: _notificationController,
-          shoppingListController: widget.shoppingListController,
-        );
-      case 2:
-        return SearchScreen(
-          key: const ValueKey("search"),
-          apiClient: widget.apiClient,
-          auth: widget.auth,
-          shoppingListController: widget.shoppingListController,
-        );
-      default:
-        return const SizedBox.shrink();
-    }
   }
 
   @override
@@ -192,18 +169,33 @@ class _FeedShellScreenState extends State<FeedShellScreen> {
         shoppingListController: widget.shoppingListController,
         onScopeSelected: _changeFeedScope,
       ),
-      body: PageTransitionSwitcher(
-        duration: const Duration(milliseconds: 280),
-        reverse: _currentIndex < _previousIndex,
-        transitionBuilder: (child, animation, secondaryAnimation) {
-          return SharedAxisTransition(
-            animation: animation,
-            secondaryAnimation: secondaryAnimation,
-            transitionType: SharedAxisTransitionType.horizontal,
-            child: child,
-          );
-        },
-        child: _buildPage(_currentIndex),
+      body: IndexedStack(
+        index: _currentIndex,
+        children: [
+          HomeScreen(
+            auth: widget.auth,
+            apiClient: widget.apiClient,
+            themeController: widget.themeController,
+            languageController: widget.languageController,
+            feed: feed,
+            scrollController: _feedScrollController,
+            onNotificationRefresh: _notificationController.refreshUnreadCount,
+            sortDropdownKey: _sortDropdownKey,
+            viewToggleKey: _viewToggleKey,
+            shoppingListController: widget.shoppingListController,
+          ),
+          NotificationsScreen(
+            apiClient: widget.apiClient,
+            auth: widget.auth,
+            notificationController: _notificationController,
+            shoppingListController: widget.shoppingListController,
+          ),
+          SearchScreen(
+            apiClient: widget.apiClient,
+            auth: widget.auth,
+            shoppingListController: widget.shoppingListController,
+          ),
+        ],
       ),
       bottomNavigationBar: ListenableBuilder(
         listenable: _notificationController,
@@ -211,7 +203,7 @@ class _FeedShellScreenState extends State<FeedShellScreen> {
           return _BottomShellNavBar(
             currentIndex: _currentIndex,
             unreadCount: _notificationController.unreadCount,
-            onHomeTap: () => _setPage(0),
+            onHomeTap: _onHomeTap,
             onNotificationsTap: () => _setPage(1),
             onAddRecipeTap: () async {
               if (widget.auth.isSoftBanned || widget.auth.isPermanentlyBanned) {
