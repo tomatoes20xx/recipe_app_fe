@@ -21,6 +21,7 @@ class HomeScreen extends StatefulWidget {
     required this.languageController,
     required this.feed,
     required this.shoppingListController,
+    required this.scrollController,
     this.onNotificationRefresh,
     this.sortDropdownKey,
     this.viewToggleKey,
@@ -32,6 +33,7 @@ class HomeScreen extends StatefulWidget {
   final LanguageController languageController;
   final FeedController feed;
   final ShoppingListController shoppingListController;
+  final ScrollController scrollController;
   final VoidCallback? onNotificationRefresh;
   final GlobalKey? sortDropdownKey;
   final GlobalKey? viewToggleKey;
@@ -44,7 +46,7 @@ class _HomeScreenState extends State<HomeScreen> {
   static const _kFullScreenViewKey = "full_screen_view";
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
-  final ScrollController sc = ScrollController();
+  ScrollController get sc => widget.scrollController;
   final PageController _fullScreenPageController = PageController();
   bool _isFullScreenView = false;
   bool _showControls = true;
@@ -60,7 +62,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     widget.feed.addListener(_onFeedChanged);
-    sc.addListener(_onScroll);
+    widget.scrollController.addListener(_onScroll);
     _loadFullScreenViewPreference();
   }
 
@@ -143,7 +145,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void dispose() {
-    sc.dispose();
+    widget.scrollController.removeListener(_onScroll);
     _fullScreenPageController.dispose();
     widget.feed.removeListener(_onFeedChanged);
     super.dispose();
