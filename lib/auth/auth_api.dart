@@ -105,10 +105,12 @@ class AuthApi {
   Future<String> login({
     required String email,
     required String password,
+    bool rememberMe = false,
   }) async {
     final data = await api.post("/auth/login", body: {
       "email": email,
       "password": password,
+      "rememberMe": rememberMe,
     });
 
     final token = (data["token"] ?? "").toString();

@@ -84,12 +84,12 @@ class AuthController extends ChangeNotifier {
     }
   }
 
-  Future<void> login(String email, String password) async {
+  Future<void> login(String email, String password, {bool rememberMe = false}) async {
     isLoading = true;
     notifyListeners();
 
     try {
-      final t = await authApi.login(email: email, password: password);
+      final t = await authApi.login(email: email, password: password, rememberMe: rememberMe);
       token = t;
       await tokenStorage.saveToken(t);
       me = await authApi.me();

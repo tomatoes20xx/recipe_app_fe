@@ -206,7 +206,7 @@ class _LoginScreenState extends State<LoginScreen>
     setState(() => error = null);
 
     try {
-      await widget.auth.login(_emailController.text.trim(), _passwordController.text);
+      await widget.auth.login(_emailController.text.trim(), _passwordController.text, rememberMe: _rememberMe);
       await _saveRememberMePreference();
     } on ApiException catch (e) {
       if (e.statusCode == 403) {
