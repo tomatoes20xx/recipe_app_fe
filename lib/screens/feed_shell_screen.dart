@@ -16,7 +16,6 @@ import "../shopping/shopping_list_controller.dart";
 import "../theme/theme_controller.dart";
 import "../utils/error_utils.dart";
 import "../utils/ui_utils.dart";
-import "analytics_stats_screen.dart";
 import "create_recipe_screen.dart";
 import "home_screen.dart";
 import "notifications_screen.dart";
@@ -668,25 +667,6 @@ class _FeedShellDrawer extends StatelessWidget {
                 },
               ),
               const SizedBox(height: 8),
-              // Analytics Statistics - Hidden for regular users
-              // TODO: Add role-based access control to show this for admins only
-              // _QuickAccessCard(
-              //   icon: Icons.bar_chart_rounded,
-              //   title: AppLocalizations.of(context)?.analyticsStatistics ?? "Analytics Statistics",
-              //   subtitle: AppLocalizations.of(context)?.viewTrackingStatistics ?? "View tracking statistics",
-              //   onTap: () {
-              //     Navigator.of(context).pop();
-              //     Navigator.of(context).push(
-              //       MaterialPageRoute(
-              //         builder: (_) => AnalyticsStatsScreen(
-              //           apiClient: apiClient,
-              //           auth: auth,
-              //         ),
-              //       ),
-              //     );
-              //   },
-              // ),
-              // const SizedBox(height: 8),
               _QuickAccessCard(
                 icon: Icons.settings_outlined,
                 title: AppLocalizations.of(context)?.settings ?? "Settings",

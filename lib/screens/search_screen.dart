@@ -632,15 +632,19 @@ class _SearchScreenState extends State<SearchScreen> {
                           buildUserAvatar(context, recipe.authorAvatarUrl,
                               recipe.authorUsername),
                           const SizedBox(width: 6),
-                          Text(
-                            "${recipe.authorDisplayName ?? recipe.authorUsername} • @${recipe.authorUsername} • $date",
-                            style:
-                                Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurface
-                                          .withValues(alpha: 0.6),
-                                    ),
+                          Expanded(
+                            child: Text(
+                              "${recipe.authorDisplayName ?? recipe.authorUsername} • @${recipe.authorUsername} • $date",
+                              style:
+                                  Theme.of(context).textTheme.bodySmall?.copyWith(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurface
+                                            .withValues(alpha: 0.6),
+                                      ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
                         ],
                       ),
