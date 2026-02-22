@@ -1,12 +1,12 @@
 class Config {
-  // Railway production URL (HTTPS)
-  static const String apiBaseUrl = "https://recipeappbe-production-4692.up.railway.app";
-  
-  // Local development URLs (uncomment to use):
-  // Android Emulator -> your PC localhost
-  // static const String apiBaseUrl = "http://10.0.2.2:3000";
-  
-  // For real device, use your PC's LAN IP address
-  // Make sure your phone and PC are on the same WiFi network
-  // static const String apiBaseUrl = "http://192.168.0.103:3000";
+  /// API base URL — set at build time via --dart-define=API_BASE_URL=...
+  ///
+  /// Defaults to Railway test backend for development.
+  /// Override examples:
+  ///   flutter run --dart-define=API_BASE_URL=http://10.0.2.2:3000        (local emulator)
+  ///   flutter run --dart-define=API_BASE_URL=http://192.168.0.103:3000   (local LAN device)
+  static const String apiBaseUrl = String.fromEnvironment(
+    "API_BASE_URL",
+    defaultValue: "https://recipeappbe-testing.up.railway.app",
+  );
 }
