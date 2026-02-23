@@ -284,12 +284,13 @@ class _EngagementRow extends StatelessWidget {
           },
           onLongPress: auth.isLoggedIn
               ? () async {
-                  final added = await showAddToCollectionBottomSheet(
+                  final result = await showAddToCollectionBottomSheet(
                     context: context,
                     apiClient: apiClient,
                     recipeId: item.id,
                   );
-                  if (added) {
+                  if (result.changed) {
+                    feed.updateBookmarkState(item.id, result.isBookmarked);
                     onActionCompleted?.call();
                   }
                 }

@@ -256,6 +256,19 @@ class FeedController extends ChangeNotifier {
     }
   }
 
+  void updateBookmarkState(String recipeId, bool bookmarked) {
+    final i = items.indexWhere((x) => x.id == recipeId);
+    if (i < 0) return;
+
+    final old = items[i];
+    if (old.viewerHasBookmarked == bookmarked) return;
+    items[i] = old.copyWith(
+      viewerHasBookmarked: bookmarked,
+      bookmarks: old.bookmarks + (bookmarked ? 1 : -1),
+    );
+    notifyListeners();
+  }
+
   void updateCommentCount(String recipeId, int newCount) {
     final i = items.indexWhere((x) => x.id == recipeId);
     if (i < 0) return;

@@ -177,12 +177,12 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
   }
 
   Future<void> _showCollectionSheet(String recipeId) async {
-    final changed = await showAddToCollectionBottomSheet(
+    final result = await showAddToCollectionBottomSheet(
       context: context,
       apiClient: widget.apiClient,
       recipeId: recipeId,
     );
-    if (changed && mounted) {
+    if (result.changed && mounted) {
       _controller.refresh();
     }
   }

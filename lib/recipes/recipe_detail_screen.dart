@@ -203,18 +203,20 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
       ErrorUtils.showError(context, "Please log in to use collections");
       return;
     }
-    final added = await showAddToCollectionBottomSheet(
+    final result = await showAddToCollectionBottomSheet(
       context: context,
       apiClient: widget.apiClient,
       recipeId: r.id,
     );
-    // BE auto-bookmarks when adding to a collection, so update local state
-    if (added && mounted && !(_viewerHasBookmarked ?? false)) {
-      setState(() {
-        _viewerHasBookmarked = true;
-        final base = _localBookmarks ?? r.counts.bookmarks;
-        _localBookmarks = base + 1;
-      });
+    if (result.changed && mounted) {
+      final wasBookmarked = _viewerHasBookmarked ?? r.viewerHasBookmarked;
+      if (result.isBookmarked != wasBookmarked) {
+        setState(() {
+          _viewerHasBookmarked = result.isBookmarked;
+          final base = _localBookmarks ?? r.counts.bookmarks;
+          _localBookmarks = base + (result.isBookmarked ? 1 : -1);
+        });
+      }
     }
   }
 

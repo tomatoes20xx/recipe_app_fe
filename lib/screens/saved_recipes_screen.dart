@@ -165,6 +165,8 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen>
             apiClient: widget.apiClient,
             auth: widget.auth,
             shoppingListController: widget.shoppingListController,
+            onCollectionChanged: () =>
+                _collectionsController.loadCollections(),
           ),
           _CollectionsTab(
             controller: _collectionsController,
@@ -173,6 +175,7 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen>
             auth: widget.auth,
             shoppingListController: widget.shoppingListController,
             onCreateCollection: _showCreateCollectionDialog,
+            onCollectionChanged: () => _savedController.refresh(),
           ),
         ],
       ),
@@ -201,6 +204,7 @@ class _AllSavedTab extends StatefulWidget {
     required this.apiClient,
     required this.auth,
     required this.shoppingListController,
+    required this.onCollectionChanged,
   });
 
   final SavedRecipesController controller;
@@ -208,6 +212,7 @@ class _AllSavedTab extends StatefulWidget {
   final ApiClient apiClient;
   final AuthController auth;
   final ShoppingListController shoppingListController;
+  final VoidCallback onCollectionChanged;
 
   @override
   State<_AllSavedTab> createState() => _AllSavedTabState();
@@ -219,13 +224,14 @@ class _AllSavedTabState extends State<_AllSavedTab>
   bool get wantKeepAlive => true;
 
   Future<void> _showCollectionSheet(String recipeId) async {
-    final changed = await showAddToCollectionBottomSheet(
+    final result = await showAddToCollectionBottomSheet(
       context: context,
       apiClient: widget.apiClient,
       recipeId: recipeId,
     );
-    if (changed && mounted) {
+    if (result.changed && mounted) {
       widget.controller.refresh();
+      widget.onCollectionChanged();
     }
   }
 
@@ -336,6 +342,7 @@ class _CollectionsTab extends StatefulWidget {
     required this.auth,
     required this.shoppingListController,
     required this.onCreateCollection,
+    required this.onCollectionChanged,
   });
 
   final CollectionsController controller;
@@ -344,6 +351,7 @@ class _CollectionsTab extends StatefulWidget {
   final AuthController auth;
   final ShoppingListController shoppingListController;
   final VoidCallback onCreateCollection;
+  final VoidCallback onCollectionChanged;
 
   @override
   State<_CollectionsTab> createState() => _CollectionsTabState();
@@ -425,10 +433,10 @@ class _CollectionsTabState extends State<_CollectionsTab>
                   ),
                 ),
               );
-              // Refresh collections list (recipe counts may have changed,
-              // or collection may have been deleted/renamed)
+              // Refresh both collections and saved recipes lists
               if (mounted) {
                 controller.loadCollections();
+                widget.onCollectionChanged();
               }
             },
           );

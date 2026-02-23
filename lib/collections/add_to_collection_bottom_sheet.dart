@@ -6,14 +6,23 @@ import "../utils/error_utils.dart";
 import "collection_api.dart";
 import "collection_models.dart";
 
+/// Result returned by the collection bottom sheet.
+class CollectionSheetResult {
+  const CollectionSheetResult({required this.changed, required this.isBookmarked});
+  /// Whether any change was made (moved, added, removed).
+  final bool changed;
+  /// Whether the recipe is still bookmarked after the sheet closed.
+  final bool isBookmarked;
+}
+
 /// Shows the add-to-collection bottom sheet.
-/// Returns `true` if the recipe's bookmark state changed.
-Future<bool> showAddToCollectionBottomSheet({
+/// Returns a [CollectionSheetResult] with change and bookmark info.
+Future<CollectionSheetResult> showAddToCollectionBottomSheet({
   required BuildContext context,
   required ApiClient apiClient,
   required String recipeId,
 }) async {
-  final result = await showModalBottomSheet<bool>(
+  final result = await showModalBottomSheet<CollectionSheetResult>(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
@@ -22,7 +31,7 @@ Future<bool> showAddToCollectionBottomSheet({
       recipeId: recipeId,
     ),
   );
-  return result ?? false;
+  return result ?? const CollectionSheetResult(changed: false, isBookmarked: true);
 }
 
 /// Sentinel value meaning "regular bookmarks (no collection)".
@@ -51,6 +60,11 @@ class _AddToCollectionSheetState extends State<_AddToCollectionSheet> {
   String? _error;
   String? _processingId;
   bool _didChange = false;
+
+  CollectionSheetResult _buildResult() => CollectionSheetResult(
+        changed: _didChange,
+        isBookmarked: _isBookmarked,
+      );
 
   @override
   void initState() {
@@ -183,7 +197,7 @@ class _AddToCollectionSheetState extends State<_AddToCollectionSheet> {
       // Regular bookmark — just close and let the caller handle unbookmark
       // via the normal bookmark toggle
       _didChange = true;
-      if (mounted) Navigator.of(context).pop(_didChange);
+      if (mounted) Navigator.of(context).pop(_buildResult());
     }
   }
 
@@ -263,7 +277,7 @@ class _AddToCollectionSheetState extends State<_AddToCollectionSheet> {
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) {
-          Navigator.of(context).pop(_didChange);
+          Navigator.of(context).pop(_buildResult());
         }
       },
       child: Container(
