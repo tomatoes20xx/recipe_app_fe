@@ -3,7 +3,9 @@ import "package:flutter_secure_storage/flutter_secure_storage.dart";
 
 import "../api/api_client.dart";
 import "../auth/auth_controller.dart";
+import "../constants/recipe_categories.dart";
 import "../feed/feed_controller.dart";
+import "../localization/app_localizations.dart";
 import "../localization/language_controller.dart";
 import "../shopping/shopping_list_controller.dart";
 import "../theme/theme_controller.dart";
@@ -315,16 +317,69 @@ class _HomeScreenState extends State<HomeScreen> {
               offset: Offset.zero,
               child: SafeArea(
                 bottom: false,
-                child: FeedControls(
-                  feed: feed,
-                  isFullScreenView: _isFullScreenView,
-                  onViewToggle: _handleViewToggle,
-                  sortDropdownKey: widget.sortDropdownKey,
-                  viewToggleKey: widget.viewToggleKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    FeedControls(
+                      feed: feed,
+                      isFullScreenView: _isFullScreenView,
+                      onViewToggle: _handleViewToggle,
+                      sortDropdownKey: widget.sortDropdownKey,
+                      viewToggleKey: widget.viewToggleKey,
+                    ),
+                    _buildCategoryChips(feed),
+                  ],
                 ),
               ),
             )
           : const SizedBox.shrink(),
+    );
+  }
+
+  Widget _buildCategoryChips(FeedController feed) {
+    final localizations = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+
+    return Container(
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(
+            color: theme.colorScheme.outline.withValues(alpha: 0.1),
+            width: 1,
+          ),
+        ),
+      ),
+      height: 48,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+            child: FilterChip(
+              selected: feed.selectedCategory == null,
+              label: Text(localizations?.allCategories ?? "All"),
+              onSelected: (_) => feed.setCategory(null),
+              visualDensity: VisualDensity.compact,
+            ),
+          ),
+          ...recipeCategories.map((category) {
+            final isSelected = feed.selectedCategory == category.tag;
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+              child: FilterChip(
+                selected: isSelected,
+                label: Text(category.getLabel(localizations)),
+                avatar: Icon(category.icon, size: 16),
+                onSelected: (_) => feed.setCategory(
+                  isSelected ? null : category.tag,
+                ),
+                visualDensity: VisualDensity.compact,
+              ),
+            );
+          }),
+        ],
+      ),
     );
   }
 }

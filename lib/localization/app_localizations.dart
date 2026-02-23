@@ -205,6 +205,17 @@ class AppLocalizations {
   String get describeYourRecipe => _localizedValues[locale.languageCode]?["describeYourRecipe"] ?? "Describe your recipe";
   String get cuisine => _localizedValues[locale.languageCode]?["cuisine"] ?? "Cuisine";
   String get cuisineExample => _localizedValues[locale.languageCode]?["cuisineExample"] ?? "e.g., Italian, Mexican, Asian";
+  String get cuisineGeorgian => _localizedValues[locale.languageCode]?["cuisineGeorgian"] ?? "Georgian";
+  String get cuisineItalian => _localizedValues[locale.languageCode]?["cuisineItalian"] ?? "Italian";
+  String get cuisineMexican => _localizedValues[locale.languageCode]?["cuisineMexican"] ?? "Mexican";
+  String get cuisineChinese => _localizedValues[locale.languageCode]?["cuisineChinese"] ?? "Chinese";
+  String get cuisineJapanese => _localizedValues[locale.languageCode]?["cuisineJapanese"] ?? "Japanese";
+  String get cuisineIndian => _localizedValues[locale.languageCode]?["cuisineIndian"] ?? "Indian";
+  String get cuisineThai => _localizedValues[locale.languageCode]?["cuisineThai"] ?? "Thai";
+  String get cuisineFrench => _localizedValues[locale.languageCode]?["cuisineFrench"] ?? "French";
+  String get cuisineMediterranean => _localizedValues[locale.languageCode]?["cuisineMediterranean"] ?? "Mediterranean";
+  String get cuisineAmerican => _localizedValues[locale.languageCode]?["cuisineAmerican"] ?? "American";
+  String get cuisineKorean => _localizedValues[locale.languageCode]?["cuisineKorean"] ?? "Korean";
   String get minTimeMinutes => _localizedValues[locale.languageCode]?["minTimeMinutes"] ?? "Min Time (minutes)";
   String get maxTimeMinutes => _localizedValues[locale.languageCode]?["maxTimeMinutes"] ?? "Max Time (minutes)";
   String get difficulty => _localizedValues[locale.languageCode]?["difficulty"] ?? "Difficulty";
@@ -215,6 +226,7 @@ class AppLocalizations {
   String get tags => _localizedValues[locale.languageCode]?["tags"] ?? "Tags";
   String get ingredients => _localizedValues[locale.languageCode]?["ingredients"] ?? "Ingredients";
   String get cookingTimeMinutes => _localizedValues[locale.languageCode]?["cookingTimeMinutes"] ?? "Cooking Time (minutes)";
+  String get minuteAbbreviation => _localizedValues[locale.languageCode]?["minuteAbbreviation"] ?? "min";
   String get min => _localizedValues[locale.languageCode]?["min"] ?? "Min";
   String get max => _localizedValues[locale.languageCode]?["max"] ?? "Max";
   String get quantity => _localizedValues[locale.languageCode]?["quantity"] ?? "Quantity";
@@ -645,6 +657,22 @@ class AppLocalizations {
   String get flaggedContentMessage => _localizedValues[locale.languageCode]?["flaggedContentMessage"] ?? "This content has been flagged by multiple users";
   String get showAnyway => _localizedValues[locale.languageCode]?["showAnyway"] ?? "Show anyway";
 
+  // Recipe Categories
+  String get categories => _localizedValues[locale.languageCode]?["categories"] ?? "Categories";
+  String get allCategories => _localizedValues[locale.languageCode]?["allCategories"] ?? "All";
+  String get categoryBreakfast => _localizedValues[locale.languageCode]?["categoryBreakfast"] ?? "Breakfast";
+  String get categoryLunch => _localizedValues[locale.languageCode]?["categoryLunch"] ?? "Lunch";
+  String get categoryDinner => _localizedValues[locale.languageCode]?["categoryDinner"] ?? "Dinner";
+  String get categoryDessert => _localizedValues[locale.languageCode]?["categoryDessert"] ?? "Dessert";
+  String get categorySnack => _localizedValues[locale.languageCode]?["categorySnack"] ?? "Snack";
+  String get categoryAppetizer => _localizedValues[locale.languageCode]?["categoryAppetizer"] ?? "Appetizer";
+  String get categorySoup => _localizedValues[locale.languageCode]?["categorySoup"] ?? "Soup";
+  String get categorySalad => _localizedValues[locale.languageCode]?["categorySalad"] ?? "Salad";
+  String get categoryDrinks => _localizedValues[locale.languageCode]?["categoryDrinks"] ?? "Drinks";
+  String get categoryQuickMeals => _localizedValues[locale.languageCode]?["categoryQuickMeals"] ?? "Quick Meals";
+  String get categoryHealthy => _localizedValues[locale.languageCode]?["categoryHealthy"] ?? "Healthy";
+  String get categoryComfortFood => _localizedValues[locale.languageCode]?["categoryComfortFood"] ?? "Comfort Food";
+
   // Comments Screen
   String get deleteCommentTitle => _localizedValues[locale.languageCode]?["deleteCommentTitle"] ?? "Delete comment?";
   String get deleteCommentMessage => _localizedValues[locale.languageCode]?["deleteCommentMessage"] ?? "This will also delete all replies to this comment.";
@@ -834,6 +862,17 @@ class AppLocalizations {
       "describeYourRecipe": "Describe your recipe",
       "cuisine": "Cuisine",
       "cuisineExample": "e.g., Italian, Mexican, Asian",
+      "cuisineGeorgian": "Georgian",
+      "cuisineItalian": "Italian",
+      "cuisineMexican": "Mexican",
+      "cuisineChinese": "Chinese",
+      "cuisineJapanese": "Japanese",
+      "cuisineIndian": "Indian",
+      "cuisineThai": "Thai",
+      "cuisineFrench": "French",
+      "cuisineMediterranean": "Mediterranean",
+      "cuisineAmerican": "American",
+      "cuisineKorean": "Korean",
       "minTimeMinutes": "Min Time (minutes)",
       "maxTimeMinutes": "Max Time (minutes)",
       "difficulty": "Difficulty",
@@ -844,6 +883,7 @@ class AppLocalizations {
       "tags": "Tags",
       "ingredients": "Ingredients",
       "cookingTimeMinutes": "Cooking Time (minutes)",
+      "minuteAbbreviation": "min",
       "min": "Min",
       "max": "Max",
       "quantity": "Quantity",
@@ -1251,6 +1291,22 @@ class AppLocalizations {
       "flaggedContentMessage": "This content has been flagged by multiple users",
       "showAnyway": "Show anyway",
 
+      // Recipe Categories
+      "categories": "Categories",
+      "allCategories": "All",
+      "categoryBreakfast": "Breakfast",
+      "categoryLunch": "Lunch",
+      "categoryDinner": "Dinner",
+      "categoryDessert": "Dessert",
+      "categorySnack": "Snack",
+      "categoryAppetizer": "Appetizer",
+      "categorySoup": "Soup",
+      "categorySalad": "Salad",
+      "categoryDrinks": "Drinks",
+      "categoryQuickMeals": "Quick Meals",
+      "categoryHealthy": "Healthy",
+      "categoryComfortFood": "Comfort Food",
+
       // Comments Screen
       "deleteCommentTitle": "Delete comment?",
       "deleteCommentMessage": "This will also delete all replies to this comment.",
@@ -1418,6 +1474,17 @@ class AppLocalizations {
       "describeYourRecipe": "შეიყვანეთ რეცეპტის აღწერა",
       "cuisine": "სამზარეულო",
       "cuisineExample": "მაგ., იტალიური, მექსიკური, აზიური",
+      "cuisineGeorgian": "ქართული",
+      "cuisineItalian": "იტალიური",
+      "cuisineMexican": "მექსიკური",
+      "cuisineChinese": "ჩინური",
+      "cuisineJapanese": "იაპონური",
+      "cuisineIndian": "ინდური",
+      "cuisineThai": "ტაილანდური",
+      "cuisineFrench": "ფრანგული",
+      "cuisineMediterranean": "ხმელთაშუაზღვისპირული",
+      "cuisineAmerican": "ამერიკული",
+      "cuisineKorean": "კორეული",
       "minTimeMinutes": "მინ. დრო (წუთები)",
       "maxTimeMinutes": "მაქს. დრო (წუთები)",
       "difficulty": "სირთულე",
@@ -1428,6 +1495,7 @@ class AppLocalizations {
       "tags": "თეგები",
       "ingredients": "ინგრედიენტები",
       "cookingTimeMinutes": "მომზადების დრო (წუთები)",
+      "minuteAbbreviation": "წთ",
       "min": "მინ",
       "max": "მაქს",
       "quantity": "რაოდენობა",
@@ -1834,6 +1902,22 @@ class AppLocalizations {
       "flaggedContent": "დარეპორტებული კონტენტი",
       "flaggedContentMessage": "ეს კონტენტი დარეპორტებულია მრავალი მომხმარებლის მიერ",
       "showAnyway": "მაინც ნახვა",
+
+      // Recipe Categories
+      "categories": "კატეგორიები",
+      "allCategories": "ყველა",
+      "categoryBreakfast": "საუზმე",
+      "categoryLunch": "სადილი",
+      "categoryDinner": "ვახშამი",
+      "categoryDessert": "დესერტი",
+      "categorySnack": "წასახემსებელი",
+      "categoryAppetizer": "მადის აღმძვრელი",
+      "categorySoup": "წვნიანი",
+      "categorySalad": "სალათი",
+      "categoryDrinks": "სასმელები",
+      "categoryQuickMeals": "სწრაფი კერძები",
+      "categoryHealthy": "ჯანსაღი",
+      "categoryComfortFood": "სამსუფრო კერძები",
 
       // Comments Screen
       "deleteCommentTitle": "კომენტარის წაშლა?",

@@ -5,6 +5,8 @@ import "package:flutter/services.dart";
 import "package:image_picker/image_picker.dart";
 
 import "../api/api_client.dart";
+import "../constants/cuisines.dart";
+import "../constants/recipe_categories.dart";
 import "../localization/app_localizations.dart";
 import "../recipes/recipe_api.dart";
 import "../recipes/recipe_detail_models.dart";
@@ -54,19 +56,6 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
   String? _uploadStatus; // For showing upload progress
   bool _isEditMode = false;
 
-  // Common cuisines for suggestions
-  static const List<String> _cuisineSuggestions = [
-    "Italian",
-    "Mexican",
-    "Chinese",
-    "Japanese",
-    "Indian",
-    "Thai",
-    "French",
-    "Mediterranean",
-    "American",
-    "Korean",
-  ];
 
   @override
   void initState() {
@@ -972,44 +961,49 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
           const SizedBox(height: 8),
 
           // Cuisine suggestions
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: _cuisineSuggestions.take(5).map((cuisine) {
-              final isSelected =
-                  _cuisineController.text.toLowerCase() == cuisine.toLowerCase();
-              return GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _cuisineController.text = cuisine;
-                  });
-                },
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? theme.colorScheme.primary.withValues(alpha: 0.15)
-                        : theme.colorScheme.surfaceContainerHighest
-                            .withValues(alpha: 0.5),
-                    borderRadius: BorderRadius.circular(20),
-                    border: isSelected
-                        ? Border.all(color: theme.colorScheme.primary, width: 1)
-                        : null,
-                  ),
-                  child: Text(
-                    cuisine,
-                    style: theme.textTheme.labelMedium?.copyWith(
+          SizedBox(
+            height: 36,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: cuisineOptions.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 8),
+              itemBuilder: (context, index) {
+                final option = cuisineOptions[index];
+                final isSelected =
+                    _cuisineController.text.toLowerCase() == option.value.toLowerCase();
+                return GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _cuisineController.text = isSelected ? "" : option.value;
+                    });
+                  },
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
                       color: isSelected
-                          ? theme.colorScheme.primary
-                          : theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                      fontWeight:
-                          isSelected ? FontWeight.w600 : FontWeight.normal,
+                          ? theme.colorScheme.primary.withValues(alpha: 0.15)
+                          : theme.colorScheme.surfaceContainerHighest
+                              .withValues(alpha: 0.5),
+                      borderRadius: BorderRadius.circular(20),
+                      border: isSelected
+                          ? Border.all(color: theme.colorScheme.primary, width: 1)
+                          : null,
+                    ),
+                    child: Text(
+                      option.getLabel(localizations),
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: isSelected
+                            ? theme.colorScheme.primary
+                            : theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                        fontWeight:
+                            isSelected ? FontWeight.w600 : FontWeight.normal,
+                      ),
                     ),
                   ),
-                ),
-              );
-            }).toList(),
+                );
+              },
+            ),
           ),
 
           const SizedBox(height: 20),
@@ -1194,6 +1188,34 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          SizedBox(
+            height: 40,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: recipeCategories.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 8),
+              itemBuilder: (context, index) {
+                final category = recipeCategories[index];
+                final isSelected = _tags.contains(category.tag);
+                return FilterChip(
+                  selected: isSelected,
+                  label: Text(category.getLabel(localizations)),
+                  avatar: Icon(category.icon, size: 18),
+                  visualDensity: VisualDensity.compact,
+                  onSelected: (selected) {
+                    setState(() {
+                      if (selected) {
+                        _tags.add(category.tag);
+                      } else {
+                        _tags.remove(category.tag);
+                      }
+                    });
+                  },
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 16),
           Row(
             children: [
               Expanded(
@@ -1223,12 +1245,15 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
               ),
             ],
           ),
-          if (_tags.isNotEmpty) ...[
+          // Only show custom (non-predefined) tags below the input
+          if (_tags.any((t) => !recipeCategories.any((c) => c.tag == t))) ...[
             const SizedBox(height: 16),
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: _tags.map((tag) {
+              children: _tags
+                  .where((t) => !recipeCategories.any((c) => c.tag == t))
+                  .map((tag) {
                 return Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 14, vertical: 8),

@@ -4,6 +4,8 @@ import "package:flutter/services.dart";
 import "../api/api_client.dart";
 import "../analytics/analytics_api.dart";
 import "../auth/auth_controller.dart";
+import "../constants/cuisines.dart";
+import "../constants/recipe_categories.dart";
 import "../localization/app_localizations.dart";
 import "../recipes/recipe_detail_screen.dart";
 import "../search/search_api.dart";
@@ -905,18 +907,75 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                   Builder(
                     builder: (context) {
                       final localizations = AppLocalizations.of(context);
+                      final theme = Theme.of(context);
                       return _FilterSection(
                         title: localizations?.cuisine ?? "Cuisine",
-                        child: TextField(
-                          controller: _cuisineController,
-                          decoration: InputDecoration(
-                            hintText: localizations?.cuisineExample ??
-                                "e.g., Italian, Mexican, Asian",
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            TextField(
+                              controller: _cuisineController,
+                              decoration: InputDecoration(
+                                hintText: localizations?.cuisineExample ??
+                                    "e.g., Italian, Mexican, Asian",
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                prefixIcon: const Icon(Icons.restaurant),
+                              ),
                             ),
-                            prefixIcon: const Icon(Icons.restaurant),
-                          ),
+                            const SizedBox(height: 8),
+                            SizedBox(
+                              height: 36,
+                              child: ListView.separated(
+                                scrollDirection: Axis.horizontal,
+                                itemCount: cuisineOptions.length,
+                                separatorBuilder: (_, __) => const SizedBox(width: 8),
+                                itemBuilder: (context, index) {
+                                  final option = cuisineOptions[index];
+                                  final isSelected = _cuisineController.text.toLowerCase() ==
+                                      option.value.toLowerCase();
+                                  return GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        _cuisineController.text =
+                                            isSelected ? "" : option.value;
+                                      });
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 12, vertical: 6),
+                                      decoration: BoxDecoration(
+                                        color: isSelected
+                                            ? theme.colorScheme.primary
+                                                .withValues(alpha: 0.15)
+                                            : theme.colorScheme.surfaceContainerHighest
+                                                .withValues(alpha: 0.5),
+                                        borderRadius: BorderRadius.circular(20),
+                                        border: isSelected
+                                            ? Border.all(
+                                                color: theme.colorScheme.primary,
+                                                width: 1)
+                                            : null,
+                                      ),
+                                      child: Text(
+                                        option.getLabel(localizations),
+                                        style: theme.textTheme.labelMedium?.copyWith(
+                                          color: isSelected
+                                              ? theme.colorScheme.primary
+                                              : theme.colorScheme.onSurface
+                                                  .withValues(alpha: 0.7),
+                                          fontWeight: isSelected
+                                              ? FontWeight.w600
+                                              : FontWeight.normal,
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ],
                         ),
                       );
                     },
@@ -930,6 +989,37 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            SizedBox(
+                              height: 40,
+                              child: ListView.separated(
+                                scrollDirection: Axis.horizontal,
+                                itemCount: recipeCategories.length,
+                                separatorBuilder: (_, __) =>
+                                    const SizedBox(width: 8),
+                                itemBuilder: (context, index) {
+                                  final category = recipeCategories[index];
+                                  final isSelected =
+                                      _selectedTags.contains(category.tag);
+                                  return FilterChip(
+                                    selected: isSelected,
+                                    label: Text(
+                                        category.getLabel(localizations)),
+                                    avatar: Icon(category.icon, size: 18),
+                                    visualDensity: VisualDensity.compact,
+                                    onSelected: (selected) {
+                                      setState(() {
+                                        if (selected) {
+                                          _selectedTags.add(category.tag);
+                                        } else {
+                                          _selectedTags.remove(category.tag);
+                                        }
+                                      });
+                                    },
+                                  );
+                                },
+                              ),
+                            ),
+                            const SizedBox(height: 12),
                             Row(
                               children: [
                                 Expanded(
@@ -959,12 +1049,17 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                                 ),
                               ],
                             ),
-                            if (_selectedTags.isNotEmpty) ...[
+                            // Only show custom (non-predefined) tags below
+                            if (_selectedTags.any((t) =>
+                                !recipeCategories.any((c) => c.tag == t))) ...[
                               const SizedBox(height: 12),
                               Wrap(
                                 spacing: 8,
                                 runSpacing: 8,
-                                children: _selectedTags.map((tag) {
+                                children: _selectedTags
+                                    .where((t) => !recipeCategories
+                                        .any((c) => c.tag == t))
+                                    .map((tag) {
                                   return Chip(
                                     label: Text(tag),
                                     onDeleted: () => _removeTag(tag),
