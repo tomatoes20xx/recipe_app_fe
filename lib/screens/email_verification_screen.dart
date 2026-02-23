@@ -21,6 +21,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
   final _tokenController = TextEditingController();
   bool _isVerifying = false;
   bool _isResending = false;
+  bool _isSigningOut = false;
   bool _emailSent = false;
 
   @override
@@ -62,6 +63,47 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
         setState(() {
           _isVerifying = false;
         });
+      }
+    }
+  }
+
+  Future<void> _signOut() async {
+    final localizations = AppLocalizations.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(localizations?.wrongEmailSignOutConfirmTitle ?? "Sign out?"),
+        content: Text(
+          localizations?.wrongEmailSignOutConfirmMessage ??
+              "You'll be signed out and can register again with the correct email.",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(localizations?.cancel ?? "Cancel"),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(localizations?.logout ?? "Sign out"),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      setState(() => _isSigningOut = true);
+      try {
+        await widget.auth.logout();
+        if (mounted) {
+          // Pop all pushed routes back to AuthGate (Route 0), which now
+          // renders LoginScreen because isLoggedIn is false.
+          Navigator.of(context).popUntil((route) => route.isFirst);
+        }
+      } catch (e) {
+        if (mounted) {
+          setState(() => _isSigningOut = false);
+          ErrorUtils.showError(context, e);
+        }
       }
     }
   }
@@ -179,6 +221,24 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                   textAlign: TextAlign.center,
                 ),
               ),
+            const Spacer(),
+            TextButton(
+              onPressed: (_isSigningOut || _isVerifying) ? null : _signOut,
+              child: _isSigningOut
+                  ? const SizedBox(
+                      height: 16,
+                      width: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Text(
+                      localizations?.wrongEmailSignOut ?? "Wrong email? Sign out",
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                        fontSize: 13,
+                      ),
+                    ),
+            ),
+            const SizedBox(height: 8),
           ],
         ),
       ),

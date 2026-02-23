@@ -429,6 +429,9 @@ class AppLocalizations {
   String get resendVerificationCode => _localizedValues[locale.languageCode]?["resendVerificationCode"] ?? "Resend Code";
   String get verificationEmailSent => _localizedValues[locale.languageCode]?["verificationEmailSent"] ?? "Verification email sent!";
   String get pleaseEnterVerificationCode => _localizedValues[locale.languageCode]?["pleaseEnterVerificationCode"] ?? "Please enter the verification code";
+  String get wrongEmailSignOut => _localizedValues[locale.languageCode]?["wrongEmailSignOut"] ?? "Wrong email? Sign out";
+  String get wrongEmailSignOutConfirmTitle => _localizedValues[locale.languageCode]?["wrongEmailSignOutConfirmTitle"] ?? "Sign out?";
+  String get wrongEmailSignOutConfirmMessage => _localizedValues[locale.languageCode]?["wrongEmailSignOutConfirmMessage"] ?? "You'll be signed out and can register again with the correct email.";
 
   // Password Reset
   String get resetPassword => _localizedValues[locale.languageCode]?["resetPassword"] ?? "Reset Password";
@@ -994,6 +997,9 @@ class AppLocalizations {
       "resendVerificationCode": "Resend Code",
       "verificationEmailSent": "Verification email sent!",
       "pleaseEnterVerificationCode": "Please enter the verification code",
+      "wrongEmailSignOut": "Wrong email? Sign out",
+      "wrongEmailSignOutConfirmTitle": "Sign out?",
+      "wrongEmailSignOutConfirmMessage": "You'll be signed out and can register again with the correct email.",
       "resetPassword": "Reset Password",
       "resetPasswordTitle": "Reset Your Password",
       "resetPasswordMessage": "Enter your email address and we'll send you a code to reset your password.",
@@ -1575,6 +1581,9 @@ class AppLocalizations {
       "resendVerificationCode": "კოდის ხელახლა გაგზავნა",
       "verificationEmailSent": "დადასტურების ელფოსტა გაიგზავნა!",
       "pleaseEnterVerificationCode": "გთხოვთ შეიყვანოთ დადასტურების კოდი",
+      "wrongEmailSignOut": "არასწორი ელფოსტა? გამოსვლა",
+      "wrongEmailSignOutConfirmTitle": "გამოსვლა?",
+      "wrongEmailSignOutConfirmMessage": "თქვენ გამოხვალთ სისტემიდან და შეძლებთ ხელახლა დარეგისტრირებას სწორი ელფოსტით.",
       "resetPassword": "პაროლის აღდგენა",
       "resetPasswordTitle": "აღადგინეთ თქვენი პაროლი",
       "resetPasswordMessage": "შეიყვანეთ თქვენი ელფოსტის მისამართი და ჩვენ გამოგიგზავნით კოდს პაროლის აღსადგენად.",
