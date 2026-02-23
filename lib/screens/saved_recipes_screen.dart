@@ -2,17 +2,18 @@ import "package:flutter/material.dart";
 
 import "../api/api_client.dart";
 import "../auth/auth_controller.dart";
-import "../config.dart";
-import "../feed/feed_api.dart";
-import "../feed/feed_models.dart";
+import "../collections/add_to_collection_bottom_sheet.dart";
+import "../collections/collection_api.dart";
+import "../collections/collections_controller.dart";
 import "../feed/saved_recipes_controller.dart";
 import "../localization/app_localizations.dart";
 import "../recipes/recipe_detail_screen.dart";
 import "../shopping/shopping_list_controller.dart";
 import "../users/user_api.dart";
-import "../utils/ui_utils.dart";
+import "../utils/error_utils.dart";
+import "../widgets/common/recipe_grid_card.dart";
 import "../widgets/empty_state_widget.dart";
-import "../widgets/engagement_stat_widget.dart";
+import "collection_detail_screen.dart";
 
 class SavedRecipesScreen extends StatefulWidget {
   const SavedRecipesScreen({
@@ -30,27 +31,39 @@ class SavedRecipesScreen extends StatefulWidget {
   State<SavedRecipesScreen> createState() => _SavedRecipesScreenState();
 }
 
-class _SavedRecipesScreenState extends State<SavedRecipesScreen> {
-  late final SavedRecipesController controller;
-  late final FeedApi feedApi;
-  final ScrollController _scrollController = ScrollController();
+class _SavedRecipesScreenState extends State<SavedRecipesScreen>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tabController;
+  late final SavedRecipesController _savedController;
+  late final CollectionsController _collectionsController;
+  late final CollectionApi _collectionApi;
+  final ScrollController _savedScrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
-    controller = SavedRecipesController(
+    _tabController = TabController(length: 2, vsync: this);
+    _savedController = SavedRecipesController(
       userApi: UserApi(widget.apiClient),
     );
-    feedApi = FeedApi(widget.apiClient);
-    controller.addListener(_onChanged);
-    _scrollController.addListener(() {
-      if (_scrollController.hasClients &&
-          _scrollController.position.pixels >
-              _scrollController.position.maxScrollExtent - 300) {
-        controller.loadMore();
+    _collectionApi = CollectionApi(widget.apiClient);
+    _collectionsController = CollectionsController(
+      collectionApi: _collectionApi,
+    );
+
+    _savedController.addListener(_onChanged);
+    _collectionsController.addListener(_onChanged);
+
+    _savedScrollController.addListener(() {
+      if (_savedScrollController.hasClients &&
+          _savedScrollController.position.pixels >
+              _savedScrollController.position.maxScrollExtent - 300) {
+        _savedController.loadMore();
       }
     });
-    controller.loadInitial();
+
+    _savedController.loadInitial();
+    _collectionsController.loadCollections();
   }
 
   void _onChanged() {
@@ -59,39 +72,168 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen> {
 
   @override
   void dispose() {
-    _scrollController.dispose();
-    controller.removeListener(_onChanged);
-    controller.dispose();
+    _tabController.dispose();
+    _savedScrollController.dispose();
+    _savedController.removeListener(_onChanged);
+    _savedController.dispose();
+    _collectionsController.removeListener(_onChanged);
+    _collectionsController.dispose();
     super.dispose();
   }
 
-  String buildImageUrl(String relativeUrl) {
-    if (relativeUrl.startsWith('http://') || relativeUrl.startsWith('https://')) {
-      return relativeUrl;
-    }
-    return "${Config.apiBaseUrl}$relativeUrl";
-  }
+  Future<void> _showCreateCollectionDialog() async {
+    final localizations = AppLocalizations.of(context);
+    final nameController = TextEditingController();
 
+    final name = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title:
+            Text(localizations?.createCollection ?? "Create Collection"),
+        content: TextField(
+          controller: nameController,
+          autofocus: true,
+          decoration: InputDecoration(
+            hintText: localizations?.enterCollectionName ??
+                "Enter collection name",
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          textCapitalization: TextCapitalization.sentences,
+          onSubmitted: (value) {
+            if (value.trim().isNotEmpty) {
+              Navigator.of(dialogContext).pop(value.trim());
+            }
+          },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: Text(localizations?.cancel ?? "Cancel"),
+          ),
+          FilledButton(
+            onPressed: () {
+              final value = nameController.text.trim();
+              if (value.isNotEmpty) {
+                Navigator.of(dialogContext).pop(value);
+              }
+            },
+            child: Text(localizations?.create ?? "Create"),
+          ),
+        ],
+      ),
+    );
+
+    if (name != null && name.isNotEmpty && mounted) {
+      try {
+        await _collectionsController.createCollection(name);
+        if (mounted) {
+          ErrorUtils.showSuccess(
+            context,
+            localizations?.collectionCreated ?? "Collection created",
+          );
+        }
+      } catch (e) {
+        if (mounted) ErrorUtils.showError(context, e);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+
     return Scaffold(
       appBar: AppBar(
-        title: Builder(
-          builder: (context) {
-            final localizations = AppLocalizations.of(context);
-            return Text(localizations?.savedRecipes ?? "Saved Recipes");
-          },
+        title: Text(localizations?.savedRecipes ?? "Saved Recipes"),
+        bottom: TabBar(
+          controller: _tabController,
+          tabs: [
+            Tab(text: localizations?.allSaved ?? "All"),
+            Tab(text: localizations?.collections ?? "Collections"),
+          ],
         ),
       ),
-      body: RefreshIndicator(
-        onRefresh: controller.refresh,
-        child: _buildBody(),
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          _AllSavedTab(
+            controller: _savedController,
+            scrollController: _savedScrollController,
+            apiClient: widget.apiClient,
+            auth: widget.auth,
+            shoppingListController: widget.shoppingListController,
+          ),
+          _CollectionsTab(
+            controller: _collectionsController,
+            collectionApi: _collectionApi,
+            apiClient: widget.apiClient,
+            auth: widget.auth,
+            shoppingListController: widget.shoppingListController,
+            onCreateCollection: _showCreateCollectionDialog,
+          ),
+        ],
+      ),
+      floatingActionButton: AnimatedBuilder(
+        animation: _tabController,
+        builder: (context, child) {
+          if (_tabController.index != 1) return const SizedBox.shrink();
+          return FloatingActionButton(
+            onPressed: _showCreateCollectionDialog,
+            backgroundColor: theme.colorScheme.primary,
+            foregroundColor: theme.colorScheme.onPrimary,
+            child: const Icon(Icons.add),
+          );
+        },
       ),
     );
   }
+}
 
-  Widget _buildBody() {
+// --- All Saved Tab ---
+
+class _AllSavedTab extends StatefulWidget {
+  const _AllSavedTab({
+    required this.controller,
+    required this.scrollController,
+    required this.apiClient,
+    required this.auth,
+    required this.shoppingListController,
+  });
+
+  final SavedRecipesController controller;
+  final ScrollController scrollController;
+  final ApiClient apiClient;
+  final AuthController auth;
+  final ShoppingListController shoppingListController;
+
+  @override
+  State<_AllSavedTab> createState() => _AllSavedTabState();
+}
+
+class _AllSavedTabState extends State<_AllSavedTab>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  Future<void> _showCollectionSheet(String recipeId) async {
+    final changed = await showAddToCollectionBottomSheet(
+      context: context,
+      apiClient: widget.apiClient,
+      recipeId: recipeId,
+    );
+    if (changed && mounted) {
+      widget.controller.refresh();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    final controller = widget.controller;
+
     if (controller.isLoading && controller.items.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -104,183 +246,193 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen> {
     }
 
     if (controller.items.isEmpty) {
-      return Builder(
-        builder: (context) {
-          final localizations = AppLocalizations.of(context);
-          return EmptyStateWidget(
-            icon: Icons.bookmark_border,
-            title: localizations?.noSavedRecipes ?? "No saved recipes",
-            description: localizations?.startBookmarkingRecipes ?? "Start bookmarking recipes to save them here",
-          );
-        },
+      final localizations = AppLocalizations.of(context);
+      return EmptyStateWidget(
+        icon: Icons.bookmark_border,
+        title: localizations?.noSavedRecipes ?? "No saved recipes",
+        description: localizations?.startBookmarkingRecipes ??
+            "Start bookmarking recipes to save them here",
       );
     }
 
-    return CustomScrollView(
-      controller: _scrollController,
-      physics: const AlwaysScrollableScrollPhysics(),
-      slivers: [
-        SliverPadding(
-          padding: const EdgeInsets.all(16),
-          sliver: SliverGrid(
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 3,
-              crossAxisSpacing: 2,
-              mainAxisSpacing: 2,
-              childAspectRatio: 0.75,
-            ),
-            delegate: SliverChildBuilderDelegate(
-              (context, index) {
-                if (index >= controller.items.length) {
-                  return Container(
-                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                    child: const Center(child: CircularProgressIndicator()),
-                  );
-                }
+    return RefreshIndicator(
+      onRefresh: controller.refresh,
+      child: CustomScrollView(
+        controller: widget.scrollController,
+        physics: const AlwaysScrollableScrollPhysics(),
+        slivers: [
+          SliverPadding(
+            padding: const EdgeInsets.all(16),
+            sliver: SliverGrid(
+              gridDelegate:
+                  const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3,
+                crossAxisSpacing: 2,
+                mainAxisSpacing: 2,
+                childAspectRatio: 0.75,
+              ),
+              delegate: SliverChildBuilderDelegate(
+                (context, index) {
+                  if (index >= controller.items.length) {
+                    return Container(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .surfaceContainerHighest,
+                      child: const Center(
+                          child: CircularProgressIndicator()),
+                    );
+                  }
 
-                final recipe = controller.items[index];
-                return RepaintBoundary(
-                  child: _RecipeGridCard(
-                    recipe: recipe,
-                    onTap: () async {
-                      await Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => RecipeDetailScreen(
-                            recipeId: recipe.id,
-                            apiClient: widget.apiClient,
-                            auth: widget.auth,
-                            shoppingListController: widget.shoppingListController,
+                  final recipe = controller.items[index];
+                  return RepaintBoundary(
+                    child: RecipeGridCard(
+                      recipe: recipe,
+                      onTap: () async {
+                        await Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => RecipeDetailScreen(
+                              recipeId: recipe.id,
+                              apiClient: widget.apiClient,
+                              auth: widget.auth,
+                              shoppingListController:
+                                  widget.shoppingListController,
+                            ),
                           ),
-                        ),
-                      );
-                      // Refresh if recipe was unbookmarked from detail screen
-                      if (mounted) {
-                        controller.refresh();
-                      }
-                    },
-                    buildImageUrl: buildImageUrl,
-                  ),
-                );
-              },
-              childCount: controller.items.length + (controller.isLoadingMore ? 1 : 0),
+                        );
+                        if (mounted) {
+                          controller.refresh();
+                        }
+                      },
+                      onLongPress: () =>
+                          _showCollectionSheet(recipe.id),
+                    ),
+                  );
+                },
+                childCount: controller.items.length +
+                    (controller.isLoadingMore ? 1 : 0),
+              ),
             ),
           ),
-        ),
-        if (controller.isLoadingMore)
-          const SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.all(16),
-              child: Center(child: CircularProgressIndicator()),
+          if (controller.isLoadingMore)
+            const SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.all(16),
+                child: Center(child: CircularProgressIndicator()),
+              ),
             ),
-          ),
-      ],
+        ],
+      ),
     );
   }
 }
 
-class _RecipeGridCard extends StatelessWidget {
-  const _RecipeGridCard({
-    required this.recipe,
-    required this.onTap,
-    required this.buildImageUrl,
+// --- Collections Tab ---
+
+class _CollectionsTab extends StatefulWidget {
+  const _CollectionsTab({
+    required this.controller,
+    required this.collectionApi,
+    required this.apiClient,
+    required this.auth,
+    required this.shoppingListController,
+    required this.onCreateCollection,
   });
 
-  final FeedItem recipe;
-  final VoidCallback onTap;
-  final String Function(String) buildImageUrl;
+  final CollectionsController controller;
+  final CollectionApi collectionApi;
+  final ApiClient apiClient;
+  final AuthController auth;
+  final ShoppingListController shoppingListController;
+  final VoidCallback onCreateCollection;
+
+  @override
+  State<_CollectionsTab> createState() => _CollectionsTabState();
+}
+
+class _CollectionsTabState extends State<_CollectionsTab>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   Widget build(BuildContext context) {
-    final firstImage = recipe.images.isNotEmpty ? recipe.images.first : null;
+    super.build(context);
+    final controller = widget.controller;
+    final localizations = AppLocalizations.of(context);
+    final theme = Theme.of(context);
 
-    return GestureDetector(
-      onTap: onTap,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          // Background image
-          if (firstImage != null)
-            RecipeImageWidget(
-              imageUrl: firstImage.url,
-              width: double.infinity,
-              height: double.infinity,
-              fit: BoxFit.cover,
-              cacheWidth: 400,
-              cacheHeight: 400,
-            )
-          else
-            const RecipeFallbackImage(
-              width: double.infinity,
-              height: double.infinity,
-              iconSize: 40,
-            ),
-          // Gradient overlay for better text readability
-          Positioned.fill(
-            child: Container(
+    if (controller.isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (controller.error != null) {
+      return ErrorStateWidget(
+        message: controller.error!,
+        onRetry: () => controller.loadCollections(),
+      );
+    }
+
+    if (controller.items.isEmpty) {
+      return EmptyStateWidget(
+        icon: Icons.collections_bookmark_outlined,
+        title: localizations?.noCollections ?? "No collections yet",
+        description: localizations?.createFirstCollection ??
+            "Create your first collection to organize your saved recipes",
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: controller.loadCollections,
+      child: ListView.builder(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        itemCount: controller.items.length,
+        itemBuilder: (context, index) {
+          final collection = controller.items[index];
+          return ListTile(
+            leading: Container(
+              width: 48,
+              height: 48,
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.transparent,
-                    Colors.black.withValues(alpha: 0.7),
-                  ],
-                  stops: const [0.4, 1.0],
-                ),
+                color: theme.colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                Icons.collections_bookmark_outlined,
+                color:
+                    theme.colorScheme.onSurface.withValues(alpha: 0.5),
               ),
             ),
-          ),
-          // Overlay content
-          Positioned(
-            left: 6,
-            right: 6,
-            bottom: 6,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Title
-                Text(
-                  recipe.title,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    shadows: [
-                      Shadow(
-                        color: Colors.black54,
-                        blurRadius: 4,
-                      ),
-                    ],
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 4),
-                // Stats row
-                Row(
-                  children: [
-                    EngagementStatWidget(
-                      icon: Icons.favorite,
-                      value: recipe.likes,
-                      size: EngagementStatSize.small,
-                      style: EngagementStatStyle.overlay,
-                      showShadows: true,
-                    ),
-                    const SizedBox(width: 8),
-                    EngagementStatWidget(
-                      icon: Icons.comment_outlined,
-                      value: recipe.comments,
-                      size: EngagementStatSize.small,
-                      style: EngagementStatStyle.overlay,
-                      showShadows: true,
-                    ),
-                  ],
-                ),
-              ],
+            title: Text(
+              collection.name,
+              style: const TextStyle(fontWeight: FontWeight.w600),
             ),
-          ),
-        ],
+            subtitle: Text(
+              localizations?.nRecipes(collection.recipeCount) ??
+                  "${collection.recipeCount} recipes",
+              style: theme.textTheme.bodySmall,
+            ),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () async {
+              await Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => CollectionDetailScreen(
+                    collection: collection,
+                    apiClient: widget.apiClient,
+                    auth: widget.auth,
+                    shoppingListController:
+                        widget.shoppingListController,
+                  ),
+                ),
+              );
+              // Refresh collections list (recipe counts may have changed,
+              // or collection may have been deleted/renamed)
+              if (mounted) {
+                controller.loadCollections();
+              }
+            },
+          );
+        },
       ),
     );
   }

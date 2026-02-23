@@ -9,10 +9,12 @@ class RecipeGridCard extends StatelessWidget {
     super.key,
     required this.recipe,
     required this.onTap,
+    this.onLongPress,
   });
 
   final FeedItem recipe;
   final VoidCallback onTap;
+  final VoidCallback? onLongPress;
 
   @override
   Widget build(BuildContext context) {
@@ -20,6 +22,7 @@ class RecipeGridCard extends StatelessWidget {
 
     return GestureDetector(
       onTap: onTap,
+      onLongPress: onLongPress,
       child: Stack(
         fit: StackFit.expand,
         children: [

@@ -2,6 +2,7 @@ import "package:flutter/material.dart";
 
 import "../api/api_client.dart";
 import "../auth/auth_controller.dart";
+import "../collections/add_to_collection_bottom_sheet.dart";
 import "../constants/cuisines.dart";
 import "../constants/recipe_categories.dart";
 import "../localization/app_localizations.dart";
@@ -192,6 +193,28 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
       if (mounted) {
         setState(() => _isBookmarking = false);
       }
+    }
+  }
+
+  Future<void> _onBookmarkLongPress() async {
+    final r = c.recipe;
+    if (r == null) return;
+    if (!(widget.auth?.isLoggedIn ?? false)) {
+      ErrorUtils.showError(context, "Please log in to use collections");
+      return;
+    }
+    final added = await showAddToCollectionBottomSheet(
+      context: context,
+      apiClient: widget.apiClient,
+      recipeId: r.id,
+    );
+    // BE auto-bookmarks when adding to a collection, so update local state
+    if (added && mounted && !(_viewerHasBookmarked ?? false)) {
+      setState(() {
+        _viewerHasBookmarked = true;
+        final base = _localBookmarks ?? r.counts.bookmarks;
+        _localBookmarks = base + 1;
+      });
     }
   }
 
@@ -456,6 +479,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                                     onLikeTap: _toggleLike,
                                     onLikeLongPress: r.likedBy != null ? _onLikeLongPress : null,
                                     onBookmarkTap: _toggleBookmark,
+                                    onBookmarkLongPress: _onBookmarkLongPress,
                                     onCommentTap: () {
                                       showCommentsBottomSheet(
                                         context: context,
@@ -647,6 +671,7 @@ class _ContentBody extends StatelessWidget {
     required this.onLikeTap,
     this.onLikeLongPress,
     required this.onBookmarkTap,
+    this.onBookmarkLongPress,
     required this.onCommentTap,
     required this.checkedIngredients,
     required this.selectedForShopping,
@@ -669,6 +694,7 @@ class _ContentBody extends StatelessWidget {
   final VoidCallback onLikeTap;
   final VoidCallback? onLikeLongPress;
   final VoidCallback onBookmarkTap;
+  final VoidCallback? onBookmarkLongPress;
   final VoidCallback onCommentTap;
   final Set<String> checkedIngredients;
   final Set<String> selectedForShopping;
@@ -734,6 +760,7 @@ class _ContentBody extends StatelessWidget {
             onLikeTap: onLikeTap,
             onLikeLongPress: onLikeLongPress,
             onBookmarkTap: onBookmarkTap,
+            onBookmarkLongPress: onBookmarkLongPress,
             onCommentTap: onCommentTap,
             isOwner: isOwner,
             shareCount: shareCount,
@@ -910,6 +937,7 @@ class _EngagementBar extends StatelessWidget {
     required this.onLikeTap,
     this.onLikeLongPress,
     required this.onBookmarkTap,
+    this.onBookmarkLongPress,
     required this.onCommentTap,
     required this.isOwner,
     required this.shareCount,
@@ -924,6 +952,7 @@ class _EngagementBar extends StatelessWidget {
   final VoidCallback onLikeTap;
   final VoidCallback? onLikeLongPress;
   final VoidCallback onBookmarkTap;
+  final VoidCallback? onBookmarkLongPress;
   final VoidCallback onCommentTap;
   final bool isOwner;
   final int shareCount;
@@ -966,6 +995,7 @@ class _EngagementBar extends StatelessWidget {
               isActive: viewerHasBookmarked,
               isLoading: isBookmarking,
               onTap: onBookmarkTap,
+              onLongPress: onBookmarkLongPress,
               activeColor: const Color(0xFFE53935),
             ),
           ),

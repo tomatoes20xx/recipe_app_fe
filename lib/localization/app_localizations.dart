@@ -227,6 +227,43 @@ class AppLocalizations {
   String get ingredients => _localizedValues[locale.languageCode]?["ingredients"] ?? "Ingredients";
   String get cookingTimeMinutes => _localizedValues[locale.languageCode]?["cookingTimeMinutes"] ?? "Cooking Time (minutes)";
   String get minuteAbbreviation => _localizedValues[locale.languageCode]?["minuteAbbreviation"] ?? "min";
+
+  // Collections
+  String get collections => _localizedValues[locale.languageCode]?["collections"] ?? "Collections";
+  String get allSaved => _localizedValues[locale.languageCode]?["allSaved"] ?? "All";
+  String get createCollection => _localizedValues[locale.languageCode]?["createCollection"] ?? "Create Collection";
+  String get collectionName => _localizedValues[locale.languageCode]?["collectionName"] ?? "Collection name";
+  String get enterCollectionName => _localizedValues[locale.languageCode]?["enterCollectionName"] ?? "Enter collection name";
+  String get renameCollection => _localizedValues[locale.languageCode]?["renameCollection"] ?? "Rename Collection";
+  String get deleteCollection => _localizedValues[locale.languageCode]?["deleteCollection"] ?? "Delete Collection";
+  String get deleteCollectionConfirm => _localizedValues[locale.languageCode]?["deleteCollectionConfirm"] ?? "Are you sure you want to delete this collection? Recipes will become regular bookmarks.";
+  String get collectionCreated => _localizedValues[locale.languageCode]?["collectionCreated"] ?? "Collection created";
+  String get collectionRenamed => _localizedValues[locale.languageCode]?["collectionRenamed"] ?? "Collection renamed";
+  String get collectionDeleted => _localizedValues[locale.languageCode]?["collectionDeleted"] ?? "Collection deleted";
+  String get addToCollection => _localizedValues[locale.languageCode]?["addToCollection"] ?? "Add to Collection";
+  String get recipeAddedToCollection => _localizedValues[locale.languageCode]?["recipeAddedToCollection"] ?? "Added to collection";
+  String get recipeRemovedFromCollection => _localizedValues[locale.languageCode]?["recipeRemovedFromCollection"] ?? "Removed from collection";
+  String get noCollections => _localizedValues[locale.languageCode]?["noCollections"] ?? "No collections yet";
+  String get createFirstCollection => _localizedValues[locale.languageCode]?["createFirstCollection"] ?? "Create your first collection to organize your saved recipes";
+  String get emptyCollection => _localizedValues[locale.languageCode]?["emptyCollection"] ?? "No recipes in this collection";
+  String get addRecipesToCollection => _localizedValues[locale.languageCode]?["addRecipesToCollection"] ?? "Add recipes to this collection by bookmarking them";
+  String nRecipes(int count) => count == 1
+      ? (_localizedValues[locale.languageCode]?["nRecipesSingular"]?.replaceAll("{count}", count.toString()) ?? "$count recipe")
+      : (_localizedValues[locale.languageCode]?["nRecipesPlural"]?.replaceAll("{count}", count.toString()) ?? "$count recipes");
+  String get createNew => _localizedValues[locale.languageCode]?["createNew"] ?? "Create new";
+  String get create => _localizedValues[locale.languageCode]?["create"] ?? "Create";
+  String get removeFromCollection => _localizedValues[locale.languageCode]?["removeFromCollection"] ?? "Remove from Collection";
+  String removeRecipeFromCollectionConfirm(String title) =>
+      _localizedValues[locale.languageCode]?["removeRecipeFromCollectionConfirm"]?.replaceAll("{title}", title) ?? "Remove \"$title\" from this collection? This will fully unbookmark the recipe.";
+  String get removeBookmark => _localizedValues[locale.languageCode]?["removeBookmark"] ?? "Remove Bookmark";
+  String removeBookmarkConfirm(String title) =>
+      _localizedValues[locale.languageCode]?["removeBookmarkConfirm"]?.replaceAll("{title}", title) ?? "Remove \"$title\" from saved recipes?";
+  String get bookmarkRemoved => _localizedValues[locale.languageCode]?["bookmarkRemoved"] ?? "Removed from saved recipes";
+  String get movedToCollection => _localizedValues[locale.languageCode]?["movedToCollection"] ?? "Moved to collection";
+  String get regularBookmarks => _localizedValues[locale.languageCode]?["regularBookmarks"] ?? "Regular Bookmarks";
+  String get movedToBookmarks => _localizedValues[locale.languageCode]?["movedToBookmarks"] ?? "Moved to bookmarks";
+  String get recipeAlreadyInCollection => _localizedValues[locale.languageCode]?["recipeAlreadyInCollection"] ?? "Recipe is already in a collection. It will be moved.";
+
   String get min => _localizedValues[locale.languageCode]?["min"] ?? "Min";
   String get max => _localizedValues[locale.languageCode]?["max"] ?? "Max";
   String get quantity => _localizedValues[locale.languageCode]?["quantity"] ?? "Quantity";
@@ -884,6 +921,37 @@ class AppLocalizations {
       "ingredients": "Ingredients",
       "cookingTimeMinutes": "Cooking Time (minutes)",
       "minuteAbbreviation": "min",
+      "collections": "Collections",
+      "allSaved": "All",
+      "createCollection": "Create Collection",
+      "collectionName": "Collection name",
+      "enterCollectionName": "Enter collection name",
+      "renameCollection": "Rename Collection",
+      "deleteCollection": "Delete Collection",
+      "deleteCollectionConfirm": "Are you sure you want to delete this collection? Recipes will become regular bookmarks.",
+      "collectionCreated": "Collection created",
+      "collectionRenamed": "Collection renamed",
+      "collectionDeleted": "Collection deleted",
+      "addToCollection": "Add to Collection",
+      "recipeAddedToCollection": "Added to collection",
+      "recipeRemovedFromCollection": "Removed from collection",
+      "noCollections": "No collections yet",
+      "createFirstCollection": "Create your first collection to organize your saved recipes",
+      "emptyCollection": "No recipes in this collection",
+      "addRecipesToCollection": "Add recipes to this collection by bookmarking them",
+      "nRecipesSingular": "{count} recipe",
+      "nRecipesPlural": "{count} recipes",
+      "createNew": "Create new",
+      "create": "Create",
+      "removeFromCollection": "Remove from Collection",
+      "removeRecipeFromCollectionConfirm": "Remove \"{title}\" from this collection? This will fully unbookmark the recipe.",
+      "removeBookmark": "Remove Bookmark",
+      "removeBookmarkConfirm": "Remove \"{title}\" from saved recipes?",
+      "bookmarkRemoved": "Removed from saved recipes",
+      "movedToCollection": "Moved to collection",
+      "regularBookmarks": "Regular Bookmarks",
+      "movedToBookmarks": "Moved to bookmarks",
+      "recipeAlreadyInCollection": "Recipe is already in a collection. It will be moved.",
       "min": "Min",
       "max": "Max",
       "quantity": "Quantity",
@@ -1496,6 +1564,37 @@ class AppLocalizations {
       "ingredients": "ინგრედიენტები",
       "cookingTimeMinutes": "მომზადების დრო (წუთები)",
       "minuteAbbreviation": "წთ",
+      "collections": "კოლექციები",
+      "allSaved": "ყველა",
+      "createCollection": "კოლექციის შექმნა",
+      "collectionName": "კოლექციის სახელი",
+      "enterCollectionName": "შეიყვანეთ კოლექციის სახელი",
+      "renameCollection": "კოლექციის გადარქმევა",
+      "deleteCollection": "კოლექციის წაშლა",
+      "deleteCollectionConfirm": "ნამდვილად გსურთ ამ კოლექციის წაშლა? რეცეპტები ჩვეულებრივ სანიშნებად გადაიქცევა.",
+      "collectionCreated": "კოლექცია შეიქმნა",
+      "collectionRenamed": "კოლექცია გადარქმევა",
+      "collectionDeleted": "კოლექცია წაიშალა",
+      "addToCollection": "კოლექციაში დამატება",
+      "recipeAddedToCollection": "კოლექციაში დაემატა",
+      "recipeRemovedFromCollection": "კოლექციიდან წაიშალა",
+      "noCollections": "კოლექციები ჯერ არ არის",
+      "createFirstCollection": "შექმენით პირველი კოლექცია შენახული რეცეპტების ორგანიზებისთვის",
+      "emptyCollection": "ამ კოლექციაში რეცეპტები არ არის",
+      "addRecipesToCollection": "დაამატეთ რეცეპტები ამ კოლექციაში სანიშნის დაჭერით",
+      "nRecipesSingular": "{count} რეცეპტი",
+      "nRecipesPlural": "{count} რეცეპტი",
+      "createNew": "ახლის შექმნა",
+      "create": "შექმნა",
+      "removeFromCollection": "კოლექციიდან წაშლა",
+      "removeRecipeFromCollectionConfirm": "წაშალოთ \"{title}\" ამ კოლექციიდან? რეცეპტი სრულად წაიშლება სანიშნებიდან.",
+      "removeBookmark": "სანიშნის წაშლა",
+      "removeBookmarkConfirm": "წაშალოთ \"{title}\" შენახული რეცეპტებიდან?",
+      "bookmarkRemoved": "შენახული რეცეპტებიდან წაიშალა",
+      "movedToCollection": "კოლექციაში გადავიდა",
+      "regularBookmarks": "ჩვეულებრივი სანიშნები",
+      "movedToBookmarks": "სანიშნებში გადავიდა",
+      "recipeAlreadyInCollection": "რეცეპტი უკვე კოლექციაშია. ის გადავა ახალ კოლექციაში.",
       "min": "მინ",
       "max": "მაქს",
       "quantity": "რაოდენობა",
