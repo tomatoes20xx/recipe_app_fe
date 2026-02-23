@@ -94,6 +94,7 @@ app.*.map.json
 .aider*
 .copilot/
 CLAUDE.md
+ROADMAP.md
 
 # Environment files
 .env
