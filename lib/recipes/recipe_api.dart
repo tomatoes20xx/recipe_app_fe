@@ -350,11 +350,13 @@ class RecipeApi {
     String period = "all_time",
     int limit = 20,
     String? cursor,
+    List<String>? tags,
   }) async {
     final queryParams = <String, String>{
       "limit": limit.toString(),
       "period": period,
       if (cursor != null) "cursor": cursor,
+      if (tags != null && tags.isNotEmpty) "tags": tags.join(","),
     };
 
     // auth: true so viewer flags work; if no token, header won't be set
@@ -371,11 +373,13 @@ class RecipeApi {
     int days = 7,
     int limit = 20,
     String? cursor,
+    List<String>? tags,
   }) async {
     final queryParams = <String, String>{
       "limit": limit.toString(),
       "days": days.toString(),
       if (cursor != null) "cursor": cursor,
+      if (tags != null && tags.isNotEmpty) "tags": tags.join(","),
     };
 
     // auth: true so viewer flags work; if no token, header won't be set

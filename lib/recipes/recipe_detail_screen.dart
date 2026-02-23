@@ -2,6 +2,8 @@ import "package:flutter/material.dart";
 
 import "../api/api_client.dart";
 import "../auth/auth_controller.dart";
+import "../constants/cuisines.dart";
+import "../constants/recipe_categories.dart";
 import "../localization/app_localizations.dart";
 import "../screens/create_recipe_screen.dart";
 import "../screens/profile_screen.dart";
@@ -793,13 +795,27 @@ class _QuickInfoBar extends StatelessWidget {
   final int? cookingTimeMax;
   final String? difficulty;
 
-  String _formatCookingTime() {
+  String _formatCookingTime(AppLocalizations? l) {
+    final unit = l?.minuteAbbreviation ?? "min";
     if (cookingTimeMin != null && cookingTimeMax != null) {
-      return "$cookingTimeMin-$cookingTimeMax min";
+      return "$cookingTimeMin-$cookingTimeMax $unit";
     } else if (cookingTimeMin != null) {
-      return "$cookingTimeMin+ min";
+      return "$cookingTimeMin+ $unit";
     } else {
-      return "Up to $cookingTimeMax min";
+      return "$cookingTimeMax $unit";
+    }
+  }
+
+  String _getLocalizedDifficulty(AppLocalizations? l) {
+    switch (difficulty?.toLowerCase()) {
+      case "easy":
+        return l?.easy ?? "Easy";
+      case "medium":
+        return l?.medium ?? "Medium";
+      case "hard":
+        return l?.hard ?? "Hard";
+      default:
+        return difficulty!;
     }
   }
 
@@ -818,6 +834,7 @@ class _QuickInfoBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context);
     return Wrap(
       spacing: 12,
       runSpacing: 8,
@@ -825,12 +842,12 @@ class _QuickInfoBar extends StatelessWidget {
         if (cookingTimeMin != null || cookingTimeMax != null)
           _InfoChip(
             icon: Icons.timer_outlined,
-            label: _formatCookingTime(),
+            label: _formatCookingTime(localizations),
           ),
         if (difficulty != null)
           _InfoChip(
             icon: Icons.signal_cellular_alt,
-            label: difficulty!,
+            label: _getLocalizedDifficulty(localizations),
             color: _getDifficultyColor(context),
           ),
       ],
@@ -1268,8 +1285,10 @@ class _UserInfoRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final date = formatDate(context, r.createdAt);
-    final cuisine = r.cuisine;
-    final hasCuisine = cuisine != null && cuisine.trim().isNotEmpty;
+    final localizations = AppLocalizations.of(context);
+    final rawCuisine = r.cuisine;
+    final hasCuisine = rawCuisine != null && rawCuisine.trim().isNotEmpty;
+    final cuisine = hasCuisine ? getLocalizedCuisine(rawCuisine, localizations) : null;
 
     return Row(
       children: [
@@ -1339,6 +1358,11 @@ class _HashtagPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context);
+    // Check if this tag matches a predefined category and use localized label
+    final category = recipeCategories.where((c) => c.tag == tag).firstOrNull;
+    final displayLabel = category != null ? category.getLabel(localizations) : tag;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
@@ -1350,7 +1374,7 @@ class _HashtagPill extends StatelessWidget {
         ),
       ),
       child: Text(
-        "#$tag",
+        "#$displayLabel",
         style: TextStyle(
           color: Theme.of(context).colorScheme.primary,
           fontSize: 13,

@@ -22,6 +22,7 @@ class FeedController extends ChangeNotifier {
   String scope = "global"; // "global", "following", "popular", "trending"
   String sort = "recent";  // or "top"
   int windowDays = 7;
+  String? selectedCategory; // tag to filter by (null = all)
   
   // For popular recipes
   String popularPeriod = "all_time"; // "all_time", "30d", "7d"
@@ -46,6 +47,7 @@ class FeedController extends ChangeNotifier {
           period: popularPeriod,
           limit: limit,
           cursor: null,
+          tags: selectedCategory != null ? [selectedCategory!] : null,
         );
         final rawItems = (res["items"] as List<dynamic>? ?? []);
         items.addAll(
@@ -60,6 +62,7 @@ class FeedController extends ChangeNotifier {
           days: trendingDays,
           limit: limit,
           cursor: null,
+          tags: selectedCategory != null ? [selectedCategory!] : null,
         );
         final rawItems = (res["items"] as List<dynamic>? ?? []);
         items.addAll(
@@ -73,6 +76,7 @@ class FeedController extends ChangeNotifier {
           scope: scope,
           sort: sort,
           windowDays: windowDays,
+          tags: selectedCategory != null ? [selectedCategory!] : null,
         );
         items.addAll(res.items);
         nextCursor = res.nextCursor;
@@ -106,6 +110,7 @@ class FeedController extends ChangeNotifier {
           period: popularPeriod,
           limit: limit,
           cursor: nextCursor,
+          tags: selectedCategory != null ? [selectedCategory!] : null,
         );
         final rawItems = (res["items"] as List<dynamic>? ?? []);
         items.addAll(
@@ -120,6 +125,7 @@ class FeedController extends ChangeNotifier {
           days: trendingDays,
           limit: limit,
           cursor: nextCursor,
+          tags: selectedCategory != null ? [selectedCategory!] : null,
         );
         final rawItems = (res["items"] as List<dynamic>? ?? []);
         items.addAll(
@@ -133,6 +139,7 @@ class FeedController extends ChangeNotifier {
           scope: scope,
           sort: sort,
           windowDays: windowDays,
+          tags: selectedCategory != null ? [selectedCategory!] : null,
         );
         items.addAll(res.items);
         nextCursor = res.nextCursor;
@@ -143,6 +150,12 @@ class FeedController extends ChangeNotifier {
       isLoadingMore = false;
       notifyListeners();
     }
+  }
+
+  Future<void> setCategory(String? value) async {
+    if (selectedCategory == value) return;
+    selectedCategory = value;
+    await loadInitial();
   }
 
   Future<void> setScope(String value) async {

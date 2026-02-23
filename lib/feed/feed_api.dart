@@ -27,6 +27,7 @@ class FeedApi {
     required String scope, // "global" | "following"
     required String sort,  // "recent" | "top"
     required int windowDays,
+    List<String>? tags,
   }) async {
     final query = <String, String>{
       "limit": limit.toString(),
@@ -34,6 +35,7 @@ class FeedApi {
       "sort": sort,
       "windowDays": windowDays.toString(),
       if (cursor != null) "cursor": cursor,
+      if (tags != null && tags.isNotEmpty) "tags": tags.join(","),
     };
 
     
