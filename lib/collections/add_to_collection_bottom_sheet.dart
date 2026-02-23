@@ -338,7 +338,7 @@ class _AddToCollectionSheetState extends State<_AddToCollectionSheet> {
                     const SizedBox(height: 8),
                     TextButton(
                         onPressed: _loadData,
-                        child: const Text("Retry")),
+                        child: Text(localizations?.retry ?? "Retry")),
                   ],
                 ),
               )
