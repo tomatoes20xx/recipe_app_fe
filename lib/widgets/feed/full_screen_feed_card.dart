@@ -3,6 +3,7 @@ import "package:cached_network_image/cached_network_image.dart";
 
 import "../../api/api_client.dart";
 import "../../auth/auth_controller.dart";
+import "../../collections/add_to_collection_bottom_sheet.dart";
 import "../../feed/feed_controller.dart";
 import "../../feed/feed_models.dart";
 import "../../recipes/comments_bottom_sheet.dart";
@@ -463,6 +464,18 @@ class _EngagementOverlay extends StatelessWidget {
                       onActionCompleted?.call();
                     });
                   },
+                  onLongPress: auth.isLoggedIn
+                      ? () async {
+                          final added = await showAddToCollectionBottomSheet(
+                            context: context,
+                            apiClient: apiClient,
+                            recipeId: item.id,
+                          );
+                          if (added) {
+                            onActionCompleted?.call();
+                          }
+                        }
+                      : null,
                 ),
               ),
             ],

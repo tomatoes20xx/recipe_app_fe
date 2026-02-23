@@ -10,6 +10,7 @@ class EngagementStatWidget extends StatelessWidget {
     this.active = false,
     this.activeColor,
     this.onTap,
+    this.onLongPress,
     this.size = EngagementStatSize.medium,
     this.style = EngagementStatStyle.regular,
     this.showShadows = false,
@@ -32,6 +33,9 @@ class EngagementStatWidget extends StatelessWidget {
 
   /// Optional tap callback - if provided, makes the widget tappable
   final VoidCallback? onTap;
+
+  /// Optional long-press callback (e.g., for adding to collection)
+  final VoidCallback? onLongPress;
 
   /// Size variant of the stat
   final EngagementStatSize size;
@@ -85,7 +89,7 @@ class EngagementStatWidget extends StatelessWidget {
           );
 
     // If not tappable, return the child directly
-    if (onTap == null) return child;
+    if (onTap == null && onLongPress == null) return child;
 
     // Apply appropriate tap handling based on style
     switch (style) {
@@ -93,6 +97,7 @@ class EngagementStatWidget extends StatelessWidget {
       case EngagementStatStyle.overlay:
         return GestureDetector(
           onTap: onTap,
+          onLongPress: onLongPress,
           child: child,
         );
       case EngagementStatStyle.regular:
@@ -101,6 +106,7 @@ class EngagementStatWidget extends StatelessWidget {
           color: Colors.transparent,
           child: InkWell(
             onTap: onTap,
+            onLongPress: onLongPress,
             borderRadius: BorderRadius.circular(10),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),

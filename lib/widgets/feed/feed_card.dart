@@ -3,6 +3,7 @@ import "package:cached_network_image/cached_network_image.dart";
 
 import "../../api/api_client.dart";
 import "../../auth/auth_controller.dart";
+import "../../collections/add_to_collection_bottom_sheet.dart";
 import "../../feed/feed_controller.dart";
 import "../../feed/feed_models.dart";
 import "../../recipes/comments_bottom_sheet.dart";
@@ -281,6 +282,18 @@ class _EngagementRow extends StatelessWidget {
             await feed.toggleBookmark(item.id);
             onActionCompleted?.call();
           },
+          onLongPress: auth.isLoggedIn
+              ? () async {
+                  final added = await showAddToCollectionBottomSheet(
+                    context: context,
+                    apiClient: apiClient,
+                    recipeId: item.id,
+                  );
+                  if (added) {
+                    onActionCompleted?.call();
+                  }
+                }
+              : null,
         ),
       ],
     );
@@ -294,6 +307,7 @@ class _EngagementButton extends StatelessWidget {
     this.active = false,
     this.activeColor,
     required this.onTap,
+    this.onLongPress,
   });
 
   final IconData icon;
@@ -301,6 +315,7 @@ class _EngagementButton extends StatelessWidget {
   final bool active;
   final Color? activeColor;
   final VoidCallback onTap;
+  final VoidCallback? onLongPress;
 
   @override
   Widget build(BuildContext context) {
@@ -310,6 +325,7 @@ class _EngagementButton extends StatelessWidget {
 
     return GestureDetector(
       onTap: onTap,
+      onLongPress: onLongPress,
       behavior: HitTestBehavior.opaque,
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 4),
