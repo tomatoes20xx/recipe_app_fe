@@ -103,7 +103,7 @@ class UnifiedSearchController extends ChangeNotifier {
 
   Future<void> loadMoreUsers() async {
     if (isLoading || isLoadingMoreUsers) return;
-    if (usersNextCursor == null || currentQuery == null) return;
+    if (!usersHasMore || usersNextCursor == null || currentQuery == null) return;
 
     isLoadingMoreUsers = true;
     notifyListeners();
@@ -129,7 +129,7 @@ class UnifiedSearchController extends ChangeNotifier {
 
   Future<void> loadMoreRecipes() async {
     if (isLoading || isLoadingMoreRecipes) return;
-    if (recipesNextCursor == null || currentQuery == null) return;
+    if (!recipesHasMore || recipesNextCursor == null || currentQuery == null) return;
 
     isLoadingMoreRecipes = true;
     notifyListeners();

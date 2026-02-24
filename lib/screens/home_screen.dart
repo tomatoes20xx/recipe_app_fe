@@ -365,15 +365,16 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           ...recipeCategories.map((category) {
-            final isSelected = feed.selectedCategory == category.tag;
+            final label = category.getLabel(localizations);
+            final isSelected = feed.selectedCategory == label;
             return Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
               child: FilterChip(
                 selected: isSelected,
-                label: Text(category.getLabel(localizations)),
+                label: Text(label),
                 avatar: Icon(category.icon, size: 16),
                 onSelected: (_) => feed.setCategory(
-                  isSelected ? null : category.tag,
+                  isSelected ? null : label,
                 ),
                 visualDensity: VisualDensity.compact,
               ),
@@ -389,15 +390,16 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           ...dietaryPreferences.map((pref) {
-            final isSelected = feed.selectedCategory == pref.tag;
+            final label = pref.getLabel(localizations);
+            final isSelected = feed.selectedCategory == label;
             return Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
               child: FilterChip(
                 selected: isSelected,
-                label: Text(pref.getLabel(localizations)),
+                label: Text(label),
                 avatar: Icon(pref.icon, size: 16),
                 onSelected: (_) => feed.setCategory(
-                  isSelected ? null : pref.tag,
+                  isSelected ? null : label,
                 ),
                 visualDensity: VisualDensity.compact,
               ),
