@@ -710,6 +710,19 @@ class AppLocalizations {
   String get categoryHealthy => _localizedValues[locale.languageCode]?["categoryHealthy"] ?? "Healthy";
   String get categoryComfortFood => _localizedValues[locale.languageCode]?["categoryComfortFood"] ?? "Comfort Food";
 
+  // Dietary Preferences
+  String get dietaryPreferences => _localizedValues[locale.languageCode]?["dietaryPreferences"] ?? "Dietary";
+  String get dietaryVegan => _localizedValues[locale.languageCode]?["dietaryVegan"] ?? "Vegan";
+  String get dietaryVegetarian => _localizedValues[locale.languageCode]?["dietaryVegetarian"] ?? "Vegetarian";
+  String get dietaryGlutenFree => _localizedValues[locale.languageCode]?["dietaryGlutenFree"] ?? "Gluten-Free";
+  String get dietaryDairyFree => _localizedValues[locale.languageCode]?["dietaryDairyFree"] ?? "Dairy-Free";
+  String get dietaryKeto => _localizedValues[locale.languageCode]?["dietaryKeto"] ?? "Keto";
+  String get dietaryLowCarb => _localizedValues[locale.languageCode]?["dietaryLowCarb"] ?? "Low Carb";
+  String get dietaryHighProtein => _localizedValues[locale.languageCode]?["dietaryHighProtein"] ?? "High Protein";
+  String get dietarySugarFree => _localizedValues[locale.languageCode]?["dietarySugarFree"] ?? "Sugar-Free";
+  String get dietaryNutFree => _localizedValues[locale.languageCode]?["dietaryNutFree"] ?? "Nut-Free";
+  String get dietaryPaleo => _localizedValues[locale.languageCode]?["dietaryPaleo"] ?? "Paleo";
+
   // Comments Screen
   String get deleteCommentTitle => _localizedValues[locale.languageCode]?["deleteCommentTitle"] ?? "Delete comment?";
   String get deleteCommentMessage => _localizedValues[locale.languageCode]?["deleteCommentMessage"] ?? "This will also delete all replies to this comment.";
@@ -1375,6 +1388,19 @@ class AppLocalizations {
       "categoryHealthy": "Healthy",
       "categoryComfortFood": "Comfort Food",
 
+      // Dietary Preferences
+      "dietaryPreferences": "Dietary",
+      "dietaryVegan": "Vegan",
+      "dietaryVegetarian": "Vegetarian",
+      "dietaryGlutenFree": "Gluten-Free",
+      "dietaryDairyFree": "Dairy-Free",
+      "dietaryKeto": "Keto",
+      "dietaryLowCarb": "Low Carb",
+      "dietaryHighProtein": "High Protein",
+      "dietarySugarFree": "Sugar-Free",
+      "dietaryNutFree": "Nut-Free",
+      "dietaryPaleo": "Paleo",
+
       // Comments Screen
       "deleteCommentTitle": "Delete comment?",
       "deleteCommentMessage": "This will also delete all replies to this comment.",
@@ -2017,6 +2043,19 @@ class AppLocalizations {
       "categoryQuickMeals": "სწრაფი კერძები",
       "categoryHealthy": "ჯანსაღი",
       "categoryComfortFood": "სამსუფრო კერძები",
+
+      // Dietary Preferences
+      "dietaryPreferences": "დიეტა",
+      "dietaryVegan": "ვეგანური",
+      "dietaryVegetarian": "ვეგეტარიანული",
+      "dietaryGlutenFree": "გლუტენის გარეშე",
+      "dietaryDairyFree": "რძის გარეშე",
+      "dietaryKeto": "კეტო",
+      "dietaryLowCarb": "დაბალი ნახშირწყლები",
+      "dietaryHighProtein": "მაღალი ცილა",
+      "dietarySugarFree": "შაქრის გარეშე",
+      "dietaryNutFree": "თხილის გარეშე",
+      "dietaryPaleo": "პალეო",
 
       // Comments Screen
       "deleteCommentTitle": "კომენტარის წაშლა?",
