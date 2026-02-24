@@ -970,12 +970,13 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
               separatorBuilder: (_, __) => const SizedBox(width: 8),
               itemBuilder: (context, index) {
                 final option = cuisineOptions[index];
+                final label = option.getLabel(localizations);
                 final isSelected =
-                    _cuisineController.text.toLowerCase() == option.value.toLowerCase();
+                    _cuisineController.text == label;
                 return GestureDetector(
                   onTap: () {
                     setState(() {
-                      _cuisineController.text = isSelected ? "" : option.value;
+                      _cuisineController.text = isSelected ? "" : label;
                     });
                   },
                   child: Container(
@@ -1197,18 +1198,19 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
               separatorBuilder: (_, __) => const SizedBox(width: 8),
               itemBuilder: (context, index) {
                 final category = recipeCategories[index];
-                final isSelected = _tags.contains(category.tag);
+                final label = category.getLabel(localizations);
+                final isSelected = _tags.contains(label);
                 return FilterChip(
                   selected: isSelected,
-                  label: Text(category.getLabel(localizations)),
+                  label: Text(label),
                   avatar: Icon(category.icon, size: 18),
                   visualDensity: VisualDensity.compact,
                   onSelected: (selected) {
                     setState(() {
                       if (selected) {
-                        _tags.add(category.tag);
+                        _tags.add(label);
                       } else {
-                        _tags.remove(category.tag);
+                        _tags.remove(label);
                       }
                     });
                   },
@@ -1233,18 +1235,19 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
               separatorBuilder: (_, __) => const SizedBox(width: 8),
               itemBuilder: (context, index) {
                 final pref = dietaryPreferences[index];
-                final isSelected = _tags.contains(pref.tag);
+                final label = pref.getLabel(localizations);
+                final isSelected = _tags.contains(label);
                 return FilterChip(
                   selected: isSelected,
-                  label: Text(pref.getLabel(localizations)),
+                  label: Text(label),
                   avatar: Icon(pref.icon, size: 18),
                   visualDensity: VisualDensity.compact,
                   onSelected: (selected) {
                     setState(() {
                       if (selected) {
-                        _tags.add(pref.tag);
+                        _tags.add(label);
                       } else {
-                        _tags.remove(pref.tag);
+                        _tags.remove(label);
                       }
                     });
                   },
@@ -1284,16 +1287,16 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
           ),
           // Only show custom (non-predefined) tags below the input
           if (_tags.any((t) =>
-              !recipeCategories.any((c) => c.tag == t) &&
-              !dietaryPreferences.any((d) => d.tag == t))) ...[
+              !recipeCategories.any((c) => c.getLabel(localizations) == t) &&
+              !dietaryPreferences.any((d) => d.getLabel(localizations) == t))) ...[
             const SizedBox(height: 16),
             Wrap(
               spacing: 8,
               runSpacing: 8,
               children: _tags
                   .where((t) =>
-                      !recipeCategories.any((c) => c.tag == t) &&
-                      !dietaryPreferences.any((d) => d.tag == t))
+                      !recipeCategories.any((c) => c.getLabel(localizations) == t) &&
+                      !dietaryPreferences.any((d) => d.getLabel(localizations) == t))
                   .map((tag) {
                 return Container(
                   padding:

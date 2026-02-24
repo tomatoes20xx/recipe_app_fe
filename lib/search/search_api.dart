@@ -1,3 +1,5 @@
+import "dart:convert";
+
 import "../api/api_client.dart";
 import "search_models.dart";
 
@@ -98,12 +100,15 @@ class SearchApi {
       queryParams["difficulty"] = difficulty;
     }
 
+    final cursorMap = <String, String>{};
     if (recipesCursor != null) {
-      queryParams["recipes_cursor"] = recipesCursor;
+      cursorMap["recipes"] = recipesCursor;
     }
-
     if (usersCursor != null) {
-      queryParams["users_cursor"] = usersCursor;
+      cursorMap["users"] = usersCursor;
+    }
+    if (cursorMap.isNotEmpty) {
+      queryParams["cursor"] = jsonEncode(cursorMap);
     }
 
     final data = await api.get("/search", query: queryParams, auth: true);
@@ -129,7 +134,7 @@ class SearchApi {
     };
 
     if (cursor != null) {
-      queryParams["recipes_cursor"] = cursor;
+      queryParams["cursor"] = jsonEncode({"recipes": cursor});
     }
 
     if (cuisine != null && cuisine.trim().isNotEmpty) {

@@ -241,6 +241,9 @@ class _SearchScreenState extends State<SearchScreen> {
           ],
         ),
         automaticallyImplyLeading: false,
+        actions: [
+          _buildFiltersButton(),
+        ],
       ),
       body: _buildBody(),
     );
@@ -423,8 +426,6 @@ class _SearchScreenState extends State<SearchScreen> {
           SliverToBoxAdapter(
             child: _buildSectionHeader(
               localizations?.recipes ?? "Recipes",
-              showAction: true,
-              actionWidget: _buildFiltersButton(),
             ),
           ),
           SliverList(
@@ -441,7 +442,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 return _buildRecipeCard(searchController.recipes[index]);
               },
               childCount: searchController.recipes.length +
-                  (searchController.recipesHasMore ? 1 : 0),
+                  (searchController.isLoadingMoreRecipes ? 1 : 0),
             ),
           ),
         ],
@@ -934,13 +935,13 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                                 separatorBuilder: (_, __) => const SizedBox(width: 8),
                                 itemBuilder: (context, index) {
                                   final option = cuisineOptions[index];
-                                  final isSelected = _cuisineController.text.toLowerCase() ==
-                                      option.value.toLowerCase();
+                                  final label = option.getLabel(localizations);
+                                  final isSelected = _cuisineController.text == label;
                                   return GestureDetector(
                                     onTap: () {
                                       setState(() {
                                         _cuisineController.text =
-                                            isSelected ? "" : option.value;
+                                            isSelected ? "" : label;
                                       });
                                     },
                                     child: Container(
@@ -999,20 +1000,20 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                                     const SizedBox(width: 8),
                                 itemBuilder: (context, index) {
                                   final category = recipeCategories[index];
+                                  final label = category.getLabel(localizations);
                                   final isSelected =
-                                      _selectedTags.contains(category.tag);
+                                      _selectedTags.contains(label);
                                   return FilterChip(
                                     selected: isSelected,
-                                    label: Text(
-                                        category.getLabel(localizations)),
+                                    label: Text(label),
                                     avatar: Icon(category.icon, size: 18),
                                     visualDensity: VisualDensity.compact,
                                     onSelected: (selected) {
                                       setState(() {
                                         if (selected) {
-                                          _selectedTags.add(category.tag);
+                                          _selectedTags.add(label);
                                         } else {
-                                          _selectedTags.remove(category.tag);
+                                          _selectedTags.remove(label);
                                         }
                                       });
                                     },
@@ -1044,20 +1045,20 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                                     const SizedBox(width: 8),
                                 itemBuilder: (context, index) {
                                   final pref = dietaryPreferences[index];
+                                  final label = pref.getLabel(localizations);
                                   final isSelected =
-                                      _selectedTags.contains(pref.tag);
+                                      _selectedTags.contains(label);
                                   return FilterChip(
                                     selected: isSelected,
-                                    label: Text(
-                                        pref.getLabel(localizations)),
+                                    label: Text(label),
                                     avatar: Icon(pref.icon, size: 18),
                                     visualDensity: VisualDensity.compact,
                                     onSelected: (selected) {
                                       setState(() {
                                         if (selected) {
-                                          _selectedTags.add(pref.tag);
+                                          _selectedTags.add(label);
                                         } else {
-                                          _selectedTags.remove(pref.tag);
+                                          _selectedTags.remove(label);
                                         }
                                       });
                                     },
@@ -1097,8 +1098,8 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                             ),
                             // Only show custom (non-predefined) tags below
                             if (_selectedTags.any((t) =>
-                                !recipeCategories.any((c) => c.tag == t) &&
-                                !dietaryPreferences.any((d) => d.tag == t))) ...[
+                                !recipeCategories.any((c) => c.getLabel(localizations) == t) &&
+                                !dietaryPreferences.any((d) => d.getLabel(localizations) == t))) ...[
                               const SizedBox(height: 12),
                               Wrap(
                                 spacing: 8,
@@ -1106,9 +1107,9 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                                 children: _selectedTags
                                     .where((t) =>
                                         !recipeCategories
-                                            .any((c) => c.tag == t) &&
+                                            .any((c) => c.getLabel(localizations) == t) &&
                                         !dietaryPreferences
-                                            .any((d) => d.tag == t))
+                                            .any((d) => d.getLabel(localizations) == t))
                                     .map((tag) {
                                   return Chip(
                                     label: Text(tag),
