@@ -3,6 +3,7 @@ import "package:flutter_secure_storage/flutter_secure_storage.dart";
 
 import "../api/api_client.dart";
 import "../auth/auth_controller.dart";
+import "../constants/dietary_preferences.dart";
 import "../constants/recipe_categories.dart";
 import "../feed/feed_controller.dart";
 import "../localization/app_localizations.dart";
@@ -373,6 +374,30 @@ class _HomeScreenState extends State<HomeScreen> {
                 avatar: Icon(category.icon, size: 16),
                 onSelected: (_) => feed.setCategory(
                   isSelected ? null : category.tag,
+                ),
+                visualDensity: VisualDensity.compact,
+              ),
+            );
+          }),
+          // Divider between categories and dietary
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
+            child: Container(
+              width: 1,
+              height: 28,
+              color: theme.colorScheme.outline.withValues(alpha: 0.3),
+            ),
+          ),
+          ...dietaryPreferences.map((pref) {
+            final isSelected = feed.selectedCategory == pref.tag;
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+              child: FilterChip(
+                selected: isSelected,
+                label: Text(pref.getLabel(localizations)),
+                avatar: Icon(pref.icon, size: 16),
+                onSelected: (_) => feed.setCategory(
+                  isSelected ? null : pref.tag,
                 ),
                 visualDensity: VisualDensity.compact,
               ),

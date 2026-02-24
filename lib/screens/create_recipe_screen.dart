@@ -6,6 +6,7 @@ import "package:image_picker/image_picker.dart";
 
 import "../api/api_client.dart";
 import "../constants/cuisines.dart";
+import "../constants/dietary_preferences.dart";
 import "../constants/recipe_categories.dart";
 import "../localization/app_localizations.dart";
 import "../recipes/recipe_api.dart";
@@ -1215,6 +1216,42 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
               },
             ),
           ),
+          const SizedBox(height: 12),
+          Text(
+            localizations?.dietaryPreferences ?? "Dietary",
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 8),
+          SizedBox(
+            height: 40,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: dietaryPreferences.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 8),
+              itemBuilder: (context, index) {
+                final pref = dietaryPreferences[index];
+                final isSelected = _tags.contains(pref.tag);
+                return FilterChip(
+                  selected: isSelected,
+                  label: Text(pref.getLabel(localizations)),
+                  avatar: Icon(pref.icon, size: 18),
+                  visualDensity: VisualDensity.compact,
+                  onSelected: (selected) {
+                    setState(() {
+                      if (selected) {
+                        _tags.add(pref.tag);
+                      } else {
+                        _tags.remove(pref.tag);
+                      }
+                    });
+                  },
+                );
+              },
+            ),
+          ),
           const SizedBox(height: 16),
           Row(
             children: [
@@ -1246,13 +1283,17 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
             ],
           ),
           // Only show custom (non-predefined) tags below the input
-          if (_tags.any((t) => !recipeCategories.any((c) => c.tag == t))) ...[
+          if (_tags.any((t) =>
+              !recipeCategories.any((c) => c.tag == t) &&
+              !dietaryPreferences.any((d) => d.tag == t))) ...[
             const SizedBox(height: 16),
             Wrap(
               spacing: 8,
               runSpacing: 8,
               children: _tags
-                  .where((t) => !recipeCategories.any((c) => c.tag == t))
+                  .where((t) =>
+                      !recipeCategories.any((c) => c.tag == t) &&
+                      !dietaryPreferences.any((d) => d.tag == t))
                   .map((tag) {
                 return Container(
                   padding:

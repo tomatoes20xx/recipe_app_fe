@@ -4,6 +4,7 @@ import "../api/api_client.dart";
 import "../auth/auth_controller.dart";
 import "../collections/add_to_collection_bottom_sheet.dart";
 import "../constants/cuisines.dart";
+import "../constants/dietary_preferences.dart";
 import "../constants/recipe_categories.dart";
 import "../localization/app_localizations.dart";
 import "../screens/create_recipe_screen.dart";
@@ -1391,9 +1392,14 @@ class _HashtagPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context);
-    // Check if this tag matches a predefined category and use localized label
+    // Check if this tag matches a predefined category or dietary preference
     final category = recipeCategories.where((c) => c.tag == tag).firstOrNull;
-    final displayLabel = category != null ? category.getLabel(localizations) : tag;
+    final dietary = dietaryPreferences.where((d) => d.tag == tag).firstOrNull;
+    final displayLabel = category != null
+        ? category.getLabel(localizations)
+        : dietary != null
+            ? dietary.getLabel(localizations)
+            : tag;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
