@@ -19,6 +19,7 @@ import "../users/user_api.dart";
 import "../users/user_models.dart";
 import "../utils/error_utils.dart";
 import "../utils/ui_utils.dart";
+import "../widgets/common/common_widgets.dart";
 import "../widgets/empty_state_widget.dart";
 import "pantry_search_screen.dart";
 import "profile_screen.dart";
@@ -97,11 +98,12 @@ class _SearchScreenState extends State<SearchScreen> {
     try {
       await searchController.toggleFollow(user.username);
       if (mounted) {
+        final localizations = AppLocalizations.of(context);
         ErrorUtils.showSuccess(
           context,
           newFollowing
-              ? "Now following ${user.username}"
-              : "Unfollowed ${user.username}",
+              ? (localizations?.nowFollowingUser(user.username) ?? "Now following ${user.username}")
+              : (localizations?.unfollowedUser(user.username) ?? "Unfollowed ${user.username}"),
         );
       }
     } catch (e) {
@@ -1344,44 +1346,6 @@ class _FilterSection extends StatelessWidget {
         const SizedBox(height: 12),
         child,
       ],
-    );
-  }
-}
-
-class FollowButton extends StatelessWidget {
-  const FollowButton({
-    super.key,
-    required this.isFollowing,
-    required this.onTap,
-  });
-
-  final bool isFollowing;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return OutlinedButton(
-      onPressed: onTap,
-      style: OutlinedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        side: BorderSide(
-          color: isFollowing
-              ? Theme.of(context).colorScheme.outline
-              : Theme.of(context).colorScheme.primary,
-        ),
-      ),
-      child: Text(
-        isFollowing ? "Following" : "Follow",
-        style: TextStyle(
-          fontWeight: FontWeight.w600,
-          color: isFollowing
-              ? Theme.of(context).colorScheme.onSurface
-              : Theme.of(context).colorScheme.primary,
-        ),
-      ),
     );
   }
 }

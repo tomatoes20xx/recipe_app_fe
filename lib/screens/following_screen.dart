@@ -1,15 +1,14 @@
 import "package:flutter/material.dart";
-import "package:cached_network_image/cached_network_image.dart";
 
 import "../api/api_client.dart";
 import "../auth/auth_controller.dart";
-import "../config.dart";
 import "../localization/app_localizations.dart";
 import "../shopping/shopping_list_controller.dart";
 import "../users/following_controller.dart";
 import "../users/user_api.dart";
 import "../users/user_models.dart";
 import "../utils/error_utils.dart";
+import "../utils/ui_utils.dart";
 import "../widgets/common/common_widgets.dart";
 import "../widgets/empty_state_widget.dart";
 import "profile_screen.dart";
@@ -82,7 +81,9 @@ class _FollowingScreenState extends State<FollowingScreen> {
       if (mounted) {
         ErrorUtils.showSuccess(
           context,
-          newFollowing ? "Now following ${user.username}" : "Unfollowed ${user.username}",
+          newFollowing
+              ? (AppLocalizations.of(context)?.nowFollowingUser(user.username) ?? "Now following ${user.username}")
+              : (AppLocalizations.of(context)?.unfollowedUser(user.username) ?? "Unfollowed ${user.username}"),
         );
       }
     } catch (e) {
@@ -92,49 +93,6 @@ class _FollowingScreenState extends State<FollowingScreen> {
     }
   }
 
-  String _buildImageUrl(String relativeUrl) {
-    if (relativeUrl.startsWith('http://') || relativeUrl.startsWith('https://')) {
-      return relativeUrl;
-    }
-    return "${Config.apiBaseUrl}$relativeUrl";
-  }
-
-  Widget _buildUserAvatar(BuildContext context, String? avatarUrl, String username, {double radius = 20}) {
-    if (avatarUrl != null && avatarUrl.isNotEmpty) {
-      return CircleAvatar(
-        radius: radius,
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        backgroundImage: CachedNetworkImageProvider(
-          _buildImageUrl(avatarUrl),
-          cacheKey: avatarUrl,
-          maxWidth: (radius * 2 * MediaQuery.of(context).devicePixelRatio).round(),
-          maxHeight: (radius * 2 * MediaQuery.of(context).devicePixelRatio).round(),
-        ),
-        onBackgroundImageError: (exception, stackTrace) {
-          // Image failed to load, will show child as fallback
-        },
-        child: null,
-      );
-    }
-    return CircleAvatar(
-      radius: radius,
-      backgroundColor: Theme.of(context).colorScheme.primary,
-      child: username.isNotEmpty
-          ? Text(
-              username[0].toUpperCase(),
-              style: TextStyle(
-                fontSize: radius * 0.8,
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.onPrimary,
-              ),
-            )
-          : Icon(
-              Icons.person_outline_rounded,
-              size: radius,
-              color: Theme.of(context).colorScheme.onPrimary,
-            ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -200,8 +158,12 @@ class _FollowingScreenState extends State<FollowingScreen> {
     }
 
     if (controller.error != null && controller.items.isEmpty) {
+      final localizations = AppLocalizations.of(context);
+      final errorMessage = controller.error == "followingListPrivate"
+          ? (localizations?.followingListPrivate ?? "This user's following list is private")
+          : controller.error!;
       return ErrorStateWidget(
-        message: controller.error!,
+        message: errorMessage,
         onRetry: () => controller.loadInitial(),
       );
     }
@@ -248,7 +210,7 @@ class _FollowingScreenState extends State<FollowingScreen> {
             ),
             child: ListTile(
               contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              leading: _buildUserAvatar(
+              leading: buildUserAvatar(
                 context,
                 user.avatarUrl,
                 user.username,

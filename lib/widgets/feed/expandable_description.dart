@@ -1,5 +1,6 @@
 import "package:flutter/gestures.dart";
 import "package:flutter/material.dart";
+import "../../localization/app_localizations.dart";
 
 /// Expandable description widget for feed cards (list view)
 class ExpandableDescription extends StatelessWidget {
@@ -18,6 +19,7 @@ class ExpandableDescription extends StatelessWidget {
   Widget build(BuildContext context) {
     // Simple heuristic: if description is longer than ~100 chars, it likely needs expansion
     final needsExpansion = description.length > 100;
+    final localizations = AppLocalizations.of(context);
     final textStyle = Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
               height: 1.4,
@@ -46,7 +48,7 @@ class ExpandableDescription extends StatelessWidget {
             ),
             const TextSpan(text: " "),
             TextSpan(
-              text: "less",
+              text: localizations?.showLess ?? "less",
               style: buttonStyle,
               recognizer: TapGestureRecognizer()
                 ..onTap = () {
@@ -61,11 +63,12 @@ class ExpandableDescription extends StatelessWidget {
 
     // When collapsed, show truncated text with "more" inline
     // We need to manually truncate to ensure "more" is always visible
+    final moreLabel = localizations?.showMore ?? "more";
     return LayoutBuilder(
       builder: (context, constraints) {
         // Measure how much space " more" takes
         final moreTextPainter = TextPainter(
-          text: TextSpan(text: " more", style: buttonStyle),
+          text: TextSpan(text: " $moreLabel", style: buttonStyle),
           textDirection: TextDirection.ltr,
         );
         moreTextPainter.layout();
@@ -99,7 +102,7 @@ class ExpandableDescription extends StatelessWidget {
               ),
               const TextSpan(text: " "),
               TextSpan(
-                text: "more",
+                text: moreLabel,
                 style: buttonStyle,
                 recognizer: TapGestureRecognizer()
                   ..onTap = () {
@@ -132,6 +135,7 @@ class FullScreenExpandableDescription extends StatelessWidget {
   Widget build(BuildContext context) {
     // Simple heuristic: if description is longer than ~100 chars, it likely needs expansion
     final needsExpansion = description.length > 100;
+    final localizations = AppLocalizations.of(context);
     final textStyle = TextStyle(
       color: Colors.white.withValues(alpha: 0.9),
       fontSize: 14,
@@ -167,7 +171,7 @@ class FullScreenExpandableDescription extends StatelessWidget {
             ),
             const TextSpan(text: " "),
             TextSpan(
-              text: "less",
+              text: localizations?.showLess ?? "less",
               style: buttonStyle,
               recognizer: TapGestureRecognizer()
                 ..onTap = () {
@@ -182,11 +186,12 @@ class FullScreenExpandableDescription extends StatelessWidget {
 
     // When collapsed, show truncated text with "more" inline
     // We need to manually truncate to ensure "more" is always visible
+    final moreLabel = localizations?.showMore ?? "more";
     return LayoutBuilder(
       builder: (context, constraints) {
         // Measure how much space " more" takes
         final moreTextPainter = TextPainter(
-          text: TextSpan(text: " more", style: buttonStyle),
+          text: TextSpan(text: " $moreLabel", style: buttonStyle),
           textDirection: TextDirection.ltr,
         );
         moreTextPainter.layout();
@@ -220,7 +225,7 @@ class FullScreenExpandableDescription extends StatelessWidget {
               ),
               const TextSpan(text: " "),
               TextSpan(
-                text: "more",
+                text: moreLabel,
                 style: buttonStyle,
                 recognizer: TapGestureRecognizer()
                   ..onTap = () {

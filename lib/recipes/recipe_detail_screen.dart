@@ -133,7 +133,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     final r = c.recipe;
     if (r == null || _isLiking) return;
     if (!(widget.auth?.isLoggedIn ?? false)) {
-      ErrorUtils.showError(context, "Please log in to like recipes");
+      ErrorUtils.showError(context, AppLocalizations.of(context)?.pleaseLogInToLike ?? "Please log in to like recipes");
       return;
     }
 
@@ -167,7 +167,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     final r = c.recipe;
     if (r == null || _isBookmarking) return;
     if (!(widget.auth?.isLoggedIn ?? false)) {
-      ErrorUtils.showError(context, "Please log in to bookmark recipes");
+      ErrorUtils.showError(context, AppLocalizations.of(context)?.pleaseLogInToBookmark ?? "Please log in to bookmark recipes");
       return;
     }
 
@@ -201,7 +201,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     final r = c.recipe;
     if (r == null) return;
     if (!(widget.auth?.isLoggedIn ?? false)) {
-      ErrorUtils.showError(context, "Please log in to use collections");
+      ErrorUtils.showError(context, AppLocalizations.of(context)?.pleaseLogInToUseCollections ?? "Please log in to use collections");
       return;
     }
     final result = await showAddToCollectionBottomSheet(
@@ -223,7 +223,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
 
   Future<void> _onShareTap() async {
     if (!(widget.auth?.isLoggedIn ?? false)) {
-      ErrorUtils.showError(context, "Please log in to share recipes");
+      ErrorUtils.showError(context, AppLocalizations.of(context)?.pleaseLogInToShare ?? "Please log in to share recipes");
       return;
     }
 
@@ -323,7 +323,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     if (r == null) return;
 
     if (!(widget.auth?.isLoggedIn ?? false)) {
-      ErrorUtils.showError(context, "Please log in to report recipes");
+      ErrorUtils.showError(context, AppLocalizations.of(context)?.pleaseLogInToReport ?? "Please log in to report recipes");
       return;
     }
 
@@ -1328,7 +1328,7 @@ class _UserInfoRow extends StatelessWidget {
         GestureDetector(
           onTap: () {
             if (auth == null) {
-              ErrorUtils.showError(context, "Log in to view profiles");
+              ErrorUtils.showError(context, AppLocalizations.of(context)?.logInToViewProfiles ?? "Log in to view profiles");
               return;
             }
             // If viewing own profile, pass null to show edit functionality

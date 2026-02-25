@@ -306,7 +306,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
 
   Future<void> _onShareTap() async {
     if (!(widget.auth?.isLoggedIn ?? false)) {
-      ErrorUtils.showError(context, "Please log in to share your shopping list");
+      ErrorUtils.showError(context, AppLocalizations.of(context)?.pleaseLogInToShareList ?? "Please log in to share your shopping list");
       return;
     }
 
@@ -509,7 +509,7 @@ class _RecipeGroupCardState extends State<_RecipeGroupCard> {
     final sharedUsers = _getSharedUsers();
 
     if (sharedUsers.isEmpty) {
-      ErrorUtils.showError(context, "This recipe is not shared with anyone");
+      ErrorUtils.showError(context, AppLocalizations.of(context)?.recipeNotSharedWithAnyone ?? "This recipe is not shared with anyone");
       return;
     }
 

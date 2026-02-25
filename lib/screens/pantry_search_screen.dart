@@ -84,7 +84,7 @@ class _PantrySearchScreenState extends State<PantrySearchScreen> {
 
   Future<void> _search() async {
     if (_selectedIngredients.isEmpty) {
-      ErrorUtils.showError(context, "Please add at least one ingredient");
+      ErrorUtils.showError(context, AppLocalizations.of(context)?.addAtLeastOneIngredient ?? "Please add at least one ingredient");
       return;
     }
 

@@ -38,8 +38,6 @@ class FeedApi {
       if (tags != null && tags.isNotEmpty) "tags": tags.join(","),
     };
 
-    
-
     // auth: true so viewer flags work; if no token, header won't be set
     final data = await api.get("/feed", query: query, auth: true);
     return FeedResponse.fromJson(Map<String, dynamic>.from(data as Map));

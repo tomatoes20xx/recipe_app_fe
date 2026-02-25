@@ -749,6 +749,39 @@ class AppLocalizations {
       ? (_localizedValues[locale.languageCode]?["showMoreRepliesSingular"]?.replaceAll("{count}", count.toString()) ?? "Show $count more reply")
       : (_localizedValues[locale.languageCode]?["showMoreRepliesPlural"]?.replaceAll("{count}", count.toString()) ?? "Show $count more replies");
 
+  // Follow/unfollow
+  String get follow => _localizedValues[locale.languageCode]?["follow"] ?? "Follow";
+  String get followingUser => _localizedValues[locale.languageCode]?["followingUser"] ?? "Following";
+  String nowFollowingUser(String username) => _localizedValues[locale.languageCode]?["nowFollowingUser"]?.replaceAll("{username}", username) ?? "Now following $username";
+  String unfollowedUser(String username) => _localizedValues[locale.languageCode]?["unfollowedUser"]?.replaceAll("{username}", username) ?? "Unfollowed $username";
+
+  // Login required messages
+  String get pleaseLogInToLike => _localizedValues[locale.languageCode]?["pleaseLogInToLike"] ?? "Please log in to like recipes";
+  String get pleaseLogInToBookmark => _localizedValues[locale.languageCode]?["pleaseLogInToBookmark"] ?? "Please log in to bookmark recipes";
+  String get pleaseLogInToUseCollections => _localizedValues[locale.languageCode]?["pleaseLogInToUseCollections"] ?? "Please log in to use collections";
+  String get pleaseLogInToShare => _localizedValues[locale.languageCode]?["pleaseLogInToShare"] ?? "Please log in to share recipes";
+  String get pleaseLogInToReport => _localizedValues[locale.languageCode]?["pleaseLogInToReport"] ?? "Please log in to report recipes";
+  String get logInToViewProfiles => _localizedValues[locale.languageCode]?["logInToViewProfiles"] ?? "Log in to view profiles";
+  String get pleaseLogInToShareList => _localizedValues[locale.languageCode]?["pleaseLogInToShareList"] ?? "Please log in to share your shopping list";
+
+  // Privacy
+  String get followersListPrivate => _localizedValues[locale.languageCode]?["followersListPrivate"] ?? "This user's followers list is private";
+  String get followingListPrivate => _localizedValues[locale.languageCode]?["followingListPrivate"] ?? "This user's following list is private";
+
+  // Expandable text
+  String get showMore => _localizedValues[locale.languageCode]?["showMore"] ?? "more";
+  String get showLess => _localizedValues[locale.languageCode]?["showLess"] ?? "less";
+
+  // Verification
+  String get verificationCodeMustBe6Digits => _localizedValues[locale.languageCode]?["verificationCodeMustBe6Digits"] ?? "Verification code must be exactly 6 digits";
+  String get resetCodeMustBe6Digits => _localizedValues[locale.languageCode]?["resetCodeMustBe6Digits"] ?? "Reset code must be exactly 6 digits";
+
+  // Pantry / ingredients
+  String get addAtLeastOneIngredient => _localizedValues[locale.languageCode]?["addAtLeastOneIngredient"] ?? "Please add at least one ingredient";
+
+  // Sharing
+  String get recipeNotSharedWithAnyone => _localizedValues[locale.languageCode]?["recipeNotSharedWithAnyone"] ?? "This recipe is not shared with anyone";
+
   // Helper method to get full month names by index (1-12)
   String getMonthName(int month) {
     final months = [
@@ -1423,6 +1456,39 @@ class AppLocalizations {
       "replyCountPlural": "{count} replies",
       "showMoreRepliesSingular": "Show {count} more reply",
       "showMoreRepliesPlural": "Show {count} more replies",
+
+      // Follow/unfollow
+      "follow": "Follow",
+      "followingUser": "Following",
+      "nowFollowingUser": "Now following {username}",
+      "unfollowedUser": "Unfollowed {username}",
+
+      // Login required
+      "pleaseLogInToLike": "Please log in to like recipes",
+      "pleaseLogInToBookmark": "Please log in to bookmark recipes",
+      "pleaseLogInToUseCollections": "Please log in to use collections",
+      "pleaseLogInToShare": "Please log in to share recipes",
+      "pleaseLogInToReport": "Please log in to report recipes",
+      "logInToViewProfiles": "Log in to view profiles",
+      "pleaseLogInToShareList": "Please log in to share your shopping list",
+
+      // Privacy
+      "followersListPrivate": "This user's followers list is private",
+      "followingListPrivate": "This user's following list is private",
+
+      // Expandable text
+      "showMore": "more",
+      "showLess": "less",
+
+      // Verification
+      "verificationCodeMustBe6Digits": "Verification code must be exactly 6 digits",
+      "resetCodeMustBe6Digits": "Reset code must be exactly 6 digits",
+
+      // Pantry / ingredients
+      "addAtLeastOneIngredient": "Please add at least one ingredient",
+
+      // Sharing
+      "recipeNotSharedWithAnyone": "This recipe is not shared with anyone",
     },
     "ka": {
       "appTitle": "Yummy",
@@ -2079,6 +2145,39 @@ class AppLocalizations {
       "replyCountPlural": "{count} პასუხი",
       "showMoreRepliesSingular": "კიდევ {count} პასუხის ჩვენება",
       "showMoreRepliesPlural": "კიდევ {count} პასუხის ჩვენება",
+
+      // Follow/unfollow
+      "follow": "გამოწერა",
+      "followingUser": "გამოწერილი",
+      "nowFollowingUser": "{username} გამოწერილია",
+      "unfollowedUser": "{username} გამოწერა გაუქმდა",
+
+      // Login required
+      "pleaseLogInToLike": "რეცეპტის მოწონებისთვის გთხოვთ გაიაროთ ავტორიზაცია",
+      "pleaseLogInToBookmark": "რეცეპტის შესანახად გთხოვთ გაიაროთ ავტორიზაცია",
+      "pleaseLogInToUseCollections": "კოლექციების გამოსაყენებლად გთხოვთ გაიაროთ ავტორიზაცია",
+      "pleaseLogInToShare": "რეცეპტის გასაზიარებლად გთხოვთ გაიაროთ ავტორიზაცია",
+      "pleaseLogInToReport": "რეცეპტის დასარეპორტებლად გთხოვთ გაიაროთ ავტორიზაცია",
+      "logInToViewProfiles": "პროფილის სანახავად შედით სისტემაში",
+      "pleaseLogInToShareList": "სიის გასაზიარებლად გთხოვთ გაიაროთ ავტორიზაცია",
+
+      // Privacy
+      "followersListPrivate": "ამ მომხმარებლის მიმდევრების სია დახურულია",
+      "followingListPrivate": "ამ მომხმარებლის გამოწერების სია დახურულია",
+
+      // Expandable text
+      "showMore": "მეტი",
+      "showLess": "ნაკლები",
+
+      // Verification
+      "verificationCodeMustBe6Digits": "დამადასტურებელი კოდი უნდა იყოს ზუსტად 6 ციფრი",
+      "resetCodeMustBe6Digits": "აღდგენის კოდი უნდა იყოს ზუსტად 6 ციფრი",
+
+      // Pantry / ingredients
+      "addAtLeastOneIngredient": "გთხოვთ დაამატეთ მინიმუმ ერთი ინგრედიენტი",
+
+      // Sharing
+      "recipeNotSharedWithAnyone": "ეს რეცეპტი არავისთან არ არის გაზიარებული",
     },
   };
 }

@@ -50,7 +50,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     }
 
     if (code.length != 6) {
-      ErrorUtils.showError(context, "Reset code must be exactly 6 digits");
+      ErrorUtils.showError(context, localizations?.resetCodeMustBe6Digits ?? "Reset code must be exactly 6 digits");
       return;
     }
 

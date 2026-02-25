@@ -43,7 +43,7 @@ class FollowersController extends ChangeNotifier {
       // Check if it's a 403 (private list)
       if (e.toString().contains("403") || e.toString().contains("Forbidden")) {
         isPrivate = true;
-        error = "This user's followers list is private";
+        error = "followersListPrivate";
       } else {
         error = e.toString();
       }
