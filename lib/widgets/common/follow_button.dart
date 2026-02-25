@@ -1,4 +1,5 @@
 import "package:flutter/material.dart";
+import "../../localization/app_localizations.dart";
 
 /// Reusable follow/following button widget.
 /// Displays different styles based on follow state.
@@ -45,7 +46,9 @@ class FollowButton extends StatelessWidget {
               ),
             )
           : Text(
-              isFollowing ? "Following" : "Follow",
+              isFollowing
+                  ? (AppLocalizations.of(context)?.followingUser ?? "Following")
+                  : (AppLocalizations.of(context)?.follow ?? "Follow"),
               style: TextStyle(
                 fontWeight: FontWeight.w600,
                 color: isFollowing

@@ -118,25 +118,25 @@ class RecipeApi {
     if (cuisine != null) {
       body["cuisine"] = cuisine.trim();
     }
-      if (tags != null) {
-        body["tags"] = tags;
-      }
-      if (cookingTimeMin != null) {
-        body["cooking_time_min"] = cookingTimeMin;
-      }
-      if (cookingTimeMax != null) {
-        body["cooking_time_max"] = cookingTimeMax;
-      }
-      if (difficulty != null && difficulty.isNotEmpty) {
-        body["difficulty"] = difficulty;
-      }
-      if (ingredients != null) {
-        body["ingredients"] = ingredients;
-      }
-      if (steps != null) {
-        body["steps"] = steps;
-      }
-    
+    if (tags != null) {
+      body["tags"] = tags;
+    }
+    if (cookingTimeMin != null) {
+      body["cooking_time_min"] = cookingTimeMin;
+    }
+    if (cookingTimeMax != null) {
+      body["cooking_time_max"] = cookingTimeMax;
+    }
+    if (difficulty != null && difficulty.isNotEmpty) {
+      body["difficulty"] = difficulty;
+    }
+    if (ingredients != null) {
+      body["ingredients"] = ingredients;
+    }
+    if (steps != null) {
+      body["steps"] = steps;
+    }
+
     if (body.isEmpty) {
       throw Exception("At least one field must be provided for update");
     }

@@ -176,7 +176,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (mounted) {
         ErrorUtils.showSuccess(
           context,
-          newFollowing ? "Now following ${_userProfile!.username}" : "Unfollowed ${_userProfile!.username}",
+          newFollowing
+              ? (AppLocalizations.of(context)?.nowFollowingUser(_userProfile!.username) ?? "Now following ${_userProfile!.username}")
+              : (AppLocalizations.of(context)?.unfollowedUser(_userProfile!.username) ?? "Unfollowed ${_userProfile!.username}"),
         );
       }
     } catch (e) {

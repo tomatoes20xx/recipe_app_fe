@@ -43,7 +43,7 @@ class FollowingController extends ChangeNotifier {
       // Check if it's a 403 (private list)
       if (e.toString().contains("403") || e.toString().contains("Forbidden")) {
         isPrivate = true;
-        error = "This user's following list is private";
+        error = "followingListPrivate";
       } else {
         error = e.toString();
       }

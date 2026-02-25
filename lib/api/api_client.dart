@@ -80,30 +80,51 @@ class ApiClient {
 }
 
   Future<dynamic> patch(String path, {Object? body, bool auth = false}) async {
-  final res = await _client.patch(
-    _uri(path),
-    headers: await _headers(auth: auth, hasBody: body != null),
-    body: body == null ? null : jsonEncode(body),
-  );
-  return _handle(res);
+  try {
+    final res = await _client.patch(
+      _uri(path),
+      headers: await _headers(auth: auth, hasBody: body != null),
+      body: body == null ? null : jsonEncode(body),
+    );
+    return _handle(res);
+  } on http.ClientException catch (e) {
+    throw ApiException(0, "Connection failed: ${e.message}. Make sure your backend is running and your phone is on the same network.");
+  } catch (e) {
+    if (e is ApiException) rethrow;
+    throw ApiException(0, "Network error: $e");
+  }
 }
 
  Future<dynamic> put(String path, {Object? body, bool auth = false}) async {
-  final res = await _client.put(
-    _uri(path),
-    headers: await _headers(auth: auth, hasBody: body != null),
-    body: body == null ? null : jsonEncode(body),
-  );
-  return _handle(res);
+  try {
+    final res = await _client.put(
+      _uri(path),
+      headers: await _headers(auth: auth, hasBody: body != null),
+      body: body == null ? null : jsonEncode(body),
+    );
+    return _handle(res);
+  } on http.ClientException catch (e) {
+    throw ApiException(0, "Connection failed: ${e.message}. Make sure your backend is running and your phone is on the same network.");
+  } catch (e) {
+    if (e is ApiException) rethrow;
+    throw ApiException(0, "Network error: $e");
+  }
 }
 
 Future<dynamic> delete(String path, {Object? body, bool auth = false}) async {
-  final res = await _client.delete(
-    _uri(path),
-    headers: await _headers(auth: auth, hasBody: body != null),
-    body: body == null ? null : jsonEncode(body),
-  );
-  return _handle(res);
+  try {
+    final res = await _client.delete(
+      _uri(path),
+      headers: await _headers(auth: auth, hasBody: body != null),
+      body: body == null ? null : jsonEncode(body),
+    );
+    return _handle(res);
+  } on http.ClientException catch (e) {
+    throw ApiException(0, "Connection failed: ${e.message}. Make sure your backend is running and your phone is on the same network.");
+  } catch (e) {
+    if (e is ApiException) rethrow;
+    throw ApiException(0, "Network error: $e");
+  }
 }
 
 Future<dynamic> postMultipart(

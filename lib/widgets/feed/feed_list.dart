@@ -157,7 +157,7 @@ class FeedList extends StatelessWidget {
             left: 16,
             right: 16,
             top: i == 0 ? 16 : 8,
-            bottom: i == totalItemCount - 2 ? 0 : 0,
+            bottom: 0,
           ),
           // RepaintBoundary prevents repaints from propagating to/from this widget,
           // improving scroll performance for complex cards with images

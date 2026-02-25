@@ -134,6 +134,7 @@ class FeedItem {
       viewerHasBookmarked: viewerHasBookmarked ?? this.viewerHasBookmarked,
       likesWindow: likesWindow ?? this.likesWindow,
       images: images ?? this.images,
+      shareId: shareId,
     );
   }
 }

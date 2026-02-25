@@ -40,7 +40,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
 
     // Backend requires exactly 6 digits
     if (token.length != 6) {
-      ErrorUtils.showError(context, "Verification code must be exactly 6 digits");
+      ErrorUtils.showError(context, localizations?.verificationCodeMustBe6Digits ?? "Verification code must be exactly 6 digits");
       return;
     }
 
