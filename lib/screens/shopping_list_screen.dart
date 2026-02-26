@@ -571,6 +571,7 @@ class _RecipeGroupCardState extends State<_RecipeGroupCard> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final localizations = AppLocalizations.of(context);
     final sharedCount = _getSharedUsers().length;
 
     return Card(
@@ -652,7 +653,7 @@ class _RecipeGroupCardState extends State<_RecipeGroupCard> {
                         Row(
                           children: [
                             Text(
-                              "${widget.group.checkedCount}/${widget.group.totalCount} items",
+                              localizations?.shoppingItemsCount(widget.group.checkedCount, widget.group.totalCount) ?? "${widget.group.checkedCount}/${widget.group.totalCount} items",
                               style: theme.textTheme.bodySmall?.copyWith(
                                 color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                               ),
