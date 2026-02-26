@@ -533,6 +533,11 @@ class AppLocalizations {
   String get checked => _localizedValues[locale.languageCode]?["checked"] ?? "Checked";
   String get remaining => _localizedValues[locale.languageCode]?["remaining"] ?? "Remaining";
   String get clearChecked => _localizedValues[locale.languageCode]?["clearChecked"] ?? "Clear";
+  String shoppingItemsCount(int checked, int total) =>
+      (_localizedValues[locale.languageCode]?["shoppingItemsCount"] ?? "{checked}/{total} items")
+          .replaceAll("{checked}", checked.toString())
+          .replaceAll("{total}", total.toString());
+
   String get clearCheckedItems => _localizedValues[locale.languageCode]?["clearCheckedItems"] ?? "Clear checked items?";
   String get clearCheckedItemsMessage => _localizedValues[locale.languageCode]?["clearCheckedItemsMessage"] ?? "This will remove all checked items from your shopping list.";
   String get clearAllItems => _localizedValues[locale.languageCode]?["clearAllItems"] ?? "Clear all items?";
@@ -1197,6 +1202,7 @@ class AppLocalizations {
       "checked": "Checked",
       "remaining": "Remaining",
       "clearChecked": "Clear",
+      "shoppingItemsCount": "{checked}/{total} items",
       "clearCheckedItems": "Clear checked items?",
       "clearCheckedItemsMessage": "This will remove all checked items from your shopping list.",
       "clearAllItems": "Clear all items?",
@@ -1886,6 +1892,7 @@ class AppLocalizations {
       "checked": "მონიშნული",
       "remaining": "დარჩენილი",
       "clearChecked": "გასუფთავება",
+      "shoppingItemsCount": "{checked}/{total} ელემენტი",
       "clearCheckedItems": "გავასუფთაო მონიშნული ელემენტები?",
       "clearCheckedItemsMessage": "ეს ამოშლის ყველა მონიშნულ ელემენტს თქვენი საყიდლების სიიდან.",
       "clearAllItems": "გავასუფთაო ყველა ელემენტი?",
