@@ -27,6 +27,8 @@ class AppLocalizations {
   String get password => _localizedValues[locale.languageCode]?["password"] ?? "Password";
   String get passwordHint => _localizedValues[locale.languageCode]?["passwordHint"] ?? "Enter your password";
   String get createAccount => _localizedValues[locale.languageCode]?["createAccount"] ?? "Create account";
+  String get createYourAccount => _localizedValues[locale.languageCode]?["createYourAccount"] ?? "Create your account";
+  String get alreadyHaveAccount => _localizedValues[locale.languageCode]?["alreadyHaveAccount"] ?? "Already have an account?";
   String get username => _localizedValues[locale.languageCode]?["username"] ?? "Username";
   String get displayName => _localizedValues[locale.languageCode]?["displayName"] ?? "Display name (optional)";
   String get passwordMin => _localizedValues[locale.languageCode]?["passwordMin"] ?? "Password (min 8)";
@@ -498,6 +500,9 @@ class AppLocalizations {
   String get enterPasswordAgain => _localizedValues[locale.languageCode]?["enterPasswordAgain"] ?? "Enter password again";
   String get passwordsDoNotMatch => _localizedValues[locale.languageCode]?["passwordsDoNotMatch"] ?? "Passwords do not match";
   String get passwordTooShort => _localizedValues[locale.languageCode]?["passwordTooShort"] ?? "Password must be at least 8 characters";
+  String get passwordNeedsUppercase => _localizedValues[locale.languageCode]?["passwordNeedsUppercase"] ?? "Password must contain at least one uppercase letter (A-Z)";
+  String get passwordNeedsLowercase => _localizedValues[locale.languageCode]?["passwordNeedsLowercase"] ?? "Password must contain at least one lowercase letter (a-z)";
+  String get passwordNeedsNumber => _localizedValues[locale.languageCode]?["passwordNeedsNumber"] ?? "Password must contain at least one number (0-9)";
   String get passwordResetSuccess => _localizedValues[locale.languageCode]?["passwordResetSuccess"] ?? "Password reset successfully!";
   String get pleaseEnterResetCode => _localizedValues[locale.languageCode]?["pleaseEnterResetCode"] ?? "Please enter the reset code";
   String get pleaseEnterPassword => _localizedValues[locale.languageCode]?["pleaseEnterPassword"] ?? "Please enter a password";
@@ -815,9 +820,11 @@ class AppLocalizations {
       "password": "Password",
       "passwordHint": "Enter your password",
       "createAccount": "Create account",
+      "createYourAccount": "Create your account",
+      "alreadyHaveAccount": "Already have an account?",
       "username": "Username",
       "displayName": "Display name (optional)",
-      "passwordMin": "Password (min 8)",
+      "passwordMin": "Password (min 8, A-Z, a-z, 0-9)",
       "continueWithGoogle": "Continue with Google",
       "orContinue": "or continue",
       "rememberMe": "Remember me",
@@ -1174,6 +1181,9 @@ class AppLocalizations {
       "enterPasswordAgain": "Enter password again",
       "passwordsDoNotMatch": "Passwords do not match",
       "passwordTooShort": "Password must be at least 8 characters",
+      "passwordNeedsUppercase": "Password must contain at least one uppercase letter (A-Z)",
+      "passwordNeedsLowercase": "Password must contain at least one lowercase letter (a-z)",
+      "passwordNeedsNumber": "Password must contain at least one number (0-9)",
       "passwordResetSuccess": "Password reset successfully!",
       "pleaseEnterResetCode": "Please enter the reset code",
       "pleaseEnterPassword": "Please enter a password",
@@ -1505,9 +1515,11 @@ class AppLocalizations {
       "password": "პაროლი",
       "passwordHint": "შეიყვანეთ თქვენი პაროლი",
       "createAccount": "ანგარიშის შექმნა",
+      "createYourAccount": "შექმენი ანგარიში",
+      "alreadyHaveAccount": "უკვე გაქვს ანგარიში?",
       "username": "მომხმარებლის სახელი",
       "displayName": "როგორ გინდათ თქვენი სახელი გამოჩნდეს? (არასავალდებულო)",
-      "passwordMin": "პაროლი (მინ. 8)",
+      "passwordMin": "პაროლი (მინ. 8, A-Z, a-z, 0-9)",
       "continueWithGoogle": "გაგრძელება Google-ით",
       "orContinue": "ან გაგრძელება",
       "rememberMe": "დამახსოვრება",
@@ -1864,6 +1876,9 @@ class AppLocalizations {
       "enterPasswordAgain": "შეიყვანეთ პაროლი ხელახლა",
       "passwordsDoNotMatch": "პაროლები არ ემთხვევა",
       "passwordTooShort": "პაროლი უნდა იყოს მინიმუმ 8 სიმბოლო",
+      "passwordNeedsUppercase": "პაროლი უნდა შეიცავდეს მინიმუმ ერთ დიდ ასოს (A-Z)",
+      "passwordNeedsLowercase": "პაროლი უნდა შეიცავდეს მინიმუმ ერთ პატარა ასოს (a-z)",
+      "passwordNeedsNumber": "პაროლი უნდა შეიცავდეს მინიმუმ ერთ ციფრს (0-9)",
       "passwordResetSuccess": "პაროლი წარმატებით აღდგა!",
       "pleaseEnterResetCode": "გთხოვთ შეიყვანოთ აღდგენის კოდი",
       "pleaseEnterPassword": "გთხოვთ შეიყვანოთ პაროლი",

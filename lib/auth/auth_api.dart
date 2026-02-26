@@ -48,7 +48,7 @@ class AuthApi {
       "email": email,
       "password": password,
       "username": username,
-      "displayName": displayName,
+      if (displayName != null && displayName.isNotEmpty) "displayName": displayName,
     });
 
     final token = (data["token"] ?? "").toString();

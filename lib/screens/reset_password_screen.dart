@@ -70,6 +70,30 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       return;
     }
 
+    if (!password.contains(RegExp(r'[A-Z]'))) {
+      ErrorUtils.showError(
+        context,
+        localizations?.passwordNeedsUppercase ?? "Password must contain at least one uppercase letter (A-Z)",
+      );
+      return;
+    }
+
+    if (!password.contains(RegExp(r'[a-z]'))) {
+      ErrorUtils.showError(
+        context,
+        localizations?.passwordNeedsLowercase ?? "Password must contain at least one lowercase letter (a-z)",
+      );
+      return;
+    }
+
+    if (!password.contains(RegExp(r'[0-9]'))) {
+      ErrorUtils.showError(
+        context,
+        localizations?.passwordNeedsNumber ?? "Password must contain at least one number (0-9)",
+      );
+      return;
+    }
+
     if (password != confirmPassword) {
       ErrorUtils.showError(
         context,
