@@ -263,82 +263,68 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
   }
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
     final localizations = AppLocalizations.of(context);
+    final errors = <String>[];
+
+    // Title is required
+    if (_titleController.text.trim().isEmpty) {
+      errors.add(localizations?.recipeTitleRequired ?? "Recipe title is required");
+    }
+
+    // At least one ingredient
     if (_ingredients.isEmpty) {
-      ErrorUtils.showError(
-          context,
-          localizations?.pleaseAddAtLeastOneIngredient ??
-              "Please add at least one ingredient");
-      return;
+      errors.add(localizations?.pleaseAddAtLeastOneIngredient ?? "Please add at least one ingredient");
+    } else {
+      // Validate ingredient names
+      for (var i = 0; i < _ingredients.length; i++) {
+        if (_ingredients[i].nameController.text.trim().isEmpty) {
+          errors.add(localizations?.ingredientNameRequired(i) ?? "Ingredient ${i + 1}: name is required");
+        }
+      }
     }
+
+    // At least one step
     if (_steps.isEmpty) {
-      ErrorUtils.showError(context,
-          localizations?.pleaseAddAtLeastOneStep ?? "Please add at least one step");
-      return;
-    }
-
-    // Validate ingredients
-    for (var i = 0; i < _ingredients.length; i++) {
-      if (_ingredients[i].nameController.text.trim().isEmpty) {
-        ErrorUtils.showError(
-            context,
-            localizations?.ingredientNameRequired(i) ??
-                "Ingredient ${i + 1}: name is required");
-        return;
+      errors.add(localizations?.pleaseAddAtLeastOneStep ?? "Please add at least one step");
+    } else {
+      // Validate step instructions
+      for (var i = 0; i < _steps.length; i++) {
+        if (_steps[i].instructionController.text.trim().isEmpty) {
+          errors.add(localizations?.stepInstructionRequired(i) ?? "Step ${i + 1}: instruction is required");
+        }
       }
     }
 
-    // Validate steps
-    for (var i = 0; i < _steps.length; i++) {
-      if (_steps[i].instructionController.text.trim().isEmpty) {
-        ErrorUtils.showError(
-            context,
-            localizations?.stepInstructionRequired(i) ??
-                "Step ${i + 1}: instruction is required");
-        return;
-      }
-    }
-
-    // Validate cooking time: min should not be more than max (they can be equal)
+    // Validate cooking time
     final cookingTimeMinText = _cookingTimeMinController.text.trim();
     final cookingTimeMaxText = _cookingTimeMaxController.text.trim();
 
-    // Check if fields have text but are invalid
-    if (cookingTimeMinText.isNotEmpty) {
-      final min = int.tryParse(cookingTimeMinText);
-      if (min == null) {
-        ErrorUtils.showError(
-            context,
-            localizations?.minCookingTimeMustBeValidNumber ??
-                "Minimum cooking time must be a valid number");
-        return;
-      }
+    if (cookingTimeMinText.isNotEmpty && int.tryParse(cookingTimeMinText) == null) {
+      errors.add(localizations?.minCookingTimeMustBeValidNumber ?? "Minimum cooking time must be a valid number");
     }
-    if (cookingTimeMaxText.isNotEmpty) {
-      final max = int.tryParse(cookingTimeMaxText);
-      if (max == null) {
-        ErrorUtils.showError(
-            context,
-            localizations?.maxCookingTimeMustBeValidNumber ??
-                "Maximum cooking time must be a valid number");
-        return;
-      }
+    if (cookingTimeMaxText.isNotEmpty && int.tryParse(cookingTimeMaxText) == null) {
+      errors.add(localizations?.maxCookingTimeMustBeValidNumber ?? "Maximum cooking time must be a valid number");
     }
 
-    // Parse cooking time values - we already validated they're valid if text is present
-    final cookingTimeMin =
-        cookingTimeMinText.isEmpty ? null : int.tryParse(cookingTimeMinText);
-    final cookingTimeMax =
-        cookingTimeMaxText.isEmpty ? null : int.tryParse(cookingTimeMaxText);
+    final cookingTimeMin = cookingTimeMinText.isEmpty ? null : int.tryParse(cookingTimeMinText);
+    final cookingTimeMax = cookingTimeMaxText.isEmpty ? null : int.tryParse(cookingTimeMaxText);
 
-    if (cookingTimeMin != null &&
-        cookingTimeMax != null &&
-        cookingTimeMin > cookingTimeMax) {
-      ErrorUtils.showError(
-          context,
-          localizations?.minCookingTimeCannotBeGreater ??
-              "Minimum cooking time cannot be greater than maximum time");
+    if (cookingTimeMin != null && cookingTimeMax != null && cookingTimeMin > cookingTimeMax) {
+      errors.add(localizations?.minCookingTimeCannotBeGreater ?? "Minimum cooking time cannot be greater than maximum time");
+    }
+
+    // Trigger inline form field validation for visual feedback
+    _formKey.currentState!.validate();
+
+    // Show the first error via snackbar
+    if (errors.isNotEmpty) {
+      ErrorUtils.showSnackBar(
+        context,
+        errors.first,
+        icon: Icons.error_outline,
+        backgroundColor: Theme.of(context).colorScheme.error,
+        iconColor: Colors.white,
+      );
       return;
     }
 
@@ -920,7 +906,7 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
             theme: theme,
             validator: (value) {
               if (value == null || value.trim().isEmpty) {
-                return "${localizations?.title ?? "Title"} is required";
+                return localizations?.recipeTitleRequired ?? "Recipe title is required";
               }
               return null;
             },
