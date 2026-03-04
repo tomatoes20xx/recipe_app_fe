@@ -902,6 +902,8 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
 
     final screenHeight = MediaQuery.of(context).size.height;
     final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
+    final navBarHeight = MediaQuery.of(context).viewPadding.bottom;
+    final bottomPadding = keyboardHeight > 0 ? keyboardHeight : navBarHeight;
     final sheetHeight = screenHeight * 0.75;
 
     final isLoggedIn = widget.auth?.isLoggedIn ?? false;
@@ -915,7 +917,7 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 100),
       height: sheetHeight,
-      padding: EdgeInsets.only(bottom: keyboardHeight),
+      padding: EdgeInsets.only(bottom: bottomPadding),
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),

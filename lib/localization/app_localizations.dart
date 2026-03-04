@@ -178,6 +178,8 @@ class AppLocalizations {
   String get pleaseAddAtLeastOneStep => _localizedValues[locale.languageCode]?["pleaseAddAtLeastOneStep"] ?? "Please add at least one step";
   String ingredientNameRequired(int index) => _localizedValues[locale.languageCode]?["ingredientNameRequired"]?.replaceAll("{index}", "${index + 1}") ?? "Ingredient ${index + 1}: name is required";
   String stepInstructionRequired(int index) => _localizedValues[locale.languageCode]?["stepInstructionRequired"]?.replaceAll("{index}", "${index + 1}") ?? "Step ${index + 1}: instruction is required";
+  String get pleaseFillInRequiredFields => _localizedValues[locale.languageCode]?["pleaseFillInRequiredFields"] ?? "Please fix the following:";
+  String get recipeTitleRequired => _localizedValues[locale.languageCode]?["recipeTitleRequired"] ?? "Recipe title is required";
 
   // Profile
   String get addAvatar => _localizedValues[locale.languageCode]?["addAvatar"] ?? "Add Avatar";
@@ -1252,6 +1254,8 @@ class AppLocalizations {
       "pleaseAddAtLeastOneStep": "Please add at least one step",
       "ingredientNameRequired": "Ingredient {index}: name is required",
       "stepInstructionRequired": "Step {index}: instruction is required",
+      "pleaseFillInRequiredFields": "Please fix the following:",
+      "recipeTitleRequired": "Recipe title is required",
       "helpWelcomeTitle": "Welcome to Help & Support",
       "helpWelcomeMessage": "I'm a solo developer working on Yummy. While I don't have a dedicated support team, I'm here to help! Please check the FAQs below first, and if you still need assistance, feel free to reach out.",
       "faq": "Frequently Asked Questions",
@@ -1947,6 +1951,8 @@ class AppLocalizations {
       "pleaseAddAtLeastOneStep": "გთხოვთ დაამატოთ მინიმუმ ერთი ნაბიჯი",
       "ingredientNameRequired": "ინგრედიენტი {index}: სახელი აუცილებელია",
       "stepInstructionRequired": "ნაბიჯი {index}: ინსტრუქცია აუცილებელია",
+      "pleaseFillInRequiredFields": "გთხოვთ გაასწოროთ შემდეგი:",
+      "recipeTitleRequired": "რეცეპტის სათაური აუცილებელია",
       "helpWelcomeTitle": "კეთილი იყოს თქვენი მობრძანება დახმარებისა და მხარდაჭერის გვერდზე",
       "helpWelcomeMessage": "Yummy-ზე მუშაობს მხოლოდ ერთი დეველოპერი. მიუხედავად იმისა, რომ არ მყავს გამოყოფილი მხარდაჭერის გუნდი, შევეცდები ყველაფერში დაგეხმაროთ! გთხოვთ ჯერ გადახედოთ ხშირად დასმულ კითხვებს, და თუ კვლავ დაგჭირდებათ დახმარება, დამიკავშირდით.",
       "faq": "ხშირად დასმული კითხვები",
