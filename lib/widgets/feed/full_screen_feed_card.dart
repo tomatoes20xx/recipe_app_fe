@@ -146,6 +146,7 @@ class _ImageCarousel extends StatelessWidget {
   Widget build(BuildContext context) {
     if (item.images.isNotEmpty) {
       return GestureDetector(
+        behavior: HitTestBehavior.opaque,
         onTap: onTap,
         child: PageView.builder(
           controller: pageController,
@@ -167,6 +168,7 @@ class _ImageCarousel extends StatelessWidget {
     }
 
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: onTap,
       child: const RecipeFallbackImage(
         width: double.infinity,
@@ -186,16 +188,18 @@ class _GradientOverlay extends StatelessWidget {
       bottom: 0,
       left: 0,
       right: 0,
-      child: Container(
-        height: 300,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Colors.transparent,
-              Colors.black.withValues(alpha: 0.7),
-            ],
+      child: IgnorePointer(
+        child: Container(
+          height: 300,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Colors.transparent,
+                Colors.black.withValues(alpha: 0.7),
+              ],
+            ),
           ),
         ),
       ),
@@ -303,24 +307,23 @@ class _AuthorInfo extends StatelessWidget {
   Widget build(BuildContext context) {
     final displayName = item.authorDisplayName ?? item.authorUsername;
 
-    return Row(
-      children: [
-        GestureDetector(
-          onTap: () {
-            // If viewing own profile, pass null to show edit functionality
-            final isOwnProfile = auth.me?["username"]?.toString() == item.authorUsername;
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => ProfileScreen(
-                  auth: auth,
-                  apiClient: apiClient,
-                  shoppingListController: shoppingListController,
-                  username: isOwnProfile ? null : item.authorUsername,
-                ),
-              ),
-            );
-          },
-          child: item.authorAvatarUrl != null && item.authorAvatarUrl!.isNotEmpty
+    return GestureDetector(
+      onTap: () {
+        final isOwnProfile = auth.me?["username"]?.toString() == item.authorUsername;
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => ProfileScreen(
+              auth: auth,
+              apiClient: apiClient,
+              shoppingListController: shoppingListController,
+              username: isOwnProfile ? null : item.authorUsername,
+            ),
+          ),
+        );
+      },
+      child: Row(
+        children: [
+          item.authorAvatarUrl != null && item.authorAvatarUrl!.isNotEmpty
               ? CircleAvatar(
                   radius: 16,
                   backgroundColor: Theme.of(context).colorScheme.primary,
@@ -345,32 +348,32 @@ class _AuthorInfo extends StatelessWidget {
                     ),
                   ),
                 ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                displayName,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 14,
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  displayName,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
                 ),
-              ),
-              Text(
-                "@${item.authorUsername} · $date",
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.8),
-                  fontSize: 12,
+                Text(
+                  "@${item.authorUsername} · $date",
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.8),
+                    fontSize: 12,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
