@@ -17,6 +17,7 @@ import "../users/user_recipes_controller.dart";
 import "../utils/error_utils.dart";
 import "../utils/image_utils.dart";
 import "../utils/ui_utils.dart";
+import "../widgets/common/app_bottom_sheet.dart";
 import "../widgets/common/common_widgets.dart";
 import "../widgets/empty_state_widget.dart";
 import "edit_profile_screen.dart";
@@ -231,13 +232,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _showAvatarMenu(BuildContext context, String? avatarUrl) {
-    showModalBottomSheet(
+    showAppBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => SafeArea(
-        child: Column(
+      isScrollControlled: false,
+      builder: (context) => Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Builder(
@@ -286,6 +291,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             const SizedBox(height: 8),
           ],
+        ),
         ),
       ),
     );

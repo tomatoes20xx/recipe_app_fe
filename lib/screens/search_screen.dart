@@ -19,6 +19,7 @@ import "../users/user_api.dart";
 import "../users/user_models.dart";
 import "../utils/error_utils.dart";
 import "../utils/ui_utils.dart";
+import "../widgets/common/app_bottom_sheet.dart";
 import "../widgets/common/common_widgets.dart";
 import "../widgets/empty_state_widget.dart";
 import "pantry_search_screen.dart";
@@ -673,12 +674,8 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   void _showFilterBottomSheet(BuildContext context) {
-    showModalBottomSheet(
+    showAppBottomSheet(
       context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
       builder: (context) => _FilterBottomSheet(
         filters: searchController.recipeFilters,
         onApply: (filters) {
@@ -860,8 +857,15 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
       maxChildSize: 0.95,
       expand: false,
       builder: (context, scrollController) {
-        return Column(
-          children: [
+        return Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: SafeArea(
+            top: false,
+            child: Column(
+              children: [
             Container(
               margin: const EdgeInsets.only(top: 12),
               width: 40,
@@ -1317,6 +1321,8 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
               ),
             ),
           ],
+        ),
+        ),
         );
       },
     );

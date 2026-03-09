@@ -8,6 +8,7 @@ import "../reports/report_bottom_sheet.dart";
 import "../reports/report_models.dart";
 import "../utils/error_utils.dart";
 import "../utils/ui_utils.dart";
+import "../widgets/common/app_bottom_sheet.dart";
 import "comment_models.dart";
 import "comments_controller.dart";
 import "recipe_api.dart";
@@ -30,10 +31,8 @@ Future<void> showCommentsBottomSheet({
 
   if (!context.mounted) return;
 
-  await showModalBottomSheet(
+  await showAppBottomSheet(
     context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
     builder: (context) => _CommentsBottomSheet(
       recipeId: recipeId,
       commentsController: commentsController,
@@ -902,8 +901,6 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
 
     final screenHeight = MediaQuery.of(context).size.height;
     final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
-    final navBarHeight = MediaQuery.of(context).viewPadding.bottom;
-    final bottomPadding = keyboardHeight > 0 ? keyboardHeight : navBarHeight;
     final sheetHeight = screenHeight * 0.75;
 
     final isLoggedIn = widget.auth?.isLoggedIn ?? false;
@@ -917,12 +914,14 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 100),
       height: sheetHeight,
-      padding: EdgeInsets.only(bottom: bottomPadding),
+      padding: EdgeInsets.only(bottom: keyboardHeight),
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      child: Column(
+      child: SafeArea(
+        top: false,
+        child: Column(
         children: [
           // Handle bar
           Center(
@@ -1228,6 +1227,7 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
             ),
           ],
         ],
+      ),
       ),
     );
   }

@@ -8,6 +8,7 @@ import "../../localization/app_localizations.dart";
 import "../../users/user_api.dart";
 import "../../users/user_models.dart";
 import "../../utils/ui_utils.dart";
+import "../common/app_bottom_sheet.dart";
 
 /// Shows a bottom sheet for selecting followers (people who follow you) to share content with
 ///
@@ -22,10 +23,8 @@ Future<void> showFollowerSelectionBottomSheet({
   required Function(List<String> userIds, String? shareType) onShare,
   bool showShareTypeSelector = false,
 }) async {
-  await showModalBottomSheet(
+  await showAppBottomSheet(
     context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
     builder: (context) => _FollowerSelectionBottomSheet(
       apiClient: apiClient,
       auth: auth,
@@ -165,8 +164,10 @@ class _FollowerSelectionBottomSheetState extends State<_FollowerSelectionBottomS
         maxChildSize: 0.95,
         expand: false,
         builder: (context, scrollController) {
-          return Column(
-            children: [
+          return SafeArea(
+            top: false,
+            child: Column(
+              children: [
               // Drag handle
               Container(
                 margin: const EdgeInsets.only(top: 8),
@@ -273,28 +274,26 @@ class _FollowerSelectionBottomSheetState extends State<_FollowerSelectionBottomS
                     ),
                   ),
                 ),
-                child: SafeArea(
-                  top: false,
-                  child: FilledButton(
-                    onPressed: _selectedUserIds.isEmpty || _isSharing ? null : _handleShare,
-                    style: FilledButton.styleFrom(
-                      minimumSize: const Size.fromHeight(48),
-                    ),
-                    child: _isSharing
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : Text(
-                            _selectedUserIds.isEmpty
-                                ? (localizations?.selectFollowers ?? "Select followers")
-                                : localizations?.shareWithNPeople(_selectedUserIds.length) ?? "Share with ${_selectedUserIds.length} ${_selectedUserIds.length == 1 ? "person" : "people"}",
-                          ),
+                child: FilledButton(
+                  onPressed: _selectedUserIds.isEmpty || _isSharing ? null : _handleShare,
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size.fromHeight(48),
                   ),
+                  child: _isSharing
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : Text(
+                          _selectedUserIds.isEmpty
+                              ? (localizations?.selectFollowers ?? "Select followers")
+                              : localizations?.shareWithNPeople(_selectedUserIds.length) ?? "Share with ${_selectedUserIds.length} ${_selectedUserIds.length == 1 ? "person" : "people"}",
+                        ),
                 ),
               ),
             ],
+          ),
           );
         },
       ),

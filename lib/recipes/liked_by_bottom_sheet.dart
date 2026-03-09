@@ -1,18 +1,15 @@
 import "package:flutter/material.dart";
 import "../localization/app_localizations.dart";
 import "../utils/ui_utils.dart";
+import "../widgets/common/app_bottom_sheet.dart";
 import "recipe_detail_models.dart";
 
 Future<void> showLikedByBottomSheet({
   required BuildContext context,
   required List<LikedByUser> likedBy,
 }) {
-  return showModalBottomSheet(
+  return showAppBottomSheet(
     context: context,
-    isScrollControlled: true,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-    ),
     builder: (context) => DraggableScrollableSheet(
       initialChildSize: 0.6,
       minChildSize: 0.4,
@@ -47,8 +44,10 @@ class _LikedByBottomSheet extends StatelessWidget {
         color: theme.colorScheme.surface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      child: Column(
-        children: [
+      child: SafeArea(
+        top: false,
+        child: Column(
+          children: [
           // Drag handle
           Padding(
             padding: const EdgeInsets.only(top: 12, bottom: 8),
@@ -116,6 +115,7 @@ class _LikedByBottomSheet extends StatelessWidget {
                   ),
           ),
         ],
+      ),
       ),
     );
   }

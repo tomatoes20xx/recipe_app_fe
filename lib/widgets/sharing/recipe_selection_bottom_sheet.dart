@@ -3,6 +3,7 @@ import "package:flutter/material.dart";
 import "../../localization/app_localizations.dart";
 import "../../shopping/shopping_list_models.dart";
 import "../../utils/ui_utils.dart";
+import "../common/app_bottom_sheet.dart";
 
 /// Bottom sheet for selecting recipes from shopping list to share
 Future<void> showRecipeSelectionBottomSheet({
@@ -10,10 +11,8 @@ Future<void> showRecipeSelectionBottomSheet({
   required List<ShoppingListItem> allItems,
   required Function(List<String> recipeIds) onRecipesSelected,
 }) async {
-  await showModalBottomSheet(
+  await showAppBottomSheet(
     context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
     builder: (context) => _RecipeSelectionBottomSheet(
       allItems: allItems,
       onRecipesSelected: onRecipesSelected,
@@ -104,10 +103,12 @@ class _RecipeSelectionBottomSheetState extends State<_RecipeSelectionBottomSheet
             color: theme.scaffoldBackgroundColor,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
           ),
-          child: Column(
-            children: [
-              // Drag handle
-              Container(
+          child: SafeArea(
+            top: false,
+            child: Column(
+              children: [
+                // Drag handle
+                Container(
                 margin: const EdgeInsets.symmetric(vertical: 12),
                 width: 40,
                 height: 4,
@@ -209,22 +210,20 @@ class _RecipeSelectionBottomSheetState extends State<_RecipeSelectionBottomSheet
                     ),
                   ],
                 ),
-                child: SafeArea(
-                  top: false,
-                  child: FilledButton(
-                    onPressed: _selectedRecipeIds.isEmpty ? null : _handleShare,
-                    style: FilledButton.styleFrom(
-                      minimumSize: const Size(double.infinity, 50),
-                    ),
-                    child: Text(
-                      _selectedRecipeIds.isEmpty
-                          ? (localizations?.selectRecipes ?? "Select Recipes")
-                          : (localizations?.shareSelectedRecipes ?? "Share ${_selectedRecipeIds.length} ${_selectedRecipeIds.length == 1 ? 'Recipe' : 'Recipes'}"),
-                    ),
+                child: FilledButton(
+                  onPressed: _selectedRecipeIds.isEmpty ? null : _handleShare,
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 50),
+                  ),
+                  child: Text(
+                    _selectedRecipeIds.isEmpty
+                        ? (localizations?.selectRecipes ?? "Select Recipes")
+                        : (localizations?.shareSelectedRecipes ?? "Share ${_selectedRecipeIds.length} ${_selectedRecipeIds.length == 1 ? 'Recipe' : 'Recipes'}"),
                   ),
                 ),
               ),
             ],
+          ),
           ),
         );
       },
