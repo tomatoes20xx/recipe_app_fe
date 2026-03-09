@@ -3,6 +3,7 @@ import "package:flutter/material.dart";
 import "../api/api_client.dart";
 import "../localization/app_localizations.dart";
 import "../utils/error_utils.dart";
+import "../widgets/common/app_bottom_sheet.dart";
 import "report_api.dart";
 import "report_models.dart";
 
@@ -15,10 +16,8 @@ Future<bool> showReportBottomSheet({
   required String targetId,
   required ApiClient apiClient,
 }) async {
-  final result = await showModalBottomSheet<bool>(
+  final result = await showAppBottomSheet<bool>(
     context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
     builder: (context) => _ReportBottomSheet(
       targetType: targetType,
       targetId: targetId,
@@ -158,6 +157,7 @@ class _ReportBottomSheetState extends State<_ReportBottomSheet> {
         bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
       child: SafeArea(
+        top: false,
         child: SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.all(20),

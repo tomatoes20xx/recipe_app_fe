@@ -3,6 +3,7 @@ import "package:flutter/material.dart";
 import "../api/api_client.dart";
 import "../localization/app_localizations.dart";
 import "../utils/error_utils.dart";
+import "../widgets/common/app_bottom_sheet.dart";
 import "collection_api.dart";
 import "collection_models.dart";
 
@@ -22,10 +23,8 @@ Future<CollectionSheetResult> showAddToCollectionBottomSheet({
   required ApiClient apiClient,
   required String recipeId,
 }) async {
-  final result = await showModalBottomSheet<CollectionSheetResult>(
+  final result = await showAppBottomSheet<CollectionSheetResult>(
     context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
     builder: (context) => _AddToCollectionSheet(
       apiClient: apiClient,
       recipeId: recipeId,
@@ -289,7 +288,9 @@ class _AddToCollectionSheetState extends State<_AddToCollectionSheet> {
         constraints: BoxConstraints(
           maxHeight: MediaQuery.of(context).size.height * 0.65,
         ),
-        child: Column(
+        child: SafeArea(
+          top: false,
+          child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             // Drag handle
@@ -390,6 +391,7 @@ class _AddToCollectionSheetState extends State<_AddToCollectionSheet> {
                 ),
               ),
           ],
+        ),
         ),
       ),
     );

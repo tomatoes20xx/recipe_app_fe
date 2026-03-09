@@ -3,6 +3,7 @@ import "package:flutter/material.dart";
 import "../../localization/app_localizations.dart";
 import "../../sharing/sharing_models.dart";
 import "../../utils/ui_utils.dart";
+import "../common/app_bottom_sheet.dart";
 
 /// Shows a bottom sheet displaying who has access to shared content
 ///
@@ -15,10 +16,8 @@ Future<void> showSharedWithBottomSheet({
   required Function(String userId) onUnshare,
   bool isLoading = false,
 }) async {
-  await showModalBottomSheet(
+  await showAppBottomSheet(
     context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
     builder: (context) => _SharedWithBottomSheet(
       sharedWith: sharedWith,
       onUnshare: onUnshare,
@@ -106,8 +105,10 @@ class _SharedWithBottomSheetState extends State<_SharedWithBottomSheet> {
         maxChildSize: 0.9,
         expand: false,
         builder: (context, scrollController) {
-          return Column(
-            children: [
+          return SafeArea(
+            top: false,
+            child: Column(
+              children: [
               // Drag handle
               Container(
                 margin: const EdgeInsets.only(top: 8),
@@ -137,6 +138,7 @@ class _SharedWithBottomSheetState extends State<_SharedWithBottomSheet> {
                 child: _buildContent(scrollController, localizations, theme),
               ),
             ],
+          ),
           );
         },
       ),
