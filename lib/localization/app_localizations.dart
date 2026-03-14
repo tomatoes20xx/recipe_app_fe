@@ -268,6 +268,15 @@ class AppLocalizations {
   String get movedToBookmarks => _localizedValues[locale.languageCode]?["movedToBookmarks"] ?? "Moved to bookmarks";
   String get recipeAlreadyInCollection => _localizedValues[locale.languageCode]?["recipeAlreadyInCollection"] ?? "Recipe is already in a collection. It will be moved.";
 
+  // Multi-select
+  String nSelected(int count) => _localizedValues[locale.languageCode]?["nSelected"]?.replaceAll("{count}", count.toString()) ?? "$count selected";
+  String get moveToCollection => _localizedValues[locale.languageCode]?["moveToCollection"] ?? "Move to Collection";
+  String get removeBookmarks => _localizedValues[locale.languageCode]?["removeBookmarks"] ?? "Remove Bookmarks";
+  String removeSelectedBookmarksConfirm(int count) => _localizedValues[locale.languageCode]?["removeSelectedBookmarksConfirm"]?.replaceAll("{count}", count.toString()) ?? "Remove $count recipes from saved?";
+  String bulkMoveSuccess(int count) => _localizedValues[locale.languageCode]?["bulkMoveSuccess"]?.replaceAll("{count}", count.toString()) ?? "Moved $count recipes";
+  String bulkRemoveSuccess(int count) => _localizedValues[locale.languageCode]?["bulkRemoveSuccess"]?.replaceAll("{count}", count.toString()) ?? "Removed $count recipes";
+  String get selectAll => _localizedValues[locale.languageCode]?["selectAll"] ?? "Select All";
+
   String get min => _localizedValues[locale.languageCode]?["min"] ?? "Min";
   String get max => _localizedValues[locale.languageCode]?["max"] ?? "Max";
   String get quantity => _localizedValues[locale.languageCode]?["quantity"] ?? "Quantity";
@@ -1012,6 +1021,13 @@ class AppLocalizations {
       "regularBookmarks": "Regular Bookmarks",
       "movedToBookmarks": "Moved to bookmarks",
       "recipeAlreadyInCollection": "Recipe is already in a collection. It will be moved.",
+      "nSelected": "{count} selected",
+      "moveToCollection": "Move to Collection",
+      "removeBookmarks": "Remove Bookmarks",
+      "removeSelectedBookmarksConfirm": "Remove {count} recipes from saved?",
+      "bulkMoveSuccess": "Moved {count} recipes",
+      "bulkRemoveSuccess": "Removed {count} recipes",
+      "selectAll": "Select All",
       "min": "Min",
       "max": "Max",
       "quantity": "Quantity",
@@ -1709,6 +1725,13 @@ class AppLocalizations {
       "regularBookmarks": "ჩვეულებრივი სანიშნები",
       "movedToBookmarks": "სანიშნებში გადავიდა",
       "recipeAlreadyInCollection": "რეცეპტი უკვე კოლექციაშია. ის გადავა ახალ კოლექციაში.",
+      "nSelected": "{count} არჩეული",
+      "moveToCollection": "კოლექციაში გადატანა",
+      "removeBookmarks": "სანიშნების წაშლა",
+      "removeSelectedBookmarksConfirm": "წაშალოთ {count} რეცეპტი შენახულებიდან?",
+      "bulkMoveSuccess": "გადატანილია {count} რეცეპტი",
+      "bulkRemoveSuccess": "წაშლილია {count} რეცეპტი",
+      "selectAll": "ყველას არჩევა",
       "min": "მინ",
       "max": "მაქს",
       "quantity": "რაოდენობა",
