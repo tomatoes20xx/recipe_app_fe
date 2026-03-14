@@ -10,11 +10,15 @@ class RecipeGridCard extends StatelessWidget {
     required this.recipe,
     required this.onTap,
     this.onLongPress,
+    this.isSelected = false,
+    this.isSelectionMode = false,
   });
 
   final FeedItem recipe;
   final VoidCallback onTap;
   final VoidCallback? onLongPress;
+  final bool isSelected;
+  final bool isSelectionMode;
 
   @override
   Widget build(BuildContext context) {
@@ -58,6 +62,29 @@ class RecipeGridCard extends StatelessWidget {
               ),
             ),
           ),
+          // Selection overlay
+          if (isSelectionMode) ...[
+            if (isSelected)
+              Positioned.fill(
+                child: ColoredBox(
+                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
+                ),
+              ),
+            Positioned(
+              top: 6,
+              right: 6,
+              child: Icon(
+                isSelected ? Icons.check_circle : Icons.circle_outlined,
+                size: 22,
+                color: isSelected
+                    ? Theme.of(context).colorScheme.primary
+                    : Colors.white.withValues(alpha: 0.8),
+                shadows: const [
+                  Shadow(color: Colors.black54, blurRadius: 4),
+                ],
+              ),
+            ),
+          ],
           // Overlay content
           Positioned(
             left: 6,

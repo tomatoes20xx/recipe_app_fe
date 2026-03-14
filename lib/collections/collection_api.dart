@@ -87,6 +87,28 @@ class CollectionApi {
         "/collections/$collectionId/recipes/$recipeId", auth: true);
   }
 
+  /// POST /bookmarks/bulk-delete
+  /// Deletes bookmarks for multiple recipes at once.
+  Future<int> bulkDelete(List<String> recipeIds) async {
+    final data = await api.post(
+      "/bookmarks/bulk-delete",
+      body: {"recipeIds": recipeIds},
+      auth: true,
+    );
+    return (data as Map)["deleted"] as int? ?? 0;
+  }
+
+  /// POST /bookmarks/bulk-move
+  /// Moves multiple bookmarks to a collection (or back to unsorted with null).
+  Future<int> bulkMove(List<String> recipeIds, String? collectionId) async {
+    final data = await api.post(
+      "/bookmarks/bulk-move",
+      body: {"recipeIds": recipeIds, "collectionId": collectionId},
+      auth: true,
+    );
+    return (data as Map)["moved"] as int? ?? 0;
+  }
+
   /// GET /recipes/:id/collections
   /// Returns which collection this recipe belongs to, or null.
   Future<RecipeCollectionInfo?> getRecipeCollection(String recipeId) async {
