@@ -96,6 +96,10 @@ app.*.map.json
 CLAUDE.md
 ROADMAP.md
 
+# Firebase / Google Services (contains API keys)
+**/google-services.json
+**/GoogleService-Info.plist
+
 # Environment files
 .env
 .env.*
