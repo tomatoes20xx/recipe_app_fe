@@ -2,6 +2,7 @@ import "dart:io" show Platform;
 import "dart:ui";
 import "package:flutter/foundation.dart" show kIsWeb;
 import "package:flutter/material.dart";
+import "package:flutter/services.dart";
 import "package:flutter_localizations/flutter_localizations.dart";
 import "package:google_fonts/google_fonts.dart";
 import "package:google_mobile_ads/google_mobile_ads.dart";
@@ -26,6 +27,16 @@ import "theme/theme_controller.dart";
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Enable edge-to-edge display (required for Android 15+)
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      systemNavigationBarColor: Colors.transparent,
+      systemNavigationBarDividerColor: Colors.transparent,
+    ),
+  );
 
   // Initialize Firebase (optional - will skip if not configured)
   try {
