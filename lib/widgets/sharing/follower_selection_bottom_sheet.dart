@@ -351,7 +351,7 @@ class _FollowerSelectionBottomSheetState extends State<_FollowerSelectionBottomS
             Text(
               _searchQuery.isEmpty
                   ? (localizations?.noFollowersToShareWith ?? "No followers to share with")
-                  : "No followers found",
+                  : (localizations?.noFollowersFound ?? "No followers found"),
               style: theme.textTheme.bodyLarge,
             ),
           ],

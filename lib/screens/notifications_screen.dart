@@ -366,7 +366,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 try {
                   await widget.notificationController.markAllAsRead();
                   if (!mounted) return;
-                  ErrorUtils.showSuccess(this.context, "All notifications marked as read");
+                  final localizations =
+                      AppLocalizations.of(this.context);
+                  ErrorUtils.showSuccess(
+                    this.context,
+                    localizations?.allNotificationsMarkedAsRead ??
+                        "All notifications marked as read",
+                  );
                 } catch (e) {
                   if (!mounted) return;
                   ErrorUtils.showError(this.context, e);
@@ -461,10 +467,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     if (widget.notificationController.items.isEmpty) {
       return EmptyStateWidget(
         icon: _showUnreadOnly ? Icons.mark_email_read : Icons.notifications_none,
-        title: _showUnreadOnly ? "No unread notifications" : "No notifications",
+        title: _showUnreadOnly
+            ? (AppLocalizations.of(context)?.noUnreadNotifications ?? "No unread notifications")
+            : (AppLocalizations.of(context)?.noNotifications ?? "No notifications"),
         description: _showUnreadOnly
-            ? "You're all caught up!"
-            : "You'll see notifications here when someone interacts with your content",
+            ? (AppLocalizations.of(context)?.allCaughtUp ?? "You're all caught up!")
+            : (AppLocalizations.of(context)?.notificationsEmptyDescription ?? "You'll see notifications here when someone interacts with your content"),
         titleStyle: Theme.of(context).textTheme.titleLarge?.copyWith(
           color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
         ),

@@ -109,7 +109,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _privacySettings = updatedPrivacy;
           _isLoadingPrivacy = false;
         });
-        ErrorUtils.showSuccess(context, "Privacy settings updated");
+        final localizations = AppLocalizations.of(context);
+        ErrorUtils.showSuccess(
+          context,
+          localizations?.privacySettingsUpdated ??
+              "Privacy settings updated",
+        );
       }
     } catch (e) {
       setState(() {
