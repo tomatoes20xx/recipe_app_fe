@@ -803,6 +803,29 @@ class AppLocalizations {
   // Sharing
   String get recipeNotSharedWithAnyone => _localizedValues[locale.languageCode]?["recipeNotSharedWithAnyone"] ?? "This recipe is not shared with anyone";
 
+  // Success messages
+  String get allNotificationsMarkedAsRead => _localizedValues[locale.languageCode]?["allNotificationsMarkedAsRead"] ?? "All notifications marked as read";
+  String get profileUpdatedSuccessfully => _localizedValues[locale.languageCode]?["profileUpdatedSuccessfully"] ?? "Profile updated successfully";
+  String get avatarUpdatedSuccessfully => _localizedValues[locale.languageCode]?["avatarUpdatedSuccessfully"] ?? "Avatar updated successfully";
+  String get avatarRemovedSuccessfully => _localizedValues[locale.languageCode]?["avatarRemovedSuccessfully"] ?? "Avatar removed successfully";
+  String get privacySettingsUpdated => _localizedValues[locale.languageCode]?["privacySettingsUpdated"] ?? "Privacy settings updated";
+
+  // Notification empty states
+  String get noUnreadNotifications => _localizedValues[locale.languageCode]?["noUnreadNotifications"] ?? "No unread notifications";
+  String get noNotifications => _localizedValues[locale.languageCode]?["noNotifications"] ?? "No notifications";
+  String get allCaughtUp => _localizedValues[locale.languageCode]?["allCaughtUp"] ?? "You're all caught up!";
+  String get notificationsEmptyDescription => _localizedValues[locale.languageCode]?["notificationsEmptyDescription"] ?? "You'll see notifications here when someone interacts with your content";
+
+  // Profile empty states
+  String get noRecipesYet => _localizedValues[locale.languageCode]?["noRecipesYet"] ?? "No recipes yet";
+  String get createYourFirstRecipe => _localizedValues[locale.languageCode]?["createYourFirstRecipe"] ?? "Create your first recipe!";
+  String get userNoRecipesYet => _localizedValues[locale.languageCode]?["userNoRecipesYet"] ?? "This user hasn't created any recipes yet";
+  String recipeCount(int count) =>
+      (_localizedValues[locale.languageCode]?["recipeCount"] ?? "{count} Recipes").replaceAll("{count}", count.toString());
+
+  // Follower search
+  String get noFollowersFound => _localizedValues[locale.languageCode]?["noFollowersFound"] ?? "No followers found";
+
   // Helper method to get full month names by index (1-12)
   String getMonthName(int month) {
     final months = [
@@ -1525,6 +1548,28 @@ class AppLocalizations {
 
       // Sharing
       "recipeNotSharedWithAnyone": "This recipe is not shared with anyone",
+
+      // Success messages
+      "allNotificationsMarkedAsRead": "All notifications marked as read",
+      "profileUpdatedSuccessfully": "Profile updated successfully",
+      "avatarUpdatedSuccessfully": "Avatar updated successfully",
+      "avatarRemovedSuccessfully": "Avatar removed successfully",
+      "privacySettingsUpdated": "Privacy settings updated",
+
+      // Notification empty states
+      "noUnreadNotifications": "No unread notifications",
+      "noNotifications": "No notifications",
+      "allCaughtUp": "You're all caught up!",
+      "notificationsEmptyDescription": "You'll see notifications here when someone interacts with your content",
+
+      // Profile empty states
+      "noRecipesYet": "No recipes yet",
+      "createYourFirstRecipe": "Create your first recipe!",
+      "userNoRecipesYet": "This user hasn't created any recipes yet",
+      "recipeCount": "{count} Recipes",
+
+      // Follower search
+      "noFollowersFound": "No followers found",
     },
     "ka": {
       "appTitle": "Yummy",
@@ -1536,7 +1581,7 @@ class AppLocalizations {
       "passwordHint": "შეიყვანეთ თქვენი პაროლი",
       "createAccount": "ანგარიშის შექმნა",
       "createYourAccount": "შექმენი ანგარიში",
-      "alreadyHaveAccount": "უკვე გაქვს ანგარიში?",
+      "alreadyHaveAccount": "უკვე გაქვთ ანგარიში?",
       "username": "მომხმარებლის სახელი",
       "displayName": "როგორ გინდათ თქვენი სახელი გამოჩნდეს? (არასავალდებულო)",
       "passwordMin": "პაროლი (მინ. 8, A-Z, a-z, 0-9)",
@@ -1549,7 +1594,7 @@ class AppLocalizations {
       "googleSignInFailed": "Google-ით შესვლა ვერ მოხერხდა. გთხოვთ, სცადოთ თავიდან.",
       "showPassword": "პაროლის ჩვენება",
       "hidePassword": "პაროლის დამალვა",
-      "appTagline": "თქვენი რეცეპტების მოგზაურობა",
+      "appTagline": "თქვენი მოგზაურობა რეცეპტების სამყაროში",
       "home": "მთავარი",
       "menu": "მენიუ",
       "createRecipe": "რეცეპტის შექმნა",
@@ -1567,8 +1612,8 @@ class AppLocalizations {
       "notificationFollowed": "{name}-მა დაიწყო თქვენი გამოწერა",
       "notificationLiked": "{name}-მა მოიწონა თქვენი რეცეპტი",
       "notificationLikedRecipe": "{name}-მა მოიწონა \"{recipe}\"",
-      "notificationCommented": "{name}-მა დააკომენტარა თქვენი რეცეპტი",
-      "notificationCommentedRecipe": "{name}-მა დააკომენტარა \"{recipe}\"",
+      "notificationCommented": "{name}-მა დაგიტოვათ კომენტარი თქვენს რეცეპტზე",
+      "notificationCommentedRecipe": "{name}-მა დაგიტოვათ კომენტარი \"{recipe}\"-ზე",
       "notificationBookmarked": "{name}-მა დაამატა თქვენი რეცეპტი ფავორიტებში",
       "notificationBookmarkedRecipe": "{name}-მა დაამატა \"{recipe}\" ფავორიტებში",
       "notificationPostedRecipe": "{name}-მა გამოაქვეყნა \"{recipe}\"",
@@ -1597,7 +1642,7 @@ class AppLocalizations {
       "popular": "პოპულარული",
       "mostPopularRecipes": "ყველაზე პოპულარული რეცეპტები",
       "trending": "ტრენდული",
-      "trendingNow": "ახლა ტრენდული",
+      "trendingNow": "ამჟამად ტრენდული",
       "savedRecipes": "შენახული რეცეპტები",
       "viewYourBookmarkedRecipes": "იხილეთ თქვენი შენახული რეცეპტები",
       "analyticsStatistics": "ანალიტიკური სტატისტიკა",
@@ -1655,7 +1700,7 @@ class AppLocalizations {
       "followingTitle": "გამოწერილი",
       "totalLikes": "მოწონებები",
       "private": "პირადი",
-      "thisUsersFollowersListIsPrivate": "ამ მომხმარებლის მიმდევრების სია დახურულია",
+      "thisUsersFollowersListIsPrivate": "ამ მომხმარებლის გამომწერების სია დახურულია",
       "noFollowers": "გამომწერები არ არიან",
       "thisUserDoesntHaveAnyFollowersYet": "ამ მომხმარებელს ჯერ არ ყავს გამომწერები",
       "thisUsersFollowingListIsPrivate": "ამ მომხმარებლის გამოწერების სია დახურულია",
@@ -1701,16 +1746,16 @@ class AppLocalizations {
       "enterCollectionName": "შეიყვანეთ კოლექციის სახელი",
       "renameCollection": "კოლექციის გადარქმევა",
       "deleteCollection": "კოლექციის წაშლა",
-      "deleteCollectionConfirm": "ნამდვილად გსურთ ამ კოლექციის წაშლა? რეცეპტები ჩვეულებრივ სანიშნებად გადაიქცევა.",
+      "deleteCollectionConfirm": "ნამდვილად გსურთ ამ კოლექციის წაშლა? რეცეპტები დაბრუნდებიან სანიშნების მთავარ გვერდზე.",
       "collectionCreated": "კოლექცია შეიქმნა",
-      "collectionRenamed": "კოლექცია გადარქმევა",
+      "collectionRenamed": "კოლექციას შეეცვალა სახელი",
       "collectionDeleted": "კოლექცია წაიშალა",
       "addToCollection": "კოლექციაში დამატება",
       "recipeAddedToCollection": "კოლექციაში დაემატა",
       "recipeRemovedFromCollection": "კოლექციიდან წაიშალა",
       "noCollections": "კოლექციები ჯერ არ არის",
       "createFirstCollection": "შექმენით პირველი კოლექცია შენახული რეცეპტების ორგანიზებისთვის",
-      "emptyCollection": "ამ კოლექციაში რეცეპტები არ არის",
+      "emptyCollection": "ამ კოლექციაში რეცეპტი არ არის",
       "addRecipesToCollection": "დაამატეთ რეცეპტები ამ კოლექციაში სანიშნის დაჭერით",
       "nRecipesSingular": "{count} რეცეპტი",
       "nRecipesPlural": "{count} რეცეპტი",
@@ -1751,11 +1796,11 @@ class AppLocalizations {
       "filters": "ფილტრები",
       "searchRecipes": "რეცეპტების ძიება...",
       "searchUsers": "მომხმარებლების ძიება...",
-      "cookWithWhatIHave": "რა მაქვს იმით მოვამზადო",
+      "cookWithWhatIHave": "ხელთარსებული ინგრედიენტებით მომზადება",
       "findRecipesWithIngredients": "იპოვეთ რეცეპტები იმ ინგრედიენტებით, რაც გაქვთ",
       "addIngredientsToStart": "დაამატეთ ინგრედიენტები დასაწყებად",
       "addIngredientsDescription": "დაამატეთ ინგრედიენტები, რომლებიც გაქვთ და ჩვენ ვიპოვით რეცეპტებს, რომლებიც შეგიძლიათ მოამზადოთ",
-      "tryDifferentIngredients": "სცადეთ სხვა ინგრედიენტების დამატება ან შემცირეთ შესაბამისობის ზღვარი",
+      "tryDifferentIngredients": "სცადეთ სხვა ინგრედიენტების დამატება ან შეამცირეთ შესაბამისობის ზღვარი",
       "enterIngredient": "შეიყვანეთ ინგრედიენტი...",
       "matchThreshold": "შესაბამისობის ზღვარი:",
       "findRecipes": "რეცეპტების პოვნა",
@@ -1799,9 +1844,9 @@ class AppLocalizations {
       "somethingWentWrong": "რაღაც შეცდომა მოხდა",
       "steps": "ნაბიჯები",
       "noStepsYet": "ნაბიჯი ჯერ არ არის. დაამატეთ დასაწყებად!",
-      "noIngredientsYet": "ინგრედიენტები ჯერ არ არის. დაამატეთ პირველი!",
+      "noIngredientsYet": "ინგრედიენტი ჯერ არ არის. დაამატეთ!",
       "addCoverPhoto": "დაამატეთ გარეკანის ფოტო",
-      "tapToUpload": "შეეხეთ ატვირთვისთვის",
+      "tapToUpload": "დააჭირეთ ასატვირთად",
       "basicInfo": "ძირითადი ინფორმაცია",
       "cookingDetails": "მომზადების დეტალები",
       "saveChanges": "ცვლილებების შენახვა",
@@ -1826,9 +1871,9 @@ class AppLocalizations {
       "helpAndSupport": "დახმარება და მხარდაჭერა",
       "termsAndPrivacy": "წესები და კონფიდენციალურობა",
       "editProfile": "პროფილის რედაქტირება",
-      "profileUpdateInfo": "განაახლეთ თქვენი პროფილის ინფორმაცია. ცვლილებები სხვა მომხმარებლებისთვის ხილული იქნება.",
-      "enterDisplayName": "შეიყვანეთ საჩვენებელი სახელი",
-      "displayNameTooLong": "საჩვენებელი სახელი უნდა იყოს მაქსიმუმ 100 სიმბოლო",
+      "profileUpdateInfo": "განაახლეთ თქვენი პროფილის ინფორმაცია. ცვლილებები გამოუჩდნებათ სხვა მომხმარებლებს.",
+      "enterDisplayName": "შეიყვანეთ სახელი, რომელიც აპლიკაციაში გამოჩნდება",
+      "displayNameTooLong": "გმაოსაჩენი სახელი უნდა იყოს მაქსიმუმ 100 სიმბოლო",
       "bio": "ბიოგრაფია",
       "enterBio": "მოგვიყევით თქვენს შესახებ",
       "bioTooLong": "ბიოგრაფია უნდა იყოს მაქსიმუმ 500 სიმბოლო",
@@ -1887,7 +1932,7 @@ class AppLocalizations {
       "pleaseEnterVerificationCode": "გთხოვთ შეიყვანოთ დადასტურების კოდი",
       "wrongEmailSignOut": "არასწორი ელფოსტა? გამოსვლა",
       "wrongEmailSignOutConfirmTitle": "გამოსვლა?",
-      "wrongEmailSignOutConfirmMessage": "თქვენ გამოხვალთ სისტემიდან და შეძლებთ ხელახლა დარეგისტრირებას სწორი ელფოსტით.",
+      "wrongEmailSignOutConfirmMessage": "თქვენ გამოხვალთ სისტემიდან და შეძლებთ ხელახლა დარეგისტრირდეთ სწორი ელფოსტით.",
       "resetPassword": "პაროლის აღდგენა",
       "resetPasswordTitle": "აღადგინეთ თქვენი პაროლი",
       "resetPasswordMessage": "შეიყვანეთ თქვენი ელფოსტის მისამართი და ჩვენ გამოგიგზავნით კოდს პაროლის აღსადგენად.",
@@ -1975,6 +2020,7 @@ class AppLocalizations {
       "ingredientNameRequired": "ინგრედიენტი {index}: სახელი აუცილებელია",
       "stepInstructionRequired": "ნაბიჯი {index}: ინსტრუქცია აუცილებელია",
       "pleaseFillInRequiredFields": "გთხოვთ გაასწოროთ შემდეგი:",
+      // to here
       "recipeTitleRequired": "რეცეპტის სათაური აუცილებელია",
       "helpWelcomeTitle": "კეთილი იყოს თქვენი მობრძანება დახმარებისა და მხარდაჭერის გვერდზე",
       "helpWelcomeMessage": "Yummy-ზე მუშაობს მხოლოდ ერთი დეველოპერი. მიუხედავად იმისა, რომ არ მყავს გამოყოფილი მხარდაჭერის გუნდი, შევეცდები ყველაფერში დაგეხმაროთ! გთხოვთ ჯერ გადახედოთ ხშირად დასმულ კითხვებს, და თუ კვლავ დაგჭირდებათ დახმარება, დამიკავშირდით.",
@@ -2229,6 +2275,28 @@ class AppLocalizations {
 
       // Sharing
       "recipeNotSharedWithAnyone": "ეს რეცეპტი არავისთან არ არის გაზიარებული",
+
+      // Success messages
+      "allNotificationsMarkedAsRead": "ყველა შეტყობინება წაკითხულად მონიშნულია",
+      "profileUpdatedSuccessfully": "პროფილი წარმატებით განახლდა",
+      "avatarUpdatedSuccessfully": "ავატარი წარმატებით განახლდა",
+      "avatarRemovedSuccessfully": "ავატარი წარმატებით წაიშალა",
+      "privacySettingsUpdated": "კონფიდენციალურობის პარამეტრები განახლდა",
+
+      // Notification empty states
+      "noUnreadNotifications": "წაუკითხავი შეტყობინებები არ არის",
+      "noNotifications": "შეტყობინებები არ არის",
+      "allCaughtUp": "ყველაფერი წაკითხული გაქვთ!",
+      "notificationsEmptyDescription": "შეტყობინებებს აქ ნახავთ, როცა ვინმე თქვენს კონტენტთან ურთიერთობს",
+
+      // Profile empty states
+      "noRecipesYet": "რეცეპტები ჯერ არ არის",
+      "createYourFirstRecipe": "შექმენი შენი პირველი რეცეპტი!",
+      "userNoRecipesYet": "ამ მომხმარებელს ჯერ არ აქვს რეცეპტები",
+      "recipeCount": "{count} რეცეპტი",
+
+      // Follower search
+      "noFollowersFound": "მიმდევრები ვერ მოიძებნა",
     },
   };
 }

@@ -218,7 +218,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
       await widget.auth.bootstrap();
 
       if (mounted) {
-        ErrorUtils.showSuccess(context, "Avatar updated successfully");
+        final localizations = AppLocalizations.of(context);
+        ErrorUtils.showSuccess(
+          context,
+          localizations?.avatarUpdatedSuccessfully ??
+              "Avatar updated successfully",
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -329,7 +334,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
       await widget.auth.bootstrap();
 
       if (mounted) {
-        ErrorUtils.showSuccess(context, "Avatar removed successfully");
+        final localizations = AppLocalizations.of(context);
+        ErrorUtils.showSuccess(
+          context,
+          localizations?.avatarRemovedSuccessfully ??
+              "Avatar removed successfully",
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -1216,12 +1226,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
 
     if (controller.items.isEmpty) {
+      final localizations = AppLocalizations.of(context);
       return EmptyStateWidget(
         icon: Icons.restaurant_menu_outlined,
-        title: "No recipes yet",
+        title: localizations?.noRecipesYet ?? "No recipes yet",
         description: widget.username == null
-            ? "Create your first recipe!"
-            : "This user hasn't created any recipes yet",
+            ? (localizations?.createYourFirstRecipe ??
+                "Create your first recipe!")
+            : (localizations?.userNoRecipesYet ??
+                "This user hasn't created any recipes yet"),
         wrapInCard: true,
       );
     }
@@ -1232,7 +1245,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
           child: Text(
-            "$recipeCount Recipes",
+            AppLocalizations.of(context)?.recipeCount(recipeCount) ?? "$recipeCount Recipes",
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.w700,
                 ),

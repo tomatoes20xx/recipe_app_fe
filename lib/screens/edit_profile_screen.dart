@@ -100,7 +100,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       await widget.auth.bootstrap();
 
       if (mounted) {
-        ErrorUtils.showSuccess(context, "Profile updated successfully");
+        final localizations = AppLocalizations.of(context);
+        ErrorUtils.showSuccess(
+          context,
+          localizations?.profileUpdatedSuccessfully ??
+              "Profile updated successfully",
+        );
         Navigator.of(context).pop(true); // Return true to indicate success
       }
     } catch (e) {
