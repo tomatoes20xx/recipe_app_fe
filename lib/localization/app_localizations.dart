@@ -1796,7 +1796,7 @@ class AppLocalizations {
       "filters": "ფილტრები",
       "searchRecipes": "რეცეპტების ძიება...",
       "searchUsers": "მომხმარებლების ძიება...",
-      "cookWithWhatIHave": "ხელთარსებული ინგრედიენტებით მომზადება",
+      "cookWithWhatIHave": "არსებული ინგრედიენტებით მომზადება",
       "findRecipesWithIngredients": "იპოვეთ რეცეპტები იმ ინგრედიენტებით, რაც გაქვთ",
       "addIngredientsToStart": "დაამატეთ ინგრედიენტები დასაწყებად",
       "addIngredientsDescription": "დაამატეთ ინგრედიენტები, რომლებიც გაქვთ და ჩვენ ვიპოვით რეცეპტებს, რომლებიც შეგიძლიათ მოამზადოთ",
