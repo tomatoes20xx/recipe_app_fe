@@ -86,10 +86,10 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
 /// Helper class for AdMob configuration
 class AdHelper {
   /// Production Banner Ad Unit ID
-  static const String bannerAdUnitId = "ca-app-pub-3299728362959933/3238998585";
+  /// TODO: Create a Banner ad unit in AdMob and replace this ID
+  static const String bannerAdUnitId = "ca-app-pub-3299728362959933/REPLACE_WITH_BANNER_AD_UNIT_ID";
 
-  /// Production Native Ad Unit ID (for feed cards)
-  /// NOTE: Create a Native Ad Unit in AdMob and replace this ID
+  /// Production Native Ad Unit ID (YummyAd - Native Advanced)
   static const String nativeAdUnitId = "ca-app-pub-3299728362959933/3238998585";
 
   /// App ID

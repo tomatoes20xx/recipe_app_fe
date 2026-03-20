@@ -40,7 +40,7 @@ class NativeAdManager {
     
     // Create new ad if none exists or previous one was disposed
     final theme = Theme.of(context);
-    final finalAdUnitId = adUnitId ?? AdHelper.testNativeAdUnitId;
+    final finalAdUnitId = adUnitId ?? AdHelper.nativeAdUnitId;
     
     final ad = NativeAd(
       adUnitId: finalAdUnitId,
@@ -109,7 +109,7 @@ class NativeAdManager {
     }
     
     // Create new ad if none exists or previous one was disposed
-    final finalAdUnitId = adUnitId ?? AdHelper.testNativeAdUnitId;
+    final finalAdUnitId = adUnitId ?? AdHelper.nativeAdUnitId;
     
     final ad = NativeAd(
       adUnitId: finalAdUnitId,
