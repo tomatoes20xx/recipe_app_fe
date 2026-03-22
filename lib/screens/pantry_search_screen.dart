@@ -38,6 +38,7 @@ class _PantrySearchScreenState extends State<PantrySearchScreen> {
   bool _isLoading = false;
   bool _isLoadingMore = false;
   bool _hasSearched = false;
+  bool _chipsExpanded = false;
   String? _error;
   int _matchThreshold = 70;
 
@@ -94,6 +95,7 @@ class _PantrySearchScreenState extends State<PantrySearchScreen> {
       _results = [];
       _nextCursor = null;
       _hasSearched = true;
+      _chipsExpanded = false;
     });
 
     try {
@@ -177,6 +179,8 @@ class _PantrySearchScreenState extends State<PantrySearchScreen> {
             isLoading: _isLoading,
             matchThreshold: _matchThreshold,
             onThresholdChanged: (value) => setState(() => _matchThreshold = value),
+            chipsExpanded: _chipsExpanded,
+            onToggleChips: () => setState(() => _chipsExpanded = !_chipsExpanded),
           ),
           const Divider(height: 1),
           // Results section
@@ -264,6 +268,8 @@ class _IngredientInputSection extends StatelessWidget {
     required this.isLoading,
     required this.matchThreshold,
     required this.onThresholdChanged,
+    required this.chipsExpanded,
+    required this.onToggleChips,
   });
 
   final TextEditingController controller;
@@ -275,6 +281,8 @@ class _IngredientInputSection extends StatelessWidget {
   final bool isLoading;
   final int matchThreshold;
   final Function(int) onThresholdChanged;
+  final bool chipsExpanded;
+  final VoidCallback onToggleChips;
 
   @override
   Widget build(BuildContext context) {
@@ -321,16 +329,11 @@ class _IngredientInputSection extends StatelessWidget {
 
           // Selected ingredients chips
           if (selectedIngredients.isNotEmpty) ...[
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: selectedIngredients.map((ingredient) {
-                return InputChip(
-                  label: Text(ingredient),
-                  onDeleted: () => onRemoveIngredient(ingredient),
-                  deleteIcon: const Icon(Icons.close, size: 18),
-                );
-              }).toList(),
+            _IngredientsChipRow(
+              ingredients: selectedIngredients,
+              onRemove: onRemoveIngredient,
+              expanded: chipsExpanded,
+              onToggle: onToggleChips,
             ),
             const SizedBox(height: 16),
           ],
@@ -527,6 +530,74 @@ class _RecipeMatchCard extends StatelessWidget {
     } else {
       return "Up to ${recipe.cookingTimeMax} min";
     }
+  }
+}
+
+class _IngredientsChipRow extends StatelessWidget {
+  const _IngredientsChipRow({
+    required this.ingredients,
+    required this.onRemove,
+    required this.expanded,
+    required this.onToggle,
+  });
+
+  final List<String> ingredients;
+  final Function(String) onRemove;
+  final bool expanded;
+  final VoidCallback onToggle;
+
+  static const int _collapsedMax = 4;
+
+  Widget _chip(String ingredient) => InputChip(
+        label: Text(ingredient, style: const TextStyle(fontSize: 12)),
+        onDeleted: () => onRemove(ingredient),
+        deleteIcon: const Icon(Icons.close, size: 14),
+        visualDensity: VisualDensity.compact,
+        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        padding: const EdgeInsets.symmetric(horizontal: 2),
+      );
+
+  Widget _toggleChip(BuildContext context, String label) => ActionChip(
+        label: Text(label, style: const TextStyle(fontSize: 12)),
+        onPressed: onToggle,
+        visualDensity: VisualDensity.compact,
+        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        padding: const EdgeInsets.symmetric(horizontal: 2),
+        side: BorderSide(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.4)),
+        labelStyle: TextStyle(color: Theme.of(context).colorScheme.primary),
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    final hasOverflow = ingredients.length > _collapsedMax;
+
+    if (expanded && hasOverflow) {
+      return ConstrainedBox(
+        constraints: const BoxConstraints(maxHeight: 200),
+        child: SingleChildScrollView(
+          child: Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              ...ingredients.map(_chip),
+              _toggleChip(context, 'show less'),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final visible = hasOverflow ? ingredients.take(_collapsedMax).toList() : ingredients;
+    final hiddenCount = ingredients.length - visible.length;
+
+    return Wrap(
+      spacing: 6,
+      runSpacing: 6,
+      children: [
+        ...visible.map(_chip),
+        if (hasOverflow) _toggleChip(context, '+$hiddenCount more'),
+      ],
+    );
   }
 }
 
