@@ -32,6 +32,7 @@ class _LoginScreenState extends State<LoginScreen>
   bool _obscurePassword = true;
   bool _rememberMe = false;
   bool _termsAccepted = false;
+  bool _isSubmitting = false;
   String? error;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
@@ -134,8 +135,9 @@ class _LoginScreenState extends State<LoginScreen>
 
 
   Future<void> _handleGoogleSignIn() async {
+    if (_isSubmitting) return;
+    setState(() { _isSubmitting = true; error = null; });
     final localizations = AppLocalizations.of(context);
-    setState(() => error = null);
 
     try {
       final account = await _googleAuthService.signInWithGoogle();
@@ -182,14 +184,17 @@ class _LoginScreenState extends State<LoginScreen>
       if (mounted) {
         ErrorUtils.showError(context, localizations?.googleSignInFailed ?? errorMessage);
       }
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
     }
   }
 
   // ── Email Login ──
 
   Future<void> _handleEmailLogin() async {
+    if (_isSubmitting) return;
+    setState(() { _isSubmitting = true; error = null; });
     final localizations = AppLocalizations.of(context);
-    setState(() => error = null);
 
     try {
       await widget.auth.login(
@@ -207,6 +212,8 @@ class _LoginScreenState extends State<LoginScreen>
       setState(() => error = e.message);
     } catch (_) {
       setState(() => error = "Something went wrong.");
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
     }
   }
 
@@ -230,19 +237,20 @@ class _LoginScreenState extends State<LoginScreen>
   }
 
   Future<void> _handleEmailSignup() async {
-    setState(() => error = null);
+    if (_isSubmitting) return;
+    setState(() { _isSubmitting = true; error = null; });
     final localizations = AppLocalizations.of(context);
 
     final email = _emailController.text.trim();
     if (email.isEmpty) {
       final msg = localizations?.pleaseEnterEmail ?? "Please enter your email address";
-      setState(() => error = msg);
+      setState(() { error = msg; _isSubmitting = false; });
       ErrorUtils.showError(context, msg);
       return;
     }
     if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email)) {
       final msg = localizations?.invalidEmail ?? "Please enter a valid email address";
-      setState(() => error = msg);
+      setState(() { error = msg; _isSubmitting = false; });
       ErrorUtils.showError(context, msg);
       return;
     }
@@ -250,14 +258,14 @@ class _LoginScreenState extends State<LoginScreen>
     final username = _usernameController.text.trim();
     if (username.isEmpty) {
       final msg = localizations?.usernameRequired ?? "Username is required";
-      setState(() => error = msg);
+      setState(() { error = msg; _isSubmitting = false; });
       ErrorUtils.showError(context, msg);
       return;
     }
 
     final passwordError = _validatePassword(_passwordController.text);
     if (passwordError != null) {
-      setState(() => error = passwordError);
+      setState(() { error = passwordError; _isSubmitting = false; });
       ErrorUtils.showError(context, passwordError);
       return;
     }
@@ -294,6 +302,8 @@ class _LoginScreenState extends State<LoginScreen>
       setState(() => error = e.message);
     } catch (_) {
       setState(() => error = "Something went wrong.");
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
     }
   }
 
@@ -321,7 +331,7 @@ class _LoginScreenState extends State<LoginScreen>
 
   @override
   Widget build(BuildContext context) {
-    final loading = widget.auth.isLoading;
+    final loading = widget.auth.isLoading || _isSubmitting;
     final localizations = AppLocalizations.of(context);
     final theme = Theme.of(context);
 
@@ -597,7 +607,7 @@ class _LoginScreenState extends State<LoginScreen>
       autofillHints: [_isSignUp ? AutofillHints.newPassword : AutofillHints.password],
       textInputAction: TextInputAction.done,
       onSubmitted: (_) {
-        if (!widget.auth.isLoading) {
+        if (!widget.auth.isLoading && !_isSubmitting) {
           if (_isSignUp) {
             if (_isSignUpFormValid && _termsAccepted) _handleEmailSignup();
           } else {

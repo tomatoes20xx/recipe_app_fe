@@ -4,6 +4,7 @@ import "package:http/http.dart" as http;
 
 import "../config.dart";
 import "../auth/token_storage.dart";
+import "../security/certificate_pinning.dart";
 
 class ApiException implements Exception {
   final int statusCode;
@@ -18,7 +19,7 @@ class ApiException implements Exception {
 
 class ApiClient {
   ApiClient({required this.tokenStorage, http.Client? client})
-      : _client = client ?? http.Client();
+      : _client = client ?? buildPinnedClient();
 
   final TokenStorage tokenStorage;
   final http.Client _client;
