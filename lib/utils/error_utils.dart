@@ -9,6 +9,7 @@ class ErrorUtils {
   /// If context is provided, uses localized error messages
   static String getUserFriendlyMessage(dynamic error, [BuildContext? context]) {
     final localizations = context != null ? AppLocalizations.of(context) : null;
+    if (error is String) return error;
     if (error is ApiException) {
       return _formatApiException(error, context);
     }

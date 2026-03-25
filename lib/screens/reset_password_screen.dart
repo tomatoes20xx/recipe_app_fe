@@ -26,6 +26,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   bool _codeSent = false;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
+  String? _passwordError;
+  String? _confirmPasswordError;
 
   @override
   void dispose() {
@@ -54,51 +56,28 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       return;
     }
 
+    String? passwordError;
     if (password.isEmpty) {
-      ErrorUtils.showError(
-        context,
-        localizations?.pleaseEnterPassword ?? "Please enter a new password",
-      );
-      return;
+      passwordError = localizations?.pleaseEnterPassword ?? "Please enter a new password";
+    } else if (password.length < 8) {
+      passwordError = localizations?.passwordTooShort ?? "Password must be at least 8 characters";
+    } else if (!password.contains(RegExp(r'[A-Z]'))) {
+      passwordError = localizations?.passwordNeedsUppercase ?? "Password must contain at least one uppercase letter (A-Z)";
+    } else if (!password.contains(RegExp(r'[a-z]'))) {
+      passwordError = localizations?.passwordNeedsLowercase ?? "Password must contain at least one lowercase letter (a-z)";
+    } else if (!password.contains(RegExp(r'[0-9]'))) {
+      passwordError = localizations?.passwordNeedsNumber ?? "Password must contain at least one number (0-9)";
     }
 
-    if (password.length < 8) {
-      ErrorUtils.showError(
-        context,
-        localizations?.passwordTooShort ?? "Password must be at least 8 characters",
-      );
-      return;
-    }
+    final confirmError = password != confirmPassword
+        ? (localizations?.passwordsDoNotMatch ?? "Passwords do not match")
+        : null;
 
-    if (!password.contains(RegExp(r'[A-Z]'))) {
-      ErrorUtils.showError(
-        context,
-        localizations?.passwordNeedsUppercase ?? "Password must contain at least one uppercase letter (A-Z)",
-      );
-      return;
-    }
-
-    if (!password.contains(RegExp(r'[a-z]'))) {
-      ErrorUtils.showError(
-        context,
-        localizations?.passwordNeedsLowercase ?? "Password must contain at least one lowercase letter (a-z)",
-      );
-      return;
-    }
-
-    if (!password.contains(RegExp(r'[0-9]'))) {
-      ErrorUtils.showError(
-        context,
-        localizations?.passwordNeedsNumber ?? "Password must contain at least one number (0-9)",
-      );
-      return;
-    }
-
-    if (password != confirmPassword) {
-      ErrorUtils.showError(
-        context,
-        localizations?.passwordsDoNotMatch ?? "Passwords do not match",
-      );
+    if (passwordError != null || confirmError != null) {
+      setState(() {
+        _passwordError = passwordError;
+        _confirmPasswordError = confirmError;
+      });
       return;
     }
 
@@ -222,6 +201,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
               TextField(
                 controller: _passwordController,
                 obscureText: _obscurePassword,
+                onChanged: (_) {
+                  if (_passwordError != null) setState(() => _passwordError = null);
+                },
                 decoration: InputDecoration(
                   labelText: localizations?.newPassword ?? "New Password",
                   hintText: localizations?.enterNewPassword ?? "Enter new password",
@@ -235,12 +217,16 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                     },
                   ),
                   border: const OutlineInputBorder(),
+                  errorText: _passwordError,
                 ),
               ),
               const SizedBox(height: 16),
               TextField(
                 controller: _confirmPasswordController,
                 obscureText: _obscureConfirmPassword,
+                onChanged: (_) {
+                  if (_confirmPasswordError != null) setState(() => _confirmPasswordError = null);
+                },
                 decoration: InputDecoration(
                   labelText: localizations?.confirmPassword ?? "Confirm Password",
                   hintText: localizations?.enterPasswordAgain ?? "Enter password again",
@@ -257,6 +243,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                     },
                   ),
                   border: const OutlineInputBorder(),
+                  errorText: _confirmPasswordError,
                 ),
                 onSubmitted: (_) => _resetPassword(),
               ),

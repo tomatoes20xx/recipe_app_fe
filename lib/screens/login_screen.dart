@@ -112,7 +112,6 @@ class _LoginScreenState extends State<LoginScreen>
       final remembered = await _storage.read(key: "remember_me");
       if (remembered == "true") {
         setState(() => _rememberMe = true);
-        await _attemptSilentGoogleSignIn();
       }
     } catch (e) {
       // Ignore errors loading remember me preference
@@ -133,36 +132,6 @@ class _LoginScreenState extends State<LoginScreen>
 
   // ── Google Sign-In ──
 
-  Future<void> _attemptSilentGoogleSignIn() async {
-    try {
-      final account = await _googleAuthService.signInSilently();
-      if (account != null) {
-        final idToken = await _googleAuthService.getIdToken(account);
-        if (idToken != null) {
-          final response = await widget.auth.loginWithGoogle(idToken);
-
-          if (response.needsUsername && response.tempToken != null) {
-            if (mounted) {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => UsernameSelectionScreen(
-                    tempToken: response.tempToken!,
-                    suggestedDisplayName: response.suggestedDisplayName,
-                    authApi: widget.auth.authApi,
-                    authController: widget.auth,
-                    avatarUrl: response.avatarUrl,
-                    email: response.email,
-                  ),
-                ),
-              );
-            }
-          }
-        }
-      }
-    } catch (e) {
-      // Silent sign-in failed
-    }
-  }
 
   Future<void> _handleGoogleSignIn() async {
     final localizations = AppLocalizations.of(context);
