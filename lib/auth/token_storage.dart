@@ -2,7 +2,9 @@ import "package:flutter_secure_storage/flutter_secure_storage.dart";
 
 class TokenStorage {
   static const _kTokenKey = "jwt_token";
-  final FlutterSecureStorage _storage = const FlutterSecureStorage();
+  final FlutterSecureStorage _storage = const FlutterSecureStorage(
+    aOptions: AndroidOptions(encryptedSharedPreferences: true),
+  );
 
   Future<void> saveToken(String token) => _storage.write(key: _kTokenKey, value: token);
 

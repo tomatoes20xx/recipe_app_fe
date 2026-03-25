@@ -103,28 +103,7 @@ class GoogleAuthService {
     }
   }
 
-  /// Attempts to sign in silently (without user interaction)
-  /// Used for "Remember me" functionality
-  Future<GoogleSignInAccount?> signInSilently() async {
-    try {
-      _signInCompleter = Completer<GoogleSignInAccount?>();
-
-      // Attempt lightweight authentication
-      await _googleSignIn.attemptLightweightAuthentication();
-
-      // Wait for the authentication event (with timeout)
-      return await _signInCompleter!.future.timeout(
-        const Duration(seconds: 5),
-        onTimeout: () => null,
-      );
-    } catch (error) {
-      return null;
-    } finally {
-      _signInCompleter = null;
-    }
-  }
-
-  /// Signs out the user from Google
+/// Signs out the user from Google
   Future<void> signOut() async {
     try {
       await _googleSignIn.signOut();

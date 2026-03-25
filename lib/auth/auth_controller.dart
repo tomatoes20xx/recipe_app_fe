@@ -1,5 +1,6 @@
 import "package:flutter/foundation.dart";
 
+import "../api/api_client.dart";
 import "auth_api.dart";
 import "token_storage.dart";
 
@@ -56,23 +57,16 @@ class AuthController extends ChangeNotifier {
         return;
       }
 
-      // Add timeout to prevent hanging if server is unreachable
       try {
-        me = await authApi.me().timeout(
-          const Duration(seconds: 5),
-          onTimeout: () {
-            // Server unreachable - treat as logged out
-            return null;
-          },
-        );
-        if (me == null) {
+        me = await authApi.me().timeout(const Duration(seconds: 10));
+      } on ApiException catch (e) {
+        if (e.statusCode == 401 || e.statusCode == 403) {
           await logout();
           return;
         }
-      } catch (e) {
-        // token invalid / server unreachable -> treat as logged out
-        await logout();
-        return;
+        // Server error or unreachable — token may still be valid, proceed offline
+      } catch (_) {
+        // Timeout or network error — keep token, proceed offline
       }
 
       notifyListeners();
