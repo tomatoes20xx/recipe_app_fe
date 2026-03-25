@@ -15,6 +15,7 @@ import "firebase_options.dart";
 import "services/notification_service.dart";
 
 import "api/api_client.dart";
+import "config.dart";
 import "auth/auth_api.dart";
 import "auth/auth_controller.dart";
 import "auth/token_storage.dart";
@@ -45,11 +46,14 @@ void main() async {
     );
 
     // Initialize Firebase Crashlytics
+    // Skip ApiExceptions — they are expected API errors, not crashes, and
+    // may contain user-facing validation messages or partial user input.
     FlutterError.onError = (errorDetails) {
+      if (errorDetails.exception is ApiException) return;
       FirebaseCrashlytics.instance.recordFlutterFatalError(errorDetails);
     };
-    // Pass all uncaught asynchronous errors to Crashlytics
     PlatformDispatcher.instance.onError = (error, stack) {
+      if (error is ApiException) return true;
       FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
       return true;
     };
@@ -69,11 +73,9 @@ void main() async {
   MobileAds.instance.initialize();
 
   // Initialize Google Sign-In with Web Client ID
-  const String webClientId = '31640311657-vt82s1udbrrn2t36g3ivhh0jll148q4l.apps.googleusercontent.com';
-
   try {
     await GoogleSignIn.instance.initialize(
-      serverClientId: webClientId,
+      serverClientId: Config.googleWebClientId,
     );
   } catch (e) {
     // Ignore initialization errors
