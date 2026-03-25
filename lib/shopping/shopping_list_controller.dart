@@ -1,8 +1,9 @@
 import "dart:convert";
+import "dart:developer";
 import "dart:io";
 
 import "package:flutter/foundation.dart";
-import "package:shared_preferences/shared_preferences.dart";
+import "package:flutter_secure_storage/flutter_secure_storage.dart";
 import "shopping_list_api.dart";
 import "shopping_list_models.dart";
 
@@ -12,6 +13,7 @@ class ShoppingListController extends ChangeNotifier {
   }
 
   final ShoppingListApi? api;
+  static const _storage = FlutterSecureStorage();
   static const String _storageKey = "shopping_list_items";
   static const String _lastSyncKey = "shopping_list_last_sync";
 
@@ -62,8 +64,7 @@ class ShoppingListController extends ChangeNotifier {
 
     try {
       // Load last sync time
-      final prefs = await SharedPreferences.getInstance();
-      final lastSyncString = prefs.getString(_lastSyncKey);
+      final lastSyncString = await _storage.read(key: _lastSyncKey);
       if (lastSyncString != null) {
         _lastSyncTime = DateTime.parse(lastSyncString);
       }
@@ -75,7 +76,7 @@ class ShoppingListController extends ChangeNotifier {
           _items = serverItems;
           _lastSyncTime = DateTime.now();
           await _saveToCache();
-          await prefs.setString(_lastSyncKey, _lastSyncTime!.toIso8601String());
+          await _storage.write(key: _lastSyncKey, value: _lastSyncTime!.toIso8601String());
         } on SocketException {
           // No internet - load from cache
           await _loadFromCache();
@@ -88,7 +89,7 @@ class ShoppingListController extends ChangeNotifier {
         await _loadFromCache();
       }
     } catch (e) {
-      // Error loading shopping list
+      log("Error loading shopping list: $e", name: "ShoppingListController");
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -98,26 +99,24 @@ class ShoppingListController extends ChangeNotifier {
   /// Load items from local cache
   Future<void> _loadFromCache() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final String? jsonString = prefs.getString(_storageKey);
+      final String? jsonString = await _storage.read(key: _storageKey);
 
       if (jsonString != null) {
         final List<dynamic> jsonList = json.decode(jsonString);
         _items = jsonList.map((json) => ShoppingListItem.fromJson(json)).toList();
       }
     } catch (e) {
-      // Error loading from cache
+      log("Error loading shopping list from cache: $e", name: "ShoppingListController");
     }
   }
 
   /// Save items to local cache
   Future<void> _saveToCache() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
       final jsonList = _items.map((item) => item.toJson()).toList();
-      await prefs.setString(_storageKey, json.encode(jsonList));
+      await _storage.write(key: _storageKey, value: json.encode(jsonList));
     } catch (e) {
-      // Error saving to cache
+      log("Error saving shopping list to cache: $e", name: "ShoppingListController");
     }
   }
 
@@ -133,11 +132,10 @@ class ShoppingListController extends ChangeNotifier {
       _items = serverItems;
       _lastSyncTime = DateTime.now();
 
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_lastSyncKey, _lastSyncTime!.toIso8601String());
+      await _storage.write(key: _lastSyncKey, value: _lastSyncTime!.toIso8601String());
       await _saveToCache();
     } catch (e) {
-      // Error syncing with server
+      log("Error syncing shopping list with server: $e", name: "ShoppingListController");
     } finally {
       _isSyncing = false;
       notifyListeners();
@@ -180,7 +178,7 @@ class ShoppingListController extends ChangeNotifier {
       } on SocketException {
         // Offline - items are already added locally, will sync later
       } catch (e) {
-        // Items remain in local cache
+        log("Error syncing added items to server: $e", name: "ShoppingListController");
       }
     }
   }
@@ -212,7 +210,7 @@ class ShoppingListController extends ChangeNotifier {
       } on SocketException {
         // Offline - change is saved locally
       } catch (e) {
-        // Error syncing toggle to server
+        log("Error syncing item toggle to server: $e", name: "ShoppingListController");
       }
     }
   }
@@ -242,7 +240,7 @@ class ShoppingListController extends ChangeNotifier {
       } on SocketException {
         // Offline - recipe group toggled locally
       } catch (e) {
-        // Error syncing recipe group toggle
+        log("Error syncing recipe group toggle to server: $e", name: "ShoppingListController");
       }
     }
   }
@@ -264,7 +262,7 @@ class ShoppingListController extends ChangeNotifier {
       } on SocketException {
         // Offline - item removed locally
       } catch (e) {
-        // Error syncing item deletion
+        log("Error syncing item deletion to server: $e", name: "ShoppingListController");
       }
     }
   }
@@ -285,7 +283,7 @@ class ShoppingListController extends ChangeNotifier {
       } on SocketException {
         // Offline - recipe items removed locally
       } catch (e) {
-        // Error syncing recipe items deletion
+        log("Error syncing recipe items deletion to server: $e", name: "ShoppingListController");
       }
     }
   }
@@ -306,7 +304,7 @@ class ShoppingListController extends ChangeNotifier {
       } on SocketException {
         // Offline - checked items cleared locally
       } catch (e) {
-        // Error syncing checked items deletion
+        log("Error syncing checked items deletion to server: $e", name: "ShoppingListController");
       }
     }
   }
@@ -327,7 +325,7 @@ class ShoppingListController extends ChangeNotifier {
       } on SocketException {
         // Offline - all items cleared locally
       } catch (e) {
-        // Error syncing clear all
+        log("Error syncing clear all to server: $e", name: "ShoppingListController");
       }
     }
   }
