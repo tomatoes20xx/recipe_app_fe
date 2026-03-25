@@ -86,6 +86,11 @@ class ApiClient {
       _uri(path),
       headers: await _headers(auth: auth, hasBody: body != null),
       body: body == null ? null : jsonEncode(body),
+    ).timeout(
+      const Duration(seconds: 30),
+      onTimeout: () {
+        throw ApiException(0, "Request timeout. The server took too long to respond.");
+      },
     );
     return _handle(res);
   } on http.ClientException catch (e) {
@@ -102,6 +107,11 @@ class ApiClient {
       _uri(path),
       headers: await _headers(auth: auth, hasBody: body != null),
       body: body == null ? null : jsonEncode(body),
+    ).timeout(
+      const Duration(seconds: 30),
+      onTimeout: () {
+        throw ApiException(0, "Request timeout. The server took too long to respond.");
+      },
     );
     return _handle(res);
   } on http.ClientException catch (e) {
@@ -118,6 +128,11 @@ Future<dynamic> delete(String path, {Object? body, bool auth = false}) async {
       _uri(path),
       headers: await _headers(auth: auth, hasBody: body != null),
       body: body == null ? null : jsonEncode(body),
+    ).timeout(
+      const Duration(seconds: 30),
+      onTimeout: () {
+        throw ApiException(0, "Request timeout. The server took too long to respond.");
+      },
     );
     return _handle(res);
   } on http.ClientException catch (e) {
