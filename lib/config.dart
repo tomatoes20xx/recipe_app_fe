@@ -9,4 +9,10 @@ class Config {
     "API_BASE_URL",
     defaultValue: "https://recipeappbe-testing.up.railway.app",
   );
+
+  /// Google Sign-In Web Client ID — set at build time via --dart-define=GOOGLE_WEB_CLIENT_ID=...
+  static const String googleWebClientId = String.fromEnvironment(
+    "GOOGLE_WEB_CLIENT_ID",
+    defaultValue: "31640311657-vt82s1udbrrn2t36g3ivhh0jll148q4l.apps.googleusercontent.com",
+  );
 }
