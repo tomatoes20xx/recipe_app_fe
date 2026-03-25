@@ -15,7 +15,7 @@ import "firebase_options.dart";
 import "services/notification_service.dart";
 
 import "api/api_client.dart";
-import "config.dart";
+import "config.dart" as app_config;
 import "auth/auth_api.dart";
 import "auth/auth_controller.dart";
 import "auth/token_storage.dart";
@@ -75,7 +75,7 @@ void main() async {
   // Initialize Google Sign-In with Web Client ID
   try {
     await GoogleSignIn.instance.initialize(
-      serverClientId: Config.googleWebClientId,
+      serverClientId: app_config.Config.googleWebClientId,
     );
   } catch (e) {
     // Ignore initialization errors
