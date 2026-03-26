@@ -70,6 +70,8 @@ dependencies:
   flutter_local_notifications: ^18.0.1
   # Tutorial/Tour Guide for feature highlighting
   tutorial_coach_mark: ^1.2.11
+  # Android in-app update via Google Play
+  in_app_update: ^4.2.1
 
 dev_dependencies:
   flutter_test:

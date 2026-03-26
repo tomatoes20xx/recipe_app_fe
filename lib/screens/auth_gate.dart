@@ -3,6 +3,7 @@ import "package:flutter/material.dart";
 import "../api/api_client.dart";
 import "../auth/auth_controller.dart";
 import "../localization/language_controller.dart";
+import "../services/update_service.dart";
 import "../shopping/shopping_list_controller.dart";
 import "../theme/theme_controller.dart";
 import "email_verification_screen.dart";
@@ -53,6 +54,9 @@ class _AuthGateState extends State<AuthGate> {
       // If bootstrap fails, still show the app (user can try to login)
       // Don't block the app from starting
     }
+
+    // Check for a Play Store update (non-blocking — errors are swallowed)
+    UpdateService.checkForUpdate();
 
     // Check mounted and update state after try-catch, not in finally
     if (mounted) {
