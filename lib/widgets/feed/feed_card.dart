@@ -46,7 +46,25 @@ class _FeedCardState extends State<FeedCard> {
     final firstImage = widget.item.images.isNotEmpty ? widget.item.images.first : null;
     final hasDescription = widget.item.description != null && widget.item.description!.trim().isNotEmpty;
 
-    return Card(
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 16,
+            spreadRadius: 0,
+            offset: const Offset(0, 4),
+          ),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 4,
+            spreadRadius: 0,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      child: Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
@@ -122,6 +140,7 @@ class _FeedCardState extends State<FeedCard> {
           ),
         ],
       ),
+    ),
     );
   }
 }
@@ -384,6 +403,41 @@ class _ImageSection extends StatelessWidget {
               width: double.infinity,
               height: double.infinity,
               iconSize: 48,
+            ),
+          // Cooking time badge
+          if (item.cookingTimeMin != null || item.cookingTimeMax != null)
+            Positioned(
+              top: 8,
+              left: 8,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.92),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.schedule_rounded, size: 12, color: Color(0xFF333333)),
+                    const SizedBox(width: 4),
+                    Text(
+                      () {
+                        final min = item.cookingTimeMin;
+                        final max = item.cookingTimeMax;
+                        if (min != null && max != null && min != max) {
+                          return '$min–$max წთ';
+                        }
+                        return '${min ?? max} წთ';
+                      }(),
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF333333),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           // Trending badge for top sort
           if (sort == "top" && item.likesWindow != null)
