@@ -11,6 +11,7 @@ import "../constants/recipe_categories.dart";
 import "../localization/app_localizations.dart";
 import "../recipes/recipe_api.dart";
 import "../recipes/recipe_detail_models.dart";
+import "../services/recipe_draft_service.dart";
 import "../utils/error_utils.dart";
 import "../utils/image_utils.dart";
 import "../utils/ui_utils.dart";
@@ -31,7 +32,8 @@ class CreateRecipeScreen extends StatefulWidget {
   State<CreateRecipeScreen> createState() => _CreateRecipeScreenState();
 }
 
-class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
+class _CreateRecipeScreenState extends State<CreateRecipeScreen>
+    with WidgetsBindingObserver {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
@@ -53,17 +55,23 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
   String? _cookingTimeError;
 
   bool _isSubmitting = false;
+  bool _submitted = false;
   String? _error;
   String? _uploadStatus; // For showing upload progress
   bool _isEditMode = false;
+
+  final _draftService = RecipeDraftService();
 
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _isEditMode = widget.recipeId != null && widget.recipe != null;
     if (_isEditMode && widget.recipe != null) {
       _loadRecipeData(widget.recipe!);
+    } else {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _checkForDraft());
     }
   }
 
@@ -96,6 +104,10 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    if (!_isEditMode && !_submitted && _hasMeaningfulData()) {
+      _saveDraft();
+    }
     _titleController.dispose();
     _descriptionController.dispose();
     _cuisineController.dispose();
@@ -112,6 +124,129 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
       step.instructionController.dispose();
     }
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (!_isEditMode && !_submitted &&
+        (state == AppLifecycleState.paused ||
+            state == AppLifecycleState.inactive) &&
+        _hasMeaningfulData()) {
+      _saveDraft();
+    }
+  }
+
+  bool _hasMeaningfulData() {
+    return _titleController.text.trim().isNotEmpty ||
+        _descriptionController.text.trim().isNotEmpty ||
+        _cuisineController.text.trim().isNotEmpty ||
+        _tags.isNotEmpty ||
+        _ingredients.any((i) => i.nameController.text.trim().isNotEmpty) ||
+        _steps.any((s) => s.instructionController.text.trim().isNotEmpty) ||
+        _selectedImages.isNotEmpty;
+  }
+
+  void _saveDraft() {
+    _draftService.saveDraft(
+      title: _titleController.text,
+      description: _descriptionController.text,
+      cuisine: _cuisineController.text,
+      tags: List.from(_tags),
+      cookingTimeMin: _cookingTimeMinController.text,
+      cookingTimeMax: _cookingTimeMaxController.text,
+      difficulty: _selectedDifficulty,
+      ingredients: _ingredients
+          .map((i) => {
+                'quantity': i.quantityController.text,
+                'unit': i.unitController.text,
+                'name': i.nameController.text,
+              })
+          .toList(),
+      steps: _steps.map((s) => s.instructionController.text).toList(),
+      imagePaths: _selectedImages.map((f) => f.path).toList(),
+    );
+  }
+
+  Future<void> _checkForDraft() async {
+    if (!mounted) return;
+    final hasDraft = await _draftService.hasDraft();
+    if (!mounted || !hasDraft) return;
+
+    final localizations = AppLocalizations.of(context);
+    final shouldContinue = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        title: Text(localizations?.draftFound ?? 'Draft Found'),
+        content: Text(
+          localizations?.draftFoundMessage ??
+              'You have an unsaved recipe draft. Would you like to continue editing it?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(localizations?.startFresh ?? 'Start Fresh'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(localizations?.continueDraft ?? 'Continue Draft'),
+          ),
+        ],
+      ),
+    );
+
+    if (!mounted) return;
+
+    if (shouldContinue == true) {
+      await _loadDraft();
+    } else {
+      await _draftService.clearDraft();
+    }
+  }
+
+  Future<void> _loadDraft() async {
+    final draft = await _draftService.loadDraft();
+    if (draft == null || !mounted) return;
+
+    setState(() {
+      _titleController.text = (draft['title'] as String?) ?? '';
+      _descriptionController.text = (draft['description'] as String?) ?? '';
+      _cuisineController.text = (draft['cuisine'] as String?) ?? '';
+      _cookingTimeMinController.text =
+          (draft['cookingTimeMin'] as String?) ?? '';
+      _cookingTimeMaxController.text =
+          (draft['cookingTimeMax'] as String?) ?? '';
+      final diff = (draft['difficulty'] as String?) ?? '';
+      _selectedDifficulty = diff.isEmpty ? null : diff;
+
+      final tags = (draft['tags'] as List<dynamic>?) ?? [];
+      _tags.addAll(tags.cast<String>());
+
+      final ingredients = (draft['ingredients'] as List<dynamic>?) ?? [];
+      for (final ing in ingredients) {
+        final map = ing as Map<String, dynamic>;
+        final item = _IngredientItem();
+        item.quantityController.text = (map['quantity'] as String?) ?? '';
+        item.unitController.text = (map['unit'] as String?) ?? '';
+        item.nameController.text = (map['name'] as String?) ?? '';
+        _ingredients.add(item);
+      }
+
+      final steps = (draft['steps'] as List<dynamic>?) ?? [];
+      for (final step in steps) {
+        final item = _StepItem();
+        item.instructionController.text = (step as String?) ?? '';
+        _steps.add(item);
+      }
+
+      final imagePaths = (draft['imagePaths'] as List<dynamic>?) ?? [];
+      for (final path in imagePaths) {
+        final p = path as String;
+        if (File(p).existsSync()) {
+          _selectedImages.add(XFile(p));
+        }
+      }
+    });
   }
 
   void _addTag() {
@@ -477,6 +612,10 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
         );
       }
 
+      _submitted = true;
+      if (!_isEditMode) {
+        await _draftService.clearDraft();
+      }
       if (mounted) {
         setState(() {
           _uploadStatus = null;

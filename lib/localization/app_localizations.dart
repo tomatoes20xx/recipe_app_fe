@@ -826,6 +826,12 @@ class AppLocalizations {
   // Follower search
   String get noFollowersFound => _localizedValues[locale.languageCode]?["noFollowersFound"] ?? "No followers found";
 
+  // Recipe Draft
+  String get draftFound => _localizedValues[locale.languageCode]?["draftFound"] ?? "Draft Found";
+  String get draftFoundMessage => _localizedValues[locale.languageCode]?["draftFoundMessage"] ?? "You have an unsaved recipe draft. Would you like to continue editing it?";
+  String get continueDraft => _localizedValues[locale.languageCode]?["continueDraft"] ?? "Continue Draft";
+  String get startFresh => _localizedValues[locale.languageCode]?["startFresh"] ?? "Start Fresh";
+
   // Helper method to get full month names by index (1-12)
   String getMonthName(int month) {
     final months = [
@@ -1570,6 +1576,12 @@ class AppLocalizations {
 
       // Follower search
       "noFollowersFound": "No followers found",
+
+      // Recipe Draft
+      "draftFound": "Draft Found",
+      "draftFoundMessage": "You have an unsaved recipe draft. Would you like to continue editing it?",
+      "continueDraft": "Continue Draft",
+      "startFresh": "Start Fresh",
     },
     "ka": {
       "appTitle": "Yummy",
@@ -2297,6 +2309,12 @@ class AppLocalizations {
 
       // Follower search
       "noFollowersFound": "მიმდევრები ვერ მოიძებნა",
+
+      // Recipe Draft
+      "draftFound": "შენახული რეცეპტი",
+      "draftFoundMessage": "თქვენ გაქვთ შენახული რეცეპტი, რომლის ატვირთვაც არ დაგისრულებიათ. გსურთ გაგრძელება?",
+      "continueDraft": "გაგრძელება",
+      "startFresh": "თავიდან დაწყება",
     },
   };
 }
