@@ -1329,15 +1329,6 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
       title: "${localizations?.ingredients ?? "Ingredients"} *",
       icon: Icons.shopping_basket_rounded,
       iconColor: Colors.green,
-      action: TextButton.icon(
-        onPressed: _addIngredient,
-        icon: const Icon(Icons.add_rounded, size: 20),
-        label: Text(localizations?.add ?? "Add"),
-        style: TextButton.styleFrom(
-          foregroundColor: theme.colorScheme.primary,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        ),
-      ),
       child: _ingredients.isEmpty
           ? _buildEmptyState(
               theme,
@@ -1347,37 +1338,53 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
               onTap: _addIngredient,
               localizations: localizations,
             )
-          : ReorderableListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              buildDefaultDragHandles: false,
-              itemCount: _ingredients.length,
-              onReorder: _reorderIngredients,
-              proxyDecorator: (child, index, animation) {
-                return AnimatedBuilder(
-                  animation: animation,
-                  builder: (context, child) {
-                    final animValue = Curves.easeInOut.transform(animation.value);
-                    final elevation = lerpDouble(0, 6, animValue)!;
-                    return Material(
-                      elevation: elevation,
-                      borderRadius: BorderRadius.circular(12),
+          : Column(
+              children: [
+                ReorderableListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  buildDefaultDragHandles: false,
+                  itemCount: _ingredients.length,
+                  onReorder: _reorderIngredients,
+                  proxyDecorator: (child, index, animation) {
+                    return AnimatedBuilder(
+                      animation: animation,
+                      builder: (context, child) {
+                        final animValue =
+                            Curves.easeInOut.transform(animation.value);
+                        final elevation = lerpDouble(0, 6, animValue)!;
+                        return Material(
+                          elevation: elevation,
+                          borderRadius: BorderRadius.circular(12),
+                          child: child,
+                        );
+                      },
                       child: child,
                     );
                   },
-                  child: child,
-                );
-              },
-              itemBuilder: (context, index) {
-                return _IngredientTile(
-                  key: ValueKey(_ingredients[index]),
-                  ingredient: _ingredients[index],
-                  index: index,
-                  onRemove: () => _removeIngredient(index),
-                  theme: theme,
-                  localizations: localizations,
-                );
-              },
+                  itemBuilder: (context, index) {
+                    return _IngredientTile(
+                      key: ValueKey(_ingredients[index]),
+                      ingredient: _ingredients[index],
+                      index: index,
+                      onRemove: () => _removeIngredient(index),
+                      onAddNew: _addIngredient,
+                      theme: theme,
+                      localizations: localizations,
+                    );
+                  },
+                ),
+                TextButton.icon(
+                  onPressed: _addIngredient,
+                  icon: const Icon(Icons.add_rounded, size: 20),
+                  label: Text(localizations?.add ?? "Add"),
+                  style: TextButton.styleFrom(
+                    foregroundColor: theme.colorScheme.primary,
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  ),
+                ),
+              ],
             ),
     );
   }
@@ -1390,15 +1397,6 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
       title: "${localizations?.instruction ?? "Steps"} *",
       icon: Icons.format_list_numbered_rounded,
       iconColor: Colors.blue,
-      action: TextButton.icon(
-        onPressed: _addStep,
-        icon: const Icon(Icons.add_rounded, size: 20),
-        label: Text(localizations?.add ?? "Add"),
-        style: TextButton.styleFrom(
-          foregroundColor: theme.colorScheme.primary,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        ),
-      ),
       child: _steps.isEmpty
           ? _buildEmptyState(
               theme,
@@ -1408,38 +1406,54 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
               onTap: _addStep,
               localizations: localizations,
             )
-          : ReorderableListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              buildDefaultDragHandles: false,
-              itemCount: _steps.length,
-              onReorder: _reorderSteps,
-              proxyDecorator: (child, index, animation) {
-                return AnimatedBuilder(
-                  animation: animation,
-                  builder: (context, child) {
-                    final animValue = Curves.easeInOut.transform(animation.value);
-                    final elevation = lerpDouble(0, 6, animValue)!;
-                    return Material(
-                      elevation: elevation,
-                      borderRadius: BorderRadius.circular(12),
+          : Column(
+              children: [
+                ReorderableListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  buildDefaultDragHandles: false,
+                  itemCount: _steps.length,
+                  onReorder: _reorderSteps,
+                  proxyDecorator: (child, index, animation) {
+                    return AnimatedBuilder(
+                      animation: animation,
+                      builder: (context, child) {
+                        final animValue =
+                            Curves.easeInOut.transform(animation.value);
+                        final elevation = lerpDouble(0, 6, animValue)!;
+                        return Material(
+                          elevation: elevation,
+                          borderRadius: BorderRadius.circular(12),
+                          child: child,
+                        );
+                      },
                       child: child,
                     );
                   },
-                  child: child,
-                );
-              },
-              itemBuilder: (context, index) {
-                return _StepTile(
-                  key: ValueKey(_steps[index]),
-                  step: _steps[index],
-                  stepNumber: index + 1,
-                  onRemove: () => _removeStep(index),
-                  theme: theme,
-                  localizations: localizations,
-                  isLast: index == _steps.length - 1,
-                );
-              },
+                  itemBuilder: (context, index) {
+                    return _StepTile(
+                      key: ValueKey(_steps[index]),
+                      step: _steps[index],
+                      stepNumber: index + 1,
+                      onRemove: () => _removeStep(index),
+                      onAddNew: _addStep,
+                      theme: theme,
+                      localizations: localizations,
+                      isLast: index == _steps.length - 1,
+                    );
+                  },
+                ),
+                TextButton.icon(
+                  onPressed: _addStep,
+                  icon: const Icon(Icons.add_rounded, size: 20),
+                  label: Text(localizations?.add ?? "Add"),
+                  style: TextButton.styleFrom(
+                    foregroundColor: theme.colorScheme.primary,
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  ),
+                ),
+              ],
             ),
     );
   }
@@ -1702,6 +1716,7 @@ class _IngredientTile extends StatelessWidget {
     required this.ingredient,
     required this.index,
     required this.onRemove,
+    required this.onAddNew,
     required this.theme,
     this.localizations,
   });
@@ -1709,6 +1724,7 @@ class _IngredientTile extends StatelessWidget {
   final _IngredientItem ingredient;
   final int index;
   final VoidCallback onRemove;
+  final VoidCallback onAddNew;
   final ThemeData theme;
   final AppLocalizations? localizations;
 
@@ -1826,6 +1842,8 @@ class _IngredientTile extends StatelessWidget {
           TextFormField(
             controller: ingredient.nameController,
             style: theme.textTheme.bodyMedium,
+            textInputAction: TextInputAction.next,
+            onFieldSubmitted: (_) => onAddNew(),
             decoration: InputDecoration(
               labelText: localizations?.ingredient ?? "Ingredient",
               labelStyle: TextStyle(
@@ -1888,6 +1906,7 @@ class _StepTile extends StatelessWidget {
     required this.step,
     required this.stepNumber,
     required this.onRemove,
+    required this.onAddNew,
     required this.theme,
     required this.isLast,
     this.localizations,
@@ -1896,6 +1915,7 @@ class _StepTile extends StatelessWidget {
   final _StepItem step;
   final int stepNumber;
   final VoidCallback onRemove;
+  final VoidCallback onAddNew;
   final ThemeData theme;
   final bool isLast;
   final AppLocalizations? localizations;
@@ -1978,6 +1998,8 @@ class _StepTile extends StatelessWidget {
                         maxLines: 3,
                         minLines: 2,
                         style: theme.textTheme.bodyMedium,
+                        textInputAction: TextInputAction.next,
+                        onFieldSubmitted: (_) => onAddNew(),
                         decoration: InputDecoration(
                           hintText: localizations?.describeThisStep ??
                               "Describe this step...",
