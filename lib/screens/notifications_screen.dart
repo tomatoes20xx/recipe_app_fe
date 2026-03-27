@@ -33,11 +33,13 @@ class NotificationsScreen extends StatefulWidget {
 
 class _NotificationsScreenState extends State<NotificationsScreen> {
   bool _showUnreadOnly = false;
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
     widget.notificationController.addListener(_onControllerChanged);
+    _scrollController.addListener(_onScroll);
     // Defer loading until after the build phase completes
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // Always refresh notifications when entering this screen
@@ -50,6 +52,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     });
   }
 
+  void _onScroll() {
+    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 300) {
+      widget.notificationController.loadMore(unreadOnly: _showUnreadOnly);
+    }
+  }
+
   void _onControllerChanged() {
     if (mounted) {
       setState(() {});
@@ -59,6 +67,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   @override
   void dispose() {
     widget.notificationController.removeListener(_onControllerChanged);
+    _scrollController.dispose();
     // Don't dispose the controller - it's owned by FeedShellScreen
     super.dispose();
   }
@@ -483,6 +492,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }
 
     return ListView.builder(
+      controller: _scrollController,
       padding: const EdgeInsets.fromLTRB(0, 8, 0, 120),
       itemCount: widget.notificationController.items.length + (widget.notificationController.isLoadingMore ? 1 : 0),
       itemBuilder: (context, index) {
