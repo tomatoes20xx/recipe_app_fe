@@ -406,7 +406,7 @@ class _EngagementOverlay extends StatelessWidget {
             children: [
               _ShadowedIcon(
                 child: EngagementStatWidget(
-                  icon: Icons.favorite_rounded,
+                  icon: item.viewerHasLiked ? Icons.favorite : Icons.favorite_border,
                   value: item.likes,
                   active: item.viewerHasLiked,
                   activeColor: const Color(0xFFE53935),
@@ -426,7 +426,7 @@ class _EngagementOverlay extends StatelessWidget {
               const SizedBox(height: 32),
               _ShadowedIcon(
                 child: EngagementStatWidget(
-                  icon: Icons.comment_outlined,
+                  icon: Icons.chat_bubble_outline,
                   value: item.comments,
                   size: EngagementStatSize.large,
                   style: EngagementStatStyle.fullScreen,
@@ -452,7 +452,7 @@ class _EngagementOverlay extends StatelessWidget {
               const SizedBox(height: 32),
               _ShadowedIcon(
                 child: EngagementStatWidget(
-                  icon: item.viewerHasBookmarked ? Icons.bookmark_rounded : Icons.bookmark_outline_rounded,
+                  icon: item.viewerHasBookmarked ? Icons.bookmark : Icons.bookmark_border,
                   value: item.bookmarks,
                   active: item.viewerHasBookmarked,
                   activeColor: const Color(0xFFE53935),

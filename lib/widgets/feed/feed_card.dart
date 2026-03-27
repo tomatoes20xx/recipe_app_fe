@@ -261,7 +261,7 @@ class _EngagementRow extends StatelessWidget {
       children: [
         // Like button
         _EngagementButton(
-          icon: item.viewerHasLiked ? Icons.favorite_rounded : Icons.favorite_outline_rounded,
+          icon: item.viewerHasLiked ? Icons.favorite : Icons.favorite_border,
           value: item.likes,
           active: item.viewerHasLiked,
           activeColor: const Color(0xFFE53935),
@@ -273,7 +273,7 @@ class _EngagementRow extends StatelessWidget {
         const SizedBox(width: 16),
         // Comment button
         _EngagementButton(
-          icon: Icons.comment_outlined,
+          icon: Icons.chat_bubble_outline,
           value: item.comments,
           onTap: () {
             showCommentsBottomSheet(
@@ -293,7 +293,7 @@ class _EngagementRow extends StatelessWidget {
         const SizedBox(width: 16),
         // Bookmark button
         _EngagementButton(
-          icon: item.viewerHasBookmarked ? Icons.bookmark_rounded : Icons.bookmark_outline_rounded,
+          icon: item.viewerHasBookmarked ? Icons.bookmark : Icons.bookmark_border,
           value: item.bookmarks,
           active: item.viewerHasBookmarked,
           activeColor: const Color(0xFFE53935),
