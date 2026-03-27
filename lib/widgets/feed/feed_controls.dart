@@ -25,12 +25,6 @@ class FeedControls extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-        border: Border(
-          bottom: BorderSide(
-            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
-            width: 1,
-          ),
-        ),
       ),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),

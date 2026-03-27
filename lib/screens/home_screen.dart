@@ -341,15 +341,15 @@ class _HomeScreenState extends State<HomeScreen> {
     final localizations = AppLocalizations.of(context);
     final theme = Theme.of(context);
 
-    return Container(
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(
-            color: theme.colorScheme.outline.withValues(alpha: 0.1),
-            width: 1,
-          ),
-        ),
+    const chipShadow = [
+      BoxShadow(
+        color: Color(0x14000000),
+        blurRadius: 6,
+        offset: Offset(0, 2),
       ),
+    ];
+
+    return SizedBox(
       height: 48,
       child: ListView(
         scrollDirection: Axis.horizontal,
@@ -357,11 +357,17 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-            child: FilterChip(
-              selected: feed.selectedCategory == null,
-              label: Text(localizations?.allCategories ?? "All"),
-              onSelected: (_) => feed.setCategory(null),
-              visualDensity: VisualDensity.compact,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: chipShadow,
+              ),
+              child: FilterChip(
+                selected: feed.selectedCategory == null,
+                label: Text(localizations?.allCategories ?? "All"),
+                onSelected: (_) => feed.setCategory(null),
+                visualDensity: VisualDensity.compact,
+              ),
             ),
           ),
           ...recipeCategories.map((category) {
@@ -369,14 +375,20 @@ class _HomeScreenState extends State<HomeScreen> {
             final isSelected = feed.selectedCategory == label;
             return Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-              child: FilterChip(
-                selected: isSelected,
-                label: Text(label),
-                avatar: Icon(category.icon, size: 16),
-                onSelected: (_) => feed.setCategory(
-                  isSelected ? null : label,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: chipShadow,
                 ),
-                visualDensity: VisualDensity.compact,
+                child: FilterChip(
+                  selected: isSelected,
+                  label: Text(label),
+                  avatar: Icon(category.icon, size: 16),
+                  onSelected: (_) => feed.setCategory(
+                    isSelected ? null : label,
+                  ),
+                  visualDensity: VisualDensity.compact,
+                ),
               ),
             );
           }),
@@ -394,14 +406,20 @@ class _HomeScreenState extends State<HomeScreen> {
             final isSelected = feed.selectedCategory == label;
             return Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-              child: FilterChip(
-                selected: isSelected,
-                label: Text(label),
-                avatar: Icon(pref.icon, size: 16),
-                onSelected: (_) => feed.setCategory(
-                  isSelected ? null : label,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: chipShadow,
                 ),
-                visualDensity: VisualDensity.compact,
+                child: FilterChip(
+                  selected: isSelected,
+                  label: Text(label),
+                  avatar: Icon(pref.icon, size: 16),
+                  onSelected: (_) => feed.setCategory(
+                    isSelected ? null : label,
+                  ),
+                  visualDensity: VisualDensity.compact,
+                ),
               ),
             );
           }),
