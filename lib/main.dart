@@ -147,6 +147,7 @@ class MyApp extends StatelessWidget {
             fontFamilyFallback: const ["Noto Sans Georgian", "Noto Sans"],
             colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF53B175), brightness: Brightness.light)
                 .copyWith(primary: const Color(0xFF53B175), onPrimary: Colors.white, secondary: Colors.white, onSecondary: Colors.black),
+            chipTheme: const ChipThemeData(showCheckmark: false),
           ),
           darkTheme: ThemeData(
             useMaterial3: true,
@@ -155,6 +156,7 @@ class MyApp extends StatelessWidget {
             fontFamilyFallback: const ["Noto Sans Georgian", "Noto Sans"],
             colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF53B175), brightness: Brightness.dark)
                 .copyWith(primary: const Color(0xFF53B175), onPrimary: Colors.white, surface: Colors.grey[900]!, onSurface: Colors.white),
+            chipTheme: const ChipThemeData(showCheckmark: false),
           ),
           themeMode: themeController.themeMode,
           home: AuthGate(
