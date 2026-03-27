@@ -792,6 +792,7 @@ class AppLocalizations {
   // Expandable text
   String get showMore => _localizedValues[locale.languageCode]?["showMore"] ?? "more";
   String get showLess => _localizedValues[locale.languageCode]?["showLess"] ?? "less";
+  String nMore(int count) => _localizedValues[locale.languageCode]?["nMore"]?.replaceAll("{count}", count.toString()) ?? "+$count more";
 
   // Verification
   String get verificationCodeMustBe6Digits => _localizedValues[locale.languageCode]?["verificationCodeMustBe6Digits"] ?? "Verification code must be exactly 6 digits";
@@ -1544,6 +1545,7 @@ class AppLocalizations {
       // Expandable text
       "showMore": "more",
       "showLess": "less",
+      "nMore": "+{count} more",
 
       // Verification
       "verificationCodeMustBe6Digits": "Verification code must be exactly 6 digits",
@@ -2277,6 +2279,7 @@ class AppLocalizations {
       // Expandable text
       "showMore": "მეტი",
       "showLess": "ნაკლები",
+      "nMore": "+{count} მეტი",
 
       // Verification
       "verificationCodeMustBe6Digits": "დამადასტურებელი კოდი უნდა იყოს ზუსტად 6 ციფრი",

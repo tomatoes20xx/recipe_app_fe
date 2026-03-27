@@ -571,6 +571,8 @@ class _IngredientsChipRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final hasOverflow = ingredients.length > _collapsedMax;
 
+    final localizations = AppLocalizations.of(context);
+
     if (expanded && hasOverflow) {
       return ConstrainedBox(
         constraints: const BoxConstraints(maxHeight: 200),
@@ -580,7 +582,7 @@ class _IngredientsChipRow extends StatelessWidget {
             runSpacing: 6,
             children: [
               ...ingredients.map(_chip),
-              _toggleChip(context, 'show less'),
+              _toggleChip(context, localizations?.showLess ?? 'show less'),
             ],
           ),
         ),
@@ -595,7 +597,7 @@ class _IngredientsChipRow extends StatelessWidget {
       runSpacing: 6,
       children: [
         ...visible.map(_chip),
-        if (hasOverflow) _toggleChip(context, '+$hiddenCount more'),
+        if (hasOverflow) _toggleChip(context, localizations?.nMore(hiddenCount) ?? '+$hiddenCount more'),
       ],
     );
   }
