@@ -714,7 +714,7 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen>
     final hasImages = _existingImages.isNotEmpty || _selectedImages.isNotEmpty;
 
     return SliverAppBar(
-      expandedHeight: hasImages ? 280 : 200,
+      expandedHeight: hasImages ? 280 : 320,
       pinned: true,
       stretch: true,
       backgroundColor: theme.colorScheme.surface,
@@ -741,16 +741,7 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen>
     final hasImages = _existingImages.isNotEmpty || _selectedImages.isNotEmpty;
 
     return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
-            theme.colorScheme.surface,
-          ],
-        ),
-      ),
+      color: theme.colorScheme.surface,
       child: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(20, 60, 20, 20),
@@ -766,49 +757,53 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen>
       BuildContext context, ThemeData theme, AppLocalizations? localizations) {
     return GestureDetector(
       onTap: _pickImage,
-      child: Container(
-        height: 140,
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: theme.colorScheme.outline.withValues(alpha: 0.2),
-            width: 2,
-            style: BorderStyle.solid,
-          ),
+      child: CustomPaint(
+        painter: _DashedBorderPainter(
+          color: theme.colorScheme.outline.withValues(alpha: 0.4),
+          borderRadius: 20,
+          dashWidth: 8,
+          dashSpace: 6,
+          strokeWidth: 1.5,
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primary.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.add_photo_alternate_rounded,
-                size: 28,
-                color: theme.colorScheme.primary,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              localizations?.addCoverPhoto ?? "Add cover photo",
-              style: theme.textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: theme.colorScheme.onSurface,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              localizations?.tapToUpload ?? "Tap to upload",
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-              ),
-            ),
-          ],
+        child: Container(
+          height: 240,
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primary.withValues(alpha: 0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.add_photo_alternate_rounded,
+                    size: 32,
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  localizations?.addCoverPhoto ?? "Add cover photo",
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: theme.colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  localizations?.tapToUpload ?? "Tap to upload",
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -2179,4 +2174,55 @@ class _StepTile extends StatelessWidget {
       ),
     );
   }
+}
+
+class _DashedBorderPainter extends CustomPainter {
+  const _DashedBorderPainter({
+    required this.color,
+    required this.borderRadius,
+    required this.dashWidth,
+    required this.dashSpace,
+    required this.strokeWidth,
+  });
+
+  final Color color;
+  final double borderRadius;
+  final double dashWidth;
+  final double dashSpace;
+  final double strokeWidth;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = strokeWidth
+      ..style = PaintingStyle.stroke;
+
+    final rrect = RRect.fromRectAndRadius(
+      Rect.fromLTWH(strokeWidth / 2, strokeWidth / 2,
+          size.width - strokeWidth, size.height - strokeWidth),
+      Radius.circular(borderRadius),
+    );
+
+    final path = Path()..addRRect(rrect);
+    final metrics = path.computeMetrics();
+
+    for (final metric in metrics) {
+      double distance = 0;
+      while (distance < metric.length) {
+        final start = distance;
+        final end = (distance + dashWidth).clamp(0.0, metric.length);
+        canvas.drawPath(metric.extractPath(start, end), paint);
+        distance += dashWidth + dashSpace;
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(_DashedBorderPainter oldDelegate) =>
+      color != oldDelegate.color ||
+      borderRadius != oldDelegate.borderRadius ||
+      dashWidth != oldDelegate.dashWidth ||
+      dashSpace != oldDelegate.dashSpace ||
+      strokeWidth != oldDelegate.strokeWidth;
 }
