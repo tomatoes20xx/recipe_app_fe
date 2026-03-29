@@ -1,4 +1,5 @@
 import "package:flutter/material.dart";
+import "../api/api_client.dart";
 import "../localization/app_localizations.dart";
 
 /// Unified empty state widget for displaying empty lists, search results, etc.
@@ -119,11 +120,26 @@ class ErrorStateWidget extends StatelessWidget {
   /// Optional custom retry button label
   final String? retryLabel;
 
+  String _resolveMessage(AppLocalizations? l) {
+    switch (message) {
+      case ApiErrorKeys.noInternet:
+        return l?.unableToConnect ?? "No internet connection.";
+      case ApiErrorKeys.networkError:
+        return l?.unableToConnect ?? "No internet connection.";
+      case ApiErrorKeys.requestTimeout:
+        return l?.requestTimedOut ?? "Request timed out. Please try again.";
+      case ApiErrorKeys.uploadCancelled:
+        return l?.uploadCancelled ?? "Upload was cancelled. Please try again.";
+      default:
+        return message;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final localizations = AppLocalizations.of(context);
-    
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -144,7 +160,7 @@ class ErrorStateWidget extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Text(
-              message,
+              _resolveMessage(localizations),
               style: theme.textTheme.bodySmall,
               textAlign: TextAlign.center,
             ),

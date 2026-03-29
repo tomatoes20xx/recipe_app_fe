@@ -79,8 +79,11 @@ class _AuthGateState extends State<AuthGate> {
       animation: widget.auth,
       builder: (context, _) {
         if (widget.auth.isLoggedIn) {
-          // Check if email is verified
-          final emailVerified = widget.auth.me?['emailVerified'] == true;
+          // Check if email is verified.
+          // If me is null (offline/network error), skip verification check —
+          // we can't know the status without a server response.
+          final emailVerified =
+              widget.auth.me == null || widget.auth.me?['emailVerified'] == true;
 
           if (!emailVerified) {
             // User logged in but email not verified - show verification screen
