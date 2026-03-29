@@ -1,4 +1,5 @@
 import "package:flutter/foundation.dart";
+import "../api/api_client.dart";
 import "user_api.dart";
 import "user_models.dart";
 
@@ -40,8 +41,7 @@ class FollowersController extends ChangeNotifier {
       items.addAll(res.items);
       nextCursor = res.nextCursor;
     } catch (e) {
-      // Check if it's a 403 (private list)
-      if (e.toString().contains("403") || e.toString().contains("Forbidden")) {
+      if (e is ApiException && e.statusCode == 403) {
         isPrivate = true;
         error = "followersListPrivate";
       } else {

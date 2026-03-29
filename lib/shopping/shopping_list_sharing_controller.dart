@@ -126,20 +126,8 @@ class ShoppingListSharingController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // Get all shares and find ones for this user
-      final allShares = await shoppingListApi.getRecipeSharedWith();
-      final userShares = allShares.where((share) {
-        final owner = share["owner"] as Map<String, dynamic>? ?? {};
-        final shareUserId = (owner["userId"] ?? owner["user_id"] ?? "").toString();
-        return shareUserId == userId;
-      }).toList();
-
-      // Delete each share
-      for (final share in userShares) {
-        final shareId = (share["shareId"] ?? share["share_id"] ?? "").toString();
-        if (shareId.isNotEmpty) {
-          await shoppingListApi.revokeRecipeShare(shareId);
-        }
+      if (removedUser.shareId != null && removedUser.shareId!.isNotEmpty) {
+        await shoppingListApi.revokeRecipeShare(removedUser.shareId!);
       }
 
       _error = null;
