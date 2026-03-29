@@ -88,10 +88,6 @@ void main() async {
     databaseFactory = databaseFactoryFfi;
   }
   
-  // Clear image cache to ensure fresh images are loaded
-  imageCache.clear();
-  imageCache.clearLiveImages();
-
   final tokenStorage = TokenStorage();
   final apiClient = ApiClient(tokenStorage: tokenStorage);
   final authApi = AuthApi(apiClient);

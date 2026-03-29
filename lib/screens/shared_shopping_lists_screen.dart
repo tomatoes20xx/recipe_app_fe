@@ -5,6 +5,7 @@ import "../auth/auth_controller.dart";
 import "../localization/app_localizations.dart";
 import "../shopping/shared_shopping_lists_controller.dart";
 import "../shopping/shopping_list_api.dart";
+import "../utils/error_utils.dart";
 import "../utils/ui_utils.dart";
 import "../widgets/empty_state_widget.dart";
 import "shared_user_shopping_list_screen.dart";
@@ -77,12 +78,7 @@ class _SharedShoppingListsScreenState extends State<SharedShoppingListsScreen> {
       await controller.dismissAllFromUser(ownerId);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(localizations?.error ?? "Error: ${e.toString()}"),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
-        );
+        ErrorUtils.showError(context, e);
       }
     }
   }

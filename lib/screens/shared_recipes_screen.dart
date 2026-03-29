@@ -132,12 +132,7 @@ class _SharedRecipesScreenState extends State<SharedRecipesScreen> {
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(localizations?.error ?? "Error: ${e.toString()}"),
-              backgroundColor: Theme.of(context).colorScheme.error,
-            ),
-          );
+          ErrorUtils.showError(context, e);
         }
       }
     }

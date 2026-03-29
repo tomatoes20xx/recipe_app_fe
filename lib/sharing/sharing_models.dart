@@ -1,4 +1,5 @@
 import "../shopping/shopping_list_models.dart";
+import "../utils/ui_utils.dart";
 
 /// Represents a user who has access to shared content (recipe or shopping list)
 class SharedWithUser {
@@ -21,13 +22,7 @@ class SharedWithUser {
   });
 
   factory SharedWithUser.fromJson(Map<String, dynamic> json) {
-    // Handle avatar URL (check for null, empty, or "null" string)
-    final avatarUrl = json["avatar_url"] ?? json["avatarUrl"];
-    final processedAvatarUrl = avatarUrl == null ||
-                               avatarUrl == "null" ||
-                               (avatarUrl is String && avatarUrl.isEmpty)
-        ? null
-        : avatarUrl.toString();
+    final processedAvatarUrl = normalizeAvatarUrl(json["avatar_url"] ?? json["avatarUrl"]);
 
     // Handle sharedAt - may be missing in inline sharedWith arrays
     final sharedAtStr = json["shared_at"]?.toString() ?? json["sharedAt"]?.toString();
@@ -86,13 +81,7 @@ class SharedShoppingList {
     // Extract owner object (nested structure)
     final owner = json["owner"] as Map<String, dynamic>? ?? {};
 
-    // Handle avatar URL
-    final avatarUrl = owner["avatarUrl"] ?? owner["avatar_url"];
-    final processedAvatarUrl = avatarUrl == null ||
-                               avatarUrl == "null" ||
-                               (avatarUrl is String && avatarUrl.isEmpty)
-        ? null
-        : avatarUrl.toString();
+    final processedAvatarUrl = normalizeAvatarUrl(owner["avatarUrl"] ?? owner["avatar_url"]);
 
     // Handle date parsing safely
     final sharedAtStr = json["sharedAt"]?.toString();
@@ -149,13 +138,7 @@ class SharedUserShoppingList {
   int get uncheckedCount => items.where((item) => !item.isChecked).length;
 
   factory SharedUserShoppingList.fromJson(Map<String, dynamic> json) {
-    // Handle avatar URL (check for null, empty, or "null" string)
-    final avatarUrl = json["owner_avatar_url"];
-    final processedAvatarUrl = avatarUrl == null ||
-                               avatarUrl == "null" ||
-                               (avatarUrl is String && avatarUrl.isEmpty)
-        ? null
-        : avatarUrl.toString();
+    final processedAvatarUrl = normalizeAvatarUrl(json["owner_avatar_url"]);
 
     // Handle items - backend might return List or Map
     final itemsData = json["items"];
@@ -244,13 +227,7 @@ class SharedRecipeShoppingList {
     // Extract owner object
     final owner = json["owner"] as Map<String, dynamic>? ?? {};
 
-    // Handle avatar URL
-    final avatarUrl = owner["avatarUrl"] ?? owner["avatar_url"];
-    final processedAvatarUrl = avatarUrl == null ||
-                               avatarUrl == "null" ||
-                               (avatarUrl is String && avatarUrl.isEmpty)
-        ? null
-        : avatarUrl.toString();
+    final processedAvatarUrl = normalizeAvatarUrl(owner["avatarUrl"] ?? owner["avatar_url"]);
 
     // Handle recipeIds (could be array or null/empty)
     final recipeIdsData = json["recipeIds"] ?? json["recipe_ids"];

@@ -4,6 +4,13 @@ import "package:cached_network_image/cached_network_image.dart";
 import "../config.dart";
 import "../localization/app_localizations.dart";
 
+/// Normalizes an avatar URL — returns null for null, empty, or the literal string "null"
+String? normalizeAvatarUrl(dynamic avatarUrl) {
+  if (avatarUrl == null || avatarUrl == 'null') return null;
+  if (avatarUrl is String && avatarUrl.isEmpty) return null;
+  return avatarUrl.toString();
+}
+
 /// Builds a full image URL from a relative URL or returns the URL if it's already absolute
 String buildImageUrl(String relativeUrl) {
   if (relativeUrl.startsWith('http://') || relativeUrl.startsWith('https://')) {
