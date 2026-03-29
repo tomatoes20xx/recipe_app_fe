@@ -1,4 +1,5 @@
 import "../users/user_models.dart";
+import "../utils/ui_utils.dart";
 
 class IngredientMatch {
   final int percentage;
@@ -52,10 +53,7 @@ class SearchResult {
   });
 
   factory SearchResult.fromJson(Map<String, dynamic> json) {
-    final avatarUrl = json["author_avatar_url"];
-    final authorAvatarUrl = avatarUrl == null || avatarUrl == "null" || (avatarUrl is String && avatarUrl.isEmpty)
-        ? null
-        : avatarUrl.toString();
+    final authorAvatarUrl = normalizeAvatarUrl(json["author_avatar_url"]);
 
     final ingredientMatchData = json["ingredient_match"] as Map<String, dynamic>?;
 

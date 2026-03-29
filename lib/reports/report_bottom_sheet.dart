@@ -70,14 +70,9 @@ class _ReportBottomSheetState extends State<_ReportBottomSheet> {
 
     if (_selectedReason == null) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            localizations?.reportPleaseSelectReason ??
-            "Please select a reason for reporting",
-          ),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
+      ErrorUtils.showError(
+        context,
+        localizations?.reportPleaseSelectReason ?? "Please select a reason for reporting",
       );
       return;
     }

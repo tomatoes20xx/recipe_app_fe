@@ -173,12 +173,7 @@ class _SharedUserShoppingListScreenState extends State<SharedUserShoppingListScr
         // build() handles popping if no shares remain for this user
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(localizations?.error ?? "Error: ${e.toString()}"),
-              backgroundColor: Theme.of(context).colorScheme.error,
-            ),
-          );
+          ErrorUtils.showError(context, e);
         }
       }
     }

@@ -1,3 +1,5 @@
+import "../utils/ui_utils.dart";
+
 /// Notification types
 enum NotificationType {
   follow,             // Someone followed you
@@ -68,13 +70,7 @@ class Notification {
         type = NotificationType.unknown;
     }
 
-    // Handle avatar URL (check for null, empty, or "null" string)
-    final avatarUrl = json["actor_avatar_url"];
-    final actorAvatarUrl = avatarUrl == null || 
-                          avatarUrl == "null" || 
-                          (avatarUrl is String && avatarUrl.isEmpty)
-        ? null
-        : avatarUrl.toString();
+    final actorAvatarUrl = normalizeAvatarUrl(json["actor_avatar_url"]);
 
     return Notification(
       id: json["id"].toString(),

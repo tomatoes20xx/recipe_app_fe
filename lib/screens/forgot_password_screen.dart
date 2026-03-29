@@ -35,8 +35,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       return;
     }
 
-    // Basic email validation
-    if (!email.contains("@") || !email.contains(".")) {
+    if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email)) {
       ErrorUtils.showError(
         context,
         localizations?.invalidEmail ?? "Please enter a valid email address",
