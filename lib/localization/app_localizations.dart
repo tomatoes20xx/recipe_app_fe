@@ -159,6 +159,7 @@ class AppLocalizations {
   String get unableToConnect => _localizedValues[locale.languageCode]?["unableToConnect"] ?? "Unable to connect to the server. Please check your internet connection and try again.";
   String get requestTimedOut => _localizedValues[locale.languageCode]?["requestTimedOut"] ?? "Request timed out. Please try again.";
   String get connectionInterrupted => _localizedValues[locale.languageCode]?["connectionInterrupted"] ?? "Connection was interrupted. Please try again.";
+  String get uploadCancelled => _localizedValues[locale.languageCode]?["uploadCancelled"] ?? "Upload was cancelled. Please try again.";
   String get needToLogIn => _localizedValues[locale.languageCode]?["needToLogIn"] ?? "You need to log in to perform this action.";
   String get noPermission => _localizedValues[locale.languageCode]?["noPermission"] ?? "You don't have permission to perform this action.";
   String get itemNotFound => _localizedValues[locale.languageCode]?["itemNotFound"] ?? "The requested item could not be found.";
@@ -1281,6 +1282,7 @@ class AppLocalizations {
       "unableToConnect": "Unable to connect to the server. Please check your internet connection and try again.",
       "requestTimedOut": "Request timed out. Please try again.",
       "connectionInterrupted": "Connection was interrupted. Please try again.",
+      "uploadCancelled": "Upload was cancelled. Please try again.",
       "needToLogIn": "You need to log in to perform this action.",
       "noPermission": "You don't have permission to perform this action.",
       "itemNotFound": "The requested item could not be found.",
@@ -2014,6 +2016,7 @@ class AppLocalizations {
       "unableToConnect": "სერვერთან დაკავშირება ვერ მოხერხდა. გთხოვთ შეამოწმოთ ინტერნეტ-კავშირი და სცადოთ ხელახლა.",
       "requestTimedOut": "მოთხოვნის დრო ამოიწურა. გთხოვთ სცადოთ ხელახლა.",
       "connectionInterrupted": "კავშირი შეწყდა. გთხოვთ სცადოთ ხელახლა.",
+      "uploadCancelled": "ატვირთვა გაუქმდა. გთხოვთ სცადოთ ხელახლა.",
       "needToLogIn": "ამ ქმედების შესასრულებლად საჭიროა შესვლა.",
       "noPermission": "ამ ქმედების შესრულების უფლება არ გაქვთ.",
       "itemNotFound": "მოთხოვნილი ელემენტი ვერ მოიძებნა.",

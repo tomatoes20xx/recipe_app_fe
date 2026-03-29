@@ -6,6 +6,15 @@ import "../config.dart";
 import "../auth/token_storage.dart";
 import "../security/certificate_pinning.dart";
 
+/// Sentinel message keys used by [ApiException] for localized error display.
+/// These values are matched in [ErrorStateWidget] to resolve the localized string.
+class ApiErrorKeys {
+  static const String noInternet = 'error_no_internet';
+  static const String networkError = 'error_network';
+  static const String requestTimeout = 'error_timeout';
+  static const String uploadCancelled = 'error_upload_cancelled';
+}
+
 class ApiException implements Exception {
   final int statusCode;
   final String message;
@@ -14,7 +23,7 @@ class ApiException implements Exception {
   ApiException(this.statusCode, this.message, {this.details});
 
   @override
-  String toString() => "ApiException($statusCode): $message";
+  String toString() => message;
 }
 
 class ApiClient {
@@ -51,11 +60,11 @@ class ApiClient {
   try {
     final res = await _client.get(_uri(path, query), headers: await _headers(auth: auth));
     return _handle(res);
-  } on http.ClientException catch (e) {
-    throw ApiException(0, "Connection failed: ${e.message}. Make sure your backend is running and your phone is on the same network.");
+  } on http.ClientException catch (_) {
+    throw ApiException(0, ApiErrorKeys.noInternet);
   } catch (e) {
     if (e is ApiException) rethrow;
-    throw ApiException(0, "Network error: $e");
+    throw ApiException(0, ApiErrorKeys.networkError);
   }
 }
 
@@ -68,15 +77,15 @@ class ApiClient {
     ).timeout(
       const Duration(seconds: 30),
       onTimeout: () {
-        throw ApiException(0, "Request timeout. The server took too long to respond.");
+        throw ApiException(0, ApiErrorKeys.requestTimeout);
       },
     );
     return _handle(res);
-  } on http.ClientException catch (e) {
-    throw ApiException(0, "Connection failed: ${e.message}. Make sure your backend is running and your phone is on the same network.");
+  } on http.ClientException catch (_) {
+    throw ApiException(0, ApiErrorKeys.noInternet);
   } catch (e) {
     if (e is ApiException) rethrow;
-    throw ApiException(0, "Network error: $e");
+    throw ApiException(0, ApiErrorKeys.networkError);
   }
 }
 
@@ -89,15 +98,15 @@ class ApiClient {
     ).timeout(
       const Duration(seconds: 30),
       onTimeout: () {
-        throw ApiException(0, "Request timeout. The server took too long to respond.");
+        throw ApiException(0, ApiErrorKeys.requestTimeout);
       },
     );
     return _handle(res);
-  } on http.ClientException catch (e) {
-    throw ApiException(0, "Connection failed: ${e.message}. Make sure your backend is running and your phone is on the same network.");
+  } on http.ClientException catch (_) {
+    throw ApiException(0, ApiErrorKeys.noInternet);
   } catch (e) {
     if (e is ApiException) rethrow;
-    throw ApiException(0, "Network error: $e");
+    throw ApiException(0, ApiErrorKeys.networkError);
   }
 }
 
@@ -110,15 +119,15 @@ class ApiClient {
     ).timeout(
       const Duration(seconds: 30),
       onTimeout: () {
-        throw ApiException(0, "Request timeout. The server took too long to respond.");
+        throw ApiException(0, ApiErrorKeys.requestTimeout);
       },
     );
     return _handle(res);
-  } on http.ClientException catch (e) {
-    throw ApiException(0, "Connection failed: ${e.message}. Make sure your backend is running and your phone is on the same network.");
+  } on http.ClientException catch (_) {
+    throw ApiException(0, ApiErrorKeys.noInternet);
   } catch (e) {
     if (e is ApiException) rethrow;
-    throw ApiException(0, "Network error: $e");
+    throw ApiException(0, ApiErrorKeys.networkError);
   }
 }
 
@@ -131,15 +140,15 @@ Future<dynamic> delete(String path, {Object? body, bool auth = false}) async {
     ).timeout(
       const Duration(seconds: 30),
       onTimeout: () {
-        throw ApiException(0, "Request timeout. The server took too long to respond.");
+        throw ApiException(0, ApiErrorKeys.requestTimeout);
       },
     );
     return _handle(res);
-  } on http.ClientException catch (e) {
-    throw ApiException(0, "Connection failed: ${e.message}. Make sure your backend is running and your phone is on the same network.");
+  } on http.ClientException catch (_) {
+    throw ApiException(0, ApiErrorKeys.noInternet);
   } catch (e) {
     if (e is ApiException) rethrow;
-    throw ApiException(0, "Network error: $e");
+    throw ApiException(0, ApiErrorKeys.networkError);
   }
 }
 
@@ -170,13 +179,13 @@ Future<dynamic> _multipartRequest(
 }) async {
   try {
     final request = http.MultipartRequest(method, _uri(path));
-    
+
     // Add fields
     request.fields.addAll(fields);
-    
+
     // Add files
     request.files.addAll(files);
-    
+
     // Add auth header
     if (auth) {
       final token = await tokenStorage.readToken();
@@ -184,14 +193,14 @@ Future<dynamic> _multipartRequest(
         request.headers["Authorization"] = "Bearer $token";
       }
     }
-    
+
     request.headers["Accept"] = "application/json";
-    
+
     // Increase timeout for large file uploads (2 minutes for large images)
     final streamedResponse = await _client.send(request).timeout(
       const Duration(minutes: 2),
       onTimeout: () {
-        throw ApiException(0, "Request timeout. The server took too long to respond. Try using smaller images.");
+        throw ApiException(0, ApiErrorKeys.requestTimeout);
       },
     );
     final res = await http.Response.fromStream(streamedResponse);
@@ -199,18 +208,18 @@ Future<dynamic> _multipartRequest(
   } on http.ClientException catch (e) {
     // Handle connection reset/aborted errors (ECONNRESET, EPIPE)
     final message = e.message.toLowerCase();
-    if (message.contains("connection closed") || 
+    if (message.contains("connection closed") ||
         message.contains("connection reset") ||
         message.contains("aborted") ||
         message.contains("broken pipe")) {
-      throw ApiException(499, "Upload was cancelled or connection was reset. Please try again.");
+      throw ApiException(499, ApiErrorKeys.uploadCancelled);
     }
-    throw ApiException(0, "Connection failed: ${e.message}. Make sure your backend is running and your phone is on the same network.");
-  } on SocketException catch (e) {
-    throw ApiException(0, "Network error: ${e.message}. Check your internet connection.");
+    throw ApiException(0, ApiErrorKeys.noInternet);
+  } on SocketException catch (_) {
+    throw ApiException(0, ApiErrorKeys.noInternet);
   } catch (e) {
     if (e is ApiException) rethrow;
-    throw ApiException(0, "Network error: $e");
+    throw ApiException(0, ApiErrorKeys.networkError);
   }
 }
 
@@ -221,20 +230,20 @@ Future<dynamic> _multipartRequest(
 
     // Handle 499 (Client Closed Request) - connection was reset/aborted
     if (res.statusCode == 499) {
-      throw ApiException(499, "Upload was cancelled or connection was reset. Please try again.");
+      throw ApiException(499, ApiErrorKeys.uploadCancelled);
     }
 
     // Handle 204 No Content (common for DELETE requests)
     if (res.statusCode == 204) return null;
-    
+
     if (res.statusCode >= 200 && res.statusCode < 300) return data;
 
     // Fastify often returns { error, message } or { error, details }
     String msg = "Request failed";
     if (isJson) {
       if (data is Map) {
-        msg = data["error"]?.toString() ?? 
-              data["message"]?.toString() ?? 
+        msg = data["error"]?.toString() ??
+              data["message"]?.toString() ??
               data["details"]?.toString() ??
               "Request failed";
         // If there's a validation error, try to get more details
@@ -273,12 +282,12 @@ Future<dynamic> _multipartRequest(
             }
           }
         }
-        
+
         // Check for formErrors and fieldErrors at root level (common in validation)
         if (data.containsKey("formErrors") || data.containsKey("fieldErrors")) {
           final formErrors = data["formErrors"];
           final fieldErrors = data["fieldErrors"];
-          
+
           if (fieldErrors is Map && fieldErrors.isNotEmpty) {
             final fieldErrorList = fieldErrors.entries
                 .map((e) {
