@@ -134,8 +134,11 @@ class NotificationController extends ChangeNotifier {
   /// Refresh unread count
   Future<void> refreshUnreadCount() async {
     try {
-      unreadCount = await notificationApi.getUnreadCount();
-      _notify();
+      final newCount = await notificationApi.getUnreadCount();
+      if (newCount != unreadCount) {
+        unreadCount = newCount;
+        _notify();
+      }
     } catch (e) {
       // Silently fail - don't update UI
     }

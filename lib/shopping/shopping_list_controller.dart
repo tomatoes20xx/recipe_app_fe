@@ -34,6 +34,7 @@ class ShoppingListController extends ChangeNotifier {
   /// Get items grouped by recipe
   List<GroupedShoppingItems> get groupedItems {
     final Map<String, GroupedShoppingItems> groups = {};
+    final Map<String, DateTime> latestDates = {};
 
     for (final item in _items) {
       if (!groups.containsKey(item.recipeId)) {
@@ -43,19 +44,15 @@ class ShoppingListController extends ChangeNotifier {
           recipeImage: item.recipeImage,
           items: [],
         );
+        latestDates[item.recipeId] = item.addedAt;
+      } else if (item.addedAt.isAfter(latestDates[item.recipeId]!)) {
+        latestDates[item.recipeId] = item.addedAt;
       }
       groups[item.recipeId]!.items.add(item);
     }
 
-    // Sort groups by most recent addition
-    final sortedGroups = groups.values.toList()
-      ..sort((a, b) {
-        final aLatest = a.items.map((i) => i.addedAt).reduce((a, b) => a.isAfter(b) ? a : b);
-        final bLatest = b.items.map((i) => i.addedAt).reduce((a, b) => a.isAfter(b) ? a : b);
-        return bLatest.compareTo(aLatest);
-      });
-
-    return sortedGroups;
+    return groups.values.toList()
+      ..sort((a, b) => latestDates[b.recipeId]!.compareTo(latestDates[a.recipeId]!));
   }
 
   Future<void> _loadItems() async {
@@ -234,9 +231,10 @@ class ShoppingListController extends ChangeNotifier {
     // Sync with server
     if (api != null) {
       try {
-        for (final itemId in itemsToToggle) {
-          await api!.updateItem(itemId, isChecked: checked);
-        }
+        await Future.wait([
+          for (final itemId in itemsToToggle)
+            api!.updateItem(itemId, isChecked: checked),
+        ]);
       } on SocketException {
         // Offline - recipe group toggled locally
       } catch (e) {
