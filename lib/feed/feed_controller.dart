@@ -1,154 +1,64 @@
-import "package:flutter/foundation.dart";
-import "feed_api.dart";
-import "feed_models.dart" as feed_models;
-import "../recipes/recipe_api.dart";
+import 'feed_api.dart';
+import 'feed_models.dart' as feed_models;
+import '../recipes/recipe_api.dart';
+import '../utils/paginated_list_controller.dart';
 
-class FeedController extends ChangeNotifier {
-  FeedController({
-    required this.feedApi,
-    this.recipeApi,
-  });
+class FeedController extends PaginatedListController<feed_models.FeedItem> {
+  FeedController({required this.feedApi, this.recipeApi});
 
   final FeedApi feedApi;
   final RecipeApi? recipeApi;
 
-  final List<feed_models.FeedItem> items = [];
-  String? nextCursor;
-
-  bool isLoading = false;
-  bool isLoadingMore = false;
-  String? error;
-
-  String scope = "global"; // "global", "following", "popular", "trending"
-  String sort = "recent";  // or "top"
+  String scope = 'global'; // 'global', 'following', 'popular', 'trending'
+  String sort = 'recent';  // 'recent', 'top'
   int windowDays = 7;
-  String? selectedCategory; // tag to filter by (null = all)
-  
-  // For popular recipes
-  String popularPeriod = "all_time"; // "all_time", "30d", "7d"
-  // For trending recipes
+  String? selectedCategory;
+  String popularPeriod = 'all_time'; // 'all_time', '30d', '7d'
   int trendingDays = 7; // 1-30
 
-  int limit = 20;
-
+  @override
   Future<void> loadInitial() async {
-    isLoading = true;
-    error = null;
-    items.clear();
-    nextCursor = null;
-    notifyListeners();
-
-    try {
-      if (scope == "popular") {
-        if (recipeApi == null) {
-          throw Exception("RecipeApi is required for popular feed");
-        }
-        final res = await recipeApi!.getPopularRecipes(
-          period: popularPeriod,
-          limit: limit,
-          cursor: null,
-          tags: selectedCategory != null ? [selectedCategory!] : null,
-        );
-        final rawItems = (res["items"] as List<dynamic>? ?? []);
-        items.addAll(
-          rawItems.map((e) => feed_models.FeedItem.fromJson(Map<String, dynamic>.from(e))).toList(),
-        );
-        nextCursor = res["nextCursor"]?.toString();
-      } else if (scope == "trending") {
-        if (recipeApi == null) {
-          throw Exception("RecipeApi is required for trending feed");
-        }
-        final res = await recipeApi!.getTrendingRecipes(
-          days: trendingDays,
-          limit: limit,
-          cursor: null,
-          tags: selectedCategory != null ? [selectedCategory!] : null,
-        );
-        final rawItems = (res["items"] as List<dynamic>? ?? []);
-        items.addAll(
-          rawItems.map((e) => feed_models.FeedItem.fromJson(Map<String, dynamic>.from(e))).toList(),
-        );
-        nextCursor = res["nextCursor"]?.toString();
-      } else {
-        final res = await feedApi.getFeed(
-          limit: limit,
-          cursor: null,
-          scope: scope,
-          sort: sort,
-          windowDays: windowDays,
-          tags: selectedCategory != null ? [selectedCategory!] : null,
-        );
-        items.addAll(res.items);
-        nextCursor = res.nextCursor;
-      }
-    } catch (e) {
-      error = e.toString();
-    } finally {
-      isLoading = false;
-      notifyListeners();
-    }
+    await doLoadInitial();
   }
 
-  Future<void> refresh() async {
-    await loadInitial();
-  }
-
-  Future<void> loadMore() async {
-    if (isLoading || isLoadingMore) return;
-    if (nextCursor == null) return;
-
-    isLoadingMore = true;
-    error = null;
-    notifyListeners();
-
-    try {
-      if (scope == "popular") {
-        if (recipeApi == null) {
-          throw Exception("RecipeApi is required for popular feed");
-        }
-        final res = await recipeApi!.getPopularRecipes(
-          period: popularPeriod,
-          limit: limit,
-          cursor: nextCursor,
-          tags: selectedCategory != null ? [selectedCategory!] : null,
-        );
-        final rawItems = (res["items"] as List<dynamic>? ?? []);
-        items.addAll(
-          rawItems.map((e) => feed_models.FeedItem.fromJson(Map<String, dynamic>.from(e))).toList(),
-        );
-        nextCursor = res["nextCursor"]?.toString();
-      } else if (scope == "trending") {
-        if (recipeApi == null) {
-          throw Exception("RecipeApi is required for trending feed");
-        }
-        final res = await recipeApi!.getTrendingRecipes(
-          days: trendingDays,
-          limit: limit,
-          cursor: nextCursor,
-          tags: selectedCategory != null ? [selectedCategory!] : null,
-        );
-        final rawItems = (res["items"] as List<dynamic>? ?? []);
-        items.addAll(
-          rawItems.map((e) => feed_models.FeedItem.fromJson(Map<String, dynamic>.from(e))).toList(),
-        );
-        nextCursor = res["nextCursor"]?.toString();
-      } else {
-        final res = await feedApi.getFeed(
-          limit: limit,
-          cursor: nextCursor,
-          scope: scope,
-          sort: sort,
-          windowDays: windowDays,
-          tags: selectedCategory != null ? [selectedCategory!] : null,
-        );
-        items.addAll(res.items);
-        nextCursor = res.nextCursor;
-      }
-    } catch (e) {
-      error = e.toString();
-    } finally {
-      isLoadingMore = false;
-      notifyListeners();
+  @override
+  Future<PaginatedResponse<feed_models.FeedItem>> fetchPage(String? cursor) async {
+    if (scope == 'popular') {
+      if (recipeApi == null) throw Exception('RecipeApi is required for popular feed');
+      final res = await recipeApi!.getPopularRecipes(
+        period: popularPeriod,
+        limit: limit,
+        cursor: cursor,
+        tags: selectedCategory != null ? [selectedCategory!] : null,
+      );
+      final rawItems = (res['items'] as List<dynamic>? ?? []);
+      return PaginatedResponse(
+        items: rawItems.map((e) => feed_models.FeedItem.fromJson(Map<String, dynamic>.from(e))).toList(),
+        nextCursor: res['nextCursor']?.toString(),
+      );
+    } else if (scope == 'trending') {
+      if (recipeApi == null) throw Exception('RecipeApi is required for trending feed');
+      final res = await recipeApi!.getTrendingRecipes(
+        days: trendingDays,
+        limit: limit,
+        cursor: cursor,
+        tags: selectedCategory != null ? [selectedCategory!] : null,
+      );
+      final rawItems = (res['items'] as List<dynamic>? ?? []);
+      return PaginatedResponse(
+        items: rawItems.map((e) => feed_models.FeedItem.fromJson(Map<String, dynamic>.from(e))).toList(),
+        nextCursor: res['nextCursor']?.toString(),
+      );
+    } else {
+      final res = await feedApi.getFeed(
+        limit: limit,
+        cursor: cursor,
+        scope: scope,
+        sort: sort,
+        windowDays: windowDays,
+        tags: selectedCategory != null ? [selectedCategory!] : null,
+      );
+      return PaginatedResponse(items: res.items, nextCursor: res.nextCursor);
     }
   }
 
@@ -167,7 +77,7 @@ class FeedController extends ChangeNotifier {
   Future<void> setPopularPeriod(String value) async {
     if (popularPeriod == value) return;
     popularPeriod = value;
-    if (scope == "popular") {
+    if (scope == 'popular') {
       await loadInitial();
     } else {
       notifyListeners();
@@ -177,7 +87,7 @@ class FeedController extends ChangeNotifier {
   Future<void> setTrendingDays(int value) async {
     if (trendingDays == value) return;
     trendingDays = value;
-    if (scope == "trending") {
+    if (scope == 'trending') {
       await loadInitial();
     } else {
       notifyListeners();
@@ -193,7 +103,7 @@ class FeedController extends ChangeNotifier {
   Future<void> setWindowDays(int value) async {
     if (windowDays == value) return;
     windowDays = value;
-    if (sort == "top") {
+    if (sort == 'top') {
       await loadInitial();
     } else {
       notifyListeners();
@@ -201,19 +111,12 @@ class FeedController extends ChangeNotifier {
   }
 
   Future<void> toggleLike(String recipeId) async {
-    final i = items.indexWhere((x) => x.id == recipeId);
+    final i = indexWhere((x) => x.id == recipeId);
     if (i < 0) return;
-
     final old = items[i];
     final nextLiked = !old.viewerHasLiked;
-
-    // Optimistic UI update
-    items[i] = old.copyWith(
-      viewerHasLiked: nextLiked,
-      likes: old.likes + (nextLiked ? 1 : -1),
-    );
+    updateItemAt(i, old.copyWith(viewerHasLiked: nextLiked, likes: old.likes + (nextLiked ? 1 : -1)));
     notifyListeners();
-
     try {
       if (nextLiked) {
         await feedApi.like(recipeId);
@@ -221,27 +124,19 @@ class FeedController extends ChangeNotifier {
         await feedApi.unlike(recipeId);
       }
     } catch (e) {
-      // Rollback on error
-      items[i] = old;
+      updateItemAt(i, old);
       error = e.toString();
       notifyListeners();
     }
   }
 
   Future<void> toggleBookmark(String recipeId) async {
-    final i = items.indexWhere((x) => x.id == recipeId);
+    final i = indexWhere((x) => x.id == recipeId);
     if (i < 0) return;
-
     final old = items[i];
     final next = !old.viewerHasBookmarked;
-
-    // Optimistic UI update
-    items[i] = old.copyWith(
-      viewerHasBookmarked: next,
-      bookmarks: old.bookmarks + (next ? 1 : -1),
-    );
+    updateItemAt(i, old.copyWith(viewerHasBookmarked: next, bookmarks: old.bookmarks + (next ? 1 : -1)));
     notifyListeners();
-
     try {
       if (next) {
         await feedApi.bookmark(recipeId);
@@ -249,32 +144,28 @@ class FeedController extends ChangeNotifier {
         await feedApi.unbookmark(recipeId);
       }
     } catch (e) {
-      // Rollback on error
-      items[i] = old;
+      updateItemAt(i, old);
       error = e.toString();
       notifyListeners();
     }
   }
 
   void updateBookmarkState(String recipeId, bool bookmarked) {
-    final i = items.indexWhere((x) => x.id == recipeId);
+    final i = indexWhere((x) => x.id == recipeId);
     if (i < 0) return;
-
     final old = items[i];
     if (old.viewerHasBookmarked == bookmarked) return;
-    items[i] = old.copyWith(
+    updateItemAt(i, old.copyWith(
       viewerHasBookmarked: bookmarked,
       bookmarks: old.bookmarks + (bookmarked ? 1 : -1),
-    );
+    ));
     notifyListeners();
   }
 
   void updateCommentCount(String recipeId, int newCount) {
-    final i = items.indexWhere((x) => x.id == recipeId);
+    final i = indexWhere((x) => x.id == recipeId);
     if (i < 0) return;
-    
-    final old = items[i];
-    items[i] = old.copyWith(comments: newCount);
+    updateItemAt(i, items[i].copyWith(comments: newCount));
     notifyListeners();
   }
 }
