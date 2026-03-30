@@ -1,4 +1,5 @@
 import "package:flutter/foundation.dart";
+import "package:recipe_app_fe/constants/enums.dart";
 import "search_api.dart";
 import "search_filters.dart";
 import "search_models.dart";
@@ -49,7 +50,7 @@ class RecipeSearchController extends ChangeNotifier {
         ingredients: this.filters.ingredients.isNotEmpty ? this.filters.ingredients : null,
         cookingTimeMin: this.filters.cookingTimeMin,
         cookingTimeMax: this.filters.cookingTimeMax,
-        difficulty: this.filters.difficulty,
+        difficulty: this.filters.difficulty?.apiValue,
         limit: limit,
         cursor: null,
       );
@@ -79,7 +80,7 @@ class RecipeSearchController extends ChangeNotifier {
         ingredients: filters.ingredients.isNotEmpty ? filters.ingredients : null,
         cookingTimeMin: filters.cookingTimeMin,
         cookingTimeMax: filters.cookingTimeMax,
-        difficulty: filters.difficulty,
+        difficulty: filters.difficulty?.apiValue,
         limit: limit,
         cursor: nextCursor,
       );

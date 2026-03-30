@@ -1,7 +1,8 @@
-import 'feed_api.dart';
-import 'feed_models.dart' as feed_models;
+import '../constants/enums.dart';
 import '../recipes/recipe_api.dart';
 import '../utils/paginated_list_controller.dart';
+import 'feed_api.dart';
+import 'feed_models.dart' as feed_models;
 
 class FeedController extends PaginatedListController<feed_models.FeedItem> {
   FeedController({required this.feedApi, this.recipeApi});
@@ -9,11 +10,11 @@ class FeedController extends PaginatedListController<feed_models.FeedItem> {
   final FeedApi feedApi;
   final RecipeApi? recipeApi;
 
-  String scope = 'global'; // 'global', 'following', 'popular', 'trending'
-  String sort = 'recent';  // 'recent', 'top'
+  FeedScope scope = FeedScope.global;
+  FeedSort sort = FeedSort.recent;
   int windowDays = 7;
   String? selectedCategory;
-  String popularPeriod = 'all_time'; // 'all_time', '30d', '7d'
+  PopularPeriod popularPeriod = PopularPeriod.allTime;
   int trendingDays = 7; // 1-30
 
   @override
@@ -23,10 +24,10 @@ class FeedController extends PaginatedListController<feed_models.FeedItem> {
 
   @override
   Future<PaginatedResponse<feed_models.FeedItem>> fetchPage(String? cursor) async {
-    if (scope == 'popular') {
+    if (scope == FeedScope.popular) {
       if (recipeApi == null) throw Exception('RecipeApi is required for popular feed');
       final res = await recipeApi!.getPopularRecipes(
-        period: popularPeriod,
+        period: popularPeriod.apiValue,
         limit: limit,
         cursor: cursor,
         tags: selectedCategory != null ? [selectedCategory!] : null,
@@ -36,7 +37,7 @@ class FeedController extends PaginatedListController<feed_models.FeedItem> {
         items: rawItems.map((e) => feed_models.FeedItem.fromJson(Map<String, dynamic>.from(e))).toList(),
         nextCursor: res['nextCursor']?.toString(),
       );
-    } else if (scope == 'trending') {
+    } else if (scope == FeedScope.trending) {
       if (recipeApi == null) throw Exception('RecipeApi is required for trending feed');
       final res = await recipeApi!.getTrendingRecipes(
         days: trendingDays,
@@ -53,8 +54,8 @@ class FeedController extends PaginatedListController<feed_models.FeedItem> {
       final res = await feedApi.getFeed(
         limit: limit,
         cursor: cursor,
-        scope: scope,
-        sort: sort,
+        scope: scope.apiValue,
+        sort: sort.apiValue,
         windowDays: windowDays,
         tags: selectedCategory != null ? [selectedCategory!] : null,
       );
@@ -68,16 +69,16 @@ class FeedController extends PaginatedListController<feed_models.FeedItem> {
     await loadInitial();
   }
 
-  Future<void> setScope(String value) async {
+  Future<void> setScope(FeedScope value) async {
     if (scope == value) return;
     scope = value;
     await loadInitial();
   }
 
-  Future<void> setPopularPeriod(String value) async {
+  Future<void> setPopularPeriod(PopularPeriod value) async {
     if (popularPeriod == value) return;
     popularPeriod = value;
-    if (scope == 'popular') {
+    if (scope == FeedScope.popular) {
       await loadInitial();
     } else {
       notifyListeners();
@@ -87,14 +88,14 @@ class FeedController extends PaginatedListController<feed_models.FeedItem> {
   Future<void> setTrendingDays(int value) async {
     if (trendingDays == value) return;
     trendingDays = value;
-    if (scope == 'trending') {
+    if (scope == FeedScope.trending) {
       await loadInitial();
     } else {
       notifyListeners();
     }
   }
 
-  Future<void> setSort(String value) async {
+  Future<void> setSort(FeedSort value) async {
     if (sort == value) return;
     sort = value;
     await loadInitial();
@@ -103,7 +104,7 @@ class FeedController extends PaginatedListController<feed_models.FeedItem> {
   Future<void> setWindowDays(int value) async {
     if (windowDays == value) return;
     windowDays = value;
-    if (sort == 'top') {
+    if (sort == FeedSort.top) {
       await loadInitial();
     } else {
       notifyListeners();

@@ -1,3 +1,4 @@
+import '../constants/enums.dart';
 import '../feed/feed_api.dart';
 import '../feed/feed_models.dart';
 import '../recipes/recipe_api.dart';
@@ -8,7 +9,7 @@ class PopularRecipesController extends PaginatedListController<FeedItem> {
 
   final RecipeApi recipeApi;
   final FeedApi feedApi;
-  String period = 'all_time';
+  PopularPeriod period = PopularPeriod.allTime;
 
   @override
   Future<void> loadInitial() async {
@@ -18,7 +19,7 @@ class PopularRecipesController extends PaginatedListController<FeedItem> {
   @override
   Future<PaginatedResponse<FeedItem>> fetchPage(String? cursor) async {
     final res = await recipeApi.getPopularRecipes(
-      period: period,
+      period: period.apiValue,
       limit: limit,
       cursor: cursor,
     );
@@ -29,7 +30,7 @@ class PopularRecipesController extends PaginatedListController<FeedItem> {
     );
   }
 
-  Future<void> setPeriod(String newPeriod) async {
+  Future<void> setPeriod(PopularPeriod newPeriod) async {
     if (period == newPeriod) return;
     period = newPeriod;
     await loadInitial();

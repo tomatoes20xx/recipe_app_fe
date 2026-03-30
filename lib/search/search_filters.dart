@@ -1,3 +1,5 @@
+import 'package:recipe_app_fe/constants/enums.dart';
+
 /// Model for recipe search filters
 class RecipeSearchFilters {
   final String? query;
@@ -6,7 +8,7 @@ class RecipeSearchFilters {
   final List<String> ingredients;
   final int? cookingTimeMin;
   final int? cookingTimeMax;
-  final String? difficulty; // 'easy', 'medium', 'hard'
+  final Difficulty? difficulty;
 
   RecipeSearchFilters({
     this.query,
@@ -41,7 +43,7 @@ class RecipeSearchFilters {
     List<String>? ingredients,
     int? cookingTimeMin,
     int? cookingTimeMax,
-    String? difficulty,
+    Difficulty? difficulty,
     bool clearQuery = false,
     bool clearCuisine = false,
     bool clearTags = false,
@@ -95,8 +97,8 @@ class RecipeSearchFilters {
       params["cooking_time_max"] = cookingTimeMax!.toString();
     }
 
-    if (difficulty != null && difficulty!.isNotEmpty) {
-      params["difficulty"] = difficulty!;
+    if (difficulty != null) {
+      params["difficulty"] = difficulty!.apiValue;
     }
 
     return params;

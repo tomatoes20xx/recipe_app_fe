@@ -1,5 +1,6 @@
 import "package:flutter/material.dart";
 
+import "../../constants/enums.dart";
 import "../../feed/feed_controller.dart";
 import "../../localization/app_localizations.dart";
 
@@ -31,18 +32,18 @@ class FeedControls extends StatelessWidget {
         child: Row(
           children: [
             // Sort dropdown (only for global/following)
-            if (feed.scope == "global" || feed.scope == "following") ...[
+            if (feed.scope == FeedScope.global || feed.scope == FeedScope.following) ...[
               FeedSortDropdown(key: sortDropdownKey, feed: feed),
               const SizedBox(width: 12),
             ],
             // Period selector for popular
-            if (feed.scope == "popular")
+            if (feed.scope == FeedScope.popular)
               FeedPopularPeriodSelector(feed: feed),
             // Days selector for trending
-            if (feed.scope == "trending")
+            if (feed.scope == FeedScope.trending)
               FeedTrendingDaysSelector(feed: feed),
             // Window days selector (only when sort is "top" and scope is global/following)
-            if ((feed.scope == "global" || feed.scope == "following") && feed.sort == "top") ...[
+            if ((feed.scope == FeedScope.global || feed.scope == FeedScope.following) && feed.sort == FeedSort.top) ...[
               const SizedBox(width: 12),
               FeedWindowDaysSelector(feed: feed),
             ],
@@ -69,39 +70,39 @@ class FeedSortDropdown extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context);
-    return PopupMenuButton<String>(
+    return PopupMenuButton<FeedSort>(
       tooltip: localizations?.sortBy ?? "Sort by",
-      onSelected: (value) => feed.setSort(value),
+      onSelected: feed.setSort,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
       itemBuilder: (_) => [
         PopupMenuItem(
-          value: "recent",
+          value: FeedSort.recent,
           child: Row(
             children: [
-              if (feed.sort == "recent")
+              if (feed.sort == FeedSort.recent)
                 Icon(
                   Icons.check,
                   size: 20,
                   color: Theme.of(context).colorScheme.primary,
                 ),
-              if (feed.sort == "recent") const SizedBox(width: 8),
+              if (feed.sort == FeedSort.recent) const SizedBox(width: 8),
               Text(localizations?.recent ?? "Recent"),
             ],
           ),
         ),
         PopupMenuItem(
-          value: "top",
+          value: FeedSort.top,
           child: Row(
             children: [
-              if (feed.sort == "top")
+              if (feed.sort == FeedSort.top)
                 Icon(
                   Icons.check,
                   size: 20,
                   color: Theme.of(context).colorScheme.primary,
                 ),
-              if (feed.sort == "top") const SizedBox(width: 8),
+              if (feed.sort == FeedSort.top) const SizedBox(width: 8),
               Text(localizations?.top ?? "Top"),
             ],
           ),
@@ -117,7 +118,7 @@ class FeedSortDropdown extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              feed.sort == "recent" ? (localizations?.recent ?? "Recent") : (localizations?.top ?? "Top"),
+              feed.sort == FeedSort.recent ? (localizations?.recent ?? "Recent") : (localizations?.top ?? "Top"),
               style: const TextStyle(
                 fontWeight: FontWeight.w600,
                 fontSize: 13,
@@ -141,54 +142,54 @@ class FeedPopularPeriodSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context);
-    return PopupMenuButton<String>(
+    return PopupMenuButton<PopularPeriod>(
       tooltip: localizations?.timePeriod ?? "Time period",
-      onSelected: (p) => feed.setPopularPeriod(p),
+      onSelected: feed.setPopularPeriod,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
       itemBuilder: (_) => [
         PopupMenuItem(
-          value: "all_time",
+          value: PopularPeriod.allTime,
           child: Row(
             children: [
-              if (feed.popularPeriod == "all_time")
+              if (feed.popularPeriod == PopularPeriod.allTime)
                 Icon(
                   Icons.check,
                   size: 20,
                   color: Theme.of(context).colorScheme.primary,
                 ),
-              if (feed.popularPeriod == "all_time") const SizedBox(width: 8),
+              if (feed.popularPeriod == PopularPeriod.allTime) const SizedBox(width: 8),
               Text(localizations?.allTime ?? "All Time"),
             ],
           ),
         ),
         PopupMenuItem(
-          value: "30d",
+          value: PopularPeriod.last30Days,
           child: Row(
             children: [
-              if (feed.popularPeriod == "30d")
+              if (feed.popularPeriod == PopularPeriod.last30Days)
                 Icon(
                   Icons.check,
                   size: 20,
                   color: Theme.of(context).colorScheme.primary,
                 ),
-              if (feed.popularPeriod == "30d") const SizedBox(width: 8),
+              if (feed.popularPeriod == PopularPeriod.last30Days) const SizedBox(width: 8),
               Text(localizations?.last30Days ?? "Last 30 Days"),
             ],
           ),
         ),
         PopupMenuItem(
-          value: "7d",
+          value: PopularPeriod.last7Days,
           child: Row(
             children: [
-              if (feed.popularPeriod == "7d")
+              if (feed.popularPeriod == PopularPeriod.last7Days)
                 Icon(
                   Icons.check,
                   size: 20,
                   color: Theme.of(context).colorScheme.primary,
                 ),
-              if (feed.popularPeriod == "7d") const SizedBox(width: 8),
+              if (feed.popularPeriod == PopularPeriod.last7Days) const SizedBox(width: 8),
               Text(localizations?.last7Days ?? "Last 7 Days"),
             ],
           ),
@@ -204,9 +205,9 @@ class FeedPopularPeriodSelector extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              feed.popularPeriod == "all_time"
+              feed.popularPeriod == PopularPeriod.allTime
                   ? (localizations?.allTime ?? "All Time")
-                  : feed.popularPeriod == "30d"
+                  : feed.popularPeriod == PopularPeriod.last30Days
                       ? (localizations?.last30Days ?? "Last 30 Days")
                       : (localizations?.last7Days ?? "Last 7 Days"),
               style: const TextStyle(

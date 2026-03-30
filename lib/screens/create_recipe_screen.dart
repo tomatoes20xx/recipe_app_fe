@@ -7,6 +7,7 @@ import "package:image_picker/image_picker.dart";
 import "../api/api_client.dart";
 import "../constants/cuisines.dart";
 import "../constants/dietary_preferences.dart";
+import "../constants/enums.dart";
 import "../constants/recipe_categories.dart";
 import "../localization/app_localizations.dart";
 import "../recipes/recipe_api.dart";
@@ -51,7 +52,7 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen>
   final Set<String> _removedImageIds = {}; // Track removed existing images
   final ImagePicker _imagePicker = ImagePicker();
 
-  String? _selectedDifficulty; // 'easy', 'medium', 'hard'
+  Difficulty? _selectedDifficulty;
   String? _cookingTimeError;
 
   bool _isSubmitting = false;
@@ -83,7 +84,7 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen>
     _existingImages.addAll(recipe.images);
     _cookingTimeMinController.text = recipe.cookingTimeMin?.toString() ?? "";
     _cookingTimeMaxController.text = recipe.cookingTimeMax?.toString() ?? "";
-    _selectedDifficulty = recipe.difficulty;
+    _selectedDifficulty = DifficultyApi.fromApiValue(recipe.difficulty);
 
     // Load ingredients
     for (final ing in recipe.ingredients) {
@@ -154,7 +155,7 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen>
       tags: List.from(_tags),
       cookingTimeMin: _cookingTimeMinController.text,
       cookingTimeMax: _cookingTimeMaxController.text,
-      difficulty: _selectedDifficulty,
+      difficulty: _selectedDifficulty?.apiValue,
       ingredients: _ingredients
           .map((i) => {
                 'quantity': i.quantityController.text,
@@ -217,7 +218,7 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen>
       _cookingTimeMaxController.text =
           (draft['cookingTimeMax'] as String?) ?? '';
       final diff = (draft['difficulty'] as String?) ?? '';
-      _selectedDifficulty = diff.isEmpty ? null : diff;
+      _selectedDifficulty = DifficultyApi.fromApiValue(diff.isEmpty ? null : diff);
 
       final tags = (draft['tags'] as List<dynamic>?) ?? [];
       _tags.addAll(tags.cast<String>());
@@ -545,7 +546,7 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen>
           tags: _tags.isEmpty ? null : _tags,
           cookingTimeMin: cookingTimeMin,
           cookingTimeMax: cookingTimeMax,
-          difficulty: _selectedDifficulty,
+          difficulty: _selectedDifficulty?.apiValue,
           ingredients: ingredients,
           steps: steps,
         );
@@ -605,7 +606,7 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen>
           tags: _tags,
           cookingTimeMin: cookingTimeMin,
           cookingTimeMax: cookingTimeMax,
-          difficulty: _selectedDifficulty,
+          difficulty: _selectedDifficulty?.apiValue,
           ingredients: ingredients,
           steps: steps,
           images: imageFiles.isEmpty ? null : imageFiles,
@@ -1198,21 +1199,21 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen>
               _buildDifficultyChip(
                 theme,
                 label: localizations?.easy ?? "Easy",
-                value: "easy",
+                value: Difficulty.easy,
                 color: Colors.green,
               ),
               const SizedBox(width: 10),
               _buildDifficultyChip(
                 theme,
                 label: localizations?.medium ?? "Medium",
-                value: "medium",
+                value: Difficulty.medium,
                 color: Colors.orange,
               ),
               const SizedBox(width: 10),
               _buildDifficultyChip(
                 theme,
                 label: localizations?.hard ?? "Hard",
-                value: "hard",
+                value: Difficulty.hard,
                 color: Colors.red,
               ),
             ],
@@ -1225,7 +1226,7 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen>
   Widget _buildDifficultyChip(
     ThemeData theme, {
     required String label,
-    required String value,
+    required Difficulty value,
     required Color color,
   }) {
     final isSelected = _selectedDifficulty == value;
@@ -1253,9 +1254,9 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen>
           child: Column(
             children: [
               Icon(
-                value == "easy"
+                value == Difficulty.easy
                     ? Icons.sentiment_satisfied_rounded
-                    : value == "medium"
+                    : value == Difficulty.medium
                         ? Icons.sentiment_neutral_rounded
                         : Icons.local_fire_department_rounded,
                 color: isSelected
