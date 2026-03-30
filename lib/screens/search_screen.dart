@@ -6,6 +6,7 @@ import "../analytics/analytics_api.dart";
 import "../auth/auth_controller.dart";
 import "../constants/cuisines.dart";
 import "../constants/dietary_preferences.dart";
+import "../constants/enums.dart";
 import "../constants/recipe_categories.dart";
 import "../localization/app_localizations.dart";
 import "../recipes/recipe_detail_screen.dart";
@@ -162,8 +163,8 @@ class _SearchScreenState extends State<SearchScreen> {
     if (filters.cookingTimeMax != null) {
       filterData["cooking_time_max"] = filters.cookingTimeMax;
     }
-    if (filters.difficulty != null && filters.difficulty!.isNotEmpty) {
-      filterData["difficulty"] = filters.difficulty;
+    if (filters.difficulty != null) {
+      filterData["difficulty"] = filters.difficulty!.apiValue;
     }
 
     analyticsApi.trackSearch(
@@ -697,8 +698,8 @@ class _SearchScreenState extends State<SearchScreen> {
           if (filters.cookingTimeMax != null) {
             filterData["cooking_time_max"] = filters.cookingTimeMax;
           }
-          if (filters.difficulty != null && filters.difficulty!.isNotEmpty) {
-            filterData["difficulty"] = filters.difficulty;
+          if (filters.difficulty != null) {
+            filterData["difficulty"] = filters.difficulty!.apiValue;
           }
 
           if (filterData.isNotEmpty) {
@@ -1279,20 +1280,20 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                       final localizations = AppLocalizations.of(context);
                       return _FilterSection(
                         title: localizations?.difficulty ?? "Difficulty",
-                        child: SegmentedButton<String?>(
+                        child: SegmentedButton<Difficulty?>(
                           segments: [
                             ButtonSegment(
-                                value: "easy",
+                                value: Difficulty.easy,
                                 label: Text(localizations?.easy ?? "Easy")),
                             ButtonSegment(
-                                value: "medium",
+                                value: Difficulty.medium,
                                 label: Text(localizations?.medium ?? "Medium")),
                             ButtonSegment(
-                                value: "hard",
+                                value: Difficulty.hard,
                                 label: Text(localizations?.hard ?? "Hard")),
                           ],
                           selected: {_currentFilters.difficulty},
-                          onSelectionChanged: (Set<String?> newSelection) {
+                          onSelectionChanged: (Set<Difficulty?> newSelection) {
                             setState(() {
                               _currentFilters = _currentFilters.copyWith(
                                 difficulty: newSelection.firstOrNull,

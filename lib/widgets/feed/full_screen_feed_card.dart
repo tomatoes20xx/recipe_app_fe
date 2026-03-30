@@ -4,6 +4,7 @@ import "package:cached_network_image/cached_network_image.dart";
 import "../../api/api_client.dart";
 import "../../auth/auth_controller.dart";
 import "../../collections/add_to_collection_bottom_sheet.dart";
+import "../../constants/enums.dart";
 import "../../feed/feed_controller.dart";
 import "../../feed/feed_models.dart";
 import "../../recipes/comments_bottom_sheet.dart";
@@ -28,7 +29,7 @@ class FullScreenFeedCard extends StatefulWidget {
   });
 
   final FeedItem item;
-  final String sort;
+  final FeedSort sort;
   final FeedController feed;
   final ApiClient apiClient;
   final AuthController auth;
@@ -114,7 +115,7 @@ class _FullScreenFeedCardState extends State<FullScreenFeedCard> {
           onActionCompleted: widget.onActionCompleted,
         ),
         // Fire badge (top sort) - top right of image
-        if (widget.sort == "top" && widget.item.likesWindow != null)
+        if (widget.sort == FeedSort.top && widget.item.likesWindow != null)
           _FireBadge(likesWindow: widget.item.likesWindow!),
         // Image indicator dots (if multiple images)
         if (hasMultipleImages)

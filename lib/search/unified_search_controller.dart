@@ -1,4 +1,5 @@
 import "package:flutter/foundation.dart";
+import "package:recipe_app_fe/constants/enums.dart";
 import "../users/user_api.dart";
 import "../users/user_models.dart";
 import "search_api.dart";
@@ -70,7 +71,7 @@ class UnifiedSearchController extends ChangeNotifier {
         ingredients: recipeFilters.ingredients.isNotEmpty ? recipeFilters.ingredients : null,
         cookingTimeMin: recipeFilters.cookingTimeMin,
         cookingTimeMax: recipeFilters.cookingTimeMax,
-        difficulty: recipeFilters.difficulty,
+        difficulty: recipeFilters.difficulty?.apiValue,
       );
 
       users.addAll(res.users.items);
@@ -144,7 +145,7 @@ class UnifiedSearchController extends ChangeNotifier {
         ingredients: recipeFilters.ingredients.isNotEmpty ? recipeFilters.ingredients : null,
         cookingTimeMin: recipeFilters.cookingTimeMin,
         cookingTimeMax: recipeFilters.cookingTimeMax,
-        difficulty: recipeFilters.difficulty,
+        difficulty: recipeFilters.difficulty?.apiValue,
         recipesCursor: recipesNextCursor,
       );
 
@@ -179,7 +180,7 @@ class UnifiedSearchController extends ChangeNotifier {
           ingredients: recipeFilters.ingredients.isNotEmpty ? recipeFilters.ingredients : null,
           cookingTimeMin: recipeFilters.cookingTimeMin,
           cookingTimeMax: recipeFilters.cookingTimeMax,
-          difficulty: recipeFilters.difficulty,
+          difficulty: recipeFilters.difficulty?.apiValue,
         );
 
         recipes.addAll(res.recipes.items);

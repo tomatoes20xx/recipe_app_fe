@@ -4,6 +4,7 @@ import "package:cached_network_image/cached_network_image.dart";
 import "../../api/api_client.dart";
 import "../../auth/auth_controller.dart";
 import "../../collections/add_to_collection_bottom_sheet.dart";
+import "../../constants/enums.dart";
 import "../../feed/feed_controller.dart";
 import "../../feed/feed_models.dart";
 import "../../recipes/comments_bottom_sheet.dart";
@@ -26,7 +27,7 @@ class FeedCard extends StatefulWidget {
   });
 
   final FeedItem item;
-  final String sort;
+  final FeedSort sort;
   final FeedController feed;
   final ApiClient apiClient;
   final AuthController auth;
@@ -381,7 +382,7 @@ class _ImageSection extends StatelessWidget {
   });
 
   final FeedItem item;
-  final String sort;
+  final FeedSort sort;
   final RecipeImage? firstImage;
 
   @override
@@ -440,7 +441,7 @@ class _ImageSection extends StatelessWidget {
               ),
             ),
           // Trending badge for top sort
-          if (sort == "top" && item.likesWindow != null)
+          if (sort == FeedSort.top && item.likesWindow != null)
             Positioned(
               top: 8,
               right: 8,

@@ -4,6 +4,7 @@ import "package:flutter/material.dart";
 
 import "../api/api_client.dart";
 import "../auth/auth_controller.dart";
+import "../constants/enums.dart";
 import "../feed/feed_api.dart";
 import "../feed/feed_controller.dart";
 import "../recipes/recipe_api.dart";
@@ -145,7 +146,7 @@ class _FeedShellScreenState extends State<FeedShellScreen> {
     }
   }
 
-  void _changeFeedScope(String scope) {
+  void _changeFeedScope(FeedScope scope) {
     setState(() {
       feed.setScope(scope);
       if (_currentIndex != 0) {
@@ -467,7 +468,7 @@ class _FeedShellDrawer extends StatelessWidget {
   final ThemeController themeController;
   final LanguageController languageController;
   final ShoppingListController shoppingListController;
-  final ValueChanged<String> onScopeSelected;
+  final ValueChanged<FeedScope> onScopeSelected;
 
   @override
   Widget build(BuildContext context) {
@@ -541,10 +542,10 @@ class _FeedShellDrawer extends StatelessWidget {
               icon: Icons.public_rounded,
               title: AppLocalizations.of(context)?.global ?? "Global",
               subtitle: AppLocalizations.of(context)?.seeRecipesFromEveryone ?? "See recipes from everyone",
-              isSelected: feed.scope == "global",
+              isSelected: feed.scope == FeedScope.global,
               onTap: () {
                 Navigator.of(context).pop();
-                onScopeSelected("global");
+                onScopeSelected(FeedScope.global);
               },
             ),
             const SizedBox(height: 8),
@@ -552,7 +553,7 @@ class _FeedShellDrawer extends StatelessWidget {
               icon: Icons.people_alt_outlined,
               title: AppLocalizations.of(context)?.following ?? "Following",
               subtitle: AppLocalizations.of(context)?.seeRecipesFromPeopleYouFollow ?? "See recipes from people you follow",
-              isSelected: feed.scope == "following",
+              isSelected: feed.scope == FeedScope.following,
               enabled: auth.isLoggedIn,
               onTap: () {
                 if (!auth.isLoggedIn) {
@@ -565,7 +566,7 @@ class _FeedShellDrawer extends StatelessWidget {
                   return;
                 }
                 Navigator.of(context).pop();
-                onScopeSelected("following");
+                onScopeSelected(FeedScope.following);
               },
             ),
             const SizedBox(height: 8),
@@ -573,10 +574,10 @@ class _FeedShellDrawer extends StatelessWidget {
               icon: Icons.local_fire_department_outlined,
               title: AppLocalizations.of(context)?.popular ?? "Popular",
               subtitle: AppLocalizations.of(context)?.mostPopularRecipes ?? "Most popular recipes",
-              isSelected: feed.scope == "popular",
+              isSelected: feed.scope == FeedScope.popular,
               onTap: () {
                 Navigator.of(context).pop();
-                onScopeSelected("popular");
+                onScopeSelected(FeedScope.popular);
               },
             ),
             const SizedBox(height: 8),
@@ -584,10 +585,10 @@ class _FeedShellDrawer extends StatelessWidget {
               icon: Icons.trending_up_rounded,
               title: AppLocalizations.of(context)?.trending ?? "Trending",
               subtitle: AppLocalizations.of(context)?.trendingNow ?? "Trending now",
-              isSelected: feed.scope == "trending",
+              isSelected: feed.scope == FeedScope.trending,
               onTap: () {
                 Navigator.of(context).pop();
-                onScopeSelected("trending");
+                onScopeSelected(FeedScope.trending);
               },
             ),
 
