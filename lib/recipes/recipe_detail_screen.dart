@@ -1,3 +1,5 @@
+import "dart:ui";
+
 import "package:flutter/material.dart";
 
 import "../api/api_client.dart";
@@ -348,75 +350,59 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     return Scaffold(
       resizeToAvoidBottomInset: false,
       extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: Container(
-          margin: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.5),
-            shape: BoxShape.circle,
-          ),
-          child: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () => Navigator.of(context).pop(),
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(kToolbarHeight),
+        child: ClipRect(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
+            child: Container(
+              color: Colors.white.withValues(alpha: 0.75),
+              child: SafeArea(
+                bottom: false,
+                child: Row(
+                  children: [
+                    _AppBarIconButton(
+                      icon: Icons.arrow_back,
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                    const Spacer(),
+                    if (isOwner) ...[
+                      _AppBarIconButton(
+                        icon: Icons.edit,
+                        tooltip: AppLocalizations.of(context)?.editRecipe ?? "Edit Recipe",
+                        onPressed: () async {
+                          final result = await Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => CreateRecipeScreen(
+                                apiClient: widget.apiClient,
+                                recipeId: r.id,
+                                recipe: r,
+                              ),
+                            ),
+                          );
+                          if (result == true && mounted) {
+                            c.refresh();
+                          }
+                        },
+                      ),
+                      _AppBarIconButton(
+                        icon: Icons.delete_outline,
+                        tooltip: AppLocalizations.of(context)?.deleteRecipe ?? "Delete Recipe",
+                        onPressed: () => _showDeleteConfirmation(context, r),
+                      ),
+                    ],
+                    if (!isOwner && widget.auth?.isLoggedIn == true && r != null)
+                      _AppBarIconButton(
+                        icon: Icons.flag_outlined,
+                        tooltip: AppLocalizations.of(context)?.reportRecipe ?? "Report Recipe",
+                        onPressed: _handleReportRecipe,
+                      ),
+                  ],
+                ),
+              ),
+            ),
           ),
         ),
-        actions: [
-          if (isOwner) ...[
-            Container(
-              margin: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.5),
-                shape: BoxShape.circle,
-              ),
-              child: IconButton(
-                icon: const Icon(Icons.edit, color: Colors.white),
-                tooltip: AppLocalizations.of(context)?.editRecipe ?? "Edit Recipe",
-                onPressed: () async {
-                  final result = await Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => CreateRecipeScreen(
-                        apiClient: widget.apiClient,
-                        recipeId: r.id,
-                        recipe: r,
-                      ),
-                    ),
-                  );
-                  if (result == true && mounted) {
-                    c.refresh();
-                  }
-                },
-              ),
-            ),
-            Container(
-              margin: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.5),
-                shape: BoxShape.circle,
-              ),
-              child: IconButton(
-                icon: const Icon(Icons.delete_outline, color: Colors.white),
-                tooltip: AppLocalizations.of(context)?.deleteRecipe ?? "Delete Recipe",
-                onPressed: () => _showDeleteConfirmation(context, r),
-              ),
-            ),
-          ],
-          // Show report button for non-owners who are logged in
-          if (!isOwner && widget.auth?.isLoggedIn == true && r != null)
-            Container(
-              margin: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.5),
-                shape: BoxShape.circle,
-              ),
-              child: IconButton(
-                icon: const Icon(Icons.flag_outlined, color: Colors.white),
-                tooltip: AppLocalizations.of(context)?.reportRecipe ?? "Report Recipe",
-                onPressed: _handleReportRecipe,
-              ),
-            ),
-        ],
       ),
       body: c.isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -1526,6 +1512,38 @@ class _ErrorView extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _AppBarIconButton extends StatelessWidget {
+  const _AppBarIconButton({
+    required this.icon,
+    required this.onPressed,
+    this.tooltip,
+  });
+
+  final IconData icon;
+  final VoidCallback onPressed;
+  final String? tooltip;
+
+  @override
+  Widget build(BuildContext context) {
+    final primary = Theme.of(context).colorScheme.primary;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+      child: Material(
+        color: Colors.white,
+        shape: const CircleBorder(),
+        elevation: 0,
+        child: IconButton(
+          icon: Icon(icon, color: primary),
+          tooltip: tooltip,
+          onPressed: onPressed,
+          constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+          padding: const EdgeInsets.all(8),
+        ),
+      ),
     );
   }
 }
