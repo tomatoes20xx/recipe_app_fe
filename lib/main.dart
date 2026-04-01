@@ -155,6 +155,19 @@ class MyApp extends StatelessWidget {
             chipTheme: const ChipThemeData(showCheckmark: false),
           ),
           themeMode: themeController.themeMode,
+          builder: (context, child) {
+            final brightness = Theme.of(context).brightness;
+            return AnnotatedRegion<SystemUiOverlayStyle>(
+              value: SystemUiOverlayStyle(
+                statusBarColor: Colors.transparent,
+                statusBarIconBrightness: brightness == Brightness.light ? Brightness.dark : Brightness.light,
+              ),
+              child: ColoredBox(
+                color: Theme.of(context).colorScheme.surface,
+                child: SafeArea(top: true, bottom: false, child: child!),
+              ),
+            );
+          },
           home: AuthGate(
             auth: authController,
             apiClient: apiClient,
