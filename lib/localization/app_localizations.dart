@@ -231,6 +231,7 @@ class AppLocalizations {
   String get addTag => _localizedValues[locale.languageCode]?["addTag"] ?? "Add a tag";
   String get tags => _localizedValues[locale.languageCode]?["tags"] ?? "Tags";
   String get ingredients => _localizedValues[locale.languageCode]?["ingredients"] ?? "Ingredients";
+  String get ingredientUnit => _localizedValues[locale.languageCode]?["ingredientUnit"] ?? "items";
   String get items => _localizedValues[locale.languageCode]?["items"] ?? "items";
   String get cookingTimeMinutes => _localizedValues[locale.languageCode]?["cookingTimeMinutes"] ?? "Cooking Time (minutes)";
   String get minuteAbbreviation => _localizedValues[locale.languageCode]?["minuteAbbreviation"] ?? "min";
@@ -1022,6 +1023,7 @@ class AppLocalizations {
       "addTag": "Add a tag",
       "tags": "Tags",
       "ingredients": "Ingredients",
+      "ingredientUnit": "items",
       "items": "items",
       "cookingTimeMinutes": "Cooking Time (minutes)",
       "minuteAbbreviation": "min",
@@ -1758,6 +1760,7 @@ class AppLocalizations {
       "addTag": "თეგის დამატება",
       "tags": "თეგები",
       "ingredients": "ინგრედიენტები",
+      "ingredientUnit": "ინგრედიენტი",
       "items": "პროდუქტი",
       "cookingTimeMinutes": "მომზადების დრო (წუთები)",
       "minuteAbbreviation": "წთ",
