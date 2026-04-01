@@ -95,6 +95,7 @@ app.*.map.json
 .copilot/
 CLAUDE.md
 ROADMAP.md
+lib/auth/EMAIL_VERIFICATION_BACKEND.md
 
 # Firebase / Google Services (contains API keys)
 **/google-services.json
