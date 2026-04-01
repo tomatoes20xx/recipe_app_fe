@@ -729,12 +729,13 @@ class _ContentBody extends StatelessWidget {
           _UserInfoRow(r: recipe, apiClient: apiClient, auth: auth, shoppingListController: shoppingListController),
           const SizedBox(height: 16),
 
-          // Quick Info Bar
-          if (recipe.cookingTimeMin != null || recipe.cookingTimeMax != null || recipe.difficulty != null) ...[
-            _QuickInfoBar(
-              cookingTimeMin: recipe.cookingTimeMin,
-              cookingTimeMax: recipe.cookingTimeMax,
-              difficulty: recipe.difficulty,
+          // Description
+          if (recipe.description != null && recipe.description!.trim().isNotEmpty) ...[
+            Text(
+              recipe.description!,
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    height: 1.6,
+                  ),
             ),
             const SizedBox(height: 16),
           ],
@@ -757,6 +758,16 @@ class _ContentBody extends StatelessWidget {
           ),
           const SizedBox(height: 16),
 
+          // Quick Info Bar
+          if (recipe.cookingTimeMin != null || recipe.cookingTimeMax != null || recipe.difficulty != null) ...[
+            _QuickInfoBar(
+              cookingTimeMin: recipe.cookingTimeMin,
+              cookingTimeMax: recipe.cookingTimeMax,
+              difficulty: recipe.difficulty,
+            ),
+            const SizedBox(height: 16),
+          ],
+
           // Tags
           if (recipe.tags.isNotEmpty) ...[
             Wrap(
@@ -764,18 +775,7 @@ class _ContentBody extends StatelessWidget {
               runSpacing: 8,
               children: recipe.tags.map((tag) => _HashtagPill(tag: tag)).toList(),
             ),
-            const SizedBox(height: 16),
-          ],
-
-          // Description
-          if (recipe.description != null && recipe.description!.trim().isNotEmpty) ...[
-            Text(
-              recipe.description!,
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    height: 1.6,
-                  ),
-            ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 28),
           ],
 
           // Ingredients Section
@@ -814,7 +814,7 @@ class _QuickInfoBar extends StatelessWidget {
   String _formatCookingTime(AppLocalizations? l) {
     final unit = l?.minuteAbbreviation ?? "min";
     if (cookingTimeMin != null && cookingTimeMax != null) {
-      return "$cookingTimeMin-$cookingTimeMax $unit";
+      return "$cookingTimeMin $unit - $cookingTimeMax $unit";
     } else if (cookingTimeMin != null) {
       return "$cookingTimeMin+ $unit";
     } else {
@@ -851,22 +851,93 @@ class _QuickInfoBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context);
-    return Wrap(
-      spacing: 12,
-      runSpacing: 8,
-      children: [
-        if (cookingTimeMin != null || cookingTimeMax != null)
-          _InfoChip(
-            icon: Icons.timer_outlined,
-            label: _formatCookingTime(localizations),
+    final primary = Theme.of(context).colorScheme.primary;
+
+    final hasTime = cookingTimeMin != null || cookingTimeMax != null;
+    final hasDifficulty = difficulty != null;
+    if (!hasTime && !hasDifficulty) return const SizedBox.shrink();
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: IntrinsicHeight(
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (hasTime)
+              Expanded(
+                child: _QuickInfoItem(
+                  icon: Icons.schedule,
+                  iconColor: primary,
+                  label: localizations?.prepTime ?? "PREP TIME",
+                  value: _formatCookingTime(localizations),
+                ),
+              ),
+            if (hasTime && hasDifficulty)
+              Container(
+                width: 1,
+                height: 32,
+                color: Theme.of(context).colorScheme.outlineVariant,
+              ),
+            if (hasDifficulty)
+              Expanded(
+                child: _QuickInfoItem(
+                  icon: Icons.bolt,
+                  iconColor: primary,
+                  label: localizations?.difficulty ?? "DIFFICULTY",
+                  value: _getLocalizedDifficulty(localizations),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _QuickInfoItem extends StatelessWidget {
+  const _QuickInfoItem({
+    required this.icon,
+    required this.iconColor,
+    required this.label,
+    required this.value,
+    this.valueColor,
+  });
+
+  final IconData icon;
+  final Color iconColor;
+  final String label;
+  final String value;
+  final Color? valueColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 22, color: iconColor),
+          const SizedBox(height: 4),
+          Text(
+            label.toUpperCase(),
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                  letterSpacing: 0.8,
+                ),
           ),
-        if (difficulty != null)
-          _InfoChip(
-            icon: Icons.signal_cellular_alt,
-            label: _getLocalizedDifficulty(localizations),
-            color: _getDifficultyColor(context),
+          const SizedBox(height: 2),
+          Text(
+            value,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: valueColor ?? Theme.of(context).colorScheme.onSurface,
+                ),
           ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -915,6 +986,80 @@ class _InfoChip extends StatelessWidget {
   }
 }
 
+// Vertical Engagement sidebar widget
+class _VerticalEngagementBar extends StatelessWidget {
+  const _VerticalEngagementBar({
+    required this.counts,
+    required this.viewerHasLiked,
+    required this.viewerHasBookmarked,
+    required this.isLiking,
+    required this.isBookmarking,
+    required this.onLikeTap,
+    this.onLikeLongPress,
+    required this.onBookmarkTap,
+    this.onBookmarkLongPress,
+    required this.onCommentTap,
+    required this.isOwner,
+    required this.shareCount,
+    required this.onShareTap,
+  });
+
+  final RecipeCounts counts;
+  final bool viewerHasLiked;
+  final bool viewerHasBookmarked;
+  final bool isLiking;
+  final bool isBookmarking;
+  final VoidCallback onLikeTap;
+  final VoidCallback? onLikeLongPress;
+  final VoidCallback onBookmarkTap;
+  final VoidCallback? onBookmarkLongPress;
+  final VoidCallback onCommentTap;
+  final bool isOwner;
+  final int shareCount;
+  final VoidCallback onShareTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _EngagementButton(
+            icon: viewerHasLiked ? Icons.favorite : Icons.favorite_border,
+            count: counts.likes,
+            isActive: viewerHasLiked,
+            isLoading: isLiking,
+            onTap: onLikeTap,
+            onLongPress: onLikeLongPress,
+            activeColor: const Color(0xFFE53935),
+          ),
+          _EngagementButton(
+            icon: Icons.chat_bubble_outline,
+            count: counts.comments,
+            onTap: onCommentTap,
+          ),
+          _EngagementButton(
+            icon: viewerHasBookmarked ? Icons.bookmark : Icons.bookmark_border,
+            count: counts.bookmarks,
+            isActive: viewerHasBookmarked,
+            isLoading: isBookmarking,
+            onTap: onBookmarkTap,
+            onLongPress: onBookmarkLongPress,
+            activeColor: const Color(0xFFE53935),
+          ),
+          _EngagementButton(
+            icon: Icons.share,
+            count: shareCount,
+            onTap: onShareTap,
+            activeColor: Theme.of(context).colorScheme.primary,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 // Horizontal Engagement Bar widget
 class _EngagementBar extends StatelessWidget {
   const _EngagementBar({
@@ -949,56 +1094,46 @@ class _EngagementBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: _EngagementButton(
-              icon: viewerHasLiked ? Icons.favorite : Icons.favorite_border,
-              count: counts.likes,
-              isActive: viewerHasLiked,
-              isLoading: isLiking,
-              onTap: onLikeTap,
-              onLongPress: onLikeLongPress,
-              activeColor: const Color(0xFFE53935),
-            ),
+    return Row(
+      children: [
+        Expanded(
+          child: _EngagementButton(
+            icon: viewerHasLiked ? Icons.favorite : Icons.favorite_border,
+            count: counts.likes,
+            isActive: viewerHasLiked,
+            isLoading: isLiking,
+            onTap: onLikeTap,
+            onLongPress: onLikeLongPress,
+            activeColor: const Color(0xFFE53935),
           ),
-          _VerticalDivider(),
-          Expanded(
-            child: _EngagementButton(
-              icon: Icons.chat_bubble_outline,
-              count: counts.comments,
-              onTap: onCommentTap,
-            ),
+        ),
+        Expanded(
+          child: _EngagementButton(
+            icon: Icons.chat_bubble_outline,
+            count: counts.comments,
+            onTap: onCommentTap,
           ),
-          _VerticalDivider(),
-          Expanded(
-            child: _EngagementButton(
-              icon: viewerHasBookmarked ? Icons.bookmark : Icons.bookmark_border,
-              count: counts.bookmarks,
-              isActive: viewerHasBookmarked,
-              isLoading: isBookmarking,
-              onTap: onBookmarkTap,
-              onLongPress: onBookmarkLongPress,
-              activeColor: const Color(0xFFE53935),
-            ),
+        ),
+        Expanded(
+          child: _EngagementButton(
+            icon: viewerHasBookmarked ? Icons.bookmark : Icons.bookmark_border,
+            count: counts.bookmarks,
+            isActive: viewerHasBookmarked,
+            isLoading: isBookmarking,
+            onTap: onBookmarkTap,
+            onLongPress: onBookmarkLongPress,
+            activeColor: const Color(0xFFE53935),
           ),
-          _VerticalDivider(),
-          Expanded(
-            child: _EngagementButton(
-              icon: Icons.send,
-              count: shareCount,
-              onTap: onShareTap,
-              activeColor: Theme.of(context).colorScheme.primary,
-            ),
+        ),
+        Expanded(
+          child: _EngagementButton(
+            icon: Icons.share,
+            count: shareCount,
+            onTap: onShareTap,
+            activeColor: Theme.of(context).colorScheme.primary,
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -1097,21 +1232,34 @@ class _IngredientsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context);
+    final primary = Theme.of(context).colorScheme.primary;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SectionTitleWidget(
-          text: "${localizations?.ingredients ?? "Ingredients"} (${ingredients.length})",
-          variant: SectionTitleVariant.regular,
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              localizations?.ingredients ?? "Ingredients",
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            Text(
+              "${ingredients.length} ${localizations?.items ?? "items"}",
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: primary, fontWeight: FontWeight.w600),
+            ),
+          ],
         ),
         const SizedBox(height: 12),
-        ...ingredients.map((ing) => _IngredientTile(
-          ingredient: ing,
-          isChecked: checkedIds.contains(ing.id),
-          isSelected: selectedIds.contains(ing.id),
-          isSelectionMode: isSelectionMode,
-          onToggle: () => onToggle(ing.id),
+        ...ingredients.map((ing) => Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: _IngredientTile(
+            ingredient: ing,
+            isChecked: checkedIds.contains(ing.id),
+            isSelected: selectedIds.contains(ing.id),
+            isSelectionMode: isSelectionMode,
+            onToggle: () => onToggle(ing.id),
+          ),
         )),
       ],
     );
@@ -1133,73 +1281,71 @@ class _IngredientTile extends StatelessWidget {
   final bool isSelectionMode;
   final VoidCallback onToggle;
 
-  String _formatIngredient() {
+  String _formatAmount() {
     final qty = ingredient.quantity == null ? "" : "${ingredient.quantity}";
     final unit = ingredient.unit == null ? "" : " ${ingredient.unit}";
-    final prefix = (qty.isEmpty && unit.isEmpty) ? "" : "$qty$unit ";
-    return "$prefix${ingredient.displayName}";
+    return "$qty$unit".trim();
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final showCheckbox = !isSelectionMode;
-    final showSelectionCheckbox = isSelectionMode;
+    final isCheckedOrSelected = isSelectionMode ? isSelected : isChecked;
+    final amount = _formatAmount();
 
-    return InkWell(
-      onTap: onToggle,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
-        decoration: BoxDecoration(
-          color: isSelectionMode && isSelected
-              ? theme.colorScheme.primaryContainer.withValues(alpha: 0.3)
-              : null,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Row(
-          children: [
-            if (showCheckbox)
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onToggle,
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 14),
+          decoration: BoxDecoration(
+            color: isSelectionMode && isSelected
+                ? theme.colorScheme.primaryContainer.withValues(alpha: 0.4)
+                : theme.colorScheme.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Row(
+            children: [
               SizedBox(
                 width: 24,
                 height: 24,
                 child: Checkbox(
-                  value: isChecked,
+                  value: isCheckedOrSelected,
                   onChanged: (_) => onToggle(),
                   materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   visualDensity: VisualDensity.compact,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                 ),
               ),
-            if (showSelectionCheckbox)
-              SizedBox(
-                width: 24,
-                height: 24,
-                child: Checkbox(
-                  value: isSelected,
-                  onChanged: (_) => onToggle(),
-                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  visualDensity: VisualDensity.compact,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(4),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  ingredient.displayName,
+                  style: TextStyle(
+                    fontSize: 15,
+                    height: 1.4,
+                    decoration: !isSelectionMode && isChecked ? TextDecoration.lineThrough : null,
+                    color: !isSelectionMode && isChecked
+                        ? theme.colorScheme.onSurface.withValues(alpha: 0.45)
+                        : theme.colorScheme.onSurface,
                   ),
                 ),
               ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                _formatIngredient(),
-                style: TextStyle(
-                  fontSize: 15,
-                  height: 1.4,
-                  decoration: !isSelectionMode && isChecked ? TextDecoration.lineThrough : null,
-                  color: !isSelectionMode && isChecked
-                      ? theme.colorScheme.onSurface.withValues(alpha: 0.5)
-                      : theme.colorScheme.onSurface,
-                  fontWeight: isSelectionMode && isSelected ? FontWeight.w600 : null,
+              if (amount.isNotEmpty) ...[
+                const SizedBox(width: 8),
+                Text(
+                  amount,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: theme.colorScheme.primary,
+                  ),
                 ),
-              ),
-            ),
-          ],
+              ],
+            ],
+          ),
         ),
       ),
     );
@@ -1227,6 +1373,7 @@ class _StepsSection extends StatelessWidget {
         ...steps.asMap().entries.map((entry) => _StepCard(
           stepNumber: entry.key + 1,
           step: entry.value,
+          isLast: entry.key == steps.length - 1,
         )),
       ],
     );
@@ -1237,53 +1384,65 @@ class _StepCard extends StatelessWidget {
   const _StepCard({
     required this.stepNumber,
     required this.step,
+    required this.isLast,
   });
 
   final int stepNumber;
   final RecipeStep step;
+  final bool isLast;
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.15),
-          width: 1,
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
+    final primary = Theme.of(context).colorScheme.primary;
+    final lineColor = Theme.of(context).colorScheme.outlineVariant;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 24),
+      child: IntrinsicHeight(
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary,
-                shape: BoxShape.circle,
-              ),
-              child: Center(
-                child: Text(
-                  "$stepNumber",
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onPrimary,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
+            // Number + vertical line
+            Column(
+              children: [
+                Container(
+                  width: 32,
+                  height: 32,
+                  margin: const EdgeInsets.only(top: 2),
+                  decoration: BoxDecoration(color: primary, shape: BoxShape.circle),
+                  child: Center(
+                    child: Text(
+                      "$stepNumber",
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onPrimary,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
                   ),
                 ),
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Text(
-                step.instruction,
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      height: 1.5,
+                if (!isLast)
+                  Expanded(
+                    child: Container(
+                      width: 2,
+                      margin: const EdgeInsets.symmetric(vertical: 4),
+                      decoration: BoxDecoration(
+                        color: lineColor,
+                        borderRadius: BorderRadius.circular(1),
+                      ),
                     ),
+                  ),
+              ],
+            ),
+            const SizedBox(width: 16),
+            // Step text
+            Expanded(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: 64),
+                child: Text(
+                  step.instruction,
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(height: 1.5),
+                ),
               ),
             ),
           ],
@@ -1334,33 +1493,26 @@ class _UserInfoRow extends StatelessWidget {
             context,
             r.authorAvatarUrl,
             r.authorUsername,
-            radius: 18,
+            radius: 14,
           ),
         ),
-        const SizedBox(width: 10),
+        const SizedBox(width: 8),
         Expanded(
           child: Text.rich(
             TextSpan(
               children: [
                 TextSpan(
                   text: r.authorDisplayName ?? r.authorUsername,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
                 ),
                 TextSpan(
-                  text: " • @${r.authorUsername} • $date",
+                  text: " • $date",
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                       ),
                 ),
-                if (hasCuisine)
-                  TextSpan(
-                    text: " • $cuisine",
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-                        ),
-                  ),
               ],
             ),
           ),
