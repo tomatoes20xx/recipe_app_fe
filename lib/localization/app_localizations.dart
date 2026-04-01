@@ -223,6 +223,7 @@ class AppLocalizations {
   String get cuisineKorean => _localizedValues[locale.languageCode]?["cuisineKorean"] ?? "Korean";
   String get minTimeMinutes => _localizedValues[locale.languageCode]?["minTimeMinutes"] ?? "Min Time (minutes)";
   String get maxTimeMinutes => _localizedValues[locale.languageCode]?["maxTimeMinutes"] ?? "Max Time (minutes)";
+  String get prepTime => _localizedValues[locale.languageCode]?["prepTime"] ?? "Prep Time";
   String get difficulty => _localizedValues[locale.languageCode]?["difficulty"] ?? "Difficulty";
   String get easy => _localizedValues[locale.languageCode]?["easy"] ?? "Easy";
   String get medium => _localizedValues[locale.languageCode]?["medium"] ?? "Medium";
@@ -230,6 +231,7 @@ class AppLocalizations {
   String get addTag => _localizedValues[locale.languageCode]?["addTag"] ?? "Add a tag";
   String get tags => _localizedValues[locale.languageCode]?["tags"] ?? "Tags";
   String get ingredients => _localizedValues[locale.languageCode]?["ingredients"] ?? "Ingredients";
+  String get items => _localizedValues[locale.languageCode]?["items"] ?? "items";
   String get cookingTimeMinutes => _localizedValues[locale.languageCode]?["cookingTimeMinutes"] ?? "Cooking Time (minutes)";
   String get minuteAbbreviation => _localizedValues[locale.languageCode]?["minuteAbbreviation"] ?? "min";
 
@@ -1012,6 +1014,7 @@ class AppLocalizations {
       "cuisineKorean": "Korean",
       "minTimeMinutes": "Min Time (minutes)",
       "maxTimeMinutes": "Max Time (minutes)",
+      "prepTime": "Prep Time",
       "difficulty": "Difficulty",
       "easy": "Easy",
       "medium": "Medium",
@@ -1019,6 +1022,7 @@ class AppLocalizations {
       "addTag": "Add a tag",
       "tags": "Tags",
       "ingredients": "Ingredients",
+      "items": "items",
       "cookingTimeMinutes": "Cooking Time (minutes)",
       "minuteAbbreviation": "min",
       "collections": "Collections",
@@ -1746,6 +1750,7 @@ class AppLocalizations {
       "cuisineKorean": "კორეული",
       "minTimeMinutes": "მინ. დრო (წუთები)",
       "maxTimeMinutes": "მაქს. დრო (წუთები)",
+      "prepTime": "მომზადების დრო",
       "difficulty": "სირთულე",
       "easy": "მარტივი",
       "medium": "საშუალო",
@@ -1753,6 +1758,7 @@ class AppLocalizations {
       "addTag": "თეგის დამატება",
       "tags": "თეგები",
       "ingredients": "ინგრედიენტები",
+      "items": "პროდუქტი",
       "cookingTimeMinutes": "მომზადების დრო (წუთები)",
       "minuteAbbreviation": "წთ",
       "collections": "კოლექციები",
