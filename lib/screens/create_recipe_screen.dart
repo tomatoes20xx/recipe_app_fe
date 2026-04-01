@@ -120,6 +120,7 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen>
       ing.quantityController.dispose();
       ing.unitController.dispose();
       ing.nameController.dispose();
+      ing.nameFocusNode.dispose();
     }
     for (var step in _steps) {
       step.instructionController.dispose();
@@ -267,8 +268,12 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen>
   }
 
   void _addIngredient() {
+    final newItem = _IngredientItem();
     setState(() {
-      _ingredients.add(_IngredientItem());
+      _ingredients.add(newItem);
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      newItem.nameFocusNode.requestFocus();
     });
   }
 
@@ -277,6 +282,7 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen>
       _ingredients[index].quantityController.dispose();
       _ingredients[index].unitController.dispose();
       _ingredients[index].nameController.dispose();
+      _ingredients[index].nameFocusNode.dispose();
       _ingredients.removeAt(index);
     });
   }
@@ -1024,201 +1030,347 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen>
 
   Widget _buildBasicInfoSection(
       BuildContext context, ThemeData theme, AppLocalizations? localizations) {
-    return _buildSectionCard(
-      context: context,
-      theme: theme,
-      title: localizations?.basicInfo ?? "Basic Info",
-      icon: Icons.info_outline_rounded,
-      iconColor: theme.colorScheme.primary,
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(20),
+      ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Title
-          _buildModernTextField(
-            controller: _titleController,
-            label: "${localizations?.title ?? "Title"} *",
-            hint: localizations?.enterRecipeTitle ?? "Enter recipe title",
-            theme: theme,
-            validator: (value) {
-              if (value == null || value.trim().isEmpty) {
-                return localizations?.recipeTitleRequired ?? "Recipe title is required";
-              }
-              return null;
-            },
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Title label
+        Text(
+          (localizations?.title ?? "Recipe Title").toUpperCase(),
+          style: theme.textTheme.labelSmall?.copyWith(
+            color: theme.colorScheme.primary,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 1.2,
           ),
-          const SizedBox(height: 16),
+        ),
+        const SizedBox(height: 8),
+        _buildLabeledTextField(
+          controller: _titleController,
+          hint: localizations?.enterRecipeTitle ?? "e.g. Grandma's Sicilian Caponata",
+          theme: theme,
+          validator: (value) {
+            if (value == null || value.trim().isEmpty) {
+              return localizations?.recipeTitleRequired ?? "Recipe title is required";
+            }
+            return null;
+          },
+        ),
+        const SizedBox(height: 20),
 
-          // Description
-          _buildModernTextField(
-            controller: _descriptionController,
-            label: localizations?.description ?? "Description",
-            hint: localizations?.describeYourRecipe ?? "Describe your recipe",
-            theme: theme,
-            maxLines: 3,
+        // Description label
+        Text(
+          (localizations?.description ?? "Description").toUpperCase(),
+          style: theme.textTheme.labelSmall?.copyWith(
+            color: theme.colorScheme.primary,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 1.2,
           ),
-        ],
+        ),
+        const SizedBox(height: 8),
+        _buildLabeledTextField(
+          controller: _descriptionController,
+          hint: localizations?.describeYourRecipe ?? "Share the story behind this dish...",
+          theme: theme,
+          maxLines: 4,
+        ),
+      ],
+      ),
+    );
+  }
+
+  Widget _buildLabeledTextField({
+    required TextEditingController controller,
+    required String hint,
+    required ThemeData theme,
+    int maxLines = 1,
+    String? Function(String?)? validator,
+    void Function(String)? onSubmitted,
+  }) {
+    return TextFormField(
+      controller: controller,
+      maxLines: maxLines,
+      validator: validator,
+      onFieldSubmitted: onSubmitted,
+      style: theme.textTheme.bodyLarge,
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: TextStyle(
+          color: theme.colorScheme.onSurface.withValues(alpha: 0.35),
+        ),
+        filled: true,
+        fillColor: theme.colorScheme.surface,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(
+            color: theme.colorScheme.primary,
+            width: 2,
+          ),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(
+            color: theme.colorScheme.error,
+            width: 1,
+          ),
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       ),
     );
   }
 
   Widget _buildCookingDetailsSection(
       BuildContext context, ThemeData theme, AppLocalizations? localizations) {
-    return _buildSectionCard(
-      context: context,
-      theme: theme,
-      title: localizations?.cookingDetails ?? "Cooking Details",
-      icon: Icons.schedule_rounded,
-      iconColor: Colors.orange,
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(20),
+      ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Cuisine
-          _buildModernTextField(
-            controller: _cuisineController,
-            label: localizations?.cuisine ?? "Cuisine",
-            hint: localizations?.cuisineExample ?? "e.g., Italian, Mexican",
-            theme: theme,
-            prefixIcon: Icons.restaurant_rounded,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Cuisine label
+        Text(
+          (localizations?.cuisine ?? "Cuisine").toUpperCase(),
+          style: theme.textTheme.labelSmall?.copyWith(
+            color: theme.colorScheme.primary,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 1.2,
           ),
-          const SizedBox(height: 8),
+        ),
+        const SizedBox(height: 10),
 
-          // Cuisine suggestions
-          SizedBox(
-            height: 36,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: cuisineOptions.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 8),
-              itemBuilder: (context, index) {
-                final option = cuisineOptions[index];
-                final label = option.getLabel(localizations);
-                final isSelected =
-                    _cuisineController.text == label;
-                return GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _cuisineController.text = isSelected ? "" : label;
-                    });
-                  },
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
+        // Cuisine text input
+        _buildLabeledTextField(
+          controller: _cuisineController,
+          hint: localizations?.cuisineExample ?? 'e.g., Italian, Mexican',
+          theme: theme,
+        ),
+        const SizedBox(height: 10),
+
+        // Cuisine chips (scrollable)
+        SizedBox(
+          height: 36,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: cuisineOptions.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 8),
+            itemBuilder: (context, index) {
+              final option = cuisineOptions[index];
+              final label = option.getLabel(localizations);
+              final isSelected = _cuisineController.text == label;
+              return GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _cuisineController.text = isSelected ? '' : label;
+                  });
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+                  decoration: BoxDecoration(
+                    color: isSelected ? theme.colorScheme.primary : theme.colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(
                       color: isSelected
-                          ? theme.colorScheme.primary.withValues(alpha: 0.15)
-                          : theme.colorScheme.surfaceContainerHighest
-                              .withValues(alpha: 0.5),
-                      borderRadius: BorderRadius.circular(20),
-                      border: isSelected
-                          ? Border.all(color: theme.colorScheme.primary, width: 1)
-                          : null,
-                    ),
-                    child: Text(
-                      option.getLabel(localizations),
-                      style: theme.textTheme.labelMedium?.copyWith(
-                        color: isSelected
-                            ? theme.colorScheme.primary
-                            : theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                        fontWeight:
-                            isSelected ? FontWeight.w600 : FontWeight.normal,
-                      ),
+                          ? theme.colorScheme.primary
+                          : theme.colorScheme.outline.withValues(alpha: 0.3),
                     ),
                   ),
-                );
-              },
-            ),
-          ),
-
-          const SizedBox(height: 20),
-
-          // Cooking Time
-          Row(
-            children: [
-              Expanded(
-                child: _buildModernTextField(
-                  controller: _cookingTimeMinController,
-                  label: localizations?.minTimeMinutes ?? "Min (mins)",
-                  hint: "15",
-                  theme: theme,
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  prefixIcon: Icons.timer_outlined,
-                  onChanged: (_) => _validateCookingTime(),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildModernTextField(
-                  controller: _cookingTimeMaxController,
-                  label: localizations?.maxTimeMinutes ?? "Max (mins)",
-                  hint: "30",
-                  theme: theme,
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  prefixIcon: Icons.timer,
-                  onChanged: (_) => _validateCookingTime(),
-                ),
-              ),
-            ],
-          ),
-
-          if (_cookingTimeError != null) ...[
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Icon(
-                  Icons.error_outline_rounded,
-                  size: 16,
-                  color: theme.colorScheme.error,
-                ),
-                const SizedBox(width: 6),
-                Expanded(
                   child: Text(
-                    _cookingTimeError!,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.error,
+                    label,
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: isSelected
+                          ? Colors.white
+                          : theme.colorScheme.onSurface.withValues(alpha: 0.75),
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                     ),
                   ),
                 ),
-              ],
+              );
+            },
+          ),
+        ),
+
+        const SizedBox(height: 24),
+
+        // Prep time
+        Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    (localizations?.minTimeMinutes ?? "Prep Time (min)").toUpperCase(),
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.primary,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.1,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: _cookingTimeMinController,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    textAlign: TextAlign.center,
+                    onChanged: (_) => _validateCookingTime(),
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w500,
+                    ),
+                    decoration: InputDecoration(
+                      hintText: '20',
+                      hintStyle: TextStyle(
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
+                      ),
+                      filled: true,
+                      fillColor: theme.colorScheme.surface,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: theme.colorScheme.primary,
+                          width: 2,
+                        ),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 14),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    (localizations?.maxTimeMinutes ?? "Max Time (min)").toUpperCase(),
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.primary,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.1,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: _cookingTimeMaxController,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    textAlign: TextAlign.center,
+                    onChanged: (_) => _validateCookingTime(),
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w500,
+                    ),
+                    decoration: InputDecoration(
+                      hintText: '45',
+                      hintStyle: TextStyle(
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
+                      ),
+                      filled: true,
+                      fillColor: theme.colorScheme.surface,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: theme.colorScheme.primary,
+                          width: 2,
+                        ),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 14),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
-
-          const SizedBox(height: 20),
-
-          // Difficulty
-          Text(
-            localizations?.difficulty ?? "Difficulty",
-            style: theme.textTheme.labelLarge?.copyWith(
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-            ),
-          ),
-          const SizedBox(height: 10),
+        ),
+        if (_cookingTimeError != null) ...[
+          const SizedBox(height: 8),
           Row(
             children: [
-              _buildDifficultyChip(
-                theme,
-                label: localizations?.easy ?? "Easy",
-                value: Difficulty.easy,
-                color: Colors.green,
-              ),
-              const SizedBox(width: 10),
-              _buildDifficultyChip(
-                theme,
-                label: localizations?.medium ?? "Medium",
-                value: Difficulty.medium,
-                color: Colors.orange,
-              ),
-              const SizedBox(width: 10),
-              _buildDifficultyChip(
-                theme,
-                label: localizations?.hard ?? "Hard",
-                value: Difficulty.hard,
-                color: Colors.red,
+              Icon(Icons.error_outline_rounded,
+                  size: 16, color: theme.colorScheme.error),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  _cookingTimeError!,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.error,
+                  ),
+                ),
               ),
             ],
           ),
         ],
+
+        const SizedBox(height: 24),
+
+        // Difficulty label
+        Text(
+          (localizations?.difficulty ?? "Difficulty Level").toUpperCase(),
+          style: theme.textTheme.labelSmall?.copyWith(
+            color: theme.colorScheme.primary,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 1.2,
+          ),
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            _buildDifficultyChip(
+              theme,
+              label: localizations?.easy ?? "Easy",
+              value: Difficulty.easy,
+              triangleCount: 1,
+            ),
+            const SizedBox(width: 10),
+            _buildDifficultyChip(
+              theme,
+              label: localizations?.medium ?? "Medium",
+              value: Difficulty.medium,
+              triangleCount: 2,
+            ),
+            const SizedBox(width: 10),
+            _buildDifficultyChip(
+              theme,
+              label: localizations?.hard ?? "Hard",
+              value: Difficulty.hard,
+              triangleCount: 3,
+            ),
+          ],
+        ),
+      ],
       ),
     );
   }
@@ -1227,9 +1379,12 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen>
     ThemeData theme, {
     required String label,
     required Difficulty value,
-    required Color color,
+    required int triangleCount,
   }) {
     final isSelected = _selectedDifficulty == value;
+    final iconColor = isSelected
+        ? Colors.white
+        : theme.colorScheme.onSurface.withValues(alpha: 0.4);
 
     return Expanded(
       child: GestureDetector(
@@ -1240,38 +1395,34 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen>
         },
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(vertical: 14),
+          padding: const EdgeInsets.symmetric(vertical: 16),
           decoration: BoxDecoration(
-            color: isSelected
-                ? color.withValues(alpha: 0.15)
-                : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: isSelected ? color : Colors.transparent,
-              width: 2,
-            ),
+            color: isSelected ? theme.colorScheme.primary : theme.colorScheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(14),
           ),
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                value == Difficulty.easy
-                    ? Icons.sentiment_satisfied_rounded
-                    : value == Difficulty.medium
-                        ? Icons.sentiment_neutral_rounded
-                        : Icons.local_fire_department_rounded,
-                color: isSelected
-                    ? color
-                    : theme.colorScheme.onSurface.withValues(alpha: 0.5),
-                size: 24,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(
+                  triangleCount,
+                  (_) => Icon(
+                    Icons.change_history_rounded,
+                    color: iconColor,
+                    size: 18,
+                  ),
+                ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 6),
               Text(
-                label,
-                style: theme.textTheme.labelMedium?.copyWith(
+                label.toUpperCase(),
+                style: theme.textTheme.labelSmall?.copyWith(
                   color: isSelected
-                      ? color
+                      ? Colors.white
                       : theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.8,
                 ),
               ),
             ],
@@ -1302,17 +1453,27 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen>
 
   Widget _buildTagsSection(
       BuildContext context, ThemeData theme, AppLocalizations? localizations) {
-    return _buildSectionCard(
-      context: context,
-      theme: theme,
-      title: localizations?.tags ?? "Tags",
-      icon: Icons.label_outline_rounded,
-      iconColor: Colors.purple,
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(20),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Categories label
+          Text(
+            (localizations?.tags ?? "Tags").toUpperCase(),
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: theme.colorScheme.primary,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1.2,
+            ),
+          ),
+          const SizedBox(height: 10),
           SizedBox(
-            height: 40,
+            height: 36,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: recipeCategories.length,
@@ -1321,35 +1482,57 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen>
                 final category = recipeCategories[index];
                 final label = category.getLabel(localizations);
                 final isSelected = _tags.contains(label);
-                return FilterChip(
-                  selected: isSelected,
-                  label: Text(label),
-                  avatar: Icon(category.icon, size: 18),
-                  visualDensity: VisualDensity.compact,
-                  onSelected: (selected) {
+                return GestureDetector(
+                  onTap: () {
                     setState(() {
-                      if (selected) {
-                        _tags.add(label);
-                      } else {
+                      if (isSelected) {
                         _tags.remove(label);
+                      } else {
+                        _tags.add(label);
                       }
                     });
                   },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 180),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                    decoration: BoxDecoration(
+                      color: isSelected ? theme.colorScheme.primary : theme.colorScheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(
+                        color: isSelected
+                            ? theme.colorScheme.primary
+                            : theme.colorScheme.outline.withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: Text(
+                      label,
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: isSelected
+                            ? Colors.white
+                            : theme.colorScheme.onSurface.withValues(alpha: 0.75),
+                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                      ),
+                    ),
+                  ),
                 );
               },
             ),
           ),
-          const SizedBox(height: 12),
+
+          const SizedBox(height: 16),
+
+          // Dietary label
           Text(
-            localizations?.dietaryPreferences ?? "Dietary",
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-              fontWeight: FontWeight.w500,
+            (localizations?.dietaryPreferences ?? "Dietary").toUpperCase(),
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: theme.colorScheme.primary,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1.2,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           SizedBox(
-            height: 40,
+            height: 36,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: dietaryPreferences.length,
@@ -1358,31 +1541,51 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen>
                 final pref = dietaryPreferences[index];
                 final label = pref.getLabel(localizations);
                 final isSelected = _tags.contains(label);
-                return FilterChip(
-                  selected: isSelected,
-                  label: Text(label),
-                  avatar: Icon(pref.icon, size: 18),
-                  visualDensity: VisualDensity.compact,
-                  onSelected: (selected) {
+                return GestureDetector(
+                  onTap: () {
                     setState(() {
-                      if (selected) {
-                        _tags.add(label);
-                      } else {
+                      if (isSelected) {
                         _tags.remove(label);
+                      } else {
+                        _tags.add(label);
                       }
                     });
                   },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 180),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                    decoration: BoxDecoration(
+                      color: isSelected ? theme.colorScheme.primary : theme.colorScheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(
+                        color: isSelected
+                            ? theme.colorScheme.primary
+                            : theme.colorScheme.outline.withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: Text(
+                      label,
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: isSelected
+                            ? Colors.white
+                            : theme.colorScheme.onSurface.withValues(alpha: 0.75),
+                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                      ),
+                    ),
+                  ),
                 );
               },
             ),
           ),
+
           const SizedBox(height: 16),
+
+          // Custom tag input
           Row(
             children: [
               Expanded(
-                child: _buildModernTextField(
+                child: _buildLabeledTextField(
                   controller: _tagController,
-                  label: "",
                   hint: localizations?.addTag ?? "Add a tag...",
                   theme: theme,
                   onSubmitted: (_) => _addTag(),
@@ -1398,19 +1601,17 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen>
                     color: theme.colorScheme.primary,
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(
-                    Icons.add_rounded,
-                    color: theme.colorScheme.onPrimary,
-                  ),
+                  child: Icon(Icons.add_rounded, color: theme.colorScheme.onPrimary),
                 ),
               ),
             ],
           ),
-          // Only show custom (non-predefined) tags below the input
+
+          // Custom tags
           if (_tags.any((t) =>
               !recipeCategories.any((c) => c.getLabel(localizations) == t) &&
               !dietaryPreferences.any((d) => d.getLabel(localizations) == t))) ...[
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             Wrap(
               spacing: 8,
               runSpacing: 8,
@@ -1420,29 +1621,28 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen>
                       !dietaryPreferences.any((d) => d.getLabel(localizations) == t))
                   .map((tag) {
                 return Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.primaryContainer.withValues(alpha: 0.5),
-                    borderRadius: BorderRadius.circular(20),
+                    color: theme.colorScheme.primary,
+                    borderRadius: BorderRadius.circular(24),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
                         tag,
-                        style: theme.textTheme.labelLarge?.copyWith(
-                          color: theme.colorScheme.onPrimaryContainer,
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                       const SizedBox(width: 6),
                       GestureDetector(
                         onTap: () => _removeTag(tag),
-                        child: Icon(
+                        child: const Icon(
                           Icons.close_rounded,
-                          size: 18,
-                          color: theme.colorScheme.onPrimaryContainer
-                              .withValues(alpha: 0.7),
+                          size: 16,
+                          color: Colors.white70,
                         ),
                       ),
                     ],
@@ -1458,138 +1658,220 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen>
 
   Widget _buildIngredientsSection(
       BuildContext context, ThemeData theme, AppLocalizations? localizations) {
-    return _buildSectionCard(
-      context: context,
-      theme: theme,
-      title: "${localizations?.ingredients ?? "Ingredients"} *",
-      icon: Icons.shopping_basket_rounded,
-      iconColor: Colors.green,
-      child: _ingredients.isEmpty
-          ? _buildEmptyState(
-              theme,
-              icon: Icons.shopping_basket_outlined,
-              message: localizations?.noIngredientsYet ??
-                  "No ingredients yet. Add your first ingredient!",
-              onTap: _addIngredient,
-              localizations: localizations,
-            )
-          : Column(
-              children: [
-                ReorderableListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  buildDefaultDragHandles: false,
-                  itemCount: _ingredients.length,
-                  onReorder: _reorderIngredients,
-                  proxyDecorator: (child, index, animation) {
-                    return AnimatedBuilder(
-                      animation: animation,
-                      builder: (context, child) {
-                        final animValue =
-                            Curves.easeInOut.transform(animation.value);
-                        final elevation = lerpDouble(0, 6, animValue)!;
-                        return Material(
-                          elevation: elevation,
-                          borderRadius: BorderRadius.circular(12),
-                          child: child,
-                        );
-                      },
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                (localizations?.ingredients ?? "Ingredients").toUpperCase(),
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: theme.colorScheme.primary,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.2,
+                ),
+              ),
+              if (_ingredients.isNotEmpty)
+                Text(
+                  "${_ingredients.length} ${(localizations?.ingredientUnit ?? 'items').toUpperCase()}",
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.primary,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 1.0,
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // Ingredient tiles
+          if (_ingredients.isNotEmpty) ...[
+            ReorderableListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              buildDefaultDragHandles: false,
+              itemCount: _ingredients.length,
+              onReorder: _reorderIngredients,
+              proxyDecorator: (child, index, animation) {
+                return AnimatedBuilder(
+                  animation: animation,
+                  builder: (context, child) {
+                    final animValue =
+                        Curves.easeInOut.transform(animation.value);
+                    final elevation = lerpDouble(0, 6, animValue)!;
+                    return Material(
+                      elevation: elevation,
+                      borderRadius: BorderRadius.circular(16),
                       child: child,
                     );
                   },
-                  itemBuilder: (context, index) {
-                    return _IngredientTile(
-                      key: ValueKey(_ingredients[index]),
-                      ingredient: _ingredients[index],
-                      index: index,
-                      onRemove: () => _removeIngredient(index),
-                      onAddNew: _addIngredient,
-                      theme: theme,
-                      localizations: localizations,
-                    );
-                  },
-                ),
-                TextButton.icon(
-                  onPressed: _addIngredient,
-                  icon: const Icon(Icons.add_rounded, size: 20),
-                  label: Text(localizations?.add ?? "Add"),
-                  style: TextButton.styleFrom(
-                    foregroundColor: theme.colorScheme.primary,
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  ),
-                ),
-              ],
+                  child: child,
+                );
+              },
+              itemBuilder: (context, index) {
+                return _IngredientTile(
+                  key: ValueKey(_ingredients[index]),
+                  ingredient: _ingredients[index],
+                  index: index,
+                  onRemove: () => _removeIngredient(index),
+                  onAddNew: _addIngredient,
+                  theme: theme,
+                  localizations: localizations,
+                );
+              },
             ),
+            const SizedBox(height: 8),
+          ],
+
+          // Empty state
+          if (_ingredients.isEmpty) ...[
+            _buildEmptyState(
+              theme,
+              icon: Icons.shopping_basket_outlined,
+              message: localizations?.noIngredientsYet ?? "No ingredients yet. Add your first ingredient!",
+              onTap: _addIngredient,
+              localizations: localizations,
+            ),
+            const SizedBox(height: 12),
+          ],
+
+          // Add ingredient button (dashed)
+          GestureDetector(
+            onTap: _addIngredient,
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: theme.colorScheme.primary.withValues(alpha: 0.5),
+                  width: 1.5,
+                  // Dashed border workaround via custom painter below
+                ),
+                color: Colors.transparent,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.add_rounded,
+                      color: theme.colorScheme.primary, size: 20),
+                  const SizedBox(width: 8),
+                  Text(
+                    (localizations?.add ?? "Add Ingredient")
+                        .toUpperCase(),
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: theme.colorScheme.primary,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.1,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildStepsSection(
       BuildContext context, ThemeData theme, AppLocalizations? localizations) {
-    return _buildSectionCard(
-      context: context,
-      theme: theme,
-      title: "${localizations?.instruction ?? "Steps"} *",
-      icon: Icons.format_list_numbered_rounded,
-      iconColor: Colors.blue,
-      child: _steps.isEmpty
-          ? _buildEmptyState(
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Text(
+            (localizations?.instruction ?? "Cooking Steps").toUpperCase(),
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: theme.colorScheme.primary,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1.2,
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Step tiles
+          if (_steps.isNotEmpty)
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: _steps.length,
+              itemBuilder: (context, index) {
+                return _StepTile(
+                  key: ValueKey(_steps[index]),
+                  step: _steps[index],
+                  stepNumber: index + 1,
+                  onRemove: () => _removeStep(index),
+                  onAddNew: _addStep,
+                  theme: theme,
+                  localizations: localizations,
+                  isLast: index == _steps.length - 1,
+                );
+              },
+            ),
+
+          // Empty state
+          if (_steps.isEmpty) ...[
+            _buildEmptyState(
               theme,
               icon: Icons.format_list_numbered_outlined,
-              message: localizations?.noStepsYet ??
-                  "No steps yet. Add your first step!",
+              message: localizations?.noStepsYet ?? "No steps yet. Add your first step!",
               onTap: _addStep,
               localizations: localizations,
-            )
-          : Column(
-              children: [
-                ReorderableListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  buildDefaultDragHandles: false,
-                  itemCount: _steps.length,
-                  onReorder: _reorderSteps,
-                  proxyDecorator: (child, index, animation) {
-                    return AnimatedBuilder(
-                      animation: animation,
-                      builder: (context, child) {
-                        final animValue =
-                            Curves.easeInOut.transform(animation.value);
-                        final elevation = lerpDouble(0, 6, animValue)!;
-                        return Material(
-                          elevation: elevation,
-                          borderRadius: BorderRadius.circular(12),
-                          child: child,
-                        );
-                      },
-                      child: child,
-                    );
-                  },
-                  itemBuilder: (context, index) {
-                    return _StepTile(
-                      key: ValueKey(_steps[index]),
-                      step: _steps[index],
-                      stepNumber: index + 1,
-                      onRemove: () => _removeStep(index),
-                      onAddNew: _addStep,
-                      theme: theme,
-                      localizations: localizations,
-                      isLast: index == _steps.length - 1,
-                    );
-                  },
-                ),
-                TextButton.icon(
-                  onPressed: _addStep,
-                  icon: const Icon(Icons.add_rounded, size: 20),
-                  label: Text(localizations?.add ?? "Add"),
-                  style: TextButton.styleFrom(
-                    foregroundColor: theme.colorScheme.primary,
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  ),
-                ),
-              ],
             ),
+            const SizedBox(height: 12),
+          ],
+
+          if (_steps.isNotEmpty) const SizedBox(height: 8),
+
+          // Add step button
+          GestureDetector(
+            onTap: _addStep,
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: theme.colorScheme.primary.withValues(alpha: 0.5),
+                  width: 1.5,
+                ),
+                color: Colors.transparent,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.format_list_bulleted_add,
+                      color: theme.colorScheme.primary, size: 20),
+                  const SizedBox(width: 8),
+                  Text(
+                    (localizations?.add ?? "Add Next Step").toUpperCase(),
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: theme.colorScheme.primary,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.1,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -1600,66 +1882,35 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen>
     required VoidCallback onTap,
     AppLocalizations? localizations,
   }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 32),
-        alignment: Alignment.center,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHighest,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                icon,
-                size: 28,
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
-              ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          const SizedBox(width: double.infinity),
+          Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surfaceContainerHighest,
+              shape: BoxShape.circle,
             ),
-            const SizedBox(height: 12),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-              ),
+            child: Icon(
+              icon,
+              size: 28,
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
             ),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primary.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.add_rounded,
-                    size: 18,
-                    color: theme.colorScheme.primary,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    localizations?.tapToAdd ?? "Tap to add",
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      color: theme.colorScheme.primary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -1843,9 +2094,10 @@ class _IngredientItem {
   final TextEditingController quantityController = TextEditingController();
   final TextEditingController unitController = TextEditingController();
   final TextEditingController nameController = TextEditingController();
+  final FocusNode nameFocusNode = FocusNode();
 }
 
-class _IngredientTile extends StatelessWidget {
+class _IngredientTile extends StatefulWidget {
   const _IngredientTile({
     super.key,
     required this.ingredient,
@@ -1864,140 +2116,199 @@ class _IngredientTile extends StatelessWidget {
   final AppLocalizations? localizations;
 
   @override
+  State<_IngredientTile> createState() => _IngredientTileState();
+}
+
+class _IngredientTileState extends State<_IngredientTile> {
+  @override
+
+  @override
   Widget build(BuildContext context) {
+    final ingredient = widget.ingredient;
+    final theme = widget.theme;
+    final localizations = widget.localizations;
+    final index = widget.index;
+    final onRemove = widget.onRemove;
+    final onAddNew = widget.onAddNew;
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // First row: Drag handle, Quantity, Unit, Delete button
-          Row(
-            children: [
-              // Drag handle
-              ReorderableDragStartListener(
-                index: index,
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  child: Icon(
-                    Icons.drag_indicator_rounded,
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
-                    size: 20,
-                  ),
-                ),
+          // Icon placeholder
+          ReorderableDragStartListener(
+            index: index,
+            child: Container(
+              width: 52,
+              height: 52,
+              decoration: BoxDecoration(
+                color: const Color(0xFF1A1A1A),
+                borderRadius: BorderRadius.circular(12),
               ),
-              const SizedBox(width: 8),
-
-              // Quantity
-              Expanded(
-                flex: 2,
-                child: TextFormField(
-                  controller: ingredient.quantityController,
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
-                  inputFormatters: [_DecimalNumberFormatter()],
-                  style: theme.textTheme.bodyMedium,
-                  textAlign: TextAlign.center,
-                  decoration: InputDecoration(
-                    labelText: localizations?.quantity ?? "Qty",
-                    labelStyle: TextStyle(
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                      fontSize: 12,
-                    ),
-                    hintText: "2",
-                    hintStyle: TextStyle(
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
-                      fontSize: 13,
-                    ),
-                    filled: true,
-                    fillColor: theme.colorScheme.surface,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide.none,
-                    ),
-                    contentPadding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-                  ),
-                ),
+              child: Icon(
+                Icons.restaurant_rounded,
+                color: Colors.white.withValues(alpha: 0.7),
+                size: 24,
               ),
-              const SizedBox(width: 8),
-
-              // Unit
-              Expanded(
-                flex: 2,
-                child: TextFormField(
-                  controller: ingredient.unitController,
-                  style: theme.textTheme.bodyMedium,
-                  textAlign: TextAlign.center,
-                  decoration: InputDecoration(
-                    labelText: localizations?.unit ?? "Unit",
-                    labelStyle: TextStyle(
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                      fontSize: 12,
-                    ),
-                    hintText: localizations?.cupsHint ?? "cups",
-                    hintStyle: TextStyle(
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
-                      fontSize: 13,
-                    ),
-                    filled: true,
-                    fillColor: theme.colorScheme.surface,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide.none,
-                    ),
-                    contentPadding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-
-              // Delete button
-              GestureDetector(
-                onTap: onRemove,
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  child: Icon(
-                    Icons.close_rounded,
-                    color: theme.colorScheme.error.withValues(alpha: 0.7),
-                    size: 20,
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(width: 12),
 
-          // Second row: Ingredient name (full width)
-          TextFormField(
-            controller: ingredient.nameController,
-            style: theme.textTheme.bodyMedium,
-            textInputAction: TextInputAction.next,
-            onFieldSubmitted: (_) => onAddNew(),
-            decoration: InputDecoration(
-              labelText: localizations?.ingredient ?? "Ingredient",
-              labelStyle: TextStyle(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                fontSize: 12,
+          // Name + qty/unit fields
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextFormField(
+                  controller: ingredient.nameController,
+                  focusNode: ingredient.nameFocusNode,
+                  textInputAction: TextInputAction.next,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                  decoration: InputDecoration(
+                    labelText: localizations?.ingredient ?? "Ingredient",
+                    labelStyle: TextStyle(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                      fontSize: 13,
+                    ),
+                    hintText: localizations?.ingredientExample ?? "e.g., flour",
+                    hintStyle: TextStyle(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
+                      fontWeight: FontWeight.w400,
+                    ),
+                    isDense: true,
+                    filled: true,
+                    fillColor: theme.colorScheme.surface,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide.none,
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide.none,
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(
+                        color: theme.colorScheme.primary,
+                        width: 1.5,
+                      ),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: ingredient.quantityController,
+                        keyboardType:
+                            const TextInputType.numberWithOptions(decimal: true),
+                        inputFormatters: [_DecimalNumberFormatter()],
+                        textInputAction: TextInputAction.next,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                          fontStyle: FontStyle.italic,
+                        ),
+                        decoration: InputDecoration(
+                          labelText: localizations?.quantity ?? "Qty",
+                          labelStyle: TextStyle(
+                            color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                            fontSize: 12,
+                          ),
+                          hintText: localizations?.quantityExample ?? "e.g., 2",
+                          hintStyle: TextStyle(
+                            color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
+                            fontSize: 12,
+                            fontStyle: FontStyle.italic,
+                          ),
+                          isDense: true,
+                          filled: true,
+                          fillColor: theme.colorScheme.surface,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(6),
+                            borderSide: BorderSide.none,
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(6),
+                            borderSide: BorderSide.none,
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(6),
+                            borderSide: BorderSide(
+                              color: theme.colorScheme.primary,
+                              width: 1.5,
+                            ),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: TextFormField(
+                        controller: ingredient.unitController,
+                        textInputAction: TextInputAction.done,
+                        onFieldSubmitted: (_) => onAddNew(),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                          fontStyle: FontStyle.italic,
+                        ),
+                        decoration: InputDecoration(
+                          labelText: localizations?.unit ?? "Unit",
+                          labelStyle: TextStyle(
+                            color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                            fontSize: 12,
+                          ),
+                          hintText: localizations != null
+                              ? "${localizations.quantityExample.replaceAll(RegExp(r'\d.*'), '')}${localizations.cupsHint}"
+                              : "e.g., cups",
+                          hintStyle: TextStyle(
+                            color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
+                            fontSize: 12,
+                            fontStyle: FontStyle.italic,
+                          ),
+                          isDense: true,
+                          filled: true,
+                          fillColor: theme.colorScheme.surface,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(6),
+                            borderSide: BorderSide.none,
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(6),
+                            borderSide: BorderSide.none,
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(6),
+                            borderSide: BorderSide(
+                              color: theme.colorScheme.primary,
+                              width: 1.5,
+                            ),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          // Delete button
+          GestureDetector(
+            onTap: onRemove,
+            child: Padding(
+              padding: const EdgeInsets.all(8),
+              child: Icon(
+                Icons.delete_outline_rounded,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
+                size: 20,
               ),
-              hintText: localizations?.ingredientExample ?? "e.g., flour",
-              hintStyle: TextStyle(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
-                fontSize: 13,
-              ),
-              filled: true,
-              fillColor: theme.colorScheme.surface,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: BorderSide.none,
-              ),
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             ),
           ),
         ],
@@ -2057,121 +2368,105 @@ class _StepTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 4),
-      child: IntrinsicHeight(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Timeline indicator
-            SizedBox(
-              width: 48,
-              child: Column(
-                children: [
-                  // Step number circle
-                  Container(
-                    width: 32,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.primary,
-                      shape: BoxShape.circle,
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Number + connecting line
+          SizedBox(
+            width: 44,
+            child: Column(
+              children: [
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primary,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Text(
+                      "$stepNumber",
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                      ),
                     ),
-                    child: Center(
-                      child: Text(
-                        "$stepNumber",
-                        style: TextStyle(
-                          color: theme.colorScheme.onPrimary,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
+                  ),
+                ),
+                if (!isLast)
+                  Expanded(
+                    child: Container(
+                      width: 2,
+                      margin: const EdgeInsets.symmetric(vertical: 4),
+                      color: theme.colorScheme.primary.withValues(alpha: 0.2),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+
+          // Text field + delete
+          Expanded(
+            child: Padding(
+              padding: EdgeInsets.only(bottom: isLast ? 0 : 16),
+              child: Stack(
+                children: [
+                  TextFormField(
+                    controller: step.instructionController,
+                    maxLines: null,
+                    minLines: 2,
+                    style: theme.textTheme.bodyMedium,
+                    textInputAction: TextInputAction.newline,
+                    onFieldSubmitted: (_) => onAddNew(),
+                    decoration: InputDecoration(
+                      hintText: localizations?.describeThisStep ??
+                          "Describe this step...",
+                      hintStyle: TextStyle(
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.35),
+                      ),
+                      filled: true,
+                      fillColor: theme.colorScheme.surface,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide.none,
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide.none,
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide(
+                          color: theme.colorScheme.primary,
+                          width: 2,
+                        ),
+                      ),
+                      contentPadding: const EdgeInsets.fromLTRB(14, 12, 36, 12),
+                    ),
+                  ),
+                  // Delete button top-right
+                  Positioned(
+                    top: 4,
+                    right: 4,
+                    child: GestureDetector(
+                      onTap: onRemove,
+                      child: Padding(
+                        padding: const EdgeInsets.all(6),
+                        child: Icon(
+                          Icons.delete_outline_rounded,
+                          size: 18,
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
                         ),
                       ),
                     ),
                   ),
-                  // Connecting line
-                  if (!isLast)
-                    Expanded(
-                      child: Container(
-                        width: 2,
-                        color: theme.colorScheme.primary.withValues(alpha: 0.2),
-                      ),
-                    ),
                 ],
               ),
             ),
-
-            // Content
-            Expanded(
-              child: Container(
-                margin: const EdgeInsets.only(bottom: 12),
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color:
-                      theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Drag handle
-                    ReorderableDragStartListener(
-                      index: stepNumber - 1,
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        child: Icon(
-                          Icons.drag_indicator_rounded,
-                          color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
-                          size: 20,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-
-                    // Instruction field
-                    Expanded(
-                      child: TextFormField(
-                        controller: step.instructionController,
-                        maxLines: 3,
-                        minLines: 2,
-                        style: theme.textTheme.bodyMedium,
-                        textInputAction: TextInputAction.next,
-                        onFieldSubmitted: (_) => onAddNew(),
-                        decoration: InputDecoration(
-                          hintText: localizations?.describeThisStep ??
-                              "Describe this step...",
-                          hintStyle: TextStyle(
-                            color:
-                                theme.colorScheme.onSurface.withValues(alpha: 0.4),
-                          ),
-                          filled: true,
-                          fillColor: theme.colorScheme.surface,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            borderSide: BorderSide.none,
-                          ),
-                          contentPadding: const EdgeInsets.all(12),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-
-                    // Delete button
-                    GestureDetector(
-                      onTap: onRemove,
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        child: Icon(
-                          Icons.close_rounded,
-                          color: theme.colorScheme.error.withValues(alpha: 0.7),
-                          size: 20,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
