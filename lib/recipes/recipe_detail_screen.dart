@@ -356,7 +356,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
             child: Container(
-              color: Colors.white.withValues(alpha: 0.75),
+              color: Colors.white.withValues(alpha: 0.50),
               child: SafeArea(
                 bottom: false,
                 child: Row(
