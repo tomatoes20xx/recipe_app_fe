@@ -628,6 +628,9 @@ class AppLocalizations {
   String get shareRecipe => _localizedValues[locale.languageCode]?["shareRecipe"] ?? "Share Recipe";
   String get shareShoppingList => _localizedValues[locale.languageCode]?["shareShoppingList"] ?? "Share Shopping List";
   String get sharedWith => _localizedValues[locale.languageCode]?["sharedWith"] ?? "Shared with";
+  String sharedWithNPeople(int count) => count == 1
+      ? (_localizedValues[locale.languageCode]?["sharedWithNPeopleSingular"]?.replaceAll("{count}", count.toString()) ?? "Shared with $count person")
+      : (_localizedValues[locale.languageCode]?["sharedWithNPeoplePlural"]?.replaceAll("{count}", count.toString()) ?? "Shared with $count people");
   String get sharedBy => _localizedValues[locale.languageCode]?["sharedBy"] ?? "Shared by";
   String get unshare => _localizedValues[locale.languageCode]?["unshare"] ?? "Unshare";
   String get selectFollowers => _localizedValues[locale.languageCode]?["selectFollowers"] ?? "Select followers to share with";
@@ -1398,6 +1401,8 @@ class AppLocalizations {
       "shareShoppingList": "Share Shopping List",
       "manageSharing": "Manage Sharing",
       "sharedWith": "Shared with",
+      "sharedWithNPeopleSingular": "Shared with {count} person",
+      "sharedWithNPeoplePlural": "Shared with {count} people",
       "sharedBy": "Shared by",
       "unshare": "Unshare",
       "selectFollowers": "Select followers to share with",
@@ -2138,6 +2143,8 @@ class AppLocalizations {
       "shareShoppingList": "სიის გაზიარება",
       "manageSharing": "გაზიარების მართვა",
       "sharedWith": "გაზიარებულია",
+      "sharedWithNPeopleSingular": "გაზიარებულია {count} ადამიანთან",
+      "sharedWithNPeoplePlural": "გაზიარებულია {count} ადამიანთან",
       "sharedBy": "გააზიარა",
       "unshare": "წაშლა",
       "selectFollowers": "აირჩიეთ ვისთან გინდათ გაზიარება",
