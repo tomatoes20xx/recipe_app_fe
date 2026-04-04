@@ -315,6 +315,9 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen>
               ? null
               : TabBar(
                   controller: _tabController,
+                  isScrollable: true,
+                  tabAlignment: TabAlignment.start,
+                  dividerColor: Colors.transparent,
                   tabs: [
                     Tab(text: localizations?.allSaved ?? "All"),
                     Tab(text: localizations?.collections ?? "Collections"),
