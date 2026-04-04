@@ -342,19 +342,58 @@ class _SharedUserShoppingListScreenState extends State<SharedUserShoppingListScr
                           final item = entry.value;
                           final share = widget.userShares.shares.firstWhere((s) => s.shareId == shareId);
 
-                          return CheckboxListTile(
-                            value: item.isChecked,
-                            onChanged: share.isCollaborative
-                                ? (_) => _toggleItem(shareId, item.id, item.isChecked)
+                          return InkWell(
+                            onTap: share.isCollaborative
+                                ? () => _toggleItem(shareId, item.id, item.isChecked)
                                 : null,
-                            enabled: share.isCollaborative,
-                            title: Text(
-                              item.displayText,
-                              style: theme.textTheme.bodyLarge?.copyWith(
-                                decoration: item.isChecked ? TextDecoration.lineThrough : null,
-                                color: item.isChecked
-                                    ? theme.colorScheme.onSurface.withValues(alpha: 0.5)
-                                    : null,
+                            borderRadius: BorderRadius.circular(12),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                              child: Row(
+                                children: [
+                                  SizedBox(
+                                    width: 24,
+                                    height: 24,
+                                    child: Checkbox(
+                                      value: item.isChecked,
+                                      onChanged: share.isCollaborative
+                                          ? (_) => _toggleItem(shareId, item.id, item.isChecked)
+                                          : null,
+                                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                      visualDensity: VisualDensity.compact,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      item.name,
+                                      style: theme.textTheme.bodyMedium?.copyWith(
+                                        decoration: item.isChecked ? TextDecoration.lineThrough : null,
+                                        color: item.isChecked
+                                            ? theme.colorScheme.onSurface.withValues(alpha: 0.5)
+                                            : theme.colorScheme.onSurface,
+                                        height: 1.4,
+                                      ),
+                                    ),
+                                  ),
+                                  if (item.quantity != null || item.unit != null)
+                                    Text(
+                                      [
+                                        if (item.quantity != null) '${item.quantity}',
+                                        if (item.unit != null) item.unit!,
+                                      ].join(' '),
+                                      style: theme.textTheme.bodyMedium?.copyWith(
+                                        decoration: item.isChecked ? TextDecoration.lineThrough : null,
+                                        color: item.isChecked
+                                            ? theme.colorScheme.onSurface.withValues(alpha: 0.4)
+                                            : theme.colorScheme.primary,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                ],
                               ),
                             ),
                           );

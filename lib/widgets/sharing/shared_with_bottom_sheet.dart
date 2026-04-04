@@ -126,7 +126,7 @@ class _SharedWithBottomSheetState extends State<_SharedWithBottomSheet> {
                 child: Text(
                   widget.sharedWith.isEmpty
                       ? (localizations?.sharedWith ?? "Shared with")
-                      : "${localizations?.sharedWith ?? "Shared with"} ${widget.sharedWith.length} ${widget.sharedWith.length == 1 ? "person" : "people"}",
+                      : localizations?.sharedWithNPeople(widget.sharedWith.length) ?? "Shared with ${widget.sharedWith.length} ${widget.sharedWith.length == 1 ? "person" : "people"}",
                   style: theme.textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
