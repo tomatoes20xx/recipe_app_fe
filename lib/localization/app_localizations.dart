@@ -120,6 +120,9 @@ class AppLocalizations {
   String get thirtyDays => _localizedValues[locale.languageCode]?["thirtyDays"] ?? "30 days";
   String get listView => _localizedValues[locale.languageCode]?["listView"] ?? "List View";
   String get fullScreenView => _localizedValues[locale.languageCode]?["fullScreenView"] ?? "Full Screen View";
+  String get feedViewType => _localizedValues[locale.languageCode]?["feedViewType"] ?? "Feed View";
+  String get listViewDescription => _localizedValues[locale.languageCode]?["listViewDescription"] ?? "Scroll through recipe cards";
+  String get fullScreenViewDescription => _localizedValues[locale.languageCode]?["fullScreenViewDescription"] ?? "Immersive full-screen mode";
 
   // Empty States (user-visible messages)
   String get noMoreItems => _localizedValues[locale.languageCode]?["noMoreItems"] ?? "No more items";
@@ -952,6 +955,9 @@ class AppLocalizations {
       "thirtyDays": "30 days",
       "listView": "List View",
       "fullScreenView": "Full Screen View",
+      "feedViewType": "Feed View",
+      "listViewDescription": "Scroll through recipe cards",
+      "fullScreenViewDescription": "Immersive full-screen mode",
       "noMoreItems": "No more items",
       "noSavedRecipes": "No saved recipes",
       "startBookmarkingRecipes": "Start bookmarking recipes to save them here",
@@ -1693,6 +1699,9 @@ class AppLocalizations {
       "thirtyDays": "30 დღე",
       "listView": "სიის ხედი",
       "fullScreenView": "სრული ეკრანის ხედი",
+      "feedViewType": "ფიდის ხედი",
+      "listViewDescription": "გადაახვიეთ რეცეპტის ბარათებს",
+      "fullScreenViewDescription": "სრულეკრანიანი რეჟიმი",
       "noMoreItems": "მეტი ელემენტი არ არის",
       "noSavedRecipes": "შენახული რეცეპტები ცარიელია",
       "startBookmarkingRecipes": "დაიწყეთ რეცეპტების შენახვა აქ გამოსაჩენად",

@@ -1,9 +1,11 @@
 import "package:flutter/material.dart";
 import "../auth/auth_controller.dart";
+import "../feed/feed_view_controller.dart";
 import "../localization/app_localizations.dart";
 import "../localization/language_controller.dart";
 import "../theme/theme_controller.dart";
 import "package:package_info_plus/package_info_plus.dart";
+import "feed_view_screen.dart";
 import "theme_selection_screen.dart";
 import "language_selection_screen.dart";
 import "terms_and_privacy_screen.dart";
@@ -18,12 +20,14 @@ class SettingsScreen extends StatefulWidget {
     super.key,
     required this.themeController,
     required this.languageController,
+    this.feedViewController,
     this.auth,
     this.apiClient,
   });
 
   final ThemeController themeController;
   final LanguageController languageController;
+  final FeedViewController? feedViewController;
   final AuthController? auth;
   final ApiClient? apiClient;
 
@@ -219,6 +223,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         );
                       },
                     ),
+                    if (widget.feedViewController != null)
+                      AnimatedBuilder(
+                        animation: widget.feedViewController!,
+                        builder: (context, _) => _buildSettingsTile(
+                          context,
+                          icon: Icons.view_carousel_rounded,
+                          iconColor: Colors.teal,
+                          title: localizations?.feedViewType ?? "Feed View",
+                          subtitle: widget.feedViewController!.isFullScreenView
+                              ? (localizations?.fullScreenView ?? "Full Screen View")
+                              : (localizations?.listView ?? "List View"),
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => FeedViewScreen(
+                                  feedViewController: widget.feedViewController!,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
                   ],
                 ),
 
