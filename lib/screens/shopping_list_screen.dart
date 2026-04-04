@@ -207,46 +207,43 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
             margin: const EdgeInsets.all(16),
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  theme.colorScheme.primaryContainer,
-                  theme.colorScheme.primaryContainer.withValues(alpha: 0.7),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
+              color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(16),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildStat(
-                  icon: Icons.shopping_basket_outlined,
-                  label: localizations?.total ?? "Total",
-                  value: "${widget.controller.totalCount}",
-                  color: theme.colorScheme.onPrimaryContainer,
+                Text(
+                  localizations?.statusSummary ?? 'STATUS SUMMARY',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.0,
+                    color: theme.colorScheme.primary,
+                  ),
                 ),
-                Container(
-                  height: 40,
-                  width: 1,
-                  color: theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.2),
-                ),
-                _buildStat(
-                  icon: Icons.check_circle_outline,
-                  label: localizations?.checked ?? "Checked",
-                  value: "${widget.controller.checkedCount}",
-                  color: theme.colorScheme.onPrimaryContainer,
-                ),
-                Container(
-                  height: 40,
-                  width: 1,
-                  color: theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.2),
-                ),
-                _buildStat(
-                  icon: Icons.pending_outlined,
-                  label: localizations?.remaining ?? "Remaining",
-                  value: "${widget.controller.uncheckedCount}",
-                  color: theme.colorScheme.onPrimaryContainer,
+                const SizedBox(height: 10),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    _buildStat(
+                      label: localizations?.totalItems ?? 'TOTAL ITEMS',
+                      value: '${widget.controller.totalCount}',
+                      color: theme.colorScheme.primary,
+                    ),
+                    const SizedBox(width: 28),
+                    _buildStat(
+                      label: (localizations?.checked ?? 'Checked').toUpperCase(),
+                      value: '${widget.controller.checkedCount}',
+                      color: const Color(0xFF8B1A4A),
+                    ),
+                    const SizedBox(width: 28),
+                    _buildStat(
+                      label: (localizations?.remaining ?? 'Remaining').toUpperCase(),
+                      value: '${widget.controller.uncheckedCount}',
+                      color: theme.colorScheme.onSurface,
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -276,28 +273,30 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
   }
 
   Widget _buildStat({
-    required IconData icon,
     required String label,
     required String value,
     required Color color,
   }) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, color: color, size: 24),
-        const SizedBox(height: 4),
         Text(
           value,
           style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
+            fontSize: 28,
+            fontWeight: FontWeight.w800,
             color: color,
+            height: 1.0,
           ),
         ),
+        const SizedBox(height: 2),
         Text(
           label,
           style: TextStyle(
-            fontSize: 12,
-            color: color.withValues(alpha: 0.8),
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.5,
+            color: color.withValues(alpha: 0.7),
           ),
         ),
       ],
@@ -847,7 +846,7 @@ class _ShoppingListItemTile extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  item.displayText,
+                  item.name,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     decoration: item.isChecked ? TextDecoration.lineThrough : null,
                     color: item.isChecked
@@ -857,6 +856,20 @@ class _ShoppingListItemTile extends StatelessWidget {
                   ),
                 ),
               ),
+              if (item.quantity != null || item.unit != null)
+                Text(
+                  [
+                    if (item.quantity != null) '${item.quantity}',
+                    if (item.unit != null) item.unit!,
+                  ].join(' '),
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    decoration: item.isChecked ? TextDecoration.lineThrough : null,
+                    color: item.isChecked
+                        ? theme.colorScheme.onSurface.withValues(alpha: 0.4)
+                        : theme.colorScheme.primary,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
             ],
           ),
         ),
