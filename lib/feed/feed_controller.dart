@@ -75,6 +75,19 @@ class FeedController extends PaginatedListController<feed_models.FeedItem> {
     await loadInitial();
   }
 
+  Future<void> setScopeAndOptions({
+    required FeedScope newScope,
+    FeedSort? newSort,
+    PopularPeriod? newPopularPeriod,
+    int? newTrendingDays,
+  }) async {
+    scope = newScope;
+    if (newSort != null) sort = newSort;
+    if (newPopularPeriod != null) popularPeriod = newPopularPeriod;
+    if (newTrendingDays != null) trendingDays = newTrendingDays;
+    await loadInitial();
+  }
+
   Future<void> setPopularPeriod(PopularPeriod value) async {
     if (popularPeriod == value) return;
     popularPeriod = value;

@@ -33,8 +33,6 @@ class AppTourService {
     required GlobalKey createKey,
     required GlobalKey notificationsKey,
     required GlobalKey menuKey,
-    required GlobalKey sortDropdownKey,
-    required GlobalKey viewToggleKey,
     VoidCallback? onFinish,
   }) {
     final targets = <TargetFocus>[];
@@ -145,50 +143,6 @@ class AppTourService {
               title: localizations?.tourMenuTitle ?? "More Features 📱",
               description: localizations?.tourMenuDescription ??
                   "Access saved recipes, notifications, settings, and more from the menu.",
-            ),
-          ),
-        ],
-      ),
-    );
-
-    // 7. Sort Dropdown (Recent/Top)
-    targets.add(
-      TargetFocus(
-        identify: "sortDropdown",
-        keyTarget: sortDropdownKey,
-        alignSkip: Alignment.topRight,
-        radius: 10,
-        shape: ShapeLightFocus.RRect,
-        contents: [
-          TargetContent(
-            align: ContentAlign.bottom,
-            builder: (context, controller) => _buildContent(
-              context,
-              title: localizations?.tourSortTitle ?? "Sort Your Feed 🔽",
-              description: localizations?.tourSortDescription ??
-                  "Switch between Recent (newest first) and Top (most popular) posts. Choose what matters to you!",
-            ),
-          ),
-        ],
-      ),
-    );
-
-    // 8. View Toggle
-    targets.add(
-      TargetFocus(
-        identify: "viewToggle",
-        keyTarget: viewToggleKey,
-        alignSkip: Alignment.topRight,
-        radius: 10,
-        shape: ShapeLightFocus.Circle,
-        contents: [
-          TargetContent(
-            align: ContentAlign.bottom,
-            builder: (context, controller) => _buildContent(
-              context,
-              title: localizations?.tourViewToggleTitle ?? "Switch Views 👁️",
-              description: localizations?.tourViewToggleDescription ??
-                  "Toggle between list view and full-screen immersive view for a different browsing experience!",
               isLast: true,
             ),
           ),

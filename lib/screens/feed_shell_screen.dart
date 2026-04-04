@@ -7,6 +7,7 @@ import "../auth/auth_controller.dart";
 import "../constants/enums.dart";
 import "../feed/feed_api.dart";
 import "../feed/feed_controller.dart";
+import "../feed/feed_view_controller.dart";
 import "../recipes/recipe_api.dart";
 import "../localization/app_localizations.dart";
 import "../localization/language_controller.dart";
@@ -51,6 +52,7 @@ class FeedShellScreen extends StatefulWidget {
 class _FeedShellScreenState extends State<FeedShellScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   late final FeedController feed;
+  late final FeedViewController _feedViewController;
   final ScrollController _feedScrollController = ScrollController();
   int _currentIndex = 0;
 
@@ -63,8 +65,6 @@ class _FeedShellScreenState extends State<FeedShellScreen> {
   final GlobalKey _createKey = GlobalKey();
   final GlobalKey _notificationsKey = GlobalKey();
   final GlobalKey _menuKey = GlobalKey();
-  final GlobalKey _sortDropdownKey = GlobalKey();
-  final GlobalKey _viewToggleKey = GlobalKey();
 
   @override
   void initState() {
@@ -73,6 +73,7 @@ class _FeedShellScreenState extends State<FeedShellScreen> {
       feedApi: FeedApi(widget.apiClient),
       recipeApi: RecipeApi(widget.apiClient),
     );
+    _feedViewController = FeedViewController();
     feed.loadInitial();
 
     final notificationApi = NotificationApi(widget.apiClient);
@@ -100,8 +101,6 @@ class _FeedShellScreenState extends State<FeedShellScreen> {
             createKey: _createKey,
             notificationsKey: _notificationsKey,
             menuKey: _menuKey,
-            sortDropdownKey: _sortDropdownKey,
-            viewToggleKey: _viewToggleKey,
           );
         }
       });
@@ -111,6 +110,7 @@ class _FeedShellScreenState extends State<FeedShellScreen> {
   @override
   void dispose() {
     feed.dispose();
+    _feedViewController.dispose();
     _feedScrollController.dispose();
     _notificationController.dispose();
     _notificationTimer?.cancel();
@@ -146,13 +146,12 @@ class _FeedShellScreenState extends State<FeedShellScreen> {
     }
   }
 
-  void _changeFeedScope(FeedScope scope) {
-    setState(() {
-      feed.setScope(scope);
-      if (_currentIndex != 0) {
+  void _ensureHomeTab() {
+    if (_currentIndex != 0) {
+      setState(() {
         _currentIndex = 0;
-      }
-    });
+      });
+    }
   }
 
   @override
@@ -167,7 +166,8 @@ class _FeedShellScreenState extends State<FeedShellScreen> {
         themeController: widget.themeController,
         languageController: widget.languageController,
         shoppingListController: widget.shoppingListController,
-        onScopeSelected: _changeFeedScope,
+        feedViewController: _feedViewController,
+        onNavigateToFeed: _ensureHomeTab,
       ),
       body: IndexedStack(
         index: _currentIndex,
@@ -178,10 +178,9 @@ class _FeedShellScreenState extends State<FeedShellScreen> {
             themeController: widget.themeController,
             languageController: widget.languageController,
             feed: feed,
+            feedViewController: _feedViewController,
             scrollController: _feedScrollController,
             onNotificationRefresh: _notificationController.refreshUnreadCount,
-            sortDropdownKey: _sortDropdownKey,
-            viewToggleKey: _viewToggleKey,
             shoppingListController: widget.shoppingListController,
           ),
           NotificationsScreen(
@@ -451,7 +450,7 @@ class _BottomNavAction extends StatelessWidget {
   }
 }
 
-class _FeedShellDrawer extends StatelessWidget {
+class _FeedShellDrawer extends StatefulWidget {
   const _FeedShellDrawer({
     required this.feed,
     required this.auth,
@@ -459,7 +458,8 @@ class _FeedShellDrawer extends StatelessWidget {
     required this.themeController,
     required this.languageController,
     required this.shoppingListController,
-    required this.onScopeSelected,
+    required this.feedViewController,
+    required this.onNavigateToFeed,
   });
 
   final FeedController feed;
@@ -468,230 +468,383 @@ class _FeedShellDrawer extends StatelessWidget {
   final ThemeController themeController;
   final LanguageController languageController;
   final ShoppingListController shoppingListController;
-  final ValueChanged<FeedScope> onScopeSelected;
+  final FeedViewController feedViewController;
+  final VoidCallback onNavigateToFeed;
+
+  @override
+  State<_FeedShellDrawer> createState() => _FeedShellDrawerState();
+}
+
+class _FeedShellDrawerState extends State<_FeedShellDrawer> {
+  FeedScope? _expandedScope;
+
+  @override
+  void initState() {
+    super.initState();
+    _expandedScope = widget.feed.scope;
+  }
+
+  void _toggleExpand(FeedScope scope) {
+    setState(() {
+      _expandedScope = _expandedScope == scope ? null : scope;
+    });
+  }
+
+  void _selectOption({
+    required FeedScope scope,
+    FeedSort? sort,
+    PopularPeriod? popularPeriod,
+    int? trendingDays,
+  }) {
+    widget.feed.setScopeAndOptions(
+      newScope: scope,
+      newSort: sort,
+      newPopularPeriod: popularPeriod,
+      newTrendingDays: trendingDays,
+    );
+    Navigator.of(context).pop();
+    widget.onNavigateToFeed();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context);
+
     return Drawer(
       backgroundColor: Theme.of(context).colorScheme.surface,
       child: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-          children: [
-            // Profile section
-            if (auth.isLoggedIn) ...[
-              _DrawerCard(
-                onTap: () {
-                  Navigator.of(context).pop();
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => ProfileScreen(
-                        auth: auth,
-                        apiClient: apiClient,
-                        shoppingListController: shoppingListController,
-                      ),
-                    ),
-                  );
-                },
-                child: Row(
-                  children: [
-                    buildUserAvatar(
-                      context,
-                      auth.me?["avatar_url"]?.toString(),
-                      auth.me?["username"]?.toString() ?? "",
-                      radius: 24,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "@${auth.me?["username"] ?? ""}",
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: Theme.of(context).colorScheme.onSurface,
-                            ),
+        child: ListenableBuilder(
+          listenable: widget.feed,
+          builder: (context, _) {
+            return ListView(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              children: [
+                // Profile section
+                if (widget.auth.isLoggedIn) ...[
+                  _DrawerCard(
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => ProfileScreen(
+                            auth: widget.auth,
+                            apiClient: widget.apiClient,
+                            shoppingListController: widget.shoppingListController,
                           ),
-                          const SizedBox(height: 2),
-                          Text(
-                            AppLocalizations.of(context)?.viewProfile ?? "View your profile",
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-                            ),
+                        ),
+                      );
+                    },
+                    child: Row(
+                      children: [
+                        buildUserAvatar(
+                          context,
+                          widget.auth.me?["avatar_url"]?.toString(),
+                          widget.auth.me?["username"]?.toString() ?? "",
+                          radius: 24,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                "@${widget.auth.me?["username"] ?? ""}",
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: Theme.of(context).colorScheme.onSurface,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                localizations?.viewProfile ?? "View your profile",
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                                ),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
+                        ),
+                        Icon(
+                          Icons.chevron_right_rounded,
+                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                        ),
+                      ],
                     ),
-                    Icon(
-                      Icons.chevron_right_rounded,
-                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                  ),
+                  const SizedBox(height: 24),
+                ],
+
+                // Feed Preferences section
+                _SectionHeader(title: localizations?.feedPreferences ?? "FEED PREFERENCES"),
+                const SizedBox(height: 8),
+
+                // Global
+                _buildExpandableScope(
+                  scope: FeedScope.global,
+                  icon: Icons.public_rounded,
+                  title: localizations?.global ?? "Global",
+                  subtitle: localizations?.seeRecipesFromEveryone ?? "See recipes from everyone",
+                  subItems: [
+                    _SubItem(
+                      label: localizations?.recent ?? "Recent",
+                      isActive: widget.feed.scope == FeedScope.global && widget.feed.sort == FeedSort.recent,
+                      onTap: () => _selectOption(scope: FeedScope.global, sort: FeedSort.recent),
+                    ),
+                    _SubItem(
+                      label: localizations?.top ?? "Top",
+                      isActive: widget.feed.scope == FeedScope.global && widget.feed.sort == FeedSort.top,
+                      onTap: () => _selectOption(scope: FeedScope.global, sort: FeedSort.top),
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(height: 24),
-            ],
+                const SizedBox(height: 8),
 
-            // Feed Preferences section
-            _SectionHeader(title: AppLocalizations.of(context)?.feedPreferences ?? "FEED PREFERENCES"),
-            const SizedBox(height: 8),
-            _FeedOptionCard(
-              icon: Icons.public_rounded,
-              title: AppLocalizations.of(context)?.global ?? "Global",
-              subtitle: AppLocalizations.of(context)?.seeRecipesFromEveryone ?? "See recipes from everyone",
-              isSelected: feed.scope == FeedScope.global,
-              onTap: () {
-                Navigator.of(context).pop();
-                onScopeSelected(FeedScope.global);
-              },
-            ),
-            const SizedBox(height: 8),
-            _FeedOptionCard(
-              icon: Icons.people_alt_outlined,
-              title: AppLocalizations.of(context)?.following ?? "Following",
-              subtitle: AppLocalizations.of(context)?.seeRecipesFromPeopleYouFollow ?? "See recipes from people you follow",
-              isSelected: feed.scope == FeedScope.following,
-              enabled: auth.isLoggedIn,
-              onTap: () {
-                if (!auth.isLoggedIn) {
-                  final localizations = AppLocalizations.of(context);
-                  Navigator.of(context).pop();
-                  ErrorUtils.showInfo(
-                    context,
-                    localizations?.logInToSeeFollowingFeed ?? "Log in to see Following feed",
-                  );
-                  return;
-                }
-                Navigator.of(context).pop();
-                onScopeSelected(FeedScope.following);
-              },
-            ),
-            const SizedBox(height: 8),
-            _FeedOptionCard(
-              icon: Icons.local_fire_department_outlined,
-              title: AppLocalizations.of(context)?.popular ?? "Popular",
-              subtitle: AppLocalizations.of(context)?.mostPopularRecipes ?? "Most popular recipes",
-              isSelected: feed.scope == FeedScope.popular,
-              onTap: () {
-                Navigator.of(context).pop();
-                onScopeSelected(FeedScope.popular);
-              },
-            ),
-            const SizedBox(height: 8),
-            _FeedOptionCard(
-              icon: Icons.trending_up_rounded,
-              title: AppLocalizations.of(context)?.trending ?? "Trending",
-              subtitle: AppLocalizations.of(context)?.trendingNow ?? "Trending now",
-              isSelected: feed.scope == FeedScope.trending,
-              onTap: () {
-                Navigator.of(context).pop();
-                onScopeSelected(FeedScope.trending);
-              },
-            ),
+                // Following
+                _buildExpandableScope(
+                  scope: FeedScope.following,
+                  icon: Icons.people_alt_outlined,
+                  title: localizations?.following ?? "Following",
+                  subtitle: localizations?.seeRecipesFromPeopleYouFollow ?? "See recipes from people you follow",
+                  enabled: widget.auth.isLoggedIn,
+                  onDisabledTap: () {
+                    Navigator.of(context).pop();
+                    ErrorUtils.showInfo(
+                      context,
+                      localizations?.logInToSeeFollowingFeed ?? "Log in to see Following feed",
+                    );
+                  },
+                  subItems: [
+                    _SubItem(
+                      label: localizations?.recent ?? "Recent",
+                      isActive: widget.feed.scope == FeedScope.following && widget.feed.sort == FeedSort.recent,
+                      onTap: () => _selectOption(scope: FeedScope.following, sort: FeedSort.recent),
+                    ),
+                    _SubItem(
+                      label: localizations?.top ?? "Top",
+                      isActive: widget.feed.scope == FeedScope.following && widget.feed.sort == FeedSort.top,
+                      onTap: () => _selectOption(scope: FeedScope.following, sort: FeedSort.top),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
 
-            // Quick Access section
-            if (auth.isLoggedIn) ...[
-              const SizedBox(height: 24),
-              _SectionHeader(title: AppLocalizations.of(context)?.quickAccess ?? "QUICK ACCESS"),
-              const SizedBox(height: 8),
-              _QuickAccessCard(
-                icon: Icons.bookmark_outline_rounded,
-                title: AppLocalizations.of(context)?.savedRecipes ?? "Saved Recipes",
-                subtitle: AppLocalizations.of(context)?.viewYourBookmarkedRecipes ?? "View your bookmarked recipes",
-                onTap: () {
-                  Navigator.of(context).pop();
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => SavedRecipesScreen(
-                        apiClient: apiClient,
-                        auth: auth,
-                        shoppingListController: shoppingListController,
-                      ),
+                // Popular
+                _buildExpandableScope(
+                  scope: FeedScope.popular,
+                  icon: Icons.local_fire_department_outlined,
+                  title: localizations?.popular ?? "Popular",
+                  subtitle: localizations?.mostPopularRecipes ?? "Most popular recipes",
+                  subItems: [
+                    _SubItem(
+                      label: localizations?.allTime ?? "All Time",
+                      isActive: widget.feed.scope == FeedScope.popular && widget.feed.popularPeriod == PopularPeriod.allTime,
+                      onTap: () => _selectOption(scope: FeedScope.popular, popularPeriod: PopularPeriod.allTime),
                     ),
-                  );
-                },
-              ),
-              const SizedBox(height: 8),
-              _QuickAccessCard(
-                icon: Icons.shopping_cart_outlined,
-                title: AppLocalizations.of(context)?.shoppingList ?? "Shopping List",
-                subtitle: AppLocalizations.of(context)?.manageYourShoppingList ?? "Manage your shopping list",
-                onTap: () {
-                  Navigator.of(context).pop();
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => ShoppingListScreen(
-                        controller: shoppingListController,
-                        apiClient: apiClient,
-                        auth: auth,
-                      ),
+                    _SubItem(
+                      label: localizations?.last30Days ?? "Last 30 Days",
+                      isActive: widget.feed.scope == FeedScope.popular && widget.feed.popularPeriod == PopularPeriod.last30Days,
+                      onTap: () => _selectOption(scope: FeedScope.popular, popularPeriod: PopularPeriod.last30Days),
                     ),
-                  );
-                },
-              ),
-              const SizedBox(height: 8),
-              _QuickAccessCard(
-                icon: Icons.folder_shared,
-                title: AppLocalizations.of(context)?.sharedRecipes ?? "Shared Recipes",
-                subtitle: AppLocalizations.of(context)?.recipesSharedWithYou ?? "Recipes shared with you",
-                onTap: () {
-                  Navigator.of(context).pop();
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => SharedRecipesScreen(
-                        apiClient: apiClient,
-                        auth: auth,
-                        shoppingListController: shoppingListController,
-                      ),
+                    _SubItem(
+                      label: localizations?.last7Days ?? "Last 7 Days",
+                      isActive: widget.feed.scope == FeedScope.popular && widget.feed.popularPeriod == PopularPeriod.last7Days,
+                      onTap: () => _selectOption(scope: FeedScope.popular, popularPeriod: PopularPeriod.last7Days),
                     ),
-                  );
-                },
-              ),
-              const SizedBox(height: 8),
-              _QuickAccessCard(
-                icon: Icons.shopping_basket_outlined,
-                title: AppLocalizations.of(context)?.sharedShoppingLists ?? "Shared Shopping Lists",
-                subtitle: AppLocalizations.of(context)?.listsSharedWithYou ?? "Shopping lists shared with you",
-                onTap: () {
-                  Navigator.of(context).pop();
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => SharedShoppingListsScreen(
-                        apiClient: apiClient,
-                        auth: auth,
-                      ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+
+                // Trending
+                _buildExpandableScope(
+                  scope: FeedScope.trending,
+                  icon: Icons.trending_up_rounded,
+                  title: localizations?.trending ?? "Trending",
+                  subtitle: localizations?.trendingNow ?? "Trending now",
+                  subItems: [
+                    _SubItem(
+                      label: localizations?.last7Days ?? "Last 7 Days",
+                      isActive: widget.feed.scope == FeedScope.trending && widget.feed.trendingDays == 7,
+                      onTap: () => _selectOption(scope: FeedScope.trending, trendingDays: 7),
                     ),
-                  );
-                },
-              ),
-              const SizedBox(height: 8),
-              _QuickAccessCard(
-                icon: Icons.settings_outlined,
-                title: AppLocalizations.of(context)?.settings ?? "Settings",
-                subtitle: AppLocalizations.of(context)?.appPreferences ?? "App preferences",
-                onTap: () {
-                  Navigator.of(context).pop();
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => SettingsScreen(
-                        themeController: themeController,
-                        languageController: languageController,
-                        auth: auth,
-                        apiClient: apiClient,
-                      ),
+                    _SubItem(
+                      label: localizations?.last30Days ?? "Last 30 Days",
+                      isActive: widget.feed.scope == FeedScope.trending && widget.feed.trendingDays == 30,
+                      onTap: () => _selectOption(scope: FeedScope.trending, trendingDays: 30),
                     ),
-                  );
-                },
-              ),
-            ],
-          ],
+                  ],
+                ),
+
+                // Quick Access section
+                if (widget.auth.isLoggedIn) ...[
+                  const SizedBox(height: 24),
+                  _SectionHeader(title: localizations?.quickAccess ?? "QUICK ACCESS"),
+                  const SizedBox(height: 8),
+                  _QuickAccessCard(
+                    icon: Icons.bookmark_outline_rounded,
+                    title: localizations?.savedRecipes ?? "Saved Recipes",
+                    subtitle: localizations?.viewYourBookmarkedRecipes ?? "View your bookmarked recipes",
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => SavedRecipesScreen(
+                            apiClient: widget.apiClient,
+                            auth: widget.auth,
+                            shoppingListController: widget.shoppingListController,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                  _QuickAccessCard(
+                    icon: Icons.shopping_cart_outlined,
+                    title: localizations?.shoppingList ?? "Shopping List",
+                    subtitle: localizations?.manageYourShoppingList ?? "Manage your shopping list",
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => ShoppingListScreen(
+                            controller: widget.shoppingListController,
+                            apiClient: widget.apiClient,
+                            auth: widget.auth,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                  _QuickAccessCard(
+                    icon: Icons.folder_shared,
+                    title: localizations?.sharedRecipes ?? "Shared Recipes",
+                    subtitle: localizations?.recipesSharedWithYou ?? "Recipes shared with you",
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => SharedRecipesScreen(
+                            apiClient: widget.apiClient,
+                            auth: widget.auth,
+                            shoppingListController: widget.shoppingListController,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                  _QuickAccessCard(
+                    icon: Icons.shopping_basket_outlined,
+                    title: localizations?.sharedShoppingLists ?? "Shared Shopping Lists",
+                    subtitle: localizations?.listsSharedWithYou ?? "Shopping lists shared with you",
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => SharedShoppingListsScreen(
+                            apiClient: widget.apiClient,
+                            auth: widget.auth,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                  _QuickAccessCard(
+                    icon: Icons.settings_outlined,
+                    title: localizations?.settings ?? "Settings",
+                    subtitle: localizations?.appPreferences ?? "App preferences",
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => SettingsScreen(
+                            themeController: widget.themeController,
+                            languageController: widget.languageController,
+                            feedViewController: widget.feedViewController,
+                            auth: widget.auth,
+                            apiClient: widget.apiClient,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ],
+            );
+          },
         ),
       ),
     );
   }
+
+  Widget _buildExpandableScope({
+    required FeedScope scope,
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required List<_SubItem> subItems,
+    bool enabled = true,
+    VoidCallback? onDisabledTap,
+  }) {
+    final isSelected = widget.feed.scope == scope;
+    final isExpanded = _expandedScope == scope;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _ExpandableFeedOptionCard(
+          icon: icon,
+          title: title,
+          subtitle: subtitle,
+          isSelected: isSelected,
+          isExpanded: isExpanded,
+          enabled: enabled,
+          onTap: () {
+            if (!enabled) {
+              onDisabledTap?.call();
+              return;
+            }
+            _toggleExpand(scope);
+          },
+        ),
+        AnimatedSize(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeInOut,
+          child: isExpanded
+              ? Padding(
+                  padding: const EdgeInsets.only(left: 16, top: 4),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: subItems.map((item) => Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: _SubOptionCard(
+                        label: item.label,
+                        isActive: item.isActive,
+                        onTap: item.onTap,
+                      ),
+                    )).toList(),
+                  ),
+                )
+              : const SizedBox.shrink(),
+        ),
+      ],
+    );
+  }
+}
+
+class _SubItem {
+  const _SubItem({
+    required this.label,
+    required this.isActive,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool isActive;
+  final VoidCallback onTap;
 }
 
 class _SectionHeader extends StatelessWidget {
@@ -762,12 +915,13 @@ class _DrawerCardState extends State<_DrawerCard> {
   }
 }
 
-class _FeedOptionCard extends StatefulWidget {
-  const _FeedOptionCard({
+class _ExpandableFeedOptionCard extends StatefulWidget {
+  const _ExpandableFeedOptionCard({
     required this.icon,
     required this.title,
     required this.subtitle,
     required this.isSelected,
+    required this.isExpanded,
     required this.onTap,
     this.enabled = true,
   });
@@ -776,14 +930,15 @@ class _FeedOptionCard extends StatefulWidget {
   final String title;
   final String subtitle;
   final bool isSelected;
+  final bool isExpanded;
   final VoidCallback onTap;
   final bool enabled;
 
   @override
-  State<_FeedOptionCard> createState() => _FeedOptionCardState();
+  State<_ExpandableFeedOptionCard> createState() => _ExpandableFeedOptionCardState();
 }
 
-class _FeedOptionCardState extends State<_FeedOptionCard> {
+class _ExpandableFeedOptionCardState extends State<_ExpandableFeedOptionCard> {
   bool _isHovered = false;
   bool _isPressed = false;
 
@@ -869,23 +1024,88 @@ class _FeedOptionCardState extends State<_FeedOptionCard> {
                   ],
                 ),
               ),
-              AnimatedSwitcher(
+              AnimatedRotation(
                 duration: const Duration(milliseconds: 200),
-                transitionBuilder: (child, animation) => ScaleTransition(
-                  scale: animation,
-                  child: child,
-                ),
+                turns: widget.isExpanded ? 0.5 : 0.0,
                 child: Icon(
-                  widget.isSelected ? Icons.check_circle_rounded : Icons.circle_outlined,
-                  key: ValueKey(widget.isSelected),
+                  Icons.keyboard_arrow_down_rounded,
                   size: 22,
                   color: widget.isSelected
                       ? primaryColor
-                      : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
+                      : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
                 ),
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SubOptionCard extends StatefulWidget {
+  const _SubOptionCard({
+    required this.label,
+    required this.isActive,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool isActive;
+  final VoidCallback onTap;
+
+  @override
+  State<_SubOptionCard> createState() => _SubOptionCardState();
+}
+
+class _SubOptionCardState extends State<_SubOptionCard> {
+  bool _isPressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final primaryColor = Theme.of(context).colorScheme.primary;
+    final baseColor = widget.isActive
+        ? primaryColor.withValues(alpha: 0.1)
+        : Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3);
+    final pressedColor = primaryColor.withValues(alpha: 0.15);
+
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _isPressed = true),
+      onTapUp: (_) => setState(() => _isPressed = false),
+      onTapCancel: () => setState(() => _isPressed = false),
+      onTap: widget.onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 120),
+        curve: Curves.easeOut,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: _isPressed ? pressedColor : baseColor,
+          borderRadius: BorderRadius.circular(10),
+          border: widget.isActive
+              ? Border.all(color: primaryColor.withValues(alpha: 0.25), width: 1)
+              : null,
+        ),
+        child: Row(
+          children: [
+            Icon(
+              widget.isActive ? Icons.check_rounded : Icons.arrow_right_rounded,
+              size: 18,
+              color: widget.isActive
+                  ? primaryColor
+                  : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              widget.label,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: widget.isActive ? FontWeight.w600 : FontWeight.w400,
+                color: widget.isActive
+                    ? primaryColor
+                    : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8),
+              ),
+            ),
+          ],
         ),
       ),
     );
