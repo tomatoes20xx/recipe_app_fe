@@ -34,7 +34,8 @@ migrate_working_dir/
 /build/
 **/build/
 /coverage/
-pubspec.lock
+# pubspec.lock should be committed for apps (reproducible builds)
+# pubspec.lock
 
 # Symbolication related
 app.*.symbols

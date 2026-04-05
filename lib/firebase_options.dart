@@ -59,19 +59,22 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'YOUR_API_KEY',
-    appId: 'YOUR_APP_ID',
-    messagingSenderId: 'YOUR_SENDER_ID',
-    projectId: 'YOUR_PROJECT_ID',
-    storageBucket: 'YOUR_STORAGE_BUCKET',
+    apiKey: 'AIzaSyDDPC_VugrePkb_M3tRFTlX7yGE4P-Gri4',
+    appId: '1:31640311657:android:5f74d28cb1aa41b7f38ff8',
+    messagingSenderId: '31640311657',
+    projectId: 'yummy-edd7e',
+    storageBucket: 'yummy-edd7e.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'YOUR_API_KEY',
-    appId: 'YOUR_APP_ID',
-    messagingSenderId: 'YOUR_SENDER_ID',
-    projectId: 'YOUR_PROJECT_ID',
-    storageBucket: 'YOUR_STORAGE_BUCKET',
-    iosBundleId: 'com.yourcompany.recipeappfe',
+    apiKey: 'AIzaSyBJIB3U3FgI5yhNbRj19k1KIJ5uSI3AyWw',
+    appId: '1:31640311657:ios:00339219cb94f822f38ff8',
+    messagingSenderId: '31640311657',
+    projectId: 'yummy-edd7e',
+    storageBucket: 'yummy-edd7e.firebasestorage.app',
+    androidClientId: '31640311657-m13kjin2bkgkv93rldgg0ns2titln22f.apps.googleusercontent.com',
+    iosClientId: '31640311657-m9hij53r5o802ipotb3edkcd7kqqsjt2.apps.googleusercontent.com',
+    iosBundleId: 'com.tomakatcheishvili.yummy',
   );
+
 }
