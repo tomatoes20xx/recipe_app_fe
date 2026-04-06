@@ -235,6 +235,45 @@ class ShoppingListApi {
     return [];
   }
 
+  /// Get the full shopping list for a specific user (shared with you)
+  ///
+  /// [userId] - Owner of the shopping list
+  Future<SharedUserShoppingList> getUserShoppingList(String userId) async {
+    final data = await api.get(
+      "/shopping-list/user/$userId",
+      auth: true,
+    );
+
+    if (data is Map<String, dynamic>) {
+      return SharedUserShoppingList.fromJson(data);
+    } else if (data is Map) {
+      return SharedUserShoppingList.fromJson(Map<String, dynamic>.from(data));
+    }
+
+    throw ApiException(0, "Invalid response format");
+  }
+
+  /// Update an item in a collaborative user shopping list
+  ///
+  /// [userId] - Owner of the shopping list
+  /// [itemId] - ID of the item to update
+  /// [isChecked] - New checked state
+  Future<ShoppingListItem?> updateCollaborativeItem({
+    required String userId,
+    required String itemId,
+    required bool isChecked,
+  }) async {
+    final data = await api.patch(
+      "/shopping-list/user/$userId/item/$itemId",
+      body: {"isChecked": isChecked},
+      auth: true,
+    );
+
+    if (data == null) return null;
+
+    return ShoppingListItem.fromJson(Map<String, dynamic>.from(data as Map));
+  }
+
   /// Update an item in a collaborative recipe shopping list
   ///
   /// [userId] - Owner of the shopping list
