@@ -2130,31 +2130,14 @@ class _IngredientTileState extends State<_IngredientTile> {
     final index = widget.index;
     final onRemove = widget.onRemove;
     final onAddNew = widget.onAddNew;
-    return Container(
+    return ReorderableDragStartListener(
+      index: index,
+      child: Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Icon placeholder
-          ReorderableDragStartListener(
-            index: index,
-            child: Container(
-              width: 52,
-              height: 52,
-              decoration: BoxDecoration(
-                color: const Color(0xFF1A1A1A),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(
-                Icons.restaurant_rounded,
-                color: Colors.white.withValues(alpha: 0.7),
-                size: 24,
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-
           // Name + qty/unit fields
           Expanded(
             child: Column(
@@ -2199,7 +2182,7 @@ class _IngredientTileState extends State<_IngredientTile> {
                     contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 10),
                 Row(
                   children: [
                     Expanded(
@@ -2209,9 +2192,8 @@ class _IngredientTileState extends State<_IngredientTile> {
                             const TextInputType.numberWithOptions(decimal: true),
                         inputFormatters: [_DecimalNumberFormatter()],
                         textInputAction: TextInputAction.next,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                          fontStyle: FontStyle.italic,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w500,
                         ),
                         decoration: InputDecoration(
                           labelText: localizations?.quantity ?? "Qty",
@@ -2229,21 +2211,21 @@ class _IngredientTileState extends State<_IngredientTile> {
                           filled: true,
                           fillColor: theme.colorScheme.surface,
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(6),
+                            borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide.none,
                           ),
                           enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(6),
+                            borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide.none,
                           ),
                           focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(6),
+                            borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide(
                               color: theme.colorScheme.primary,
                               width: 1.5,
                             ),
                           ),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                         ),
                       ),
                     ),
@@ -2253,9 +2235,8 @@ class _IngredientTileState extends State<_IngredientTile> {
                         controller: ingredient.unitController,
                         textInputAction: TextInputAction.done,
                         onFieldSubmitted: (_) => onAddNew(),
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                          fontStyle: FontStyle.italic,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w500,
                         ),
                         decoration: InputDecoration(
                           labelText: localizations?.unit ?? "Unit",
@@ -2275,21 +2256,21 @@ class _IngredientTileState extends State<_IngredientTile> {
                           filled: true,
                           fillColor: theme.colorScheme.surface,
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(6),
+                            borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide.none,
                           ),
                           enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(6),
+                            borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide.none,
                           ),
                           focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(6),
+                            borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide(
                               color: theme.colorScheme.primary,
                               width: 1.5,
                             ),
                           ),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                         ),
                       ),
                     ),
@@ -2300,19 +2281,23 @@ class _IngredientTileState extends State<_IngredientTile> {
           ),
 
           // Delete button
-          GestureDetector(
-            onTap: onRemove,
-            child: Padding(
-              padding: const EdgeInsets.all(8),
-              child: Icon(
-                Icons.delete_outline_rounded,
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
-                size: 20,
+          Transform.translate(
+            offset: const Offset(8, 0),
+            child: GestureDetector(
+              onTap: onRemove,
+              child: Padding(
+                padding: const EdgeInsets.all(8),
+                child: Icon(
+                  Icons.delete_outline_rounded,
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
+                  size: 20,
+                ),
               ),
             ),
           ),
         ],
       ),
+    ),
     );
   }
 }
