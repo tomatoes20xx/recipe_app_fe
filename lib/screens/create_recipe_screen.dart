@@ -2121,8 +2121,6 @@ class _IngredientTile extends StatefulWidget {
 
 class _IngredientTileState extends State<_IngredientTile> {
   @override
-
-  @override
   Widget build(BuildContext context) {
     final ingredient = widget.ingredient;
     final theme = widget.theme;
@@ -2130,14 +2128,27 @@ class _IngredientTileState extends State<_IngredientTile> {
     final index = widget.index;
     final onRemove = widget.onRemove;
     final onAddNew = widget.onAddNew;
-    return ReorderableDragStartListener(
-      index: index,
-      child: Container(
+    return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
+          // Drag handle — only this part initiates the reorder drag
+          Listener(
+            onPointerDown: (_) => FocusScope.of(context).unfocus(),
+            child: ReorderableDragStartListener(
+              index: index,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(0, 0, 8, 0),
+                child: Icon(
+                  Icons.drag_handle_rounded,
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
+                  size: 22,
+                ),
+              ),
+            ),
+          ),
           // Name + qty/unit fields
           Expanded(
             child: Column(
@@ -2297,7 +2308,6 @@ class _IngredientTileState extends State<_IngredientTile> {
           ),
         ],
       ),
-    ),
     );
   }
 }
