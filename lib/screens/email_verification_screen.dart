@@ -139,10 +139,13 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
     final localizations = AppLocalizations.of(context);
     final email = widget.email ?? widget.auth.me?["email"]?.toString() ?? "your email";
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(localizations?.verifyEmail ?? "Verify Email"),
-      ),
+    return PopScope(
+      canPop: false,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(localizations?.verifyEmail ?? "Verify Email"),
+          automaticallyImplyLeading: false,
+        ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -242,6 +245,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
           ],
         ),
       ),
-    );
+    ),
+  );
   }
 }
