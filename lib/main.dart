@@ -72,9 +72,12 @@ void main() async {
   // App ID: ca-app-pub-3299728362959933~7231058371
   MobileAds.instance.initialize();
 
-  // Initialize Google Sign-In with Web Client ID
+  // Initialize Google Sign-In. On iOS the clientId must be set explicitly
+  // (the iOS OAuth client ID from GoogleService-Info.plist), otherwise the
+  // native SDK silently fails to configure and no sign-in sheet appears.
   try {
     await GoogleSignIn.instance.initialize(
+      clientId: Platform.isIOS ? app_config.Config.googleIosClientId : null,
       serverClientId: app_config.Config.googleWebClientId,
     );
   } catch (e) {
