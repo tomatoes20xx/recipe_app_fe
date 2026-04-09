@@ -146,86 +146,95 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
           title: Text(localizations?.verifyEmail ?? "Verify Email"),
           automaticallyImplyLeading: false,
         ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const SizedBox(height: 32),
-            Icon(
-              Icons.email_outlined,
-              size: 64,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            const SizedBox(height: 24),
-            Text(
-              localizations?.verifyEmailTitle ?? "Verify Your Email",
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              localizations?.verifyEmailMessage(email) ?? "We've sent a verification code to $email. Please enter it below to verify your email address.",
-              style: Theme.of(context).textTheme.bodyMedium,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 32),
-            TextField(
-              controller: _tokenController,
-              decoration: InputDecoration(
-                labelText: localizations?.verificationCode ?? "Verification Code",
-                hintText: localizations?.enterVerificationCode ?? "Enter the code from your email",
-                border: const OutlineInputBorder(),
-              ),
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 24,
-                letterSpacing: 4,
-                fontWeight: FontWeight.bold,
-              ),
-              maxLength: 6,
-              keyboardType: TextInputType.number,
-            ),
-            const SizedBox(height: 24),
-            FilledButton(
-              onPressed: _isVerifying ? null : _verifyEmail,
-              style: FilledButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-              ),
-              child: _isVerifying
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : Text(localizations?.verify ?? "Verify"),
-            ),
-            const SizedBox(height: 16),
-            TextButton(
-              onPressed: _isResending ? null : _resendEmail,
-              child: _isResending
-                  ? const SizedBox(
-                      height: 16,
-                      width: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : Text(localizations?.resendVerificationCode ?? "Resend Code"),
-            ),
-            if (_emailSent)
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Text(
-                  localizations?.verificationEmailSent ?? "Verification email sent!",
-                  style: TextStyle(
+      body: Column(
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SizedBox(height: 32),
+                  Icon(
+                    Icons.email_outlined,
+                    size: 64,
                     color: Theme.of(context).colorScheme.primary,
                   ),
-                  textAlign: TextAlign.center,
-                ),
+                  const SizedBox(height: 24),
+                  Text(
+                    localizations?.verifyEmailTitle ?? "Verify Your Email",
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    localizations?.verifyEmailMessage(email) ?? "We've sent a verification code to $email. Please enter it below to verify your email address.",
+                    style: Theme.of(context).textTheme.bodyMedium,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 32),
+                  TextField(
+                    controller: _tokenController,
+                    decoration: InputDecoration(
+                      labelText: localizations?.verificationCode ?? "Verification Code",
+                      hintText: localizations?.enterVerificationCode ?? "Enter the code from your email",
+                      border: const OutlineInputBorder(),
+                    ),
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 24,
+                      letterSpacing: 4,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    maxLength: 6,
+                    keyboardType: TextInputType.number,
+                  ),
+                  const SizedBox(height: 24),
+                  FilledButton(
+                    onPressed: _isVerifying ? null : _verifyEmail,
+                    style: FilledButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                    child: _isVerifying
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : Text(localizations?.verify ?? "Verify"),
+                  ),
+                  const SizedBox(height: 16),
+                  TextButton(
+                    onPressed: _isResending ? null : _resendEmail,
+                    child: _isResending
+                        ? const SizedBox(
+                            height: 16,
+                            width: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : Text(localizations?.resendVerificationCode ?? "Resend Code"),
+                  ),
+                  if (_emailSent)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Text(
+                        localizations?.verificationEmailSent ?? "Verification email sent!",
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  const SizedBox(height: 16),
+                ],
               ),
-            const Spacer(),
-            TextButton(
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+            child: TextButton(
               onPressed: (_isSigningOut || _isVerifying) ? null : _signOut,
               child: _isSigningOut
                   ? const SizedBox(
@@ -241,9 +250,8 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                       ),
                     ),
             ),
-            const SizedBox(height: 8),
-          ],
-        ),
+          ),
+        ],
       ),
     ),
   );
