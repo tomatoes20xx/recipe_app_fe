@@ -82,10 +82,11 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         title: Text(localizations?.forgotPassword ?? "Forgot Password"),
       ),
       body: SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
             children: [
               const SizedBox(height: 32),
               Icon(
