@@ -15,4 +15,8 @@ class Config {
     "GOOGLE_WEB_CLIENT_ID",
     defaultValue: "31640311657-vt82s1udbrrn2t36g3ivhh0jll148q4l.apps.googleusercontent.com",
   );
+
+  /// Google Sign-In iOS Client ID — from GoogleService-Info.plist CLIENT_ID
+  static const String googleIosClientId =
+      '31640311657-m9hij53r5o802ipotb3edkcd7kqqsjt2.apps.googleusercontent.com';
 }
