@@ -109,7 +109,7 @@ class _NativeAdCardWidgetState extends State<NativeAdCardWidget> {
             ),
           ),
           child: Container(
-            height: 200,
+            height: 280,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
               color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
@@ -147,7 +147,7 @@ class _NativeAdCardWidgetState extends State<NativeAdCardWidget> {
           color: Theme.of(context).colorScheme.surface,
         ),
         child: SizedBox(
-          height: 200,
+          height: 280,
           child: Stack(
             children: [
               // Native ad content (template handles the UI)
