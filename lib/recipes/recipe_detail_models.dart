@@ -112,6 +112,93 @@ class RecipeIngredient {
   }
 }
 
+class NutritionIngredient {
+  final String displayName;
+  final String? englishName;
+  final double? grams;
+  final double? calories;
+  final double? protein;
+  final double? fat;
+  final double? carbs;
+  final double? sugar;
+  final String status;
+
+  NutritionIngredient({
+    required this.displayName,
+    this.englishName,
+    this.grams,
+    this.calories,
+    this.protein,
+    this.fat,
+    this.carbs,
+    this.sugar,
+    required this.status,
+  });
+
+  bool get isFound => status == 'ok' &&
+      ((calories ?? 0) != 0 ||
+       (protein ?? 0) != 0 ||
+       (fat ?? 0) != 0 ||
+       (carbs ?? 0) != 0 ||
+       (sugar ?? 0) != 0);
+
+  factory NutritionIngredient.fromJson(Map<String, dynamic> json) {
+    return NutritionIngredient(
+      displayName: json['display_name']?.toString() ?? '',
+      englishName: json['english_name']?.toString(),
+      grams: _asDouble(json['grams']),
+      calories: _asDouble(json['calories']),
+      protein: _asDouble(json['protein']),
+      fat: _asDouble(json['fat']),
+      carbs: _asDouble(json['carbs']),
+      sugar: _asDouble(json['sugar']),
+      status: json['status']?.toString() ?? 'unknown',
+    );
+  }
+}
+
+class RecipeNutrition {
+  final double calories;
+  final double protein;
+  final double fat;
+  final double carbs;
+  final double sugar;
+  final int matched;
+  final int total;
+  final List<NutritionIngredient> ingredients;
+
+  RecipeNutrition({
+    required this.calories,
+    required this.protein,
+    required this.fat,
+    required this.carbs,
+    required this.sugar,
+    required this.matched,
+    required this.total,
+    required this.ingredients,
+  });
+
+  bool get isPartial => matched < total;
+
+  factory RecipeNutrition.fromJson(Map<String, dynamic> json) {
+    final totals = json['total'] as Map? ?? json;
+    final coverage = json['coverage'] as Map?;
+    final ingredientsRaw = (json['ingredients'] as List?) ?? [];
+    return RecipeNutrition(
+      calories: _asDouble(totals['calories']) ?? 0,
+      protein: _asDouble(totals['protein']) ?? 0,
+      fat: _asDouble(totals['fat']) ?? 0,
+      carbs: _asDouble(totals['carbs']) ?? 0,
+      sugar: _asDouble(totals['sugar']) ?? 0,
+      matched: _asInt(coverage?['calculated_ingredients']),
+      total: _asInt(coverage?['total_ingredients']),
+      ingredients: ingredientsRaw
+          .map((e) => NutritionIngredient.fromJson(Map<String, dynamic>.from(e as Map)))
+          .toList(),
+    );
+  }
+}
+
 class RecipeStep {
   final String id;
   final String instruction;
