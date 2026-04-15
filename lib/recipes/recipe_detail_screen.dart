@@ -787,8 +787,12 @@ class _ContentBody extends StatelessWidget {
               isSelectionMode: isSelectionMode,
               onToggle: onToggleIngredient,
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
           ],
+
+          // Nutrition Panel
+          _NutritionPanel(recipeId: recipe.id, apiClient: apiClient),
+          const SizedBox(height: 24),
 
           // Steps Section
           if (recipe.steps.isNotEmpty)
@@ -1696,6 +1700,499 @@ class _AppBarIconButton extends StatelessWidget {
           padding: const EdgeInsets.all(8),
         ),
       ),
+    );
+  }
+}
+
+class _NutritionPanel extends StatefulWidget {
+  const _NutritionPanel({required this.recipeId, required this.apiClient});
+
+  final String recipeId;
+  final ApiClient apiClient;
+
+  @override
+  State<_NutritionPanel> createState() => _NutritionPanelState();
+}
+
+class _NutritionPanelState extends State<_NutritionPanel> {
+  late final Future<RecipeNutrition?> _future;
+
+  @override
+  void initState() {
+    super.initState();
+    _future = RecipeApi(widget.apiClient).getNutrition(widget.recipeId);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<RecipeNutrition?>(
+      future: _future,
+      builder: (context, snapshot) {
+        final localizations = AppLocalizations.of(context);
+        final theme = Theme.of(context);
+        final primary = theme.colorScheme.primary;
+
+        Widget content;
+
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          content = Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Center(
+              child: SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2, color: primary),
+              ),
+            ),
+          );
+        } else if (snapshot.hasError || snapshot.data == null) {
+          content = Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Text(
+              localizations?.nutritionUnavailable ?? "Nutrition data unavailable",
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+              ),
+            ),
+          );
+        } else {
+          final n = snapshot.data!;
+          content = Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 16),
+              // Calories hero row
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    n.calories.round().toString(),
+                    style: theme.textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      color: primary,
+                      height: 1,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 3),
+                    child: Text(
+                      localizations?.kcal ?? "kcal",
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              // Macro row
+              Row(
+                children: [
+                  _MacroChip(
+                    label: localizations?.protein ?? "Protein",
+                    value: "${n.protein.round()}${localizations?.gram ?? 'g'}",
+                    color: Colors.blue.shade600,
+                  ),
+                  const SizedBox(width: 8),
+                  _MacroChip(
+                    label: localizations?.fat ?? "Fat",
+                    value: "${n.fat.round()}${localizations?.gram ?? 'g'}",
+                    color: Colors.orange.shade600,
+                  ),
+                  const SizedBox(width: 8),
+                  _MacroChip(
+                    label: localizations?.carbs ?? "Carbs",
+                    value: "${n.carbs.round()}${localizations?.gram ?? 'g'}",
+                    color: Colors.green.shade600,
+                  ),
+                  const SizedBox(width: 8),
+                  _MacroChip(
+                    label: localizations?.sugar ?? "Sugar",
+                    value: "${n.sugar.round()}${localizations?.gram ?? 'g'}",
+                    color: Colors.teal.shade600,
+                  ),
+                ],
+              ),
+              if (n.isPartial) ...[
+                const SizedBox(height: 10),
+                Text(
+                  localizations?.nutritionPartialNote(n.matched, n.total) ??
+                      "Based on ${n.matched}/${n.total} ingredients",
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.45),
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ],
+            ],
+          );
+        }
+
+        final nutrition = snapshot.data;
+        return Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: nutrition != null
+                ? () => _showNutritionBottomSheet(context, nutrition)
+                : null,
+            borderRadius: BorderRadius.circular(16),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.local_fire_department_rounded, size: 18, color: primary),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          localizations?.nutritionFacts ?? "Nutrition Facts",
+                          style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      if (nutrition != null)
+                        Icon(Icons.chevron_right, size: 18, color: theme.colorScheme.onSurface.withValues(alpha: 0.4)),
+                    ],
+                  ),
+                  content,
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showNutritionBottomSheet(BuildContext context, RecipeNutrition nutrition) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _NutritionBottomSheet(nutrition: nutrition),
+    );
+  }
+}
+
+class _MacroChip extends StatelessWidget {
+  const _MacroChip({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  final String label;
+  final String value;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              value,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: color,
+              ),
+            ),
+            const SizedBox(height: 2),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                label,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 1,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _NutritionBottomSheet extends StatelessWidget {
+  const _NutritionBottomSheet({required this.nutrition});
+
+  final RecipeNutrition nutrition;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final localizations = AppLocalizations.of(context);
+    final primary = theme.colorScheme.primary;
+
+    return DraggableScrollableSheet(
+      initialChildSize: 0.6,
+      minChildSize: 0.4,
+      maxChildSize: 0.92,
+      expand: false,
+      builder: (context, scrollController) {
+        return Container(
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: CustomScrollView(
+            controller: scrollController,
+            slivers: [
+              SliverToBoxAdapter(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Drag handle
+                    Padding(
+                      padding: const EdgeInsets.only(top: 12, bottom: 4),
+                      child: Center(
+                        child: Container(
+                          width: 40,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.onSurface.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                      ),
+                    ),
+                    // Header with totals
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(Icons.local_fire_department_rounded, size: 20, color: primary),
+                              const SizedBox(width: 8),
+                              Text(
+                                localizations?.nutritionFacts ?? 'Nutrition Facts',
+                                style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(
+                                nutrition.calories.round().toString(),
+                                style: theme.textTheme.displaySmall?.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                  color: primary,
+                                  height: 1,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 4),
+                                child: Text(
+                                  localizations?.kcal ?? 'kcal',
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                                  ),
+                                ),
+                              ),
+                              const Spacer(),
+                              if (nutrition.isPartial)
+                                Text(
+                                  localizations?.nutritionPartialNote(nutrition.matched, nutrition.total) ??
+                                      '${nutrition.matched}/${nutrition.total} ingredients',
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: theme.colorScheme.onSurface.withValues(alpha: 0.45),
+                                    fontStyle: FontStyle.italic,
+                                  ),
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              _MacroChip(label: localizations?.protein ?? 'Protein', value: '${nutrition.protein.round()}${localizations?.gram ?? 'g'}', color: Colors.blue.shade600),
+                              const SizedBox(width: 8),
+                              _MacroChip(label: localizations?.fat ?? 'Fat', value: '${nutrition.fat.round()}${localizations?.gram ?? 'g'}', color: Colors.orange.shade600),
+                              const SizedBox(width: 8),
+                              _MacroChip(label: localizations?.carbs ?? 'Carbs', value: '${nutrition.carbs.round()}${localizations?.gram ?? 'g'}', color: Colors.green.shade600),
+                              const SizedBox(width: 8),
+                              _MacroChip(label: localizations?.sugar ?? 'Sugar', value: '${nutrition.sugar.round()}${localizations?.gram ?? 'g'}', color: Colors.teal.shade600),
+                            ],
+                          ),
+                          const SizedBox(height: 20),
+                          Divider(color: theme.colorScheme.outlineVariant),
+                          const SizedBox(height: 4),
+                          Text(
+                            localizations?.perIngredient ?? 'Per ingredient',
+                            style: theme.textTheme.labelMedium?.copyWith(
+                              color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
+                sliver: SliverList.separated(
+                  itemCount: nutrition.ingredients.length,
+                  separatorBuilder: (_, _) => const SizedBox(height: 10),
+                  itemBuilder: (context, index) {
+                    return _NutritionIngredientRow(
+                      ingredient: nutrition.ingredients[index],
+                      localizations: localizations,
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _NutritionIngredientRow extends StatelessWidget {
+  const _NutritionIngredientRow({
+    required this.ingredient,
+    required this.localizations,
+  });
+
+  final NutritionIngredient ingredient;
+  final AppLocalizations? localizations;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final found = ingredient.isFound;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
+      decoration: BoxDecoration(
+        color: found
+            ? theme.colorScheme.surfaceContainerLow
+            : theme.colorScheme.errorContainer.withValues(alpha: 0.25),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  ingredient.displayName,
+                  style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+                ),
+              ),
+              if (ingredient.grams != null)
+                Text(
+                  '${ingredient.grams!.round()}${localizations?.gram ?? 'g'}',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                  ),
+                ),
+              if (ingredient.grams != null && found && ingredient.calories != null)
+                const SizedBox(width: 8),
+              if (found && ingredient.calories != null)
+                Text(
+                  '${ingredient.calories!.round()} ${localizations?.kcal ?? "kcal"}',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+              if (!found) ...[
+                if (ingredient.grams != null) const SizedBox(width: 8),
+                Tooltip(
+                  message: localizations?.nutritionNotFoundTooltip ?? 'We were not able to find the nutrition values for this ingredient in the USDA database',
+                  triggerMode: TooltipTriggerMode.tap,
+                  showDuration: const Duration(seconds: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  margin: const EdgeInsets.symmetric(horizontal: 16),
+                  preferBelow: false,
+                  child: Icon(Icons.help_outline, size: 16, color: theme.colorScheme.onSurface.withValues(alpha: 0.4)),
+                ),
+              ],
+            ],
+          ),
+          if (found) ...[
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 6,
+              runSpacing: 4,
+              children: [
+                _MiniMacro(label: localizations?.protein ?? 'P', value: '${(ingredient.protein ?? 0).round()}${localizations?.gram ?? 'g'}', color: Colors.blue.shade600),
+                _MiniMacro(label: localizations?.fat ?? 'F', value: '${(ingredient.fat ?? 0).round()}${localizations?.gram ?? 'g'}', color: Colors.orange.shade600),
+                _MiniMacro(label: localizations?.carbs ?? 'C', value: '${(ingredient.carbs ?? 0).round()}${localizations?.gram ?? 'g'}', color: Colors.green.shade600),
+                _MiniMacro(label: localizations?.sugar ?? 'S', value: '${(ingredient.sugar ?? 0).round()}${localizations?.gram ?? 'g'}', color: Colors.teal.shade600),
+              ],
+            ),
+          ] else ...[
+            const SizedBox(height: 4),
+            Text(
+              localizations?.nutritionNotFound ?? 'Data not available',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.45),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _MiniMacro extends StatelessWidget {
+  const _MiniMacro({required this.label, required this.value, required this.color});
+
+  final String label;
+  final String value;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          '$label ',
+          style: theme.textTheme.labelSmall?.copyWith(
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.45),
+          ),
+        ),
+        Text(
+          value,
+          style: theme.textTheme.labelSmall?.copyWith(
+            fontWeight: FontWeight.w700,
+            color: color,
+          ),
+        ),
+      ],
     );
   }
 }

@@ -12,6 +12,12 @@ class RecipeApi {
   RecipeApi(this.api);
   final ApiClient api;
 
+  Future<RecipeNutrition?> getNutrition(String recipeId) async {
+    final data = await api.get("/recipes/$recipeId/nutrition", auth: true);
+    if (data == null) return null;
+    return RecipeNutrition.fromJson(Map<String, dynamic>.from(data as Map));
+  }
+
   Future<RecipeDetail?> getRecipeDetail(String recipeId) async {
     final data = await api.get("/recipes/$recipeId", auth: true);
     if (data == null) return null;

@@ -845,6 +845,24 @@ class AppLocalizations {
   String get continueDraft => _localizedValues[locale.languageCode]?["continueDraft"] ?? "Continue Draft";
   String get startFresh => _localizedValues[locale.languageCode]?["startFresh"] ?? "Start Fresh";
 
+  // Nutrition
+  String get nutritionFacts => _localizedValues[locale.languageCode]?["nutritionFacts"] ?? "Nutrition Facts";
+  String get calories => _localizedValues[locale.languageCode]?["calories"] ?? "Calories";
+  String get protein => _localizedValues[locale.languageCode]?["protein"] ?? "Protein";
+  String get fat => _localizedValues[locale.languageCode]?["fat"] ?? "Fat";
+  String get carbs => _localizedValues[locale.languageCode]?["carbs"] ?? "Carbs";
+  String get sugar => _localizedValues[locale.languageCode]?["sugar"] ?? "Sugar";
+  String get kcal => _localizedValues[locale.languageCode]?["kcal"] ?? "kcal";
+  String get gram => _localizedValues[locale.languageCode]?["gram"] ?? "g";
+  String nutritionPartialNote(int matched, int total) =>
+      (_localizedValues[locale.languageCode]?["nutritionPartialNote"] ?? "Based on {matched}/{total} ingredients")
+          .replaceAll("{matched}", matched.toString())
+          .replaceAll("{total}", total.toString());
+  String get nutritionUnavailable => _localizedValues[locale.languageCode]?["nutritionUnavailable"] ?? "Nutrition data unavailable";
+  String get nutritionNotFound => _localizedValues[locale.languageCode]?["nutritionNotFound"] ?? "Data not available";
+  String get nutritionNotFoundTooltip => _localizedValues[locale.languageCode]?["nutritionNotFoundTooltip"] ?? "We were not able to find the nutrition values for this ingredient in the USDA database";
+  String get perIngredient => _localizedValues[locale.languageCode]?["perIngredient"] ?? "Per ingredient";
+
   // Helper method to get full month names by index (1-12)
   String getMonthName(int month) {
     final months = [
@@ -1607,6 +1625,20 @@ class AppLocalizations {
       "draftFoundMessage": "You have an unsaved recipe draft. Would you like to continue editing it?",
       "continueDraft": "Continue Draft",
       "startFresh": "Start Fresh",
+      // Nutrition
+      "nutritionFacts": "Nutrition Facts",
+      "calories": "Calories",
+      "protein": "Protein",
+      "fat": "Fat",
+      "carbs": "Carbs",
+      "sugar": "Sugar",
+      "kcal": "kcal",
+      "gram": "g",
+      "nutritionPartialNote": "Based on {matched}/{total} ingredients",
+      "nutritionUnavailable": "Nutrition data unavailable",
+      "nutritionNotFound": "Data not available",
+      "nutritionNotFoundTooltip": "We were not able to find the nutrition values for this ingredient in the USDA database",
+      "perIngredient": "Per ingredient",
     },
     "ka": {
       "appTitle": "Yummy",
@@ -2352,6 +2384,20 @@ class AppLocalizations {
       "draftFoundMessage": "თქვენ გაქვთ შენახული რეცეპტი, რომლის ატვირთვაც არ დაგისრულებიათ. გსურთ გაგრძელება?",
       "continueDraft": "გაგრძელება",
       "startFresh": "თავიდან დაწყება",
+      // Nutrition
+      "nutritionFacts": "კვებითი ღირებულება",
+      "calories": "კალორია",
+      "protein": "ცილა",
+      "fat": "ცხიმი",
+      "carbs": "ნახშირწყალი",
+      "sugar": "შაქარი",
+      "kcal": "კკალ",
+      "gram": "გ",
+      "nutritionPartialNote": "{matched}/{total} ინგრედიენტის მიხედვით",
+      "nutritionUnavailable": "კვებითი მონაცემები მიუწვდომელია",
+      "nutritionNotFound": "მონაცემები მიუწვდომელია",
+      "nutritionNotFoundTooltip": "ამ ინგრედიენტის კვებითი მაჩვენებლები USDA-ს მონაცემთა ბაზაში ვერ მოიძებნა",
+      "perIngredient": "ინგრედიენტების მიხედვით",
     },
   };
 }
