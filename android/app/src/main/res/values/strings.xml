@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Yummy</string>
+    <string name="facebook_app_id">1634905891117402</string>
+    <string name="facebook_client_token">a23bd1c3c5842e1babd47d72a36b4e19</string>
 </resources>
