@@ -8,6 +8,7 @@ import "package:google_fonts/google_fonts.dart";
 import "package:google_mobile_ads/google_mobile_ads.dart";
 import "package:google_sign_in/google_sign_in.dart";
 import "package:sqflite_common_ffi/sqflite_ffi.dart";
+import "package:facebook_app_events/facebook_app_events.dart";
 import "package:firebase_core/firebase_core.dart";
 import "package:firebase_crashlytics/firebase_crashlytics.dart";
 import "package:firebase_messaging/firebase_messaging.dart";
@@ -67,6 +68,9 @@ void main() async {
     // Firebase not configured - app will run without Firebase features
     // Run "flutterfire configure" to set up Firebase
   }
+
+  // Log app activation for Facebook ads attribution (fb_mobile_activate_app)
+  FacebookAppEvents().logEvent(name: 'fb_mobile_activate_app');
 
   // Initialize Google Mobile Ads SDK
   // App ID: ca-app-pub-3299728362959933~7231058371

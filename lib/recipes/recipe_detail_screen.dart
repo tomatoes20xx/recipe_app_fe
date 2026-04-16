@@ -1,5 +1,6 @@
 import "dart:ui";
 
+import "package:facebook_app_events/facebook_app_events.dart";
 import "package:flutter/material.dart";
 
 import "../api/api_client.dart";
@@ -58,6 +59,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
   final Set<String> _checkedIngredients = {};
   final Set<String> _selectedForShopping = {};
   bool _isSelectionMode = false;
+  bool _viewContentLogged = false;
 
   @override
   void initState() {
@@ -75,6 +77,14 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
   }
 
   void _onChanged() {
+    if (!_viewContentLogged && c.recipe != null) {
+      _viewContentLogged = true;
+      final recipe = c.recipe!;
+      FacebookAppEvents().logViewContent(
+        id: recipe.id,
+        type: recipe.cuisine ?? 'recipe',
+      );
+    }
     if (mounted) {
       setState(() {
         _localLikes = null;

@@ -1,3 +1,4 @@
+import "package:facebook_app_events/facebook_app_events.dart";
 import "package:flutter/foundation.dart";
 
 import "../api/api_client.dart";
@@ -136,6 +137,7 @@ class AuthController extends ChangeNotifier {
       token = t;
       await tokenStorage.saveToken(t);
       me = await authApi.me();
+      FacebookAppEvents().logCompletedRegistration(registrationMethod: 'email');
     } finally {
       isLoading = false;
       notifyListeners();
