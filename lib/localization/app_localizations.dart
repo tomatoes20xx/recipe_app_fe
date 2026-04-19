@@ -242,6 +242,13 @@ class AppLocalizations {
   // Collections
   String get collections => _localizedValues[locale.languageCode]?["collections"] ?? "Collections";
   String get allSaved => _localizedValues[locale.languageCode]?["allSaved"] ?? "All";
+  String nSaved(int count) => (_localizedValues[locale.languageCode]?["nSaved"] ?? "{count} saved").replaceAll("{count}", count.toString());
+  String get searchSavedRecipes => _localizedValues[locale.languageCode]?["searchSavedRecipes"] ?? "Search saved recipes";
+  String get searchCollections => _localizedValues[locale.languageCode]?["searchCollections"] ?? "Search collections";
+  String get noMatches => _localizedValues[locale.languageCode]?["noMatches"] ?? "No matches";
+  String nothingMatches(String query) => (_localizedValues[locale.languageCode]?["nothingMatches"] ?? 'Nothing matches "{query}"').replaceAll("{query}", query);
+  String get sortMostLiked => _localizedValues[locale.languageCode]?["sortMostLiked"] ?? "Most liked";
+  String get sortAZ => _localizedValues[locale.languageCode]?["sortAZ"] ?? "A–Z";
   String get createCollection => _localizedValues[locale.languageCode]?["createCollection"] ?? "Create Collection";
   String get collectionName => _localizedValues[locale.languageCode]?["collectionName"] ?? "Collection name";
   String get enterCollectionName => _localizedValues[locale.languageCode]?["enterCollectionName"] ?? "Enter collection name";
@@ -1058,6 +1065,13 @@ class AppLocalizations {
       "minuteAbbreviation": "min",
       "collections": "Collections",
       "allSaved": "All",
+      "nSaved": "{count} saved",
+      "searchSavedRecipes": "Search saved recipes",
+      "searchCollections": "Search collections",
+      "noMatches": "No matches",
+      "nothingMatches": "Nothing matches \"{query}\"",
+      "sortMostLiked": "Most liked",
+      "sortAZ": "A–Z",
       "createCollection": "Create Collection",
       "collectionName": "Collection name",
       "enterCollectionName": "Enter collection name",
@@ -1816,6 +1830,13 @@ class AppLocalizations {
       "minuteAbbreviation": "წთ",
       "collections": "კოლექციები",
       "allSaved": "ყველა",
+      "nSaved": "{count} შენახული",
+      "searchSavedRecipes": "შენახული რეცეპტების ძებნა",
+      "searchCollections": "კოლექციების ძებნა",
+      "noMatches": "ვერ მოიძებნა",
+      "nothingMatches": "\"{query}\" - ვერ მოიძებნა",
+      "sortMostLiked": "ყველაზე მოწონებული",
+      "sortAZ": "ა–ჰ",
       "createCollection": "კოლექციის შექმნა",
       "collectionName": "კოლექციის სახელი",
       "enterCollectionName": "შეიყვანეთ კოლექციის სახელი",

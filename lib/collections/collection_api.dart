@@ -10,10 +10,14 @@ class CollectionApi {
   Future<CollectionsResponse> getCollections({
     int limit = 20,
     String? cursor,
+    String? q,
+    String sort = 'newest',
   }) async {
     final query = <String, String>{
       "limit": limit.toString(),
       if (cursor != null) "cursor": cursor,
+      if (q != null && q.isNotEmpty) "q": q,
+      if (sort != 'newest') "sort": sort,
     };
     final data = await api.get("/collections", query: query, auth: true);
     return CollectionsResponse.fromJson(

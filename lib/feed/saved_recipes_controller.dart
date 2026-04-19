@@ -7,9 +7,24 @@ class SavedRecipesController extends PaginatedListController<FeedItem> {
 
   final UserApi userApi;
 
+  String? searchQuery;
+  String sort = 'newest';
+
+  /// Updates search/sort params and reloads from page 1.
+  Future<void> setParams({String? query, String? newSort}) async {
+    searchQuery = (query?.isEmpty ?? true) ? null : query;
+    if (newSort != null) sort = newSort;
+    await doLoadInitial();
+  }
+
   @override
   Future<PaginatedResponse<FeedItem>> fetchPage(String? cursor) async {
-    final res = await userApi.getBookmarkedRecipes(limit: limit, cursor: cursor);
+    final res = await userApi.getBookmarkedRecipes(
+      limit: limit,
+      cursor: cursor,
+      q: searchQuery,
+      sort: sort,
+    );
     return PaginatedResponse(items: res.items, nextCursor: res.nextCursor);
   }
 
