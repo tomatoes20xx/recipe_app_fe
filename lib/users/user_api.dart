@@ -107,10 +107,14 @@ class UserApi {
   Future<UserRecipesResponse> getBookmarkedRecipes({
     int limit = 20,
     String? cursor,
+    String? q,
+    String sort = 'newest',
   }) async {
     final queryParams = <String, String>{
       "limit": limit.toString(),
       if (cursor != null) "cursor": cursor,
+      if (q != null && q.isNotEmpty) "q": q,
+      if (sort != 'newest') "sort": sort,
     };
 
     final data = await api.get("/users/me/bookmarks", query: queryParams, auth: true);

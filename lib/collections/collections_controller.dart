@@ -1,7 +1,7 @@
-import "package:flutter/foundation.dart";
+import 'package:flutter/foundation.dart';
 
-import "collection_api.dart";
-import "collection_models.dart";
+import 'collection_api.dart';
+import 'collection_models.dart';
 
 class CollectionsController extends ChangeNotifier {
   CollectionsController({required this.collectionApi});
@@ -12,6 +12,16 @@ class CollectionsController extends ChangeNotifier {
   bool isLoading = false;
   String? error;
 
+  String? searchQuery;
+  String sort = 'newest';
+
+  /// Updates search/sort params and reloads.
+  Future<void> setParams({String? query, String? newSort}) async {
+    searchQuery = (query?.isEmpty ?? true) ? null : query;
+    if (newSort != null) sort = newSort;
+    await loadCollections();
+  }
+
   Future<void> loadCollections() async {
     if (isLoading) return;
 
@@ -20,7 +30,10 @@ class CollectionsController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final res = await collectionApi.getCollections();
+      final res = await collectionApi.getCollections(
+        q: searchQuery,
+        sort: sort,
+      );
       items = res.items;
     } catch (e) {
       error = e.toString();
