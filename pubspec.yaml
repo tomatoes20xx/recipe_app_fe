@@ -74,6 +74,8 @@ dependencies:
   in_app_update: ^4.2.1
   # Facebook App Events for ads attribution and install tracking
   facebook_app_events: ^0.27.1
+  # App Tracking Transparency for iOS 14+ IDFA consent (required for AdMob on real devices)
+  app_tracking_transparency: ^2.0.6
 
 dev_dependencies:
   flutter_test:
