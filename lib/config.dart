@@ -7,7 +7,9 @@ class Config {
   ///   flutter run --dart-define=API_BASE_URL=http://192.168.0.103:3000   (local LAN device)
   static const String apiBaseUrl = String.fromEnvironment(
     "API_BASE_URL",
-    defaultValue: "https://recipeappbe-testing.up.railway.app",
+    defaultValue: bool.fromEnvironment('dart.vm.product')
+        ? "https://recipeappbe-production-4692.up.railway.app"
+        : "https://recipeappbe-testing.up.railway.app",
   );
 
   /// Google Sign-In Web Client ID — set at build time via --dart-define=GOOGLE_WEB_CLIENT_ID=...
