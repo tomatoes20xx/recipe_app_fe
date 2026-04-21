@@ -121,6 +121,16 @@ class UserApi {
     return UserRecipesResponse.fromJson(Map<String, dynamic>.from(data as Map));
   }
 
+  /// Block a user
+  Future<void> blockUser(String username) async {
+    await api.post("/users/$username/block", auth: true);
+  }
+
+  /// Unblock a user
+  Future<void> unblockUser(String username) async {
+    await api.delete("/users/$username/block", auth: true);
+  }
+
   /// Update user profile (display_name, bio)
   Future<Map<String, dynamic>> updateProfile({
     String? displayName,

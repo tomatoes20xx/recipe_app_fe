@@ -72,15 +72,17 @@ class TermsAndPrivacyScreen extends StatelessWidget {
           localizations?.termsProhibitedContent ?? "You may not use Yummy to:\n\n• Violate any laws or regulations\n• Infringe on intellectual property rights\n• Post harmful, offensive, or illegal content\n• Spam or harass other users",
         ),
         const SizedBox(height: 16),
+        _buildObjectionableSection(context),
+        const SizedBox(height: 16),
         _buildSection(
           context,
-          localizations?.termsTerminationTitle ?? "6. Termination",
+          localizations?.termsTerminationTitle ?? "7. Termination",
           localizations?.termsTerminationContent ?? "We reserve the right to terminate or suspend your account at any time for violations of these terms.",
         ),
         const SizedBox(height: 16),
         _buildSection(
           context,
-          localizations?.termsChangesTitle ?? "7. Changes to Terms",
+          localizations?.termsChangesTitle ?? "8. Changes to Terms",
           localizations?.termsChangesContent ?? "We reserve the right to modify these terms at any time. Continued use of the service after changes constitutes acceptance of the new terms.",
         ),
       ],
@@ -146,6 +148,49 @@ class TermsAndPrivacyScreen extends StatelessWidget {
           localizations?.privacyContactContent ?? "If you have questions about this privacy policy, please contact us through the app settings or support channels.",
         ),
       ],
+    );
+  }
+
+  Widget _buildObjectionableSection(BuildContext context) {
+    final localizations = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.error.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: theme.colorScheme.error.withValues(alpha: 0.2),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.gpp_bad_outlined, size: 18, color: theme.colorScheme.error),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  localizations?.termsObjectionableTitle ?? "6. Objectionable Content & Abusive Users",
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: theme.colorScheme.error,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            localizations?.termsObjectionableContent ?? "Yummy has a zero-tolerance policy for objectionable content and abusive behavior.",
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
+              height: 1.5,
+            ),
+          ),
+        ],
+      ),
     );
   }
 

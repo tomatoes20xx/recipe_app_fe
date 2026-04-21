@@ -9,6 +9,7 @@ import "../auth/auth_controller.dart";
 import "../localization/app_localizations.dart";
 import "../utils/error_utils.dart";
 import "../utils/image_utils.dart";
+import "terms_and_privacy_screen.dart";
 
 class UsernameSelectionScreen extends StatefulWidget {
   const UsernameSelectionScreen({
@@ -40,6 +41,7 @@ class _UsernameSelectionScreenState extends State<UsernameSelectionScreen> {
   final _imagePicker = ImagePicker();
 
   bool _isLoading = false;
+  bool _termsAccepted = false;
   File? _selectedAvatarFile;
 
   @override
@@ -107,7 +109,7 @@ class _UsernameSelectionScreenState extends State<UsernameSelectionScreen> {
   }
 
   Future<void> _completeSignup() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate() || !_termsAccepted) return;
 
     setState(() => _isLoading = true);
 
@@ -465,12 +467,69 @@ class _UsernameSelectionScreenState extends State<UsernameSelectionScreen> {
               ),
               const SizedBox(height: 24),
 
+              // Terms acceptance
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: Checkbox(
+                      value: _termsAccepted,
+                      onChanged: _isLoading
+                          ? null
+                          : (value) => setState(() => _termsAccepted = value ?? false),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: _isLoading
+                          ? null
+                          : () => setState(() => _termsAccepted = !_termsAccepted),
+                      child: Text.rich(
+                        TextSpan(
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                          ),
+                          children: [
+                            TextSpan(
+                              text: localizations?.acceptTermsText ?? "I accept the ",
+                            ),
+                            WidgetSpan(
+                              alignment: PlaceholderAlignment.baseline,
+                              baseline: TextBaseline.alphabetic,
+                              child: GestureDetector(
+                                onTap: () => Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => const TermsAndPrivacyScreen(),
+                                  ),
+                                ),
+                                child: Text(
+                                  localizations?.termsAndPrivacy ?? "Terms & Privacy",
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: theme.colorScheme.primary,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+
               // Continue button
               SizedBox(
                 width: double.infinity,
                 height: 52,
                 child: FilledButton(
-                  onPressed: _isLoading ? null : _completeSignup,
+                  onPressed: _isLoading || !_termsAccepted ? null : _completeSignup,
                   style: FilledButton.styleFrom(
                     backgroundColor: theme.colorScheme.primary,
                     shape: RoundedRectangleBorder(

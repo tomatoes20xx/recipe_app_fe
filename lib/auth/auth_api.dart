@@ -216,4 +216,9 @@ class AuthApi {
   Future<void> deleteAvatar() async {
     await api.delete("/users/me/avatar", auth: true);
   }
+
+  Future<void> deleteAccount() async {
+    await api.delete("/auth/me", auth: true);
+    await api.tokenStorage.deleteToken();
+  }
 }

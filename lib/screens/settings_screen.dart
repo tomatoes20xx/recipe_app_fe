@@ -1,4 +1,5 @@
 import "package:flutter/material.dart";
+import "../auth/auth_api.dart";
 import "../auth/auth_controller.dart";
 import "../feed/feed_view_controller.dart";
 import "../localization/app_localizations.dart";
@@ -304,6 +305,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 // Logout Button (if logged in)
                 if (isLoggedIn) ...[
                   _buildLogoutButton(context),
+                  const SizedBox(height: 12),
+                  _buildDeleteAccountButton(context),
                   const SizedBox(height: 28),
                 ],
 
@@ -568,6 +571,172 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
       ),
     );
+  }
+
+  Widget _buildDeleteAccountButton(BuildContext context) {
+    final theme = Theme.of(context);
+    final localizations = AppLocalizations.of(context);
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => _showDeleteAccountDialog(context),
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.red.shade300.withValues(alpha: 0.5)),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.delete_forever_outlined,
+                size: 20,
+                color: Colors.red.shade400,
+              ),
+              const SizedBox(width: 10),
+              Text(
+                localizations?.deleteAccount ?? "Delete Account",
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: Colors.red.shade400,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showDeleteAccountDialog(BuildContext context) {
+    final localizations = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          localizations?.deleteAccount ?? "Delete Account",
+          style: const TextStyle(fontWeight: FontWeight.w600),
+        ),
+        content: Text(
+          localizations?.deleteAccountWarning ??
+              "This will permanently delete your account and all your data. This action cannot be undone.",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(
+              localizations?.cancel ?? "Cancel",
+              style: TextStyle(color: theme.colorScheme.onSurface.withValues(alpha: 0.7)),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _showDeleteAccountConfirmDialog(context);
+            },
+            child: Text(
+              localizations?.continueButton ?? "Continue",
+              style: TextStyle(color: Colors.red.shade500, fontWeight: FontWeight.w600),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDeleteAccountConfirmDialog(BuildContext context) {
+    final localizations = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final confirmController = TextEditingController();
+    bool isConfirmed = false;
+
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Text(
+            localizations?.deleteAccountConfirmTitle ?? "Are you sure?",
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(localizations?.deleteAccountTypeDelete ?? 'Type "DELETE" to confirm'),
+              const SizedBox(height: 12),
+              TextField(
+                controller: confirmController,
+                autofocus: true,
+                decoration: InputDecoration(
+                  hintText: "DELETE",
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                onChanged: (value) {
+                  setDialogState(() {
+                    isConfirmed = value == "DELETE";
+                  });
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text(
+                localizations?.cancel ?? "Cancel",
+                style: TextStyle(color: theme.colorScheme.onSurface.withValues(alpha: 0.7)),
+              ),
+            ),
+            TextButton(
+              onPressed: isConfirmed
+                  ? () async {
+                      Navigator.of(dialogContext).pop();
+                      await _deleteAccount();
+                    }
+                  : null,
+              child: Text(
+                localizations?.deleteAccount ?? "Delete Account",
+                style: TextStyle(
+                  color: isConfirmed ? Colors.red.shade600 : theme.colorScheme.onSurface.withValues(alpha: 0.3),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _deleteAccount() async {
+    if (widget.apiClient == null || widget.auth == null) return;
+
+    try {
+      final authApi = AuthApi(widget.apiClient!);
+      await authApi.deleteAccount();
+
+      if (mounted) {
+        widget.auth!.logout();
+        Navigator.of(context).popUntil((route) => route.isFirst);
+        final localizations = AppLocalizations.of(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(localizations?.accountDeletedSuccessfully ?? "Account deleted successfully"),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ErrorUtils.showError(context, e);
+      }
+    }
   }
 
   void _showLogoutDialog(BuildContext context) {

@@ -102,6 +102,7 @@ class UserProfile {
   final int recipesCount;
   final int totalLikesCount;
   final bool viewerIsFollowing;
+  final bool viewerIsBlocked;
   final bool isViewer; // true if this is the current user's profile
   final UserPrivacySettings? privacy; // Only visible to the user themselves
 
@@ -116,6 +117,7 @@ class UserProfile {
     required this.recipesCount,
     required this.totalLikesCount,
     required this.viewerIsFollowing,
+    required this.viewerIsBlocked,
     required this.isViewer,
     this.privacy,
   });
@@ -136,6 +138,7 @@ class UserProfile {
       recipesCount: (counts["recipes"] ?? 0) as int,
       totalLikesCount: (counts["total_likes"] ?? 0) as int,
       viewerIsFollowing: viewer?["is_following"] as bool? ?? false,
+      viewerIsBlocked: viewer?["is_blocked"] as bool? ?? false,
       isViewer: viewer?["is_me"] as bool? ?? false,
       privacy: privacyRaw != null ? UserPrivacySettings.fromJson(privacyRaw) : null,
     );
@@ -152,6 +155,7 @@ class UserProfile {
     int? recipesCount,
     int? totalLikesCount,
     bool? viewerIsFollowing,
+    bool? viewerIsBlocked,
     bool? isViewer,
     UserPrivacySettings? privacy,
   }) {
@@ -166,6 +170,7 @@ class UserProfile {
       recipesCount: recipesCount ?? this.recipesCount,
       totalLikesCount: totalLikesCount ?? this.totalLikesCount,
       viewerIsFollowing: viewerIsFollowing ?? this.viewerIsFollowing,
+      viewerIsBlocked: viewerIsBlocked ?? this.viewerIsBlocked,
       isViewer: isViewer ?? this.isViewer,
       privacy: privacy ?? this.privacy,
     );
