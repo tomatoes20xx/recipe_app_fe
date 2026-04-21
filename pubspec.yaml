@@ -55,7 +55,7 @@ dependencies:
   # For app version info
   package_info_plus: ^9.0.1
   # For Google AdMob
-  google_mobile_ads: ^7.0.0
+  google_mobile_ads: ^8.0.0
   # For launching URLs (email, web links)
   url_launcher: ^6.3.1
   # For Google Sign-In OAuth
@@ -73,7 +73,7 @@ dependencies:
   # Android in-app update via Google Play
   in_app_update: ^4.2.1
   # Facebook App Events for ads attribution and install tracking
-  facebook_app_events: ^0.16.0
+  facebook_app_events: ^0.27.1
 
 dev_dependencies:
   flutter_test:
