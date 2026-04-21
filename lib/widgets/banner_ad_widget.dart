@@ -1,3 +1,5 @@
+import "dart:developer";
+
 import "package:flutter/material.dart";
 import "package:google_mobile_ads/google_mobile_ads.dart";
 
@@ -46,7 +48,7 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
           });
         },
         onAdFailedToLoad: (ad, error) {
-          // Dispose the ad if it fails to load
+          log('BannerAd failed to load: code=${error.code} message=${error.message}', name: 'AdMob');
           ad.dispose();
         },
         onAdOpened: (_) {

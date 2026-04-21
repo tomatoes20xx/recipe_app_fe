@@ -12,6 +12,7 @@ import "package:facebook_app_events/facebook_app_events.dart";
 import "package:firebase_core/firebase_core.dart";
 import "package:firebase_crashlytics/firebase_crashlytics.dart";
 import "package:firebase_messaging/firebase_messaging.dart";
+import "package:app_tracking_transparency/app_tracking_transparency.dart";
 import "firebase_options.dart";
 import "services/notification_service.dart";
 
@@ -71,6 +72,13 @@ void main() async {
 
   // Log app activation for Facebook ads attribution (fb_mobile_activate_app)
   FacebookAppEvents().logEvent(name: 'fb_mobile_activate_app');
+
+  // Request App Tracking Transparency on iOS 14+ before initializing AdMob.
+  // The simulator auto-grants this, but real devices default to "not determined",
+  // which causes AdMob to return zero fill without an explicit authorization.
+  if (Platform.isIOS) {
+    await AppTrackingTransparency.requestTrackingAuthorization();
+  }
 
   // Initialize Google Mobile Ads SDK
   // App ID: ca-app-pub-3299728362959933~7231058371
