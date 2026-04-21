@@ -353,6 +353,74 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
 
+  Future<void> _handleBlockUser() async {
+    final profile = _userProfile;
+    if (profile == null) return;
+
+    final isCurrentlyBlocked = profile.viewerIsBlocked;
+
+    if (!isCurrentlyBlocked) {
+      final localizations = AppLocalizations.of(context);
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Text(
+            localizations?.blockUser ?? "Block User",
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
+          content: Text(
+            localizations?.blockUserConfirm(profile.username) ??
+                "Are you sure you want to block @${profile.username}?",
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(localizations?.cancel ?? "Cancel"),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text(
+                localizations?.blockUser ?? "Block",
+                style: TextStyle(color: Theme.of(context).colorScheme.error, fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true) return;
+    }
+
+    setState(() {
+      _userProfile = _userProfile!.copyWith(viewerIsBlocked: !isCurrentlyBlocked);
+    });
+
+    try {
+      final userApi = UserApi(widget.apiClient);
+      if (!isCurrentlyBlocked) {
+        await userApi.blockUser(profile.username);
+      } else {
+        await userApi.unblockUser(profile.username);
+      }
+      if (mounted) {
+        final localizations = AppLocalizations.of(context);
+        ErrorUtils.showSuccess(
+          context,
+          !isCurrentlyBlocked
+              ? (localizations?.userBlocked ?? "User blocked")
+              : (localizations?.userUnblocked ?? "User unblocked"),
+        );
+      }
+    } catch (e) {
+      setState(() {
+        _userProfile = _userProfile!.copyWith(viewerIsBlocked: isCurrentlyBlocked);
+      });
+      if (mounted) {
+        ErrorUtils.showError(context, e);
+      }
+    }
+  }
+
   Future<void> _handleReportUser() async {
     final profile = _userProfile;
     if (profile == null) return;
@@ -448,11 +516,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     PopupMenuButton<String>(
                       icon: const Icon(Icons.more_vert),
                       onSelected: (value) {
+                        if (value == "block") _handleBlockUser();
                         if (value == "report") _handleReportUser();
                       },
                       itemBuilder: (context) {
                         final localizations = AppLocalizations.of(context);
+                        final isBlocked = _userProfile!.viewerIsBlocked;
                         return [
+                          PopupMenuItem(
+                            value: "block",
+                            child: Row(
+                              children: [
+                                Icon(
+                                  isBlocked ? Icons.person_add_outlined : Icons.block_outlined,
+                                  size: 20,
+                                  color: theme.colorScheme.error,
+                                ),
+                                const SizedBox(width: 12),
+                                Flexible(
+                                  child: Text(
+                                    isBlocked
+                                        ? (localizations?.unblockUser ?? "Unblock User")
+                                        : (localizations?.blockUser ?? "Block User"),
+                                    style: TextStyle(color: theme.colorScheme.error),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                           PopupMenuItem(
                             value: "report",
                             child: Row(

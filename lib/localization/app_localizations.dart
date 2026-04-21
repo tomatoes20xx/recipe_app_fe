@@ -464,9 +464,11 @@ class AppLocalizations {
   String get termsContentContent => _localizedValues[locale.languageCode]?["termsContentContent"] ?? "You retain ownership of content you post on Yummy. By posting content, you grant us a license to use, modify, and display your content on the platform.";
   String get termsProhibitedTitle => _localizedValues[locale.languageCode]?["termsProhibitedTitle"] ?? "5. Prohibited Uses";
   String get termsProhibitedContent => _localizedValues[locale.languageCode]?["termsProhibitedContent"] ?? "You may not use Yummy to:\n\n• Violate any laws or regulations\n• Infringe on intellectual property rights\n• Post harmful, offensive, or illegal content\n• Spam or harass other users";
-  String get termsTerminationTitle => _localizedValues[locale.languageCode]?["termsTerminationTitle"] ?? "6. Termination";
+  String get termsObjectionableTitle => _localizedValues[locale.languageCode]?["termsObjectionableTitle"] ?? "6. Objectionable Content & Abusive Users";
+  String get termsObjectionableContent => _localizedValues[locale.languageCode]?["termsObjectionableContent"] ?? "Yummy has a zero-tolerance policy for objectionable content and abusive behavior.\n\nObjectionable content includes but is not limited to:\n• Content that is offensive, hateful, or discriminatory\n• Harassment, bullying, or threats directed at any user\n• Sexually explicit or violent material\n• Content that exploits or endangers minors\n• Misinformation or content designed to deceive\n\nAbusive behavior includes:\n• Harassing, threatening, or intimidating other users\n• Repeated unwanted contact after being asked to stop\n• Impersonating other users or public figures\n• Coordinated attacks on individuals or groups\n\nUsers who post objectionable content or engage in abusive behavior will have their content removed and their account suspended or permanently banned. We act on all credible reports promptly.";
+  String get termsTerminationTitle => _localizedValues[locale.languageCode]?["termsTerminationTitle"] ?? "7. Termination";
   String get termsTerminationContent => _localizedValues[locale.languageCode]?["termsTerminationContent"] ?? "We reserve the right to terminate or suspend your account at any time for violations of these terms.";
-  String get termsChangesTitle => _localizedValues[locale.languageCode]?["termsChangesTitle"] ?? "7. Changes to Terms";
+  String get termsChangesTitle => _localizedValues[locale.languageCode]?["termsChangesTitle"] ?? "8. Changes to Terms";
   String get termsChangesContent => _localizedValues[locale.languageCode]?["termsChangesContent"] ?? "We reserve the right to modify these terms at any time. Continued use of the service after changes constitutes acceptance of the new terms.";
   
   // Privacy Policy sections
@@ -788,6 +790,20 @@ class AppLocalizations {
   String showMoreReplies(int count) => count == 1
       ? (_localizedValues[locale.languageCode]?["showMoreRepliesSingular"]?.replaceAll("{count}", count.toString()) ?? "Show $count more reply")
       : (_localizedValues[locale.languageCode]?["showMoreRepliesPlural"]?.replaceAll("{count}", count.toString()) ?? "Show $count more replies");
+
+  // Delete account
+  String get deleteAccount => _localizedValues[locale.languageCode]?["deleteAccount"] ?? "Delete Account";
+  String get deleteAccountWarning => _localizedValues[locale.languageCode]?["deleteAccountWarning"] ?? "This will permanently delete your account and all your data. This action cannot be undone.";
+  String get deleteAccountConfirmTitle => _localizedValues[locale.languageCode]?["deleteAccountConfirmTitle"] ?? "Are you sure?";
+  String get deleteAccountTypeDelete => _localizedValues[locale.languageCode]?["deleteAccountTypeDelete"] ?? 'Type "DELETE" to confirm';
+  String get accountDeletedSuccessfully => _localizedValues[locale.languageCode]?["accountDeletedSuccessfully"] ?? "Account deleted successfully";
+
+  // Block / unblock
+  String get blockUser => _localizedValues[locale.languageCode]?["blockUser"] ?? "Block User";
+  String get unblockUser => _localizedValues[locale.languageCode]?["unblockUser"] ?? "Unblock User";
+  String blockUserConfirm(String username) => _localizedValues[locale.languageCode]?["blockUserConfirm"]?.replaceAll("{username}", username) ?? "Are you sure you want to block @$username?";
+  String get userBlocked => _localizedValues[locale.languageCode]?["userBlocked"] ?? "User blocked";
+  String get userUnblocked => _localizedValues[locale.languageCode]?["userUnblocked"] ?? "User unblocked";
 
   // Follow/unfollow
   String get follow => _localizedValues[locale.languageCode]?["follow"] ?? "Follow";
@@ -1224,9 +1240,11 @@ class AppLocalizations {
       "termsContentContent": "You retain ownership of content you post on Yummy. By posting content, you grant us a license to use, modify, and display your content on the platform.",
       "termsProhibitedTitle": "5. Prohibited Uses",
       "termsProhibitedContent": "You may not use Yummy to:\n\n• Violate any laws or regulations\n• Infringe on intellectual property rights\n• Post harmful, offensive, or illegal content\n• Spam or harass other users",
-      "termsTerminationTitle": "6. Termination",
+      "termsObjectionableTitle": "6. Objectionable Content & Abusive Users",
+      "termsObjectionableContent": "Yummy has a zero-tolerance policy for objectionable content and abusive behavior.\n\nObjectionable content includes but is not limited to:\n• Content that is offensive, hateful, or discriminatory\n• Harassment, bullying, or threats directed at any user\n• Sexually explicit or violent material\n• Content that exploits or endangers minors\n• Misinformation or content designed to deceive\n\nAbusive behavior includes:\n• Harassing, threatening, or intimidating other users\n• Repeated unwanted contact after being asked to stop\n• Impersonating other users or public figures\n• Coordinated attacks on individuals or groups\n\nUsers who post objectionable content or engage in abusive behavior will have their content removed and their account suspended or permanently banned. We act on all credible reports promptly.",
+      "termsTerminationTitle": "7. Termination",
       "termsTerminationContent": "We reserve the right to terminate or suspend your account at any time for violations of these terms.",
-      "termsChangesTitle": "7. Changes to Terms",
+      "termsChangesTitle": "8. Changes to Terms",
       "termsChangesContent": "We reserve the right to modify these terms at any time. Continued use of the service after changes constitutes acceptance of the new terms.",
       "privacyCollectTitle": "1. Information We Collect",
       "privacyCollectContent": "We collect information that you provide directly to us, including:\n\n• Account information (username, email, display name)\n• Content you create (recipes, comments, images)\n• Usage data and analytics\n• Device information and identifiers",
@@ -1653,6 +1671,20 @@ class AppLocalizations {
       "nutritionNotFound": "Data not available",
       "nutritionNotFoundTooltip": "We were not able to find the nutrition values for this ingredient in the USDA database",
       "perIngredient": "Per ingredient",
+
+      // Delete account
+      "deleteAccount": "Delete Account",
+      "deleteAccountWarning": "This will permanently delete your account and all your data. This action cannot be undone.",
+      "deleteAccountConfirmTitle": "Are you sure?",
+      "deleteAccountTypeDelete": "Type \"DELETE\" to confirm",
+      "accountDeletedSuccessfully": "Account deleted successfully",
+
+      // Block / unblock
+      "blockUser": "Block User",
+      "unblockUser": "Unblock User",
+      "blockUserConfirm": "Are you sure you want to block @{username}?",
+      "userBlocked": "User blocked",
+      "userUnblocked": "User unblocked",
     },
     "ka": {
       "appTitle": "Yummy",
@@ -1989,9 +2021,11 @@ class AppLocalizations {
       "termsContentContent": "თქვენ რჩებით Yummy-ზე გამოქვეყნებული კონტენტის მფლობელად. კონტენტის გამოქვეყნებით, თქვენ გვაძლევთ კონტენტის გამოყენების, შეცვლისა და პლატფორმაზე ჩვენების უფლებას.",
       "termsProhibitedTitle": "5. აკრძალული გამოყენება",
       "termsProhibitedContent": "თქვენ არ შეგიძლიათ Yummy-ის გამოყენება:\n\n• ნებისმიერი კანონის ან რეგულაციის დარღვევისთვის\n• ინტელექტუალური საკუთრების უფლებების დარღვევისთვის\n• მავნე, შეურაცხმყოფელი ან უკანონო კონტენტის გამოსაქვეყნებლად\n• სპამის ან სხვა მომხმარებლების შევიწროებისთვის",
-      "termsTerminationTitle": "6. შეწყვეტა",
+      "termsObjectionableTitle": "6. საზიანო კონტენტი და აბუზური მომხმარებლები",
+      "termsObjectionableContent": "Yummy-ს გააჩნია ნულოვანი ტოლერანტობის პოლიტიკა საზიანო კონტენტისა და აბუზური ქცევის მიმართ.\n\nსაზიანო კონტენტი მოიცავს, მაგრამ არ შემოიფარგლება:\n• შეურაცხმყოფელი, სიძულვილით სავსე ან დისკრიმინაციული კონტენტი\n• ნებისმიერი მომხმარებლის შევიწროება, დამცირება ან მუქარა\n• სექსუალური ან ძალადობრივი მასალა\n• კონტენტი, რომელიც ექსპლუატაციას ან საფრთხეს უქმნის არასრულწლოვნებს\n• მცდარი ინფორმაცია ან მოტყუების მიზნით შექმნილი კონტენტი\n\nაბუზური ქცევა მოიცავს:\n• სხვა მომხმარებლების შევიწროება, მუქარა ან დაშინება\n• განმეორებითი არასასურველი კონტაქტი შეწყვეტის მოთხოვნის შემდეგ\n• სხვა მომხმარებლების ან საჯარო პირების გასახელება\n• ინდივიდებზე ან ჯგუფებზე კოორდინირებული შეტევები\n\nმომხმარებლები, რომლებიც გამოაქვეყნებენ საზიანო კონტენტს ან ჩაერთვებიან აბუზურ ქცევაში, მათი კონტენტი წაიშლება, ხოლო ანგარიში დაიბლოკება ან სამუდამოდ გაუქმდება. ჩვენ სწრაფად ვრეაგირებთ ყველა სანდო შეტყობინებაზე.",
+      "termsTerminationTitle": "7. შეწყვეტა",
       "termsTerminationContent": "ჩვენ ვიტოვებთ უფლებას დავხუროთ ან შევაჩეროთ თქვენი ანგარიში ნებისმიერ დროს ამ წესების დარღვევის შემთხვევაში.",
-      "termsChangesTitle": "7. წესების ცვლილებები",
+      "termsChangesTitle": "8. წესების ცვლილებები",
       "termsChangesContent": "ჩვენ ვიტოვებთ უფლებას, შევცვალოთ ეს წესები ნებისმიერ დროს. სერვისის გამოყენების გაგრძელება ცვლილებების შემდეგ ნიშნავს ახალ წესებზე თანხმობას.",
       "privacyCollectTitle": "1. ინფორმაცია, რომელსაც ვაგროვებთ",
       "privacyCollectContent": "ჩვენ ვაგროვებთ ინფორმაციას, რომელსაც პირდაპირ გვაწვდით, მათ შორის:\n\n• ანგარიშის ინფორმაცია (მომხმარებლის სახელი, ელფოსტა, საჩვენებელი სახელი)\n• თქვენ მიერ შექმნილი კონტენტი (რეცეპტები, კომენტარები, სურათები)\n• გამოყენების მონაცემები და ანალიტიკა\n• მოწყობილობის ინფორმაცია და იდენტიფიკატორები",
@@ -2419,6 +2453,20 @@ class AppLocalizations {
       "nutritionNotFound": "მონაცემები მიუწვდომელია",
       "nutritionNotFoundTooltip": "ამ ინგრედიენტის კვებითი მაჩვენებლები USDA-ს მონაცემთა ბაზაში ვერ მოიძებნა",
       "perIngredient": "ინგრედიენტების მიხედვით",
+
+      // Delete account
+      "deleteAccount": "ანგარიშის წაშლა",
+      "deleteAccountWarning": "ეს სამუდამოდ წაშლის თქვენს ანგარიშს და ყველა მონაცემს. ეს მოქმედება შეუქცევადია.",
+      "deleteAccountConfirmTitle": "დარწმუნებული ხართ?",
+      "deleteAccountTypeDelete": "დასადასტურებლად ჩაწერეთ \"DELETE\"",
+      "accountDeletedSuccessfully": "ანგარიში წარმატებით წაიშალა",
+
+      // Block / unblock
+      "blockUser": "მომხმარებლის დაბლოკვა",
+      "unblockUser": "მომხმარებლის განბლოკვა",
+      "blockUserConfirm": "დარწმუნებული ხართ, რომ გსურთ @{username}-ის დაბლოკვა?",
+      "userBlocked": "მომხმარებელი დაიბლოკა",
+      "userUnblocked": "მომხმარებელი განიბლოკა",
     },
   };
 }
