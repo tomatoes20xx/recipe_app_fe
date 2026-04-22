@@ -82,7 +82,10 @@ void main() async {
 
   // Initialize Google Mobile Ads SDK
   // App ID: ca-app-pub-3299728362959933~7231058371
-  MobileAds.instance.initialize();
+  await MobileAds.instance.updateRequestConfiguration(
+    RequestConfiguration(testDeviceIds: ['2a5f4afc4b22b9d68050d572ae72af3b']),
+  );
+  await MobileAds.instance.initialize();
 
   // Initialize Google Sign-In. On iOS the clientId must be set explicitly
   // (the iOS OAuth client ID from GoogleService-Info.plist), otherwise the
