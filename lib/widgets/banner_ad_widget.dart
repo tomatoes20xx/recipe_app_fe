@@ -1,4 +1,5 @@
 import "dart:developer";
+import "dart:io";
 
 import "package:flutter/material.dart";
 import "package:google_mobile_ads/google_mobile_ads.dart";
@@ -34,8 +35,7 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
   }
 
   void _loadAd() {
-    // Use production ad unit ID or the provided one
-    final adUnitId = widget.adUnitId ?? "ca-app-pub-3299728362959933/3238998585";
+    final adUnitId = widget.adUnitId ?? AdHelper.nativeAdUnitId;
     
     _bannerAd = BannerAd(
       adUnitId: adUnitId,
@@ -92,10 +92,9 @@ class AdHelper {
   static const String bannerAdUnitId = "ca-app-pub-3299728362959933/REPLACE_WITH_BANNER_AD_UNIT_ID";
 
   /// Production Native Ad Unit ID (YummyAd - Native Advanced)
-  static const String nativeAdUnitId = "ca-app-pub-3299728362959933/3238998585";
-
-  /// App ID
-  static const String appId = "ca-app-pub-3299728362959933~7231058371";
+  static String get nativeAdUnitId => Platform.isIOS
+      ? "ca-app-pub-3299728362959933/5205563553"
+      : "ca-app-pub-3299728362959933/3238998585";
   
   /// Test Ad Unit IDs (for development/testing)
   /// Use these during development to avoid invalid traffic
