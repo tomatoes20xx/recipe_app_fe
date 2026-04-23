@@ -6,11 +6,12 @@ import "../collections/collection_api.dart";
 import "../collections/collection_detail_controller.dart";
 import "../collections/collection_models.dart";
 import "../collections/collection_picker_bottom_sheet.dart";
+import "../feed/feed_models.dart";
 import "../localization/app_localizations.dart";
 import "../recipes/recipe_detail_screen.dart";
 import "../shopping/shopping_list_controller.dart";
 import "../utils/error_utils.dart";
-import "../widgets/common/recipe_grid_card.dart";
+import "../utils/ui_utils.dart";
 import "../widgets/empty_state_widget.dart";
 
 class CollectionDetailScreen extends StatefulWidget {
@@ -467,18 +468,21 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
             sliver: SliverGrid(
               gridDelegate:
                   const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
-                crossAxisSpacing: 2,
-                mainAxisSpacing: 2,
+                crossAxisCount: 2,
+                crossAxisSpacing: 8,
+                mainAxisSpacing: 8,
                 childAspectRatio: 0.75,
               ),
               delegate: SliverChildBuilderDelegate(
                 (context, index) {
                   if (index >= _controller.items.length) {
                     return Container(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .surfaceContainerHighest,
+                      decoration: BoxDecoration(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
                       child: const Center(
                           child: CircularProgressIndicator()),
                     );
@@ -486,7 +490,7 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
 
                   final recipe = _controller.items[index];
                   return RepaintBoundary(
-                    child: RecipeGridCard(
+                    child: _CollectionRecipeCard(
                       recipe: recipe,
                       isSelectionMode: _isSelectionMode,
                       isSelected: _selectedIds.contains(recipe.id),
@@ -497,7 +501,7 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
                           _navigateToDetail(recipe.id);
                         }
                       },
-                      onLongPress: () {
+                      onCheckboxTap: () {
                         if (_isSelectionMode) {
                           _toggleSelection(recipe.id);
                         } else {
@@ -538,6 +542,201 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
     if (mounted) {
       _controller.refresh();
     }
+  }
+}
+
+// --- Collection Recipe Card ---
+
+class _CollectionRecipeCard extends StatelessWidget {
+  const _CollectionRecipeCard({
+    required this.recipe,
+    required this.isSelectionMode,
+    required this.isSelected,
+    required this.onTap,
+    required this.onCheckboxTap,
+  });
+
+  final FeedItem recipe;
+  final bool isSelectionMode;
+  final bool isSelected;
+  final VoidCallback onTap;
+  final VoidCallback onCheckboxTap;
+
+  String _formatCookTime(int? min, int? max) {
+    if (min == null && max == null) return '';
+    final t = min ?? max!;
+    if (t >= 60) {
+      final h = t ~/ 60;
+      final m = t % 60;
+      return m == 0 ? '${h}h' : '${h}h ${m}m';
+    }
+    return '${t}m';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final firstImage = recipe.images.isNotEmpty ? recipe.images.first : null;
+    final cookTime = _formatCookTime(recipe.cookingTimeMin, recipe.cookingTimeMax);
+
+    return GestureDetector(
+      onTap: onTap,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            if (firstImage != null)
+              RecipeImageWidget(
+                imageUrl: firstImage.url,
+                width: double.infinity,
+                height: double.infinity,
+                fit: BoxFit.cover,
+                cacheWidth: 400,
+              )
+            else
+              const RecipeFallbackImage(
+                width: double.infinity,
+                height: double.infinity,
+                iconSize: 40,
+              ),
+
+            // Scrim gradient
+            Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.transparent,
+                      Colors.black.withValues(alpha: 0.75),
+                    ],
+                    stops: const [0.35, 1.0],
+                  ),
+                ),
+              ),
+            ),
+
+            // Selection highlight overlay
+            if (isSelected)
+              Positioned.fill(
+                child: ColoredBox(
+                  color: theme.colorScheme.primary.withValues(alpha: 0.25),
+                ),
+              ),
+
+            // Cook time badge — bottom left
+            if (cookTime.isNotEmpty)
+              Positioned(
+                left: 8,
+                bottom: 8,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.92),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.schedule_rounded,
+                        size: 11,
+                        color: Colors.black.withValues(alpha: 0.7),
+                      ),
+                      const SizedBox(width: 3),
+                      Text(
+                        cookTime,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
+                          height: 1.2,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+            // Title — bottom, above badge
+            Positioned(
+              left: 10,
+              right: 36,
+              bottom: cookTime.isNotEmpty ? 30 : 10,
+              child: Text(
+                recipe.title,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  height: 1.3,
+                  shadows: [
+                    Shadow(color: Colors.black54, blurRadius: 4),
+                  ],
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+
+            // Checkbox circle — top right (always visible)
+            Positioned(
+              top: 8,
+              right: 8,
+              child: GestureDetector(
+                onTap: onCheckboxTap,
+                child: _SelectCircle(selected: isSelected),
+              ),
+            ),
+
+            // Selected outline ring
+            if (isSelected)
+              Positioned.fill(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: theme.colorScheme.primary,
+                      width: 3,
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SelectCircle extends StatelessWidget {
+  const _SelectCircle({required this.selected});
+
+  final bool selected;
+
+  @override
+  Widget build(BuildContext context) {
+    final primary = Theme.of(context).colorScheme.primary;
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 150),
+      width: 22,
+      height: 22,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: selected ? primary : Colors.white.withValues(alpha: 0.8),
+        border: selected
+            ? null
+            : Border.all(color: Colors.white.withValues(alpha: 0.9), width: 1.5),
+        boxShadow: const [
+          BoxShadow(color: Colors.black26, blurRadius: 3, offset: Offset(0, 1)),
+        ],
+      ),
+      child: selected
+          ? const Icon(Icons.check_rounded, size: 14, color: Colors.white)
+          : null,
+    );
   }
 }
 
