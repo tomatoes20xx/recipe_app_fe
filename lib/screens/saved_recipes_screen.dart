@@ -939,7 +939,6 @@ class _SavedRecipeCard extends StatelessWidget {
                 height: double.infinity,
                 fit: BoxFit.cover,
                 cacheWidth: 400,
-                cacheHeight: 533,
               )
             else
               const RecipeFallbackImage(
