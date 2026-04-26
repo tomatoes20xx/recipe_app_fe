@@ -17,6 +17,20 @@ abstract class PaginatedListController<T> extends ChangeNotifier {
   String? error;
   int limit = 20;
 
+  bool _disposed = false;
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
+  }
+
+  @override
+  void notifyListeners() {
+    if (_disposed) return;
+    super.notifyListeners();
+  }
+
   Future<PaginatedResponse<T>> fetchPage(String? cursor);
 
   /// Loads the first page. Guards against concurrent calls.

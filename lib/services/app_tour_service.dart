@@ -2,32 +2,36 @@ import "package:flutter/material.dart";
 import "package:flutter_secure_storage/flutter_secure_storage.dart";
 import "package:tutorial_coach_mark/tutorial_coach_mark.dart";
 
+import "../widgets/att_permission_sheet.dart";
+
 import "../localization/app_localizations.dart";
 
 /// Service for managing the app tour/walkthrough
 class AppTourService {
-  static const _tourCompletedKey = 'app_tour_completed';
   static const _storage = FlutterSecureStorage();
 
+  static String _key(String userId) => 'app_tour_completed_$userId';
+
   /// Check if user has completed the tour
-  static Future<bool> hasTourCompleted() async {
-    final completed = await _storage.read(key: _tourCompletedKey);
+  static Future<bool> hasTourCompleted(String userId) async {
+    final completed = await _storage.read(key: _key(userId));
     return completed == 'true';
   }
 
   /// Mark tour as completed
-  static Future<void> markTourCompleted() async {
-    await _storage.write(key: _tourCompletedKey, value: 'true');
+  static Future<void> markTourCompleted(String userId) async {
+    await _storage.write(key: _key(userId), value: 'true');
   }
 
   /// Reset tour (for testing)
-  static Future<void> resetTour() async {
-    await _storage.delete(key: _tourCompletedKey);
+  static Future<void> resetTour(String userId) async {
+    await _storage.delete(key: _key(userId));
   }
 
   /// Create and show the tour
   static void showTour(
     BuildContext context, {
+    required String userId,
     required GlobalKey feedKey,
     required GlobalKey searchKey,
     required GlobalKey createKey,
@@ -157,13 +161,9 @@ class AppTourService {
       opacityShadow: 0.8,
       hideSkip: false,
       textSkip: localizations?.skip ?? "Skip",
-      onFinish: () {
-        markTourCompleted();
-        onFinish?.call();
-      },
+      onFinish: () => _completeTour(context, userId, onFinish),
       onSkip: () {
-        markTourCompleted();
-        onFinish?.call();
+        _completeTour(context, userId, onFinish);
         return true;
       },
     );
@@ -172,6 +172,15 @@ class AppTourService {
     Future.delayed(const Duration(milliseconds: 500), () {
       tutorial.show(context: context);
     });
+  }
+
+  static void _completeTour(BuildContext context, String userId, VoidCallback? onFinish) {
+    markTourCompleted(userId);
+    // Brief delay lets the tour overlay finish dismissing before the sheet appears
+    Future.delayed(const Duration(milliseconds: 300), () {
+      showAttPermissionSheet(context);
+    });
+    onFinish?.call();
   }
 
   static Widget _buildContent(
