@@ -607,6 +607,18 @@ class AppLocalizations {
   String get tourTapToContinue => _localizedValues[locale.languageCode]?["tourTapToContinue"] ?? "Tap the highlighted area to continue";
   String get tourAllSet => _localizedValues[locale.languageCode]?["tourAllSet"] ?? "You're all set! Enjoy using Yummy! 🎉";
 
+  // ATT permission sheet
+  String get attPermissionTitle => _localizedValues[locale.languageCode]?["attPermissionTitle"] ?? "Personalized Experience";
+  String get attPermissionSubtitle => _localizedValues[locale.languageCode]?["attPermissionSubtitle"] ?? "Yummy uses ads to keep the app free. Allowing tracking helps us show you ads that are actually relevant to you.";
+  String get attPermissionBenefit1 => _localizedValues[locale.languageCode]?["attPermissionBenefit1"] ?? "Fewer irrelevant ads";
+  String get attPermissionBenefit1Description => _localizedValues[locale.languageCode]?["attPermissionBenefit1Description"] ?? "See ads that match your interests instead of random ones";
+  String get attPermissionBenefit2 => _localizedValues[locale.languageCode]?["attPermissionBenefit2"] ?? "Better overall experience";
+  String get attPermissionBenefit2Description => _localizedValues[locale.languageCode]?["attPermissionBenefit2Description"] ?? "Help keep the app free and support a better in-app experience";
+  String get attPermissionNote => _localizedValues[locale.languageCode]?["attPermissionNote"] ?? "Your data is never sold. This only improves your in-app experience.";
+  String get attPermissionAllow => _localizedValues[locale.languageCode]?["attPermissionAllow"] ?? "Continue";
+  String get attPermissionSkip => _localizedValues[locale.languageCode]?["attPermissionSkip"] ?? "No thanks";
+  String get attPermissionTapAllow => _localizedValues[locale.languageCode]?["attPermissionTapAllow"] ?? "Tap \"Allow\"";
+
   // Date and Time - Month names
   String get monthJanuary => _localizedValues[locale.languageCode]?["monthJanuary"] ?? "January";
   String get monthFebruary => _localizedValues[locale.languageCode]?["monthFebruary"] ?? "February";
@@ -1420,6 +1432,16 @@ class AppLocalizations {
       "tourViewToggleDescription": "Toggle between list view and full-screen immersive view for a different browsing experience!",
       "tourTapToContinue": "Tap the highlighted area to continue",
       "tourAllSet": "You're all set! Enjoy using Yummy! 🎉",
+      "attPermissionTitle": "Personalized Experience",
+      "attPermissionSubtitle": "Yummy uses ads to keep the app free. Allowing tracking helps us show you ads that are actually relevant to you.",
+      "attPermissionBenefit1": "Fewer irrelevant ads",
+      "attPermissionBenefit1Description": "See ads that match your interests instead of random ones",
+      "attPermissionBenefit2": "Better overall experience",
+      "attPermissionBenefit2Description": "Help keep the app free and support a better in-app experience",
+      "attPermissionNote": "Your data is never sold. This only improves your in-app experience.",
+      "attPermissionAllow": "Continue",
+      "attPermissionSkip": "No thanks",
+      "attPermissionTapAllow": "Tap \"Allow\"",
       "commentPostedSuccessfully": "Comment posted successfully",
       "skip": "Skip",
       "tapToAdd": "Tap to add",
@@ -2202,6 +2224,16 @@ class AppLocalizations {
       "tourViewToggleDescription": "გადართეთ სიის ხედსა და სრულეკრანიან ხედს შორის განსხვავებული გამოცდილებისთვის!",
       "tourTapToContinue": "გასაგრძელებლად შეეხეთ მონიშნულ არეს",
       "tourAllSet": "ყველაფერი მზადაა! ისიამოვნეთ Yummy-ს გამოყენებით! 🎉",
+      "attPermissionTitle": "პერსონალიზებული გამოცდილება",
+      "attPermissionSubtitle": "Yummy იყენებს რეკლამებს, რათა აპლიკაცია უფასო დარჩეს. თრექინგის დაშვება გვეხმარება გაჩვენოთ თქვენთვის შესაბამისი რეკლამები.",
+      "attPermissionBenefit1": "ნაკლები შეუსაბამო რეკლამა",
+      "attPermissionBenefit1Description": "ნახეთ რეკლამები, რომლებიც თქვენს ინტერესებს შეესაბამება",
+      "attPermissionBenefit2": "უკეთესი გამოცდილება",
+      "attPermissionBenefit2Description": "დაეხმარეთ აპლიკაციას უფასო დარჩეს და ისიამოვნეთ უკეთესი გამოცდილებით",
+      "attPermissionNote": "თქვენი მონაცემები არასოდეს იყიდება. ეს მხოლოდ თქვენს გამოცდილებას აუმჯობესებს.",
+      "attPermissionAllow": "გაგრძელება",
+      "attPermissionSkip": "არა, გმადლობთ",
+      "attPermissionTapAllow": "დააჭირეთ \"Allow\"",
       "commentPostedSuccessfully": "კომენტარი წარმატებით დაიდო",
       "skip": "გამოტოვება",
       "tapToAdd": "დაამატეთ",

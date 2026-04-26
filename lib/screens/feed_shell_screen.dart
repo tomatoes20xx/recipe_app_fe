@@ -89,13 +89,16 @@ class _FeedShellScreenState extends State<FeedShellScreen> {
   }
 
   Future<void> _checkAndShowTour() async {
-    final tourCompleted = await AppTourService.hasTourCompleted();
+    final userId = widget.auth.me?["id"]?.toString();
+    if (userId == null || userId.isEmpty) return;
+    final tourCompleted = await AppTourService.hasTourCompleted(userId);
     if (!tourCompleted && mounted) {
       // Delay to ensure widgets are built
       Future.delayed(const Duration(seconds: 1), () {
         if (mounted) {
           AppTourService.showTour(
             context,
+            userId: userId,
             feedKey: _feedKey,
             searchKey: _searchKey,
             createKey: _createKey,
