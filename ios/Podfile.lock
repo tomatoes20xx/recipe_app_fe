@@ -16,6 +16,7 @@ PODS:
     - Flutter
   - FBAEMKit (18.0.3):
     - FBSDKCoreKit_Basics (= 18.0.3)
+  - FBAudienceNetwork (6.21.1)
   - FBSDKCoreKit (18.0.3):
     - FBAEMKit (= 18.0.3)
     - FBSDKCoreKit_Basics (= 18.0.3)
@@ -100,6 +101,9 @@ PODS:
   - GoogleDataTransport (10.1.0):
     - nanopb (~> 3.30910.0)
     - PromisesObjC (~> 2.4)
+  - GoogleMobileAdsMediationFacebook (6.21.1.0):
+    - FBAudienceNetwork (= 6.21.1)
+    - Google-Mobile-Ads-SDK (~> 13.0)
   - GoogleSignIn (9.1.0):
     - AppAuth (~> 2.0)
     - AppCheckCore (~> 11.0)
@@ -173,6 +177,7 @@ DEPENDENCIES:
   - flutter_secure_storage_darwin (from `.symlinks/plugins/flutter_secure_storage_darwin/darwin`)
   - google_mobile_ads (from `.symlinks/plugins/google_mobile_ads/ios`)
   - google_sign_in_ios (from `.symlinks/plugins/google_sign_in_ios/darwin`)
+  - GoogleMobileAdsMediationFacebook
   - image_picker_ios (from `.symlinks/plugins/image_picker_ios/ios`)
   - package_info_plus (from `.symlinks/plugins/package_info_plus/ios`)
   - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
@@ -185,6 +190,7 @@ SPEC REPOS:
     - AppAuth
     - AppCheckCore
     - FBAEMKit
+    - FBAudienceNetwork
     - FBSDKCoreKit
     - FBSDKCoreKit_Basics
     - Firebase
@@ -198,6 +204,7 @@ SPEC REPOS:
     - FirebaseSessions
     - Google-Mobile-Ads-SDK
     - GoogleDataTransport
+    - GoogleMobileAdsMediationFacebook
     - GoogleSignIn
     - GoogleUserMessagingPlatform
     - GoogleUtilities
@@ -247,6 +254,7 @@ SPEC CHECKSUMS:
   AppCheckCore: cc8fd0a3a230ddd401f326489c99990b013f0c4f
   facebook_app_events: 682080987ac09154742e4373a7647bd16d36776b
   FBAEMKit: 2a6b529993713c185b02bc36f8c91129bf78dfb0
+  FBAudienceNetwork: 85d18a65c9e35bc426bd4664cf3ae2a1172d7b60
   FBSDKCoreKit: 65d7f7a7d6fcc3aa6eb6e093ec737a4184fc6049
   FBSDKCoreKit_Basics: 7bc9d8fde8f70985fba2ed7c1d07e319f969a991
   Firebase: aa154fee4e9b8eac17aa42344988865b3e857d33
@@ -268,6 +276,7 @@ SPEC CHECKSUMS:
   google_mobile_ads: fc71399df4ee37c5637400f351898ee22543f75b
   google_sign_in_ios: 000870aa06da9b28d1d0bf7ef70ff0213059dd28
   GoogleDataTransport: aae35b7ea0c09004c3797d53c8c41f66f219d6a7
+  GoogleMobileAdsMediationFacebook: c28fe93a3e6ba02c3a7e09fa9c45682ad9b1e9c6
   GoogleSignIn: fcee2257188d5eda57a5e2b6a715550ffff9206d
   GoogleUserMessagingPlatform: befe603da6501006420c206222acd449bba45a9c
   GoogleUtilities: 00c88b9a86066ef77f0da2fab05f65d7768ed8e1
@@ -283,6 +292,6 @@ SPEC CHECKSUMS:
   url_launcher_ios: 7a95fa5b60cc718a708b8f2966718e93db0cef1b
   webview_flutter_wkwebview: 8ebf4fded22593026f7dbff1fbff31ea98573c8d
 
-PODFILE CHECKSUM: f68b7475dde120b5bccd7b836b3122a45ec2d4d0
+PODFILE CHECKSUM: 7d0f327faa5fc8c95b373c99998e7e754f53e21c
 
 COCOAPODS: 1.16.2

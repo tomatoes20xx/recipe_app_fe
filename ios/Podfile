@@ -30,6 +30,10 @@ target 'Runner' do
   use_frameworks!
 
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
+
+  # Facebook Audience Network mediation adapter for AdMob
+  pod 'GoogleMobileAdsMediationFacebook'
+
   target 'RunnerTests' do
     inherit! :search_paths
   end
@@ -46,7 +50,7 @@ post_install do |installer|
   end
 
   # Strip bitcode from pre-built Facebook SDK frameworks (Apple rejects bitcode since Xcode 14)
-  %w[FBSDKCoreKit FBSDKCoreKit_Basics FBAEMKit FBSDKLoginKit FBSDKShareKit].each do |name|
+  %w[FBSDKCoreKit FBSDKCoreKit_Basics FBAEMKit FBSDKLoginKit FBSDKShareKit FBAudienceNetwork].each do |name|
     Dir.glob("#{installer.sandbox.root}/**/#{name}.framework/#{name}").each do |binary|
       system("xcrun bitcode_strip -r '#{binary}' -o '#{binary}'")
     end

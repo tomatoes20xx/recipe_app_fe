@@ -75,4 +75,7 @@ dependencies {
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-crashlytics")
     implementation("com.google.firebase:firebase-messaging")
+
+    // Facebook Audience Network mediation adapter for AdMob
+    implementation("com.google.ads.mediation:facebook:6.18.0.0")
 }
