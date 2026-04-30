@@ -16,6 +16,7 @@ import "../services/recipe_draft_service.dart";
 import "../utils/error_utils.dart";
 import "../utils/image_utils.dart";
 import "../utils/ui_utils.dart";
+import "image_crop_screen.dart";
 
 class CreateRecipeScreen extends StatefulWidget {
   const CreateRecipeScreen({
@@ -323,9 +324,17 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen>
         source: ImageSource.gallery,
         imageQuality: 85,
       );
-      if (image != null) {
+      if (image != null && mounted) {
+        // Let the user crop and position the image
+        final croppedFile = await ImageCropScreen.show(
+          context,
+          File(image.path),
+          aspectRatio: 4 / 3,
+        );
+        if (croppedFile == null || !mounted) return;
+
         // Check original file size before processing
-        final originalSize = await File(image.path).length();
+        final originalSize = await croppedFile.length();
         final originalSizeMB = originalSize / (1024 * 1024);
 
         // Show processing indicator for large files
@@ -336,8 +345,8 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen>
           });
         }
 
-        // Compress and resize the image using shared utility
-        final result = await ImageUtils.compressImage(File(image.path));
+        // Compress and resize the cropped image
+        final result = await ImageUtils.compressImage(croppedFile);
 
         setState(() {
           _uploadStatus = null;
@@ -364,10 +373,10 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen>
             _selectedImages.add(XFile(result.path));
           });
         } else {
-          // If compression fails, check if original is within size limit
+          // If compression fails, check if cropped file is within size limit
           if (originalSize <= ImageUtils.maxFileSizeBytes) {
             setState(() {
-              _selectedImages.add(image);
+              _selectedImages.add(XFile(croppedFile.path));
             });
           } else {
             if (mounted) {

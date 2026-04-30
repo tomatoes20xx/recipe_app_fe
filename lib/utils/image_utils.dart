@@ -87,11 +87,10 @@ class ImageUtils {
     }
   }
 
-  /// Compresses an image for avatar use (square, center-cropped).
+  /// Compresses and resizes an image for avatar use.
   ///
-  /// [imageFile] - The source image file
-  /// [maxDimension] - Maximum size for the square avatar (default: 512)
-  /// [quality] - JPEG quality 0-100 (default: 85)
+  /// Cropping is handled by the crop UI before calling this method.
+  /// This only resizes to [maxDimension] and compresses.
   ///
   /// Returns the compressed file, or null if compression fails.
   static Future<File?> compressAvatar(
@@ -105,42 +104,23 @@ class ImageUtils {
 
       if (originalImage == null) return null;
 
-      // Calculate dimensions for square center crop
-      final width = originalImage.width;
-      final height = originalImage.height;
-      final cropSize = width < height ? width : height;
-      final offsetX = (width - cropSize) ~/ 2;
-      final offsetY = (height - cropSize) ~/ 2;
-
-      // Crop to square (center)
-      final croppedImage = img.copyCrop(
-        originalImage,
-        x: offsetX,
-        y: offsetY,
-        width: cropSize,
-        height: cropSize,
-      );
-
-      // Resize to target dimension
       final resizedImage = img.copyResize(
-        croppedImage,
+        originalImage,
         width: maxDimension,
         height: maxDimension,
         interpolation: img.Interpolation.linear,
       );
 
-      // Convert to JPEG
       final jpegBytes = img.encodeJpg(resizedImage, quality: quality);
 
-      // Save to a temporary file
       final tempDir = Directory.systemTemp;
       final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final compressedFile = File('${tempDir.path}/compressed_avatar_$timestamp.jpg');
+      final compressedFile =
+          File('${tempDir.path}/compressed_avatar_$timestamp.jpg');
       await compressedFile.writeAsBytes(jpegBytes);
 
       return compressedFile;
     } catch (e) {
-      // If compression fails, return null to use original
       return null;
     }
   }

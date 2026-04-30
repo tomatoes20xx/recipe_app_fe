@@ -303,6 +303,8 @@ class AppLocalizations {
   String get instruction => _localizedValues[locale.languageCode]?["instruction"] ?? "Instruction";
   String get images => _localizedValues[locale.languageCode]?["images"] ?? "Images";
   String get processingImage => _localizedValues[locale.languageCode]?["processingImage"] ?? "Processing image...";
+  String get cropImage => _localizedValues[locale.languageCode]?["cropImage"] ?? "Crop Image";
+  String get moveAndResize => _localizedValues[locale.languageCode]?["moveAndResize"] ?? "Move and resize";
   String imageTooLarge(String sizeMB, String maxMB) =>
       (_localizedValues[locale.languageCode]?["imageTooLarge"] ?? "Image is too large ({sizeMB}MB). Maximum size is {maxMB}MB. Please choose a smaller image.")
           .replaceAll("{sizeMB}", sizeMB)
@@ -1148,6 +1150,8 @@ class AppLocalizations {
       "instruction": "Instruction",
       "describeThisStep": "Describe this step",
       "images": "Images",
+      "cropImage": "Crop Image",
+      "moveAndResize": "Move and resize",
       "createRecipeTitle": "Create Recipe",
       "editRecipe": "Edit Recipe",
       "switchToUsers": "Switch to Users",
@@ -1939,6 +1943,8 @@ class AppLocalizations {
       "instruction": "ინსტრუქცია",
       "describeThisStep": "აღწერეთ ეს ნაბიჯი",
       "images": "სურათები",
+      "cropImage": "სურათის კადრირება",
+      "moveAndResize": "გადაადგილება და ზომის შეცვლა",
       "createRecipeTitle": "რეცეპტის შექმნა",
       "editRecipe": "რეცეპტის რედაქტირება",
       "switchToUsers": "მომხმარებლებზე გადართვა",

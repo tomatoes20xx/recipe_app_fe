@@ -9,6 +9,7 @@ import "../auth/auth_controller.dart";
 import "../localization/app_localizations.dart";
 import "../utils/error_utils.dart";
 import "../utils/image_utils.dart";
+import "image_crop_screen.dart";
 import "terms_and_privacy_screen.dart";
 
 class UsernameSelectionScreen extends StatefulWidget {
@@ -92,11 +93,19 @@ class _UsernameSelectionScreenState extends State<UsernameSelectionScreen> {
         source: ImageSource.gallery,
         imageQuality: 85,
       );
-      if (image == null) return;
+      if (image == null || !mounted) return;
 
-      // Compress the image before storing
-      final compressedFile = await ImageUtils.compressAvatar(File(image.path));
-      final fileToStore = compressedFile ?? File(image.path);
+      // Let the user crop to a square
+      final croppedFile = await ImageCropScreen.show(
+        context,
+        File(image.path),
+        aspectRatio: 1.0,
+      );
+      if (croppedFile == null || !mounted) return;
+
+      // Resize the cropped square to avatar dimensions
+      final compressedFile = await ImageUtils.compressAvatar(croppedFile);
+      final fileToStore = compressedFile ?? croppedFile;
 
       setState(() {
         _selectedAvatarFile = fileToStore;

@@ -23,6 +23,7 @@ import "../widgets/empty_state_widget.dart";
 import "edit_profile_screen.dart";
 import "followers_screen.dart";
 import "following_screen.dart";
+import "image_crop_screen.dart";
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({
@@ -203,13 +204,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
         source: ImageSource.gallery,
         imageQuality: 85,
       );
-      if (image == null) return;
+      if (image == null || !mounted) return;
+
+      // Let the user crop to a square before uploading
+      final croppedFile = await ImageCropScreen.show(
+        context,
+        File(image.path),
+        aspectRatio: 1.0,
+      );
+      if (croppedFile == null || !mounted) return;
 
       setState(() => _isUploading = true);
 
-      // Compress the image before uploading using shared utility
-      final compressedFile = await ImageUtils.compressAvatar(File(image.path));
-      final fileToUpload = compressedFile ?? File(image.path);
+      // Resize the cropped square to avatar dimensions
+      final compressedFile = await ImageUtils.compressAvatar(croppedFile);
+      final fileToUpload = compressedFile ?? croppedFile;
 
       final authApi = AuthApi(widget.apiClient);
       await authApi.uploadAvatar(fileToUpload);
