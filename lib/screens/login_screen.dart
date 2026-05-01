@@ -427,14 +427,6 @@ class _LoginScreenState extends State<LoginScreen>
           ),
         ),
         const SizedBox(height: 16),
-        Text(
-          "Yummy",
-          style: theme.textTheme.headlineMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: theme.colorScheme.onSurface,
-          ),
-        ),
-        const SizedBox(height: 4),
         AnimatedSwitcher(
           duration: const Duration(milliseconds: 200),
           child: Text(
@@ -467,15 +459,15 @@ class _LoginScreenState extends State<LoginScreen>
                 ),
               )
             : Container(
-                width: 24,
-                height: 24,
+                width: 34,
+                height: 34,
                 padding: const EdgeInsets.all(2),
                 decoration: const BoxDecoration(
                   color: Colors.white,
                   shape: BoxShape.circle,
                 ),
                 child: Image.asset(
-                  "assets/images/google_logo.png",
+                  "assets/images/android_light_rd_na.png",
                   errorBuilder: (context, error, stackTrace) {
                     return const Icon(Icons.login, color: Colors.blue, size: 18);
                   },
