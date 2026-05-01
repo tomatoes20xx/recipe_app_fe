@@ -876,36 +876,34 @@ class _QuickInfoBar extends StatelessWidget {
         color: Theme.of(context).colorScheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(16),
       ),
-      child: IntrinsicHeight(
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (hasTime)
-              Expanded(
-                child: _QuickInfoItem(
-                  icon: Icons.schedule,
-                  iconColor: primary,
-                  label: localizations?.prepTime ?? "PREP TIME",
-                  value: _formatCookingTime(localizations),
-                ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (hasTime)
+            Expanded(
+              child: _QuickInfoItem(
+                icon: Icons.schedule,
+                iconColor: primary,
+                label: localizations?.prepTime ?? "PREP TIME",
+                value: _formatCookingTime(localizations),
               ),
-            if (hasTime && hasDifficulty)
-              Container(
-                width: 1,
-                height: 32,
-                color: Theme.of(context).colorScheme.outlineVariant,
+            ),
+          if (hasTime && hasDifficulty)
+            Container(
+              width: 1,
+              height: 32,
+              color: Theme.of(context).colorScheme.outlineVariant,
+            ),
+          if (hasDifficulty)
+            Expanded(
+              child: _QuickInfoItem(
+                icon: Icons.bolt,
+                iconColor: primary,
+                label: localizations?.difficulty ?? "DIFFICULTY",
+                value: _getLocalizedDifficulty(localizations),
               ),
-            if (hasDifficulty)
-              Expanded(
-                child: _QuickInfoItem(
-                  icon: Icons.bolt,
-                  iconColor: primary,
-                  label: localizations?.difficulty ?? "DIFFICULTY",
-                  value: _getLocalizedDifficulty(localizations),
-                ),
-              ),
-          ],
-        ),
+            ),
+        ],
       ),
     );
   }
