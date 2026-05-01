@@ -238,6 +238,7 @@ class AppLocalizations {
   String get items => _localizedValues[locale.languageCode]?["items"] ?? "items";
   String get cookingTimeMinutes => _localizedValues[locale.languageCode]?["cookingTimeMinutes"] ?? "Cooking Time (minutes)";
   String get minuteAbbreviation => _localizedValues[locale.languageCode]?["minuteAbbreviation"] ?? "min";
+  String get upTo => _localizedValues[locale.languageCode]?["upTo"] ?? "Up to";
 
   // Collections
   String get collections => _localizedValues[locale.languageCode]?["collections"] ?? "Collections";
@@ -1093,6 +1094,7 @@ class AppLocalizations {
       "items": "items",
       "cookingTimeMinutes": "Cooking Time (minutes)",
       "minuteAbbreviation": "min",
+      "upTo": "Up to",
       "collections": "Collections",
       "allSaved": "All",
       "nSaved": "{count} saved",
@@ -1886,6 +1888,7 @@ class AppLocalizations {
       "items": "პროდუქტი",
       "cookingTimeMinutes": "მომზადების დრო (წუთები)",
       "minuteAbbreviation": "წთ",
+      "upTo": "მაქსიმუმ",
       "collections": "კოლექციები",
       "allSaved": "ყველა",
       "nSaved": "{count} შენახული",

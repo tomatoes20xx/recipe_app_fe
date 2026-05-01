@@ -497,7 +497,7 @@ class _RecipeMatchCard extends StatelessWidget {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        _formatCookingTime(recipe),
+                        _formatCookingTime(recipe, localizations),
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                             ),
@@ -507,7 +507,7 @@ class _RecipeMatchCard extends StatelessWidget {
                       const SizedBox(width: 16),
                     if (recipe.difficulty != null)
                       Text(
-                        recipe.difficulty!,
+                        _localizedDifficulty(recipe.difficulty!, localizations),
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                             ),
@@ -522,13 +522,27 @@ class _RecipeMatchCard extends StatelessWidget {
     );
   }
 
-  String _formatCookingTime(SearchResult recipe) {
+  String _formatCookingTime(SearchResult recipe, AppLocalizations? l10n) {
+    final min = l10n?.minuteAbbreviation ?? 'min';
     if (recipe.cookingTimeMin != null && recipe.cookingTimeMax != null) {
-      return "${recipe.cookingTimeMin}-${recipe.cookingTimeMax} min";
+      return '${recipe.cookingTimeMin}-${recipe.cookingTimeMax} $min';
     } else if (recipe.cookingTimeMin != null) {
-      return "${recipe.cookingTimeMin}+ min";
+      return '${recipe.cookingTimeMin}+ $min';
     } else {
-      return "Up to ${recipe.cookingTimeMax} min";
+      return '${l10n?.upTo ?? 'Up to'} ${recipe.cookingTimeMax} $min';
+    }
+  }
+
+  String _localizedDifficulty(String difficulty, AppLocalizations? l10n) {
+    switch (difficulty.toLowerCase()) {
+      case 'easy':
+        return l10n?.easy ?? difficulty;
+      case 'medium':
+        return l10n?.medium ?? difficulty;
+      case 'hard':
+        return l10n?.hard ?? difficulty;
+      default:
+        return difficulty;
     }
   }
 }
