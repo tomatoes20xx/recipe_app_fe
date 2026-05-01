@@ -247,44 +247,41 @@ class _ImageCropScreenState extends State<ImageCropScreen> {
           SafeArea(
             child: Column(
               children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: Row(
-                    children: [
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pop(null),
-                        child: Text(
-                          localizations?.cancel ?? 'Cancel',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                          ),
+                Row(
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(null),
+                      child: Text(
+                        localizations?.cancel ?? 'Cancel',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
                         ),
                       ),
-                      const Spacer(),
-                      TextButton(
-                        onPressed:
-                            (_saving || _loading) ? null : () => _applyCrop(cropRect),
-                        child: _saving
-                            ? const SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
-                                ),
-                              )
-                            : Text(
-                                localizations?.apply ?? 'Apply',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
+                    ),
+                    const Spacer(),
+                    TextButton(
+                      onPressed:
+                          (_saving || _loading) ? null : () => _applyCrop(cropRect),
+                      child: _saving
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
                               ),
-                      ),
-                    ],
-                  ),
+                            )
+                          : Text(
+                              localizations?.apply ?? 'Apply',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                    ),
+                  ],
                 ),
                 const Spacer(),
                 Padding(

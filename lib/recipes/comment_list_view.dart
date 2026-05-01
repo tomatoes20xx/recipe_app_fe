@@ -270,7 +270,7 @@ class _CommentListViewState extends State<CommentListView> {
             children: [
               Row(
                 children: [
-                  Flexible(
+                  Expanded(
                     child: Text(
                       displayName,
                       style: textTheme.labelMedium?.copyWith(
@@ -300,10 +300,14 @@ class _CommentListViewState extends State<CommentListView> {
                     ),
                   ],
                   const SizedBox(width: 8),
-                  Text(
-                    timeAgo,
-                    style: textTheme.labelSmall?.copyWith(
-                      color: colorScheme.onSurface.withValues(alpha: 0.45),
+                  Flexible(
+                    child: Text(
+                      timeAgo,
+                      style: textTheme.labelSmall?.copyWith(
+                        color: colorScheme.onSurface.withValues(alpha: 0.45),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],
