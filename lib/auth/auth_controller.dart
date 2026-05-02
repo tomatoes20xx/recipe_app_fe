@@ -18,6 +18,9 @@ class AuthController extends ChangeNotifier {
   String? token;
   Map<String, dynamic>? me;
 
+  /// Called before the token is cleared, allowing callers to make authenticated cleanup calls.
+  Future<void> Function()? onBeforeLogout;
+
   bool get isLoggedIn => token != null && token!.isNotEmpty;
 
   /// Whether the account is permanently banned (is_active = false)
@@ -203,6 +206,9 @@ class AuthController extends ChangeNotifier {
   }
 
   Future<void> logout() async {
+    try {
+      await onBeforeLogout?.call();
+    } catch (_) {}
     token = null;
     me = null;
     await tokenStorage.deleteToken();

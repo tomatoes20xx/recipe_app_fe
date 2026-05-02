@@ -131,3 +131,5 @@ lcov.info
 # Testing
 test-results/
 .test_coverage/
+
+yummy_retention_strategy.docx

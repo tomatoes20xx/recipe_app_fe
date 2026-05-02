@@ -37,10 +37,9 @@ class NotificationService {
     // Get FCM token
     _fcmToken = await _firebaseMessaging.getToken();
 
-    // Listen for token refresh
+    // Keep local token in sync on refresh
     _firebaseMessaging.onTokenRefresh.listen((token) {
       _fcmToken = token;
-      // TODO: Send token to backend
     });
 
     // Handle foreground messages
@@ -56,16 +55,14 @@ class NotificationService {
     }
   }
 
-  /// Request notification permissions
+  /// Request notification permissions (iOS and Android 13+)
   Future<void> _requestPermission() async {
-    if (Platform.isIOS || kIsWeb) {
-      final settings = await _firebaseMessaging.requestPermission(
-        alert: true,
-        badge: true,
-        sound: true,
-        provisional: false,
-      );
-    }
+    await _firebaseMessaging.requestPermission(
+      alert: true,
+      badge: true,
+      sound: true,
+      provisional: false,
+    );
   }
 
   /// Initialize local notifications
@@ -170,12 +167,6 @@ class NotificationService {
       notificationDetails: details,
       payload: payload,
     );
-  }
-
-  /// Send FCM token to backend
-  Future<void> sendTokenToBackend(String token) async {
-    // TODO: Implement API call to send token to backend
-    // await apiClient.post('/api/notifications/register-token', body: {'token': token});
   }
 
   /// Subscribe to a topic

@@ -56,4 +56,22 @@ class NotificationApi {
     final data = await api.delete("/notifications", auth: true);
     return Map<String, dynamic>.from(data as Map);
   }
+
+  /// Register or update the FCM device token on the backend
+  Future<void> registerFcmToken(String token, String platform) async {
+    await api.post(
+      '/notifications/fcm-token',
+      body: {'token': token, 'platform': platform},
+      auth: true,
+    );
+  }
+
+  /// Remove the FCM device token on logout
+  Future<void> removeFcmToken(String token) async {
+    await api.delete(
+      '/notifications/fcm-token',
+      body: {'token': token},
+      auth: true,
+    );
+  }
 }

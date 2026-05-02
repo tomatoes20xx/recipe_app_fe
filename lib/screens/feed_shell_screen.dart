@@ -1,5 +1,8 @@
 import "dart:async";
 
+import "dart:io";
+
+import "package:firebase_messaging/firebase_messaging.dart";
 import "package:flutter/material.dart";
 
 import "../api/api_client.dart";
@@ -14,6 +17,7 @@ import "../localization/language_controller.dart";
 import "../notifications/notification_api.dart";
 import "../notifications/notification_controller.dart";
 import "../services/app_tour_service.dart";
+import "../services/notification_service.dart";
 import "../shopping/shopping_list_controller.dart";
 import "../theme/theme_controller.dart";
 import "../utils/error_utils.dart";
@@ -57,7 +61,9 @@ class _FeedShellScreenState extends State<FeedShellScreen> {
   int _currentIndex = 0;
 
   late final NotificationController _notificationController;
+  late final NotificationApi _notificationApi;
   Timer? _notificationTimer;
+  StreamSubscription<String>? _fcmTokenRefreshSub;
 
   // Tour keys
   final GlobalKey _feedKey = GlobalKey();
@@ -76,13 +82,14 @@ class _FeedShellScreenState extends State<FeedShellScreen> {
     _feedViewController = FeedViewController();
     feed.loadInitial();
 
-    final notificationApi = NotificationApi(widget.apiClient);
-    _notificationController = NotificationController(notificationApi: notificationApi);
+    _notificationApi = NotificationApi(widget.apiClient);
+    _notificationController = NotificationController(notificationApi: _notificationApi);
     // Note: We don't add a listener that calls setState here.
     // Instead, we use ListenableBuilder in the widget tree to only rebuild
     // the notification badge, not the entire screen.
     _notificationController.refreshUnreadCount();
     _startNotificationPolling();
+    _registerFcmToken();
 
     // Check and show tour for first-time users
     _checkAndShowTour();
@@ -117,7 +124,26 @@ class _FeedShellScreenState extends State<FeedShellScreen> {
     _feedScrollController.dispose();
     _notificationController.dispose();
     _notificationTimer?.cancel();
+    _fcmTokenRefreshSub?.cancel();
+    widget.auth.onBeforeLogout = null;
     super.dispose();
+  }
+
+  void _registerFcmToken() {
+    final platform = Platform.isAndroid ? 'android' : 'ios';
+    final token = NotificationService().fcmToken;
+    if (token != null) {
+      _notificationApi.registerFcmToken(token, platform).catchError((_) {});
+    }
+    _fcmTokenRefreshSub = FirebaseMessaging.instance.onTokenRefresh.listen(
+      (newToken) => _notificationApi.registerFcmToken(newToken, platform).catchError((_) {}),
+    );
+    widget.auth.onBeforeLogout = () async {
+      final fcmToken = NotificationService().fcmToken;
+      if (fcmToken != null) {
+        await _notificationApi.removeFcmToken(fcmToken).catchError((_) {});
+      }
+    };
   }
 
   void _startNotificationPolling() {
