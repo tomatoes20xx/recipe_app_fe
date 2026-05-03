@@ -66,6 +66,8 @@ dependencies:
   firebase_crashlytics: ^5.1.0
   # Firebase Messaging for push notifications
   firebase_messaging: ^16.1.3
+  # Firebase Analytics for event tracking
+  firebase_analytics: ^12.3.0
   # Flutter Local Notifications for showing notifications
   flutter_local_notifications: ^21.0.0
   # Tutorial/Tour Guide for feature highlighting

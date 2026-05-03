@@ -1,5 +1,6 @@
 import "package:flutter/material.dart";
 
+import "../analytics/analytics_service.dart";
 import "../api/api_client.dart";
 import "../auth/auth_controller.dart";
 import "../localization/app_localizations.dart";
@@ -73,8 +74,10 @@ class _FollowersScreenState extends State<FollowersScreen> {
       final userApi = UserApi(widget.apiClient);
       if (newFollowing) {
         await userApi.followUser(user.username);
+        AnalyticsService().logFollow(user.username);
       } else {
         await userApi.unfollowUser(user.username);
+        AnalyticsService().logUnfollow(user.username);
       }
       // Refresh the list to update follow status
       controller.refresh();

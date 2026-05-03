@@ -1,6 +1,6 @@
-import "package:facebook_app_events/facebook_app_events.dart";
 import "package:flutter/foundation.dart";
 
+import "../analytics/analytics_service.dart";
 import "../api/api_client.dart";
 import "auth_api.dart";
 import "token_storage.dart";
@@ -140,7 +140,7 @@ class AuthController extends ChangeNotifier {
       token = t;
       await tokenStorage.saveToken(t);
       me = await authApi.me();
-      FacebookAppEvents().logCompletedRegistration(registrationMethod: 'email');
+      AnalyticsService().logSignupComplete();
     } finally {
       isLoading = false;
       notifyListeners();
@@ -153,6 +153,7 @@ class AuthController extends ChangeNotifier {
 
     try {
       await authApi.verifyEmail(token);
+      AnalyticsService().logEmailVerifyComplete();
       // Refresh user data to get updated emailVerified status
       me = await authApi.me();
     } finally {

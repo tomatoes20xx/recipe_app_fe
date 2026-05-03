@@ -3,6 +3,7 @@ import "dart:io";
 import "package:firebase_messaging/firebase_messaging.dart";
 import "package:flutter/foundation.dart";
 import "package:flutter_local_notifications/flutter_local_notifications.dart";
+import "../analytics/analytics_service.dart";
 
 /// Top-level function to handle background messages
 @pragma('vm:entry-point')
@@ -110,6 +111,11 @@ class NotificationService {
     final notification = message.notification;
     final data = message.data;
 
+    AnalyticsService().logPushReceived(
+      channel: data['channel']?.toString(),
+      type: data['type']?.toString(),
+    );
+
     if (notification != null) {
       // Show local notification when app is in foreground
       await _showLocalNotification(
@@ -123,6 +129,11 @@ class NotificationService {
   /// Handle notification tap
   void _handleNotificationTap(RemoteMessage message) {
     final data = message.data;
+
+    AnalyticsService().logPushOpened(
+      channel: data['channel']?.toString(),
+      type: data['type']?.toString(),
+    );
 
     // Navigate based on notification type
     final route = data['route'];

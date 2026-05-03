@@ -1,8 +1,8 @@
 import "dart:ui";
 
-import "package:facebook_app_events/facebook_app_events.dart";
 import "package:flutter/material.dart";
 
+import "../analytics/analytics_service.dart";
 import "../api/api_client.dart";
 import "../auth/auth_controller.dart";
 import "../collections/add_to_collection_bottom_sheet.dart";
@@ -80,10 +80,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     if (!_viewContentLogged && c.recipe != null) {
       _viewContentLogged = true;
       final recipe = c.recipe!;
-      FacebookAppEvents().logViewContent(
-        id: recipe.id,
-        type: recipe.cuisine ?? 'recipe',
-      );
+      AnalyticsService().logRecipeView(recipe.id, cuisineType: recipe.cuisine);
     }
     if (mounted) {
       setState(() {
@@ -189,8 +186,10 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
       final wasBookmarked = _viewerHasBookmarked ?? false;
       if (wasBookmarked) {
         await recipeApi.unbookmark(r.id);
+        AnalyticsService().logRecipeUnsave(r.id);
       } else {
         await recipeApi.bookmark(r.id);
+        AnalyticsService().logRecipeSave(r.id);
       }
       if (!mounted) return;
       final base = _localBookmarks ?? r.counts.bookmarks;

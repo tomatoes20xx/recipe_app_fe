@@ -1,5 +1,6 @@
 import "package:flutter/material.dart";
 
+import "../../analytics/analytics_service.dart";
 import "../../api/api_client.dart";
 import "../../auth/auth_controller.dart";
 import "../../feed/feed_controller.dart";
@@ -167,6 +168,7 @@ class FeedList extends StatelessWidget {
               child: InkWell(
                 borderRadius: BorderRadius.circular(16),
                 onTap: () async {
+                  AnalyticsService().logFeedCardTap(item.id, position: recipeIndex);
                   final result = await Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (_) => RecipeDetailScreen(
@@ -190,6 +192,7 @@ class FeedList extends StatelessWidget {
                   auth: auth,
                   shoppingListController: shoppingListController,
                   onActionCompleted: onActionCompleted,
+                  position: recipeIndex,
                 ),
               ),
             ),

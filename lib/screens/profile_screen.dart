@@ -3,6 +3,7 @@ import "dart:io";
 import "package:flutter/material.dart";
 import "package:image_picker/image_picker.dart";
 
+import "../analytics/analytics_service.dart";
 import "../api/api_client.dart";
 import "../auth/auth_api.dart";
 import "../auth/auth_controller.dart";
@@ -172,8 +173,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final userApi = UserApi(widget.apiClient);
       if (newFollowing) {
         await userApi.followUser(widget.username!);
+        AnalyticsService().logFollow(widget.username!);
       } else {
         await userApi.unfollowUser(widget.username!);
+        AnalyticsService().logUnfollow(widget.username!);
       }
       if (mounted) {
         ErrorUtils.showSuccess(

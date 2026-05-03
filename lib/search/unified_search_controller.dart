@@ -1,4 +1,5 @@
 import "package:flutter/foundation.dart";
+import "package:recipe_app_fe/analytics/analytics_service.dart";
 import "package:recipe_app_fe/constants/enums.dart";
 import "../users/user_api.dart";
 import "../users/user_models.dart";
@@ -208,8 +209,10 @@ class UnifiedSearchController extends ChangeNotifier {
     try {
       if (newFollowing) {
         await userApi.followUser(username);
+        AnalyticsService().logFollow(username);
       } else {
         await userApi.unfollowUser(username);
+        AnalyticsService().logUnfollow(username);
       }
     } catch (e) {
       users[i] = old;

@@ -1,6 +1,7 @@
 import "package:flutter/material.dart";
 import "package:cached_network_image/cached_network_image.dart";
 
+import "../../analytics/analytics_service.dart";
 import "../../api/api_client.dart";
 import "../../auth/auth_controller.dart";
 import "../../collections/add_to_collection_bottom_sheet.dart";
@@ -52,6 +53,7 @@ class _FullScreenFeedCardState extends State<FullScreenFeedCard> {
   }
 
   void _navigateToDetail() async {
+    AnalyticsService().logFeedCardTap(widget.item.id);
     final result = await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => RecipeDetailScreen(

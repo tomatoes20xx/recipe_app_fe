@@ -1,4 +1,5 @@
 import "package:flutter/foundation.dart";
+import "../analytics/analytics_service.dart";
 import "user_api.dart";
 import "user_models.dart";
 
@@ -94,8 +95,10 @@ class UserSearchController extends ChangeNotifier {
     try {
       if (nextFollowing) {
         await userApi.followUser(username);
+        AnalyticsService().logFollow(username);
       } else {
         await userApi.unfollowUser(username);
+        AnalyticsService().logUnfollow(username);
       }
     } catch (e) {
       // Rollback on error

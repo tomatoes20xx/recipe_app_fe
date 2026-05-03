@@ -1,5 +1,6 @@
 import "package:flutter/material.dart";
 
+import "../analytics/analytics_service.dart";
 import "../api/api_client.dart";
 import "../auth/auth_controller.dart";
 import "../constants/dietary_preferences.dart";
@@ -57,6 +58,7 @@ class _HomeScreenState extends State<HomeScreen> {
     widget.feed.addListener(_onFeedChanged);
     widget.feedViewController.addListener(_onFeedViewChanged);
     widget.scrollController.addListener(_onScroll);
+    AnalyticsService().logFeedView();
   }
 
   void _onScroll() {

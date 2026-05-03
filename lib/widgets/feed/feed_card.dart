@@ -1,6 +1,7 @@
 import "package:flutter/material.dart";
 import "package:cached_network_image/cached_network_image.dart";
 
+import "../../analytics/analytics_service.dart";
 import "../../api/api_client.dart";
 import "../../auth/auth_controller.dart";
 import "../../collections/add_to_collection_bottom_sheet.dart";
@@ -24,6 +25,7 @@ class FeedCard extends StatefulWidget {
     required this.auth,
     required this.shoppingListController,
     this.onActionCompleted,
+    this.position,
   });
 
   final FeedItem item;
@@ -33,6 +35,7 @@ class FeedCard extends StatefulWidget {
   final AuthController auth;
   final ShoppingListController shoppingListController;
   final VoidCallback? onActionCompleted;
+  final int? position;
 
   @override
   State<FeedCard> createState() => _FeedCardState();
@@ -40,6 +43,12 @@ class FeedCard extends StatefulWidget {
 
 class _FeedCardState extends State<FeedCard> {
   bool _isDescriptionExpanded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    AnalyticsService().logFeedCardImpression(widget.item.id, position: widget.position);
+  }
 
   @override
   Widget build(BuildContext context) {
