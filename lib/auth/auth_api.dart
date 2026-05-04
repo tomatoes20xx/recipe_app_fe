@@ -49,6 +49,7 @@ class AuthApi {
       "password": password,
       "username": username,
       if (displayName != null && displayName.isNotEmpty) "displayName": displayName,
+      "platform": Platform.isIOS ? "ios" : "android",
     });
 
     final token = (data["token"] ?? "").toString();
@@ -154,6 +155,7 @@ class AuthApi {
       "username": username,
       if (displayName != null && displayName.isNotEmpty) "displayName": displayName,
       if (bio != null && bio.isNotEmpty) "bio": bio,
+      "platform": Platform.isIOS ? "ios" : "android",
     });
 
     final token = (data["token"] ?? "").toString();
