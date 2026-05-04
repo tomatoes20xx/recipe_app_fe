@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../analytics/analytics_service.dart';
 import '../api/api_client.dart';
 import '../auth/auth_controller.dart';
 import '../localization/app_localizations.dart';
@@ -298,6 +299,7 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
 
     try {
       await widget.commentsController.addComment(content, parentId: parentId);
+      AnalyticsService().logComment(widget.recipeId);
       _commentController.clear();
       setState(() {
         _replyingToId = null;

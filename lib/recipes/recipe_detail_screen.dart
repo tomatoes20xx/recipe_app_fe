@@ -152,8 +152,10 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
       final wasLiked = _viewerHasLiked ?? false;
       if (wasLiked) {
         await recipeApi.unlike(r.id);
+        AnalyticsService().logUnlike(r.id);
       } else {
         await recipeApi.like(r.id);
+        AnalyticsService().logLike(r.id);
       }
       if (!mounted) return;
       final base = _localLikes ?? r.counts.likes;

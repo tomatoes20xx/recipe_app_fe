@@ -135,6 +135,26 @@ class AnalyticsService {
     _faLog('recipe_unsave', params: {'recipe_id': recipeId});
   }
 
+  // Auto-tracked server-side on like/unlike → Firebase only.
+  void logLike(String recipeId) {
+    _faLog('recipe_like', params: {'recipe_id': recipeId});
+  }
+
+  void logUnlike(String recipeId) {
+    _faLog('recipe_unlike', params: {'recipe_id': recipeId});
+  }
+
+  // Auto-tracked server-side on comment → Firebase only.
+  void logComment(String recipeId) {
+    _faLog('recipe_comment', params: {'recipe_id': recipeId});
+  }
+
+  // Not auto-tracked server-side → backend + Firebase.
+  void logShare(String recipeId) {
+    _track('share', recipeId: recipeId);
+    _faLog('share', params: {'recipe_id': recipeId});
+  }
+
   // Not auto-tracked → backend + Firebase.
   void logRecipeCook(String recipeId) {
     _track('recipe_cook', recipeId: recipeId);

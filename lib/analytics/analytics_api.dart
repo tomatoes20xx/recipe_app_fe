@@ -22,19 +22,7 @@ class AnalyticsApi {
         if (metadata != null) "metadata": metadata,
       };
 
-      await api.post("/analytics/track", body: body, auth: false);
-      // Fire-and-forget: don't await or show errors to user
-    } catch (e) {
-      // Silently fail - analytics tracking should not affect user experience
-    }
-  }
-
-  /// Track a recipe view (convenience method)
-  /// Note: GET /recipes/:id already auto-tracks views, but this can be used
-  /// for explicit tracking if needed
-  Future<void> trackRecipeView(String recipeId) async {
-    try {
-      await api.post("/recipes/$recipeId/view", auth: false);
+      await api.post("/analytics/track", body: body, auth: true);
       // Fire-and-forget: don't await or show errors to user
     } catch (e) {
       // Silently fail - analytics tracking should not affect user experience

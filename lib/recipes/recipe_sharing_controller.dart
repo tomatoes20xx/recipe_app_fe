@@ -1,5 +1,6 @@
 import "package:flutter/foundation.dart";
 
+import "../analytics/analytics_service.dart";
 import "../sharing/sharing_models.dart";
 import "recipe_api.dart";
 
@@ -65,6 +66,7 @@ class RecipeSharingController extends ChangeNotifier {
 
     try {
       await recipeApi.shareRecipe(recipeId, userIds);
+      AnalyticsService().logShare(recipeId);
 
       // Reload to get full user details from server
       await loadSharedWith();
