@@ -610,6 +610,11 @@ class AppLocalizations {
   String get tourTapToContinue => _localizedValues[locale.languageCode]?["tourTapToContinue"] ?? "Tap the highlighted area to continue";
   String get tourAllSet => _localizedValues[locale.languageCode]?["tourAllSet"] ?? "You're all set! Enjoy using Yummy! 🎉";
 
+  // Email verification gate (bottom sheet shown before gated actions)
+  String get emailGateTitle => _localizedValues[locale.languageCode]?["emailGateTitle"] ?? "Verify your email first";
+  String emailGateMessage(String email) => (_localizedValues[locale.languageCode]?["emailGateMessage"] ?? "To continue, please verify your email address ({email}).").replaceAll("{email}", email);
+  String get emailGateButton => _localizedValues[locale.languageCode]?["emailGateButton"] ?? "Verify email";
+
   // Push notification permission prompt
   String get pushPromptTitle => _localizedValues[locale.languageCode]?["pushPromptTitle"] ?? "New Georgian Recipes";
   String get pushPromptDescription => _localizedValues[locale.languageCode]?["pushPromptDescription"] ?? "Enable notifications and never miss new Georgian dishes.";
@@ -1644,6 +1649,11 @@ class AppLocalizations {
       "logInToViewProfiles": "Log in to view profiles",
       "pleaseLogInToShareList": "Please log in to share your shopping list",
 
+      // Email verification gate
+      "emailGateTitle": "Verify your email first",
+      "emailGateMessage": "To continue, please verify your email address ({email}).",
+      "emailGateButton": "Verify email",
+
       // Push notification prompt
       "pushPromptTitle": "New Georgian Recipes",
       "pushPromptDescription": "Enable notifications and never miss new Georgian dishes.",
@@ -2443,6 +2453,11 @@ class AppLocalizations {
       "pleaseLogInToReport": "რეცეპტის დასარეპორტებლად გთხოვთ გაიაროთ ავტორიზაცია",
       "logInToViewProfiles": "პროფილის სანახავად შედით სისტემაში",
       "pleaseLogInToShareList": "სიის გასაზიარებლად გთხოვთ გაიაროთ ავტორიზაცია",
+
+      // Email verification gate
+      "emailGateTitle": "დაადასტურეთ თქვენი ელ-ფოსტა",
+      "emailGateMessage": "გასაგრძელებლად, გთხოვთ დაადასტუროთ ელ-ფოსტის მისამართი ({email}).",
+      "emailGateButton": "ელ-ფოსტის დადასტურება",
 
       // Push notification prompt
       "pushPromptTitle": "არ გამოტოვოთ თქვენითვის საინტერესო ინფორმაცია!",

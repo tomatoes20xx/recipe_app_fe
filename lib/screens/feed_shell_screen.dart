@@ -130,51 +130,54 @@ class _FeedShellScreenState extends State<FeedShellScreen>
     }
     if (widget.auth.me == null || widget.auth.emailVerified) return true;
 
-    final email = widget.auth.me?['email'] ?? 'your email';
+    final email = widget.auth.me?['email']?.toString() ?? '';
     bool openVerification = false;
     await showModalBottomSheet<void>(
       context: context,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2))),
-            const SizedBox(height: 20),
-            const Text('📧', style: TextStyle(fontSize: 40)),
-            const SizedBox(height: 12),
-            const Text(
-              'Verify your email first',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'To continue, please verify your email address ($email).',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-            ),
-            const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  openVerification = true;
-                  Navigator.of(ctx).pop();
-                },
-                child: const Text('Verify email'),
+      builder: (ctx) {
+        final l = AppLocalizations.of(ctx);
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2))),
+              const SizedBox(height: 20),
+              const Text('📧', style: TextStyle(fontSize: 40)),
+              const SizedBox(height: 12),
+              Text(
+                l?.emailGateTitle ?? 'Verify your email first',
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
-            ),
-            const SizedBox(height: 8),
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('Not now'),
-            ),
-          ],
-        ),
-      ),
+              const SizedBox(height: 8),
+              Text(
+                l?.emailGateMessage(email) ?? 'To continue, please verify your email address ($email).',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    openVerification = true;
+                    Navigator.of(ctx).pop();
+                  },
+                  child: Text(l?.emailGateButton ?? 'Verify email'),
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: Text(l?.attPermissionSkip ?? 'Not now'),
+              ),
+            ],
+          ),
+        );
+      },
     );
     if (openVerification) {
       await _openVerificationScreen(codeSent: widget.auth.verificationEmailSent);

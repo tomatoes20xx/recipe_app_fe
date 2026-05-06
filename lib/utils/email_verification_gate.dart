@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../auth/auth_controller.dart';
+import '../localization/app_localizations.dart';
 import '../screens/email_verification_screen.dart';
 
 /// Returns true if the user's email is verified (or no gate is needed).
@@ -19,7 +20,8 @@ Future<bool> checkEmailVerified(BuildContext context, AuthController auth) async
   // Still null (offline) or already verified — let the action proceed.
   if (auth.me == null || auth.emailVerified) return true;
 
-  final email = auth.me?['email']?.toString() ?? 'your email';
+  final l = AppLocalizations.of(context);
+  final email = auth.me?['email']?.toString() ?? '';
   bool openVerification = false;
 
   if (!context.mounted) return false;
@@ -28,51 +30,54 @@ Future<bool> checkEmailVerified(BuildContext context, AuthController auth) async
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
     ),
-    builder: (ctx) => Padding(
-      padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: Colors.grey[300],
-              borderRadius: BorderRadius.circular(2),
+    builder: (ctx) {
+      final lCtx = AppLocalizations.of(ctx);
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
-          ),
-          const SizedBox(height: 20),
-          const Text('📧', style: TextStyle(fontSize: 40)),
-          const SizedBox(height: 12),
-          const Text(
-            'Verify your email first',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'To continue, please verify your email address ($email).',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-          ),
-          const SizedBox(height: 20),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () {
-                openVerification = true;
-                Navigator.of(ctx).pop();
-              },
-              child: const Text('Verify email'),
+            const SizedBox(height: 20),
+            const Text('📧', style: TextStyle(fontSize: 40)),
+            const SizedBox(height: 12),
+            Text(
+              lCtx?.emailGateTitle ?? l?.emailGateTitle ?? 'Verify your email first',
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-          ),
-          const SizedBox(height: 8),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Not now'),
-          ),
-        ],
-      ),
-    ),
+            const SizedBox(height: 8),
+            Text(
+              lCtx?.emailGateMessage(email) ?? l?.emailGateMessage(email) ?? 'To continue, please verify your email address ($email).',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  openVerification = true;
+                  Navigator.of(ctx).pop();
+                },
+                child: Text(lCtx?.emailGateButton ?? l?.emailGateButton ?? 'Verify email'),
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: Text(lCtx?.attPermissionSkip ?? l?.attPermissionSkip ?? 'Not now'),
+            ),
+          ],
+        ),
+      );
+    },
   );
 
   if (openVerification && context.mounted) {
