@@ -74,6 +74,28 @@ class NotificationController extends ChangeNotifier {
     await loadInitial(unreadOnly: unreadOnly);
   }
 
+  /// Silently fetch the first page and prepend any new items without
+  /// clearing the list or showing a loading spinner.
+  Future<void> silentRefresh({bool unreadOnly = false}) async {
+    if (isLoading) return;
+    try {
+      final res = await notificationApi.getNotifications(
+        limit: limit,
+        cursor: null,
+        unreadOnly: unreadOnly,
+      );
+      final existingIds = items.map((n) => n.id).toSet();
+      final newItems = res.items.where((n) => !existingIds.contains(n.id)).toList();
+      if (newItems.isNotEmpty) {
+        items.insertAll(0, newItems);
+      }
+      unreadCount = res.unreadCount;
+      _notify();
+    } catch (_) {
+      // Silently fail
+    }
+  }
+
   /// Mark a notification as read
   Future<void> markAsRead(String notificationId) async {
     final index = items.indexWhere((n) => n.id == notificationId);
@@ -128,6 +150,14 @@ class NotificationController extends ChangeNotifier {
       unreadCount = previousUnreadCount;
       _notify();
       rethrow;
+    }
+  }
+
+  /// Set unread count directly (called from FCM data message handler)
+  void setUnreadCount(int count) {
+    if (count != unreadCount) {
+      unreadCount = count;
+      _notify();
     }
   }
 

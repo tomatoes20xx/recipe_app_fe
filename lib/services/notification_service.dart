@@ -27,6 +27,9 @@ class NotificationService {
   /// Callback when notification is tapped
   Function(String?)? onNotificationTap;
 
+  /// Callback when a badge-count data message arrives (foreground)
+  Function(int)? onBadgeCountUpdate;
+
   /// Initialize notification service
   Future<void> initialize() async {
     // Initialize local notifications
@@ -116,14 +119,21 @@ class NotificationService {
       type: data['type']?.toString(),
     );
 
-    if (notification != null) {
-      // Show local notification when app is in foreground
-      await _showLocalNotification(
-        title: notification.title ?? 'Yummy',
-        body: notification.body ?? '',
-        payload: data['route'] ?? data['recipe_id'] ?? '',
-      );
+    // Data-only message — update badge count silently, no OS notification
+    if (notification == null) {
+      if (data['type'] == 'notification_badge') {
+        final count = int.tryParse(data['count'] ?? '') ?? 0;
+        onBadgeCountUpdate?.call(count);
+      }
+      return;
     }
+
+    // Show local notification when app is in foreground
+    await _showLocalNotification(
+      title: notification.title ?? 'Yummy',
+      body: notification.body ?? '',
+      payload: data['route'] ?? data['recipe_id'] ?? '',
+    );
   }
 
   /// Handle notification tap

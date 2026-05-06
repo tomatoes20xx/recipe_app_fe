@@ -65,7 +65,6 @@ class _FeedShellScreenState extends State<FeedShellScreen>
 
   late final NotificationController _notificationController;
   late final NotificationApi _notificationApi;
-  Timer? _notificationTimer;
   StreamSubscription<String>? _fcmTokenRefreshSub;
 
   // Tour keys
@@ -92,8 +91,15 @@ class _FeedShellScreenState extends State<FeedShellScreen>
     // Instead, we use ListenableBuilder in the widget tree to only rebuild
     // the notification badge, not the entire screen.
     _notificationController.refreshUnreadCount();
-    _startNotificationPolling();
     _registerFcmToken();
+    NotificationService().onBadgeCountUpdate = (count) {
+      if (count > _notificationController.unreadCount) {
+        // New notification arrived — silently prepend it so it's ready when user taps
+        _notificationController.silentRefresh();
+      } else {
+        _notificationController.setUnreadCount(count);
+      }
+    };
 
     // Check and show tour for first-time users
     _checkAndShowTour();
@@ -208,7 +214,7 @@ class _FeedShellScreenState extends State<FeedShellScreen>
     _feedViewController.dispose();
     _feedScrollController.dispose();
     _notificationController.dispose();
-    _notificationTimer?.cancel();
+    NotificationService().onBadgeCountUpdate = null;
     _fcmTokenRefreshSub?.cancel();
     widget.auth.onBeforeLogout = null;
     super.dispose();
@@ -218,6 +224,9 @@ class _FeedShellScreenState extends State<FeedShellScreen>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed && mounted) {
       PushPromptService().onForegrounded(context, widget.auth, widget.apiClient);
+      if (widget.auth.isLoggedIn) {
+        _notificationController.refreshUnreadCount();
+      }
     }
   }
 
@@ -236,14 +245,6 @@ class _FeedShellScreenState extends State<FeedShellScreen>
         await _notificationApi.removeFcmToken(fcmToken).catchError((_) {});
       }
     };
-  }
-
-  void _startNotificationPolling() {
-    _notificationTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
-      if (mounted && widget.auth.isLoggedIn) {
-        _notificationController.refreshUnreadCount();
-      }
-    });
   }
 
   void _setPage(int index) {
@@ -324,7 +325,10 @@ class _FeedShellScreenState extends State<FeedShellScreen>
             currentIndex: _currentIndex,
             unreadCount: _notificationController.unreadCount,
             onHomeTap: _onHomeTap,
-            onNotificationsTap: () => _setPage(1),
+            onNotificationsTap: () {
+                _setPage(1);
+                _notificationController.silentRefresh();
+              },
             onAddRecipeTap: () async {
               if (!await _checkEmailVerified()) return;
               if (widget.auth.isSoftBanned || widget.auth.isPermanentlyBanned) {
