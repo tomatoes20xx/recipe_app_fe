@@ -6,7 +6,6 @@ import "../localization/language_controller.dart";
 import "../services/update_service.dart";
 import "../shopping/shopping_list_controller.dart";
 import "../theme/theme_controller.dart";
-import "email_verification_screen.dart";
 import "feed_shell_screen.dart";
 import "login_screen.dart";
 
@@ -79,21 +78,8 @@ class _AuthGateState extends State<AuthGate> {
       animation: widget.auth,
       builder: (context, _) {
         if (widget.auth.isLoggedIn) {
-          // Check if email is verified.
-          // If me is null (offline/network error), skip verification check —
-          // we can't know the status without a server response.
-          final emailVerified =
-              widget.auth.me == null || widget.auth.me?['emailVerified'] == true;
-
-          if (!emailVerified) {
-            // User logged in but email not verified - show verification screen
-            return EmailVerificationScreen(
-              auth: widget.auth,
-              email: widget.auth.me?['email'] ?? '',
-            );
-          }
-
-          // Email verified - show main app
+          // Always show the main app — unverified users see a banner inside
+          // FeedShellScreen and are gated only on write actions.
           return FeedShellScreen(
             auth: widget.auth,
             apiClient: widget.apiClient,

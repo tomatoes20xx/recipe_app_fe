@@ -6,7 +6,6 @@ import "../auth/auth_controller.dart";
 import "../localization/app_localizations.dart";
 import "../services/google_auth_service.dart";
 import "../utils/error_utils.dart";
-import "email_verification_screen.dart";
 import "forgot_password_screen.dart";
 import "terms_and_privacy_screen.dart";
 import "username_selection_screen.dart";
@@ -279,25 +278,7 @@ class _LoginScreenState extends State<LoginScreen>
             ? null
             : _displayNameController.text.trim(),
       );
-
-      if (mounted) {
-        final verified = await Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => EmailVerificationScreen(
-              auth: widget.auth,
-              email: email,
-            ),
-          ),
-        );
-
-        if (verified == true && mounted) {
-          ScaffoldMessenger.of(context).clearSnackBars();
-          setState(() {
-            _isSignUp = false;
-            error = null;
-          });
-        }
-      }
+      // AuthGate rebuilds on notifyListeners() inside signup() and routes to FeedShellScreen.
     } on ApiException catch (e) {
       setState(() => error = e.message);
     } catch (_) {

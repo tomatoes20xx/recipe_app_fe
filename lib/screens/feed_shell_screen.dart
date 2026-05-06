@@ -23,6 +23,7 @@ import "../theme/theme_controller.dart";
 import "../utils/error_utils.dart";
 import "../utils/ui_utils.dart";
 import "create_recipe_screen.dart";
+import "email_verification_screen.dart";
 import "home_screen.dart";
 import "notifications_screen.dart";
 import "profile_screen.dart";
@@ -114,6 +115,83 @@ class _FeedShellScreenState extends State<FeedShellScreen> {
           );
         }
       });
+    }
+  }
+
+  /// Returns true if the user is allowed to perform a write action.
+  /// Shows a bottom sheet gate if email is not verified.
+  Future<bool> _checkEmailVerified() async {
+    // me not loaded yet (slow network at startup) — fetch it now.
+    if (widget.auth.me == null && widget.auth.isLoggedIn) {
+      await widget.auth.refreshMe();
+    }
+    if (widget.auth.me == null || widget.auth.emailVerified) return true;
+
+    final email = widget.auth.me?['email'] ?? 'your email';
+    bool openVerification = false;
+    await showModalBottomSheet<void>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2))),
+            const SizedBox(height: 20),
+            const Text('📧', style: TextStyle(fontSize: 40)),
+            const SizedBox(height: 12),
+            const Text(
+              'Verify your email first',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'To continue, please verify your email address ($email).',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  openVerification = true;
+                  Navigator.of(ctx).pop();
+                },
+                child: const Text('Verify email'),
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Not now'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (openVerification) {
+      await _openVerificationScreen(codeSent: widget.auth.verificationEmailSent);
+    }
+    return false;
+  }
+
+  Future<void> _openVerificationScreen({bool codeSent = false}) async {
+    final navigator = Navigator.of(context);
+    final verified = await navigator.push<bool>(
+      MaterialPageRoute(
+        builder: (_) => EmailVerificationScreen(
+          auth: widget.auth,
+          email: widget.auth.me?['email'] ?? '',
+          codeSent: codeSent,
+        ),
+      ),
+    );
+    if (verified == true) {
+      await widget.auth.refreshMe();
     }
   }
 
@@ -234,6 +312,7 @@ class _FeedShellScreenState extends State<FeedShellScreen> {
             onHomeTap: _onHomeTap,
             onNotificationsTap: () => _setPage(1),
             onAddRecipeTap: () async {
+              if (!await _checkEmailVerified()) return;
               if (widget.auth.isSoftBanned || widget.auth.isPermanentlyBanned) {
                 final localizations = AppLocalizations.of(context);
                 final bannedUntil = widget.auth.softBannedUntil;

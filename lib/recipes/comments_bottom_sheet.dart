@@ -7,6 +7,7 @@ import '../auth/auth_controller.dart';
 import '../localization/app_localizations.dart';
 import '../reports/report_bottom_sheet.dart';
 import '../reports/report_models.dart';
+import '../utils/email_verification_gate.dart';
 import '../utils/error_utils.dart';
 import '../widgets/common/app_bottom_sheet.dart';
 import 'comment_input_section.dart';
@@ -286,6 +287,7 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
       ErrorUtils.showError(context, localizations?.cannotCommentWhileBanned ?? "You cannot comment while your account is suspended");
       return;
     }
+    if (!await checkEmailVerified(context, widget.auth!)) return;
 
     HapticFeedback.lightImpact();
 
@@ -308,7 +310,11 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
       widget.onCommentPosted?.call();
     } catch (e) {
       if (mounted) {
-        ErrorUtils.showError(context, e);
+        if (e is ApiException && e.statusCode == 403 && e.details is Map && (e.details as Map)['code'] == 'EMAIL_UNVERIFIED') {
+          await checkEmailVerified(context, widget.auth!);
+        } else {
+          ErrorUtils.showError(context, e);
+        }
       }
     } finally {
       if (mounted) {

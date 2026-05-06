@@ -13,6 +13,7 @@ import "../localization/app_localizations.dart";
 import "../screens/create_recipe_screen.dart";
 import "../screens/profile_screen.dart";
 import "../shopping/shopping_list_controller.dart";
+import "../utils/email_verification_gate.dart";
 import "../utils/error_utils.dart";
 import "../utils/ui_utils.dart";
 import "../widgets/ingredient_action_bar.dart";
@@ -145,6 +146,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
       ErrorUtils.showError(context, AppLocalizations.of(context)?.pleaseLogInToLike ?? "Please log in to like recipes");
       return;
     }
+    if (!await checkEmailVerified(context, widget.auth!)) return;
 
     setState(() => _isLiking = true);
 
@@ -165,7 +167,11 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
       });
     } catch (e) {
       if (mounted) {
-        ErrorUtils.showError(context, e);
+        if (_isEmailUnverified(e)) {
+          await checkEmailVerified(context, widget.auth!);
+        } else {
+          ErrorUtils.showError(context, e);
+        }
       }
     } finally {
       if (mounted) {
@@ -173,6 +179,12 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
       }
     }
   }
+
+  bool _isEmailUnverified(Object e) =>
+      e is ApiException &&
+      e.statusCode == 403 &&
+      e.details is Map &&
+      (e.details as Map)['code'] == 'EMAIL_UNVERIFIED';
 
   Future<void> _toggleBookmark() async {
     final r = c.recipe;

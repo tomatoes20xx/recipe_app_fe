@@ -44,6 +44,22 @@ class AuthController extends ChangeNotifier {
   /// Whether the account can post recipes and comments
   bool get canPost => isLoggedIn && !isSoftBanned && !isPermanentlyBanned;
 
+  /// Whether the current user's email is verified (false if me not yet loaded)
+  bool get emailVerified => me?['emailVerified'] == true;
+
+  /// True once a verification email has been successfully sent this session.
+  /// Persists until the app is killed — enough to skip the "Send email" step
+  /// when the user returns to a write action after already requesting a code.
+  bool verificationEmailSent = false;
+
+  /// Refresh the cached /me data and notify listeners (e.g. after email verification)
+  Future<void> refreshMe() async {
+    try {
+      me = await authApi.me();
+      notifyListeners();
+    } catch (_) {}
+  }
+
   /// Number of violations (0–5)
   int get violationCount {
     final raw = me?["violation_count"];
@@ -168,6 +184,7 @@ class AuthController extends ChangeNotifier {
 
     try {
       await authApi.resendVerificationEmail();
+      verificationEmailSent = true;
     } finally {
       isLoading = false;
       notifyListeners();

@@ -15,6 +15,7 @@ import "../shopping/shopping_list_controller.dart";
 import "../users/user_api.dart";
 import "../users/user_models.dart";
 import "../users/user_recipes_controller.dart";
+import "../utils/email_verification_gate.dart";
 import "../utils/error_utils.dart";
 import "../utils/image_utils.dart";
 import "../utils/ui_utils.dart";
@@ -157,6 +158,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _toggleFollow() async {
     if (widget.username == null || _userProfile == null) return;
+    if (!await checkEmailVerified(context, widget.auth)) return;
 
     final oldFollowing = _isFollowing;
     final newFollowing = !_isFollowing;
@@ -196,7 +198,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
         );
       });
       if (mounted) {
-        ErrorUtils.showError(context, e);
+        if (e is ApiException && e.statusCode == 403 && e.details is Map && (e.details as Map)['code'] == 'EMAIL_UNVERIFIED') {
+          await checkEmailVerified(context, widget.auth);
+        } else {
+          ErrorUtils.showError(context, e);
+        }
       }
     }
   }
