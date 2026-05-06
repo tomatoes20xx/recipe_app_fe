@@ -18,6 +18,7 @@ import "../notifications/notification_api.dart";
 import "../notifications/notification_controller.dart";
 import "../services/app_tour_service.dart";
 import "../services/notification_service.dart";
+import "../services/push_prompt_service.dart";
 import "../shopping/shopping_list_controller.dart";
 import "../theme/theme_controller.dart";
 import "../utils/error_utils.dart";
@@ -54,7 +55,8 @@ class FeedShellScreen extends StatefulWidget {
   State<FeedShellScreen> createState() => _FeedShellScreenState();
 }
 
-class _FeedShellScreenState extends State<FeedShellScreen> {
+class _FeedShellScreenState extends State<FeedShellScreen>
+    with WidgetsBindingObserver {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   late final FeedController feed;
   late final FeedViewController _feedViewController;
@@ -76,6 +78,7 @@ class _FeedShellScreenState extends State<FeedShellScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     feed = FeedController(
       feedApi: FeedApi(widget.apiClient),
       recipeApi: RecipeApi(widget.apiClient),
@@ -197,6 +200,7 @@ class _FeedShellScreenState extends State<FeedShellScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     feed.dispose();
     _feedViewController.dispose();
     _feedScrollController.dispose();
@@ -205,6 +209,13 @@ class _FeedShellScreenState extends State<FeedShellScreen> {
     _fcmTokenRefreshSub?.cancel();
     widget.auth.onBeforeLogout = null;
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && mounted) {
+      PushPromptService().onForegrounded(context, widget.auth, widget.apiClient);
+    }
   }
 
   void _registerFcmToken() {

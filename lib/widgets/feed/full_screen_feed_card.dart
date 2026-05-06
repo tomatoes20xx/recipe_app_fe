@@ -12,6 +12,7 @@ import "../../recipes/comments_bottom_sheet.dart";
 import "../../recipes/recipe_detail_screen.dart";
 import "../../screens/profile_screen.dart";
 import "../../shopping/shopping_list_controller.dart";
+import "../../services/push_prompt_service.dart";
 import "../../utils/ui_utils.dart";
 import "../engagement_stat_widget.dart";
 import "expandable_description.dart";
@@ -419,7 +420,11 @@ class _EngagementOverlay extends StatelessWidget {
                   iconSize: 26,
                   textSize: 14,
                   onTap: () async {
+                    final wasLiked = item.viewerHasLiked;
                     await feed.toggleLike(item.id);
+                    if (!wasLiked && context.mounted) {
+                      PushPromptService().onLikeCompleted(context, apiClient);
+                    }
                     Future.delayed(const Duration(milliseconds: 500), () {
                       onActionCompleted?.call();
                     });
@@ -465,7 +470,11 @@ class _EngagementOverlay extends StatelessWidget {
                   iconSize: 26,
                   textSize: 14,
                   onTap: () async {
+                    final wasBookmarked = item.viewerHasBookmarked;
                     await feed.toggleBookmark(item.id);
+                    if (!wasBookmarked && context.mounted) {
+                      PushPromptService().onSaveCompleted(context, apiClient);
+                    }
                     Future.delayed(const Duration(milliseconds: 500), () {
                       onActionCompleted?.call();
                     });

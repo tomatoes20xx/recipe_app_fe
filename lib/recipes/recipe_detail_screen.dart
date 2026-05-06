@@ -13,6 +13,7 @@ import "../localization/app_localizations.dart";
 import "../screens/create_recipe_screen.dart";
 import "../screens/profile_screen.dart";
 import "../shopping/shopping_list_controller.dart";
+import "../services/push_prompt_service.dart";
 import "../utils/email_verification_gate.dart";
 import "../utils/error_utils.dart";
 import "../utils/ui_utils.dart";
@@ -158,6 +159,9 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
       } else {
         await recipeApi.like(r.id);
         AnalyticsService().logLike(r.id);
+        if (mounted) {
+          PushPromptService().onLikeCompleted(context, widget.apiClient);
+        }
       }
       if (!mounted) return;
       final base = _localLikes ?? r.counts.likes;
@@ -204,6 +208,9 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
       } else {
         await recipeApi.bookmark(r.id);
         AnalyticsService().logRecipeSave(r.id);
+        if (mounted) {
+          PushPromptService().onSaveCompleted(context, widget.apiClient);
+        }
       }
       if (!mounted) return;
       final base = _localBookmarks ?? r.counts.bookmarks;

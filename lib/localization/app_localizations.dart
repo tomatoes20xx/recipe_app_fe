@@ -610,6 +610,11 @@ class AppLocalizations {
   String get tourTapToContinue => _localizedValues[locale.languageCode]?["tourTapToContinue"] ?? "Tap the highlighted area to continue";
   String get tourAllSet => _localizedValues[locale.languageCode]?["tourAllSet"] ?? "You're all set! Enjoy using Yummy! 🎉";
 
+  // Push notification permission prompt
+  String get pushPromptTitle => _localizedValues[locale.languageCode]?["pushPromptTitle"] ?? "New Georgian Recipes";
+  String get pushPromptDescription => _localizedValues[locale.languageCode]?["pushPromptDescription"] ?? "Enable notifications and never miss new Georgian dishes.";
+  String get pushPromptAllow => _localizedValues[locale.languageCode]?["pushPromptAllow"] ?? "Enable Notifications";
+
   // ATT permission sheet
   String get attPermissionTitle => _localizedValues[locale.languageCode]?["attPermissionTitle"] ?? "Personalized Experience";
   String get attPermissionSubtitle => _localizedValues[locale.languageCode]?["attPermissionSubtitle"] ?? "Yummy uses ads to keep the app free. Allowing tracking helps us show you ads that are actually relevant to you.";
@@ -1639,6 +1644,11 @@ class AppLocalizations {
       "logInToViewProfiles": "Log in to view profiles",
       "pleaseLogInToShareList": "Please log in to share your shopping list",
 
+      // Push notification prompt
+      "pushPromptTitle": "New Georgian Recipes",
+      "pushPromptDescription": "Enable notifications and never miss new Georgian dishes.",
+      "pushPromptAllow": "Enable Notifications",
+
       // Privacy
       "followersListPrivate": "This user's followers list is private",
       "followingListPrivate": "This user's following list is private",
@@ -2433,6 +2443,11 @@ class AppLocalizations {
       "pleaseLogInToReport": "რეცეპტის დასარეპორტებლად გთხოვთ გაიაროთ ავტორიზაცია",
       "logInToViewProfiles": "პროფილის სანახავად შედით სისტემაში",
       "pleaseLogInToShareList": "სიის გასაზიარებლად გთხოვთ გაიაროთ ავტორიზაცია",
+
+      // Push notification prompt
+      "pushPromptTitle": "არ გამოტოვოთ თქვენითვის საინტერესო ინფორმაცია!",
+      "pushPromptDescription": "ჩართეთ შეტყობინებები რათა არ გამოგრჩეთ სიახლეები.",
+      "pushPromptAllow": "შეტყობინებების ჩართვა",
 
       // Privacy
       "followersListPrivate": "ამ მომხმარებლის მიმდევრების სია დახურულია",

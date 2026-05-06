@@ -29,9 +29,6 @@ class NotificationService {
 
   /// Initialize notification service
   Future<void> initialize() async {
-    // Request permission for iOS
-    await _requestPermission();
-
     // Initialize local notifications
     await _initializeLocalNotifications();
 
@@ -56,14 +53,17 @@ class NotificationService {
     }
   }
 
-  /// Request notification permissions (iOS and Android 13+)
-  Future<void> _requestPermission() async {
+  /// Request notification permissions (iOS and Android 13+) and refresh FCM token.
+  /// Call this from the soft-prompt sheet when the user taps "Allow".
+  Future<void> requestPermission() async {
     await _firebaseMessaging.requestPermission(
       alert: true,
       badge: true,
       sound: true,
       provisional: false,
     );
+    // Re-fetch token; on iOS it may have been unavailable before permission was granted.
+    _fcmToken = await _firebaseMessaging.getToken();
   }
 
   /// Initialize local notifications
