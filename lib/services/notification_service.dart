@@ -1,7 +1,7 @@
 import "dart:async";
+import "dart:convert";
 import "dart:io";
 import "package:firebase_messaging/firebase_messaging.dart";
-import "package:flutter/foundation.dart";
 import "package:flutter_local_notifications/flutter_local_notifications.dart";
 import "../analytics/analytics_service.dart";
 
@@ -24,8 +24,14 @@ class NotificationService {
   String? _fcmToken;
   String? get fcmToken => _fcmToken;
 
-  /// Callback when notification is tapped
-  Function(String?)? onNotificationTap;
+  /// Callback when notification is tapped. Receives the full FCM data map.
+  Function(Map<String, String?>)? onNotificationTap;
+
+  /// Stored when a notification is tapped before the handler is registered
+  /// (e.g. app launched cold from a notification).
+  Map<String, String?>? _pendingTap;
+  Map<String, String?>? get pendingTap => _pendingTap;
+  void clearPendingTap() => _pendingTap = null;
 
   /// Callback when a badge-count data message arrives (foreground)
   Function(int)? onBadgeCountUpdate;
@@ -86,8 +92,16 @@ class NotificationService {
     await _localNotifications.initialize(
       settings: initSettings,
       onDidReceiveNotificationResponse: (details) {
-        // Handle notification tap
-        onNotificationTap?.call(details.payload);
+        if (details.payload == null) return;
+        try {
+          final data = (jsonDecode(details.payload!) as Map<String, dynamic>)
+              .map((k, v) => MapEntry(k, v?.toString()));
+          if (onNotificationTap != null) {
+            onNotificationTap!.call(data);
+          } else {
+            _pendingTap = data;
+          }
+        } catch (_) {}
       },
     );
 
@@ -132,26 +146,26 @@ class NotificationService {
     await _showLocalNotification(
       title: notification.title ?? 'Yummy',
       body: notification.body ?? '',
-      payload: data['route'] ?? data['recipe_id'] ?? '',
+      payload: jsonEncode(data),
     );
   }
 
   /// Handle notification tap
   void _handleNotificationTap(RemoteMessage message) {
-    final data = message.data;
+    final rawData = message.data;
 
     AnalyticsService().logPushOpened(
-      channel: data['channel']?.toString(),
-      type: data['type']?.toString(),
+      channel: rawData['channel']?.toString(),
+      type: rawData['type']?.toString(),
     );
 
-    // Navigate based on notification type
-    final route = data['route'];
-    final recipeId = data['recipe_id'];
-    final userId = data['user_id'];
+    final data = rawData.map((k, v) => MapEntry(k, v.toString()));
 
-    // Call the callback with navigation data
-    onNotificationTap?.call(route ?? recipeId ?? userId);
+    if (onNotificationTap != null) {
+      onNotificationTap!.call(data);
+    } else {
+      _pendingTap = data;
+    }
   }
 
   /// Show local notification

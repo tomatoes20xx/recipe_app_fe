@@ -36,12 +36,14 @@ class RecipeDetailScreen extends StatefulWidget {
     required this.apiClient,
     this.auth,
     required this.shoppingListController,
+    this.openComments = false,
   });
 
   final String recipeId;
   final ApiClient apiClient;
   final AuthController? auth;
   final ShoppingListController shoppingListController;
+  final bool openComments;
 
   @override
   State<RecipeDetailScreen> createState() => _RecipeDetailScreenState();
@@ -53,6 +55,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
   late final RecipeSharingController _sharingController;
   bool _isLiking = false;
   bool _isBookmarking = false;
+  bool _commentsOpened = false;
   bool? _viewerHasLiked;
   bool? _viewerHasBookmarked;
   int? _localLikes;
@@ -83,6 +86,19 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
       _viewContentLogged = true;
       final recipe = c.recipe!;
       AnalyticsService().logRecipeView(recipe.id, cuisineType: recipe.cuisine);
+    }
+    if (widget.openComments && !_commentsOpened && c.recipe != null && mounted) {
+      _commentsOpened = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          showCommentsBottomSheet(
+            context: context,
+            recipeId: widget.recipeId,
+            apiClient: widget.apiClient,
+            auth: widget.auth,
+          );
+        }
+      });
     }
     if (mounted) {
       setState(() {

@@ -34,6 +34,7 @@ import "settings_screen.dart";
 import "shared_recipes_screen.dart";
 import "shared_shopping_lists_screen.dart";
 import "shopping_list_screen.dart";
+import "../recipes/recipe_detail_screen.dart";
 
 class FeedShellScreen extends StatefulWidget {
   const FeedShellScreen({
@@ -92,6 +93,12 @@ class _FeedShellScreenState extends State<FeedShellScreen>
     // the notification badge, not the entire screen.
     _notificationController.refreshUnreadCount();
     _registerFcmToken();
+    NotificationService().onNotificationTap = _navigateFromNotification;
+    final pendingTap = NotificationService().pendingTap;
+    if (pendingTap != null) {
+      NotificationService().clearPendingTap();
+      WidgetsBinding.instance.addPostFrameCallback((_) => _navigateFromNotification(pendingTap));
+    }
     NotificationService().onBadgeCountUpdate = (count) {
       if (count > _notificationController.unreadCount) {
         // New notification arrived — silently prepend it so it's ready when user taps
@@ -245,6 +252,63 @@ class _FeedShellScreenState extends State<FeedShellScreen>
         await _notificationApi.removeFcmToken(fcmToken).catchError((_) {});
       }
     };
+  }
+
+  void _navigateFromNotification(Map<String, String?> data) {
+    final type = data['type'];
+    final recipeId = data['recipe_id'];
+    final actorUsername = data['actor_username'];
+
+    switch (type) {
+      case 'like':
+      case 'recipe':
+      case 'bookmark':
+      case 'recipe_share':
+        if (recipeId != null) {
+          Navigator.of(context).push(MaterialPageRoute(
+            builder: (_) => RecipeDetailScreen(
+              recipeId: recipeId,
+              apiClient: widget.apiClient,
+              auth: widget.auth,
+              shoppingListController: widget.shoppingListController,
+            ),
+          ));
+        }
+        break;
+      case 'comment':
+        if (recipeId != null) {
+          Navigator.of(context).push(MaterialPageRoute(
+            builder: (_) => RecipeDetailScreen(
+              recipeId: recipeId,
+              apiClient: widget.apiClient,
+              auth: widget.auth,
+              shoppingListController: widget.shoppingListController,
+              openComments: true,
+            ),
+          ));
+        }
+        break;
+      case 'follow':
+        if (actorUsername != null) {
+          Navigator.of(context).push(MaterialPageRoute(
+            builder: (_) => ProfileScreen(
+              auth: widget.auth,
+              apiClient: widget.apiClient,
+              shoppingListController: widget.shoppingListController,
+              username: actorUsername,
+            ),
+          ));
+        }
+        break;
+      case 'shopping_list_share':
+        Navigator.of(context).push(MaterialPageRoute(
+          builder: (_) => SharedShoppingListsScreen(
+            apiClient: widget.apiClient,
+            auth: widget.auth,
+          ),
+        ));
+        break;
+    }
   }
 
   void _setPage(int index) {
