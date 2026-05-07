@@ -84,7 +84,7 @@ class _FeedShellScreenState extends State<FeedShellScreen>
       recipeApi: RecipeApi(widget.apiClient),
     );
     _feedViewController = FeedViewController();
-    feed.loadInitial();
+    _flushPendingSeenIds().then((_) => feed.loadInitial());
 
     _notificationApi = NotificationApi(widget.apiClient);
     _notificationController = NotificationController(notificationApi: _notificationApi);
@@ -110,6 +110,18 @@ class _FeedShellScreenState extends State<FeedShellScreen>
 
     // Check and show tour for first-time users
     _checkAndShowTour();
+  }
+
+  Future<void> _flushPendingSeenIds() async {
+    if (!widget.auth.isLoggedIn) return;
+    final ids = await FeedController.popPendingSeenIds();
+    if (ids.isEmpty) return;
+    try {
+      await FeedApi(widget.apiClient).postSeenRecipes(ids);
+    } catch (_) {
+      debugPrint('[DISCOVERY] flush failed, re-persisting ${ids.length} ids');
+      await FeedController.savePendingSeenIds(ids);
+    }
   }
 
   Future<void> _checkAndShowTour() async {
@@ -233,6 +245,14 @@ class _FeedShellScreenState extends State<FeedShellScreen>
       PushPromptService().onForegrounded(context, widget.auth, widget.apiClient);
       if (widget.auth.isLoggedIn) {
         _notificationController.refreshUnreadCount();
+      }
+    }
+    if (state == AppLifecycleState.paused || state == AppLifecycleState.detached) {
+      if (widget.auth.isLoggedIn) {
+        final ids = feed.flushSeenIds();
+        if (ids.isNotEmpty) {
+          FeedApi(widget.apiClient).postSeenRecipes(ids.toList()).catchError((_) {});
+        }
       }
     }
   }
@@ -777,6 +797,11 @@ class _FeedShellDrawerState extends State<_FeedShellDrawer> {
                   title: localizations?.global ?? "Global",
                   subtitle: localizations?.seeRecipesFromEveryone ?? "See recipes from everyone",
                   subItems: [
+                    _SubItem(
+                      label: localizations?.feedSortDiscovery ?? "Discovery",
+                      isActive: widget.feed.scope == FeedScope.global && widget.feed.sort == FeedSort.discovery,
+                      onTap: () => _selectOption(scope: FeedScope.global, sort: FeedSort.discovery),
+                    ),
                     _SubItem(
                       label: localizations?.recent ?? "Recent",
                       isActive: widget.feed.scope == FeedScope.global && widget.feed.sort == FeedSort.recent,

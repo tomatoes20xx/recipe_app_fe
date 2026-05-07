@@ -90,6 +90,9 @@ class AppLocalizations {
   String get applyFilters => _localizedValues[locale.languageCode]?["applyFilters"] ?? "Apply Filters";
 
   // Feed Scopes (Drawer menu)
+  String get feedSortDiscovery => _localizedValues[locale.languageCode]?["feedSortDiscovery"] ?? "Discovery";
+  String get feedDiscoveryEmptyTitle => _localizedValues[locale.languageCode]?["feedDiscoveryEmptyTitle"] ?? "You're all caught up!";
+  String get feedDiscoveryEmptySubtitle => _localizedValues[locale.languageCode]?["feedDiscoveryEmptySubtitle"] ?? "You've seen all recipes. Check back soon for new ones.";
   String get global => _localizedValues[locale.languageCode]?["global"] ?? "Global";
   String get seeRecipesFromEveryone => _localizedValues[locale.languageCode]?["seeRecipesFromEveryone"] ?? "See recipes from everyone";
   String get following => _localizedValues[locale.languageCode]?["following"] ?? "Following";
@@ -993,6 +996,9 @@ class AppLocalizations {
       "apply": "Apply",
       "clearAll": "Clear All",
       "applyFilters": "Apply Filters",
+      "feedSortDiscovery": "Discovery",
+      "feedDiscoveryEmptyTitle": "You're all caught up!",
+      "feedDiscoveryEmptySubtitle": "You've seen all recipes. Check back soon for new ones.",
       "global": "Global",
       "seeRecipesFromEveryone": "See recipes from everyone",
       "following": "Following",
@@ -1797,6 +1803,9 @@ class AppLocalizations {
       "apply": "გამოყენება",
       "clearAll": "ყველას გასუფთავება",
       "applyFilters": "გაფილტვრა",
+      "feedSortDiscovery": "აღმოჩენა",
+      "feedDiscoveryEmptyTitle": "ყველაფერი ნანახია!",
+      "feedDiscoveryEmptySubtitle": "ყველა რეცეპტი ნანახია. მალე დაბრუნდი ახლისთვის.",
       "global": "გლობალური",
       "seeRecipesFromEveryone": "იხილეთ რეცეპტები ყველასგან",
       "following": "გამოწერილი",

@@ -24,8 +24,8 @@ class FeedApi {
   Future<FeedResponse> getFeed({
     required int limit,
     String? cursor,
-    required String scope, // "global" | "following"
-    required String sort,  // "recent" | "top"
+    required String scope,
+    required String sort,
     required int windowDays,
     List<String>? tags,
   }) async {
@@ -38,8 +38,11 @@ class FeedApi {
       if (tags != null && tags.isNotEmpty) "tags": tags.join(","),
     };
 
-    // auth: true so viewer flags work; if no token, header won't be set
     final data = await api.get("/feed", query: query, auth: true);
     return FeedResponse.fromJson(Map<String, dynamic>.from(data as Map));
+  }
+
+  Future<void> postSeenRecipes(List<String> recipeIds) async {
+    await api.post("/feed/seen", body: {"recipe_ids": recipeIds}, auth: true);
   }
 }

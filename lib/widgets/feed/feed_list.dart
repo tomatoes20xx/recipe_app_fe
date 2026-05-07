@@ -3,6 +3,7 @@ import "package:flutter/material.dart";
 import "../../analytics/analytics_service.dart";
 import "../../api/api_client.dart";
 import "../../auth/auth_controller.dart";
+import "../../constants/enums.dart";
 import "../../feed/feed_controller.dart";
 import "../../localization/app_localizations.dart";
 import "../../recipes/recipe_detail_screen.dart";
@@ -13,7 +14,7 @@ import "feed_card.dart";
 import "feed_card_skeleton.dart";
 
 /// Feed list widget (scrollable list view)
-class FeedList extends StatelessWidget {
+class FeedList extends StatefulWidget {
   const FeedList({
     super.key,
     required this.feed,
@@ -32,7 +33,49 @@ class FeedList extends StatelessWidget {
   final VoidCallback? onActionCompleted;
 
   @override
+  State<FeedList> createState() => _FeedListState();
+}
+
+class _FeedListState extends State<FeedList> {
+  final Set<String> _renderedIds = {};
+
+  @override
+  void initState() {
+    super.initState();
+    widget.feed.addListener(_onFeedChanged);
+  }
+
+  @override
+  void didUpdateWidget(FeedList oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.feed != widget.feed) {
+      oldWidget.feed.removeListener(_onFeedChanged);
+      _renderedIds.clear();
+      widget.feed.addListener(_onFeedChanged);
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.feed.removeListener(_onFeedChanged);
+    super.dispose();
+  }
+
+  void _onFeedChanged() {
+    if (widget.feed.isLoading) {
+      _renderedIds.clear();
+    }
+  }
+
+  void _markSeen(String id) {
+    if (_renderedIds.add(id)) {
+      widget.feed.addSeenIds([id]);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final feed = widget.feed;
     if (feed.isLoading) {
       return ListView.builder(
         physics: const AlwaysScrollableScrollPhysics(),
@@ -92,8 +135,34 @@ class FeedList extends StatelessWidget {
       return recipeIndex;
     }
 
+    if (feed.items.isEmpty && feed.nextCursor == null) {
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.only(bottom: 120),
+        children: [
+          const SizedBox(height: 120),
+          Builder(
+            builder: (context) {
+              final l = AppLocalizations.of(context);
+              if (feed.sort == FeedSort.discovery) {
+                return EmptyStateWidget(
+                  icon: Icons.auto_awesome_rounded,
+                  title: l?.feedDiscoveryEmptyTitle ?? "You're all caught up!",
+                  description: l?.feedDiscoveryEmptySubtitle ?? "You've seen all recipes. Check back soon for new ones.",
+                );
+              }
+              return EmptyStateWidget(
+                icon: Icons.restaurant_menu_rounded,
+                title: l?.noRecipesFound ?? "No recipes found",
+              );
+            },
+          ),
+        ],
+      );
+    }
+
     return ListView.builder(
-      controller: controller,
+      controller: widget.controller,
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.only(bottom: 120),
       cacheExtent: 100, // Further reduced to minimize simultaneous ad loading
@@ -153,6 +222,7 @@ class FeedList extends StatelessWidget {
         }
 
         final item = feed.items[recipeIndex];
+        _markSeen(item.id);
         return Padding(
           padding: EdgeInsets.only(
             left: 16,
@@ -173,9 +243,9 @@ class FeedList extends StatelessWidget {
                     MaterialPageRoute(
                       builder: (_) => RecipeDetailScreen(
                         recipeId: item.id,
-                        apiClient: apiClient,
-                        auth: auth,
-                        shoppingListController: shoppingListController,
+                        apiClient: widget.apiClient,
+                        auth: widget.auth,
+                        shoppingListController: widget.shoppingListController,
                       ),
                     ),
                   );
@@ -188,10 +258,10 @@ class FeedList extends StatelessWidget {
                   item: item,
                   sort: feed.sort,
                   feed: feed,
-                  apiClient: apiClient,
-                  auth: auth,
-                  shoppingListController: shoppingListController,
-                  onActionCompleted: onActionCompleted,
+                  apiClient: widget.apiClient,
+                  auth: widget.auth,
+                  shoppingListController: widget.shoppingListController,
+                  onActionCompleted: widget.onActionCompleted,
                   position: recipeIndex,
                 ),
               ),

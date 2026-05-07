@@ -9,12 +9,13 @@ extension FeedScopeApi on FeedScope {
       };
 }
 
-enum FeedSort { recent, top }
+enum FeedSort { recent, top, discovery }
 
 extension FeedSortApi on FeedSort {
   String get apiValue => switch (this) {
-        FeedSort.recent => 'recent',
-        FeedSort.top    => 'top',
+        FeedSort.recent    => 'recent',
+        FeedSort.top       => 'top',
+        FeedSort.discovery => 'discovery',
       };
 }
 

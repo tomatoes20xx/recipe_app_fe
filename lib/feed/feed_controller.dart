@@ -1,3 +1,5 @@
+import 'package:shared_preferences/shared_preferences.dart';
+
 import '../constants/enums.dart';
 import '../recipes/recipe_api.dart';
 import '../utils/paginated_list_controller.dart';
@@ -11,14 +13,58 @@ class FeedController extends PaginatedListController<feed_models.FeedItem> {
   final RecipeApi? recipeApi;
 
   FeedScope scope = FeedScope.global;
-  FeedSort sort = FeedSort.recent;
+  FeedSort sort = FeedSort.discovery;
   int windowDays = 7;
+
+  final Set<String> _sessionSeenIds = {};
+
+  void addSeenIds(List<String> ids) {
+    _sessionSeenIds.addAll(ids);
+    _persistSeenIds(ids);
+  }
+
+  Future<void> _persistSeenIds(List<String> ids) async {
+    final prefs = await SharedPreferences.getInstance();
+    final existing = prefs.getStringList('pending_seen_recipe_ids') ?? [];
+    final merged = {...existing, ...ids}.toList();
+    await prefs.setStringList('pending_seen_recipe_ids', merged);
+  }
+
+  static Future<List<String>> popPendingSeenIds() async {
+    final prefs = await SharedPreferences.getInstance();
+    final ids = prefs.getStringList('pending_seen_recipe_ids') ?? [];
+    await prefs.remove('pending_seen_recipe_ids');
+    return ids;
+  }
+
+  static Future<void> savePendingSeenIds(List<String> ids) async {
+    if (ids.isEmpty) return;
+    final prefs = await SharedPreferences.getInstance();
+    final existing = prefs.getStringList('pending_seen_recipe_ids') ?? [];
+    await prefs.setStringList('pending_seen_recipe_ids', {...existing, ...ids}.toList());
+  }
+
+  Set<String> flushSeenIds() {
+    final ids = Set<String>.from(_sessionSeenIds);
+    _sessionSeenIds.clear();
+    return ids;
+  }
+
   String? selectedCategory;
   PopularPeriod popularPeriod = PopularPeriod.allTime;
   int trendingDays = 7; // 1-30
 
   @override
   Future<void> loadInitial() async {
+    if (scope == FeedScope.global && sort == FeedSort.discovery && _sessionSeenIds.isNotEmpty) {
+      final ids = _sessionSeenIds.toList();
+      _sessionSeenIds.clear();
+      try {
+        await feedApi.postSeenRecipes(ids);
+      } catch (_) {
+        await savePendingSeenIds(ids);
+      }
+    }
     await doLoadInitial();
   }
 
