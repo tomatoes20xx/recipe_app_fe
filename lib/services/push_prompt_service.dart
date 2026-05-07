@@ -1,5 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../api/api_client.dart';
 import '../auth/auth_controller.dart';
 import '../notifications/notification_api.dart';
@@ -10,25 +11,26 @@ class PushPromptService {
   factory PushPromptService() => _instance;
   PushPromptService._internal();
 
-  static const _storage = FlutterSecureStorage(
-    aOptions: AndroidOptions(encryptedSharedPreferences: true),
-  );
   static const _keyShown = 'push_prompt_shown';
   static const _keyLikeCount = 'push_like_count';
 
   /// Call after a recipe is successfully saved (not unsaved).
   Future<void> onSaveCompleted(BuildContext context, ApiClient apiClient) async {
-    if (await _isShown()) return;
+    final shown = await _isShown();
+    debugPrint('PUSH PROMPT: onSaveCompleted, alreadyShown=$shown');
+    if (shown) return;
     await _show(context, apiClient);
   }
 
   /// Call after a recipe is successfully liked (not unliked).
   /// Shows prompt on the 3rd like.
   Future<void> onLikeCompleted(BuildContext context, ApiClient apiClient) async {
-    if (await _isShown()) return;
-    final countStr = await _storage.read(key: _keyLikeCount) ?? '0';
-    final count = (int.tryParse(countStr) ?? 0) + 1;
-    await _storage.write(key: _keyLikeCount, value: '$count');
+    final shown = await _isShown();
+    final prefs = await SharedPreferences.getInstance();
+    final count = (prefs.getInt(_keyLikeCount) ?? 0) + 1;
+    await prefs.setInt(_keyLikeCount, count);
+    debugPrint('PUSH PROMPT: onLikeCompleted, alreadyShown=$shown, likeCount=$count');
+    if (shown) return;
     if (count >= 3) {
       await _show(context, apiClient);
     }
@@ -55,16 +57,19 @@ class PushPromptService {
   bool _isShowing = false;
 
   Future<bool> _isShown() async {
-    return await _storage.read(key: _keyShown) == 'true';
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_keyShown) == true;
   }
 
   Future<void> _show(BuildContext context, ApiClient apiClient) async {
+    debugPrint('PUSH PROMPT: _show called, _isShowing=$_isShowing, mounted=${context.mounted}');
     if (_isShowing || !context.mounted) return;
     _isShowing = true;
     try {
       await showPushPermissionPromptSheet(context, NotificationApi(apiClient));
       // Only persist after the sheet was actually displayed.
-      await _storage.write(key: _keyShown, value: 'true');
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_keyShown, true);
     } finally {
       _isShowing = false;
     }

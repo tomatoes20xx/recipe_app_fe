@@ -2,6 +2,7 @@ import "dart:async";
 import "dart:convert";
 import "dart:io";
 import "package:firebase_messaging/firebase_messaging.dart";
+import "package:flutter/foundation.dart";
 import "package:flutter_local_notifications/flutter_local_notifications.dart";
 import "../analytics/analytics_service.dart";
 
@@ -41,12 +42,16 @@ class NotificationService {
     // Initialize local notifications
     await _initializeLocalNotifications();
 
-    // Get FCM token
-    _fcmToken = await _firebaseMessaging.getToken();
+    // Get FCM token (may be null on iOS before permissions are granted)
+    try {
+      _fcmToken = await _firebaseMessaging.getToken();
+    } catch (_) {}
+    debugPrint('FCM TOKEN: $_fcmToken');
 
     // Keep local token in sync on refresh
     _firebaseMessaging.onTokenRefresh.listen((token) {
       _fcmToken = token;
+      debugPrint('FCM TOKEN (refresh): $token');
     });
 
     // Handle foreground messages
@@ -71,17 +76,30 @@ class NotificationService {
       sound: true,
       provisional: false,
     );
-    // Re-fetch token; on iOS it may have been unavailable before permission was granted.
-    _fcmToken = await _firebaseMessaging.getToken();
+    // On iOS the APNS token is registered asynchronously after permission is
+    // granted. Poll briefly so getToken() doesn't throw apns-token-not-set.
+    if (Platform.isIOS) {
+      String? apnsToken;
+      for (int i = 0; i < 10 && apnsToken == null; i++) {
+        if (i > 0) await Future.delayed(const Duration(milliseconds: 500));
+        apnsToken = await _firebaseMessaging.getAPNSToken();
+      }
+    }
+    try {
+      _fcmToken = await _firebaseMessaging.getToken();
+      debugPrint('FCM TOKEN (after permission): $_fcmToken');
+    } catch (_) {
+      // APNS token still not ready; onTokenRefresh will update _fcmToken when it arrives.
+    }
   }
 
   /// Initialize local notifications
   Future<void> _initializeLocalNotifications() async {
     const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
     const iosSettings = DarwinInitializationSettings(
-      requestAlertPermission: true,
-      requestBadgePermission: true,
-      requestSoundPermission: true,
+      requestAlertPermission: false,
+      requestBadgePermission: false,
+      requestSoundPermission: false,
     );
 
     const initSettings = InitializationSettings(
