@@ -12,6 +12,7 @@ import "../recipes/recipe_detail_screen.dart";
 import "../reports/report_bottom_sheet.dart";
 import "../reports/report_models.dart";
 import "../shopping/shopping_list_controller.dart";
+import "../users/streak_controller.dart";
 import "../users/user_api.dart";
 import "../users/user_models.dart";
 import "../users/user_recipes_controller.dart";
@@ -34,12 +35,14 @@ class ProfileScreen extends StatefulWidget {
     required this.apiClient,
     required this.shoppingListController,
     this.username,
+    this.streakController,
   });
 
   final AuthController auth;
   final ApiClient apiClient;
   final ShoppingListController shoppingListController;
   final String? username; // If provided, view this user's profile instead of current user
+  final StreakController? streakController; // Optional shared streak controller (only used for own profile)
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -53,6 +56,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _isFollowing = false;
   UserProfile? _userProfile;
   String? _error;
+  StreakController? _streakController;
+  double _streakOpacity = 0.0;
 
   late final UserRecipesController? _recipesController;
   final ScrollController _recipesScrollController = ScrollController();
@@ -86,7 +91,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } else {
       // Load own profile
       _loadOwnProfile();
+      _loadStreak();
     }
+  }
+
+  Future<void> _loadStreak() async {
+    if (widget.streakController != null) {
+      // Use the shared controller — just listen; it already fetched or will fetch.
+      _streakController = widget.streakController;
+      _streakController!.addListener(_onStreakChanged);
+      // Trigger initial opacity if already loaded
+      if (_streakController!.loaded && _streakController!.currentStreak >= 2) {
+        _streakOpacity = 1.0;
+      } else if (!_streakController!.loaded) {
+        await _streakController!.load();
+      }
+    } else {
+      final ctrl = StreakController(userApi: UserApi(widget.apiClient));
+      _streakController = ctrl;
+      ctrl.addListener(_onStreakChanged);
+      await ctrl.load();
+    }
+  }
+
+  void _onStreakChanged() {
+    if (!mounted) return;
+    setState(() {
+      if (_streakController?.loaded == true && _streakController!.currentStreak >= 2) {
+        _streakOpacity = 1.0;
+      }
+    });
   }
 
   Future<void> _loadOwnProfile() async {
@@ -129,6 +163,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _recipesScrollController.dispose();
     _recipesController?.removeListener(_onRecipesChanged);
     _recipesController?.dispose();
+    _streakController?.removeListener(_onStreakChanged);
+    // Only dispose if we own the controller (not the shared one)
+    if (widget.streakController == null) {
+      _streakController?.dispose();
+    }
     super.dispose();
   }
 
@@ -1012,6 +1051,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                                   ),
                                 ),
+                                if ((_streakController?.currentStreak ?? 0) >= 2) ...[
+                                  const SizedBox(height: 6),
+                                  AnimatedOpacity(
+                                    opacity: _streakOpacity,
+                                    duration: const Duration(milliseconds: 400),
+                                    child: Text(
+                                      "🔥 ${_streakController!.currentStreak} დღე",
+                                      style: theme.textTheme.bodyMedium?.copyWith(
+                                        color: Colors.deepOrange,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ],
                             ),
                           ),

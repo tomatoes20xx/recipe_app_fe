@@ -131,6 +131,12 @@ class UserApi {
     await api.delete("/users/$username/block", auth: true);
   }
 
+  /// Get the current user's cooking streak.
+  Future<Map<String, dynamic>> getStreak() async {
+    final data = await api.get("/users/me/streak", auth: true);
+    return Map<String, dynamic>.from(data as Map);
+  }
+
   /// Update user profile (display_name, bio)
   Future<Map<String, dynamic>> updateProfile({
     String? displayName,

@@ -914,6 +914,16 @@ class AppLocalizations {
   String get nutritionNotFoundTooltip => _localizedValues[locale.languageCode]?["nutritionNotFoundTooltip"] ?? "We were not able to find the nutrition values for this ingredient in the USDA database";
   String get perIngredient => _localizedValues[locale.languageCode]?["perIngredient"] ?? "Per ingredient";
 
+  // Cook streak
+  String get madeIt => _localizedValues[locale.languageCode]?["madeIt"] ?? "გავაკეთე! 🔥";
+  String get streakFirstDay => _localizedValues[locale.languageCode]?["streakFirstDay"] ?? "პირველი ჩაწვა! 🔥";
+  String streakNDays(int n) => (_localizedValues[locale.languageCode]?["streakNDays"] ?? "{n}-დღიანი სერია! 🔥").replaceAll("{n}", n.toString());
+  String get streakRecord => _localizedValues[locale.languageCode]?["streakRecord"] ?? "რეკორდი! 🏆";
+  String get streakClose => _localizedValues[locale.languageCode]?["streakClose"] ?? "დახურვა";
+  String streakDaysLabel(int n) => (_localizedValues[locale.languageCode]?["streakDaysLabel"] ?? "🔥 {n} დღე").replaceAll("{n}", n.toString());
+  String get pleaseLogInToCook => _localizedValues[locale.languageCode]?["pleaseLogInToCook"] ?? "Please log in to mark recipes as cooked";
+  String get alreadyCookedToday => _localizedValues[locale.languageCode]?["alreadyCookedToday"] ?? "Cooked today ✓";
+
   // Helper method to get full month names by index (1-12)
   String getMonthName(int month) {
     final months = [
@@ -1739,6 +1749,16 @@ class AppLocalizations {
       "blockUserConfirm": "Are you sure you want to block @{username}?",
       "userBlocked": "User blocked",
       "userUnblocked": "User unblocked",
+
+      // Cook streak
+      "madeIt": "გავაკეთე! 🔥",
+      "streakFirstDay": "პირველი ჩაწვა! 🔥",
+      "streakNDays": "{n}-დღიანი სერია! 🔥",
+      "streakRecord": "რეკორდი! 🏆",
+      "streakClose": "დახურვა",
+      "streakDaysLabel": "🔥 {n} დღე",
+      "pleaseLogInToCook": "Please log in to mark recipes as cooked",
+      "alreadyCookedToday": "Cooked today ✓",
     },
     "ka": {
       "appTitle": "Yummy",
@@ -2547,6 +2567,16 @@ class AppLocalizations {
       "blockUserConfirm": "დარწმუნებული ხართ, რომ გსურთ @{username}-ის დაბლოკვა?",
       "userBlocked": "მომხმარებელი დაიბლოკა",
       "userUnblocked": "მომხმარებელი განიბლოკა",
+
+      // Cook streak
+      "madeIt": "გავაკეთე! 🔥",
+      "streakFirstDay": "პირველი ჩაწვა! 🔥",
+      "streakNDays": "{n}-დღიანი სერია! 🔥",
+      "streakRecord": "რეკორდი! 🏆",
+      "streakClose": "დახურვა",
+      "streakDaysLabel": "🔥 {n} დღე",
+      "pleaseLogInToCook": "გთხოვთ გაიაროთ ავტორიზაცია რეცეპტის მომზადების მოსანიშნავად",
+      "alreadyCookedToday": "დღეს მომზადებული ✓",
     },
   };
 }

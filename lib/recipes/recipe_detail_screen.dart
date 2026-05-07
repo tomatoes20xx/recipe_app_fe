@@ -55,6 +55,8 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
   late final RecipeSharingController _sharingController;
   bool _isLiking = false;
   bool _isBookmarking = false;
+  bool _isCooking = false;
+  bool _cookedThisSession = false;
   bool _commentsOpened = false;
   bool? _viewerHasLiked;
   bool? _viewerHasBookmarked;
@@ -107,6 +109,9 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
         _localComments = null;
         _viewerHasLiked = c.recipe?.viewerHasLiked;
         _viewerHasBookmarked = c.recipe?.viewerHasBookmarked;
+        if (c.recipe?.cookedToday == true) {
+          _cookedThisSession = true;
+        }
       });
     }
   }
@@ -241,6 +246,96 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     } finally {
       if (mounted) {
         setState(() => _isBookmarking = false);
+      }
+    }
+  }
+
+  Future<void> _cookRecipe() async {
+    final r = c.recipe;
+    if (r == null || _isCooking || _cookedThisSession) return;
+    if (!(widget.auth?.isLoggedIn ?? false)) {
+      ErrorUtils.showError(context, AppLocalizations.of(context)?.pleaseLogInToCook ?? "Please log in to mark recipes as cooked");
+      return;
+    }
+    if (!await checkEmailVerified(context, widget.auth!)) return;
+
+    setState(() => _isCooking = true);
+
+    try {
+      final result = await recipeApi.cookRecipe(r.id);
+      final streakDays = (result["streak_days"] as num?)?.toInt() ?? 1;
+      final isNewRecord = result["is_new_record"] as bool? ?? false;
+
+      AnalyticsService().logRecipeCook(r.id);
+
+      if (!mounted) return;
+      setState(() => _cookedThisSession = true);
+
+      final l = AppLocalizations.of(context);
+      await showModalBottomSheet<void>(
+        context: context,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        builder: (ctx) {
+          final lCtx = AppLocalizations.of(ctx);
+          final streakTitle = streakDays == 1
+              ? (lCtx?.streakFirstDay ?? "პირველი ჩაწვა! 🔥")
+              : (lCtx?.streakNDays(streakDays) ?? "$streakDays-დღიანი სერია! 🔥");
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  streakTitle,
+                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.center,
+                ),
+                if (isNewRecord) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    lCtx?.streakRecord ?? "რეკორდი! 🏆",
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Theme.of(ctx).colorScheme.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.of(ctx).pop(),
+                    child: Text(lCtx?.streakClose ?? l?.streakClose ?? "დახურვა"),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    } catch (e) {
+      if (mounted) {
+        if (_isEmailUnverified(e)) {
+          await checkEmailVerified(context, widget.auth!);
+        } else {
+          ErrorUtils.showError(context, e);
+        }
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isCooking = false);
       }
     }
   }
@@ -511,6 +606,8 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                                     viewerHasBookmarked: _viewerHasBookmarked ?? false,
                                     isLiking: _isLiking,
                                     isBookmarking: _isBookmarking,
+                                    isCooking: _isCooking,
+                                    cookedThisSession: _cookedThisSession,
                                     onLikeTap: _toggleLike,
                                     onLikeLongPress: r.likedBy != null ? _onLikeLongPress : null,
                                     onBookmarkTap: _toggleBookmark,
@@ -530,6 +627,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                                         },
                                       );
                                     },
+                                    onCookTap: _cookRecipe,
                                     checkedIngredients: _checkedIngredients,
                                     selectedForShopping: _selectedForShopping,
                                     isSelectionMode: _isSelectionMode,
@@ -703,11 +801,14 @@ class _ContentBody extends StatelessWidget {
     required this.viewerHasBookmarked,
     required this.isLiking,
     required this.isBookmarking,
+    required this.isCooking,
+    required this.cookedThisSession,
     required this.onLikeTap,
     this.onLikeLongPress,
     required this.onBookmarkTap,
     this.onBookmarkLongPress,
     required this.onCommentTap,
+    required this.onCookTap,
     required this.checkedIngredients,
     required this.selectedForShopping,
     required this.isSelectionMode,
@@ -726,11 +827,14 @@ class _ContentBody extends StatelessWidget {
   final bool viewerHasBookmarked;
   final bool isLiking;
   final bool isBookmarking;
+  final bool isCooking;
+  final bool cookedThisSession;
   final VoidCallback onLikeTap;
   final VoidCallback? onLikeLongPress;
   final VoidCallback onBookmarkTap;
   final VoidCallback? onBookmarkLongPress;
   final VoidCallback onCommentTap;
+  final VoidCallback onCookTap;
   final Set<String> checkedIngredients;
   final Set<String> selectedForShopping;
   final bool isSelectionMode;
@@ -843,6 +947,16 @@ class _ContentBody extends StatelessWidget {
           // Steps Section
           if (recipe.steps.isNotEmpty)
             _StepsSection(steps: recipe.steps),
+
+          const SizedBox(height: 24),
+
+          // "Made It!" cook button
+          if (auth?.isLoggedIn == true)
+            _MadeItButton(
+              isCooking: isCooking,
+              cookedThisSession: cookedThisSession,
+              onTap: onCookTap,
+            ),
         ],
       ),
     );
@@ -1742,6 +1856,61 @@ class _AppBarIconButton extends StatelessWidget {
           onPressed: onPressed,
           constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
           padding: const EdgeInsets.all(8),
+        ),
+      ),
+    );
+  }
+}
+
+class _MadeItButton extends StatelessWidget {
+  const _MadeItButton({
+    required this.isCooking,
+    required this.cookedThisSession,
+    required this.onTap,
+  });
+
+  final bool isCooking;
+  final bool cookedThisSession;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final isDone = cookedThisSession;
+
+    return SizedBox(
+      width: double.infinity,
+      height: 52,
+      child: FilledButton.icon(
+        onPressed: (isCooking || isDone) ? null : onTap,
+        icon: isCooking
+            ? SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    theme.colorScheme.onPrimary,
+                  ),
+                ),
+              )
+            : Icon(isDone ? Icons.check_circle_outline : Icons.local_fire_department_rounded),
+        label: Text(
+          isDone
+              ? (l?.alreadyCookedToday ?? "Cooked today ✓")
+              : (l?.madeIt ?? "გავაკეთე! 🔥"),
+        ),
+        style: FilledButton.styleFrom(
+          backgroundColor: isDone
+              ? theme.colorScheme.surfaceContainerHighest
+              : theme.colorScheme.primary,
+          foregroundColor: isDone
+              ? theme.colorScheme.onSurface.withValues(alpha: 0.6)
+              : theme.colorScheme.onPrimary,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
         ),
       ),
     );

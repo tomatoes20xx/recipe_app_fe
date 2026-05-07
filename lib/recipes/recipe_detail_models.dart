@@ -240,6 +240,8 @@ class RecipeDetail {
   final bool? viewerHasBookmarked;
   /// List of users who liked this recipe (only present for recipe owners).
   final List<LikedByUser>? likedBy;
+  /// Whether the current viewer has already cooked this recipe today.
+  final bool cookedToday;
 
   RecipeDetail({
     required this.id,
@@ -261,6 +263,7 @@ class RecipeDetail {
     this.viewerHasLiked,
     this.viewerHasBookmarked,
     this.likedBy,
+    this.cookedToday = false,
   });
 
   factory RecipeDetail.fromJson(Map<String, dynamic> json) {
@@ -306,6 +309,7 @@ class RecipeDetail {
       viewerHasLiked: json["viewer_has_liked"] is bool ? json["viewer_has_liked"] as bool : null,
       viewerHasBookmarked: json["viewer_has_bookmarked"] is bool ? json["viewer_has_bookmarked"] as bool : null,
       likedBy: likedBy,
+      cookedToday: json["cooked_today"] is bool ? json["cooked_today"] as bool : false,
     );
   }
 }

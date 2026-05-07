@@ -476,4 +476,10 @@ class RecipeApi {
       auth: true,
     );
   }
+
+  /// Mark a recipe as cooked today. Returns cook result with streak info.
+  Future<Map<String, dynamic>> cookRecipe(String recipeId) async {
+    final data = await api.post("/recipes/$recipeId/cook", auth: true);
+    return Map<String, dynamic>.from(data as Map);
+  }
 }
