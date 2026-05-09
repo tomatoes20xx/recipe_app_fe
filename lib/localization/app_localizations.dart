@@ -778,7 +778,6 @@ class AppLocalizations {
   String get categoryDrinks => _localizedValues[locale.languageCode]?["categoryDrinks"] ?? "Drinks";
   String get categoryQuickMeals => _localizedValues[locale.languageCode]?["categoryQuickMeals"] ?? "Quick Meals";
   String get categoryHealthy => _localizedValues[locale.languageCode]?["categoryHealthy"] ?? "Healthy";
-  String get categoryComfortFood => _localizedValues[locale.languageCode]?["categoryComfortFood"] ?? "Comfort Food";
 
   // Dietary Preferences
   String get dietaryPreferences => _localizedValues[locale.languageCode]?["dietaryPreferences"] ?? "Dietary";
@@ -1612,7 +1611,6 @@ class AppLocalizations {
       "categoryDrinks": "Drinks",
       "categoryQuickMeals": "Quick Meals",
       "categoryHealthy": "Healthy",
-      "categoryComfortFood": "Comfort Food",
 
       // Dietary Preferences
       "dietaryPreferences": "Dietary",
@@ -2430,7 +2428,6 @@ class AppLocalizations {
       "categoryDrinks": "სასმელები",
       "categoryQuickMeals": "სწრაფი კერძები",
       "categoryHealthy": "ჯანსაღი",
-      "categoryComfortFood": "სამსუფრო კერძები",
 
       // Dietary Preferences
       "dietaryPreferences": "დიეტა",

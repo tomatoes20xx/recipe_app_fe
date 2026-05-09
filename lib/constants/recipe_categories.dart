@@ -69,9 +69,4 @@ final List<RecipeCategory> recipeCategories = [
     icon: Icons.favorite_outline,
     getLabel: (l) => l?.categoryHealthy ?? "Healthy",
   ),
-  RecipeCategory(
-    tag: "comfort-food",
-    icon: Icons.restaurant_outlined,
-    getLabel: (l) => l?.categoryComfortFood ?? "Comfort Food",
-  ),
 ];
