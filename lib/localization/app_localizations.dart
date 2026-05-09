@@ -916,8 +916,8 @@ class AppLocalizations {
 
   // Cook streak
   String get madeIt => _localizedValues[locale.languageCode]?["madeIt"] ?? "Made it! 🔥";
-  String get streakFirstDay => _localizedValues[locale.languageCode]?["streakFirstDay"] ?? "Streak started! 🔥";
-  String streakNDays(int n) => (_localizedValues[locale.languageCode]?["streakNDays"] ?? "{n}-day streak! 🔥").replaceAll("{n}", n.toString());
+  String get streakFirstDay => _localizedValues[locale.languageCode]?["streakFirstDay"] ?? "Streak started!";
+  String streakNDays(int n) => (_localizedValues[locale.languageCode]?["streakNDays"] ?? "{n}-day streak!").replaceAll("{n}", n.toString());
   String get streakRecord => _localizedValues[locale.languageCode]?["streakRecord"] ?? "New record! 🏆";
   String get streakClose => _localizedValues[locale.languageCode]?["streakClose"] ?? "Close";
   String streakDaysLabel(int n) => (_localizedValues[locale.languageCode]?["streakDaysLabel"] ?? "🔥 {n} days").replaceAll("{n}", n.toString());
@@ -1752,8 +1752,8 @@ class AppLocalizations {
 
       // Cook streak
       "madeIt": "Made it! 🔥",
-      "streakFirstDay": "Streak started! 🔥",
-      "streakNDays": "{n}-day streak! 🔥",
+      "streakFirstDay": "Streak started!",
+      "streakNDays": "{n}-day streak!",
       "streakRecord": "New record! 🏆",
       "streakClose": "Close",
       "streakDaysLabel": "🔥 {n} days",
@@ -2570,8 +2570,8 @@ class AppLocalizations {
 
       // Cook streak
       "madeIt": "მოვამზადე! 🔥",
-      "streakFirstDay": "სერიის დასაწყისი! 🔥",
-      "streakNDays": "{n}-დღიანი სერია! 🔥",
+      "streakFirstDay": "სერიის დასაწყისი!",
+      "streakNDays": "{n}-დღიანი სერია!",
       "streakRecord": "რეკორდი! 🏆",
       "streakClose": "დახურვა",
       "streakDaysLabel": "🔥 {n} დღე",

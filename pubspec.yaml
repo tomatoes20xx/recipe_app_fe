@@ -78,6 +78,8 @@ dependencies:
   facebook_app_events: ^0.27.1
   # App Tracking Transparency for iOS 14+ IDFA consent (required for AdMob on real devices)
   app_tracking_transparency: ^2.0.6
+  # Lottie animations
+  lottie: ^3.3.3
 
 dev_dependencies:
   flutter_test:
@@ -112,6 +114,7 @@ flutter:
   assets:
     - assets/icon/
     - assets/images/
+    - assets/animations/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

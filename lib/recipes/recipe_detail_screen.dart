@@ -18,6 +18,7 @@ import "../utils/email_verification_gate.dart";
 import "../utils/error_utils.dart";
 import "../utils/ui_utils.dart";
 import "../widgets/ingredient_action_bar.dart";
+import "../widgets/streak_celebration_overlay.dart";
 import "../widgets/section_title_widget.dart";
 import "../widgets/sharing/follower_selection_bottom_sheet.dart";
 import "../reports/report_bottom_sheet.dart";
@@ -274,59 +275,10 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
 
       if (!firstCookToday) return;
 
-      final l = AppLocalizations.of(context);
-      await showModalBottomSheet<void>(
-        context: context,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        builder: (ctx) {
-          final lCtx = AppLocalizations.of(ctx);
-          final streakTitle = streakDays == 1
-              ? (lCtx?.streakFirstDay ?? "პირველი ჩაწვა! 🔥")
-              : (lCtx?.streakNDays(streakDays) ?? "$streakDays-დღიანი სერია! 🔥");
-          return Padding(
-            padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Text(
-                  streakTitle,
-                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                  textAlign: TextAlign.center,
-                ),
-                if (isNewRecord) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    lCtx?.streakRecord ?? "რეკორდი! 🏆",
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Theme.of(ctx).colorScheme.primary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.of(ctx).pop(),
-                    child: Text(lCtx?.streakClose ?? l?.streakClose ?? "დახურვა"),
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
+      await showStreakCelebration(
+        context,
+        streakDays: streakDays,
+        isNewRecord: isNewRecord,
       );
     } catch (e) {
       if (mounted) {

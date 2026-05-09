@@ -1,3 +1,4 @@
+import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
 
 import "../analytics/analytics_service.dart";
@@ -12,6 +13,7 @@ import "../localization/language_controller.dart";
 import "../shopping/shopping_list_controller.dart";
 import "../theme/theme_controller.dart";
 import "../widgets/feed/feed_list.dart";
+import "../widgets/streak_celebration_overlay.dart";
 import "../widgets/feed/full_screen_feed_list.dart";
 import "../widgets/native_ad_manager.dart";
 
@@ -130,6 +132,12 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
+  Future<void> _debugShowStreakPopup() => showStreakCelebration(
+        context,
+        streakDays: 2,
+        isNewRecord: true,
+      );
+
   void _handleFullScreenScroll(ScrollUpdateNotification notification) {
     // Only process vertical scrolls, ignore horizontal scrolls (image carousel)
     if (notification.scrollDelta != null && notification.metrics.axis == Axis.vertical) {
@@ -184,6 +192,14 @@ class _HomeScreenState extends State<HomeScreen> {
     // that need custom animations on theme change.
     return Scaffold(
       backgroundColor: Colors.transparent,
+      floatingActionButton: kDebugMode
+          ? FloatingActionButton.small(
+              onPressed: _debugShowStreakPopup,
+              backgroundColor: Colors.deepOrange,
+              tooltip: "Debug: streak popup",
+              child: const Text("🔥", style: TextStyle(fontSize: 18)),
+            )
+          : null,
       body: Column(
         children: [
           _buildControlsSection(feed),
