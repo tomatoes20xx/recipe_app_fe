@@ -941,7 +941,7 @@ class _ProfileScreenState extends State<ProfileScreen>
               margin: EdgeInsets.only(right: i < tabs.length - 1 ? 6 : 0),
               height: 40,
               decoration: BoxDecoration(
-                color: isActive ? theme.colorScheme.onSurface : Colors.transparent,
+                color: isActive ? theme.colorScheme.primary : Colors.transparent,
                 borderRadius: BorderRadius.circular(12),
                 border: isActive
                     ? null
@@ -1231,7 +1231,7 @@ class _TopBarButton extends StatelessWidget {
             ),
           ],
         ),
-        child: Icon(icon, size: 22, color: const Color(0xFF1B1B1F)),
+        child: Icon(icon, size: 22, color: Theme.of(context).colorScheme.primary),
       ),
     );
   }
@@ -1445,8 +1445,8 @@ class _SelfActionRow extends StatelessWidget {
         label: Text(
             AppLocalizations.of(context)?.editProfile ?? "Edit Profile"),
         style: FilledButton.styleFrom(
-          backgroundColor: theme.colorScheme.onSurface,
-          foregroundColor: theme.colorScheme.surface,
+          backgroundColor: theme.colorScheme.primary,
+          foregroundColor: theme.colorScheme.onPrimary,
           textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
           shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(14)),
