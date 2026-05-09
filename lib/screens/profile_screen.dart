@@ -35,14 +35,12 @@ class ProfileScreen extends StatefulWidget {
     required this.apiClient,
     required this.shoppingListController,
     this.username,
-    this.streakController,
   });
 
   final AuthController auth;
   final ApiClient apiClient;
   final ShoppingListController shoppingListController;
   final String? username; // If provided, view this user's profile instead of current user
-  final StreakController? streakController; // Optional shared streak controller (only used for own profile)
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -57,7 +55,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   UserProfile? _userProfile;
   String? _error;
   StreakController? _streakController;
-  double _streakOpacity = 0.0;
 
   late final UserRecipesController? _recipesController;
   final ScrollController _recipesScrollController = ScrollController();
@@ -96,31 +93,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _loadStreak() async {
-    if (widget.streakController != null) {
-      // Use the shared controller — just listen; it already fetched or will fetch.
-      _streakController = widget.streakController;
-      _streakController!.addListener(_onStreakChanged);
-      // Trigger initial opacity if already loaded
-      if (_streakController!.loaded && _streakController!.currentStreak >= 2) {
-        _streakOpacity = 1.0;
-      } else if (!_streakController!.loaded) {
-        await _streakController!.load();
-      }
-    } else {
-      final ctrl = StreakController(userApi: UserApi(widget.apiClient));
-      _streakController = ctrl;
-      ctrl.addListener(_onStreakChanged);
-      await ctrl.load();
-    }
+    final ctrl = StreakController(userApi: UserApi(widget.apiClient));
+    _streakController = ctrl;
+    ctrl.addListener(_onStreakChanged);
+    await ctrl.load();
   }
 
   void _onStreakChanged() {
-    if (!mounted) return;
-    setState(() {
-      if (_streakController?.loaded == true && _streakController!.currentStreak >= 2) {
-        _streakOpacity = 1.0;
-      }
-    });
+    if (mounted) setState(() {});
   }
 
   Future<void> _loadOwnProfile() async {
@@ -165,9 +145,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _recipesController?.dispose();
     _streakController?.removeListener(_onStreakChanged);
     // Only dispose if we own the controller (not the shared one)
-    if (widget.streakController == null) {
-      _streakController?.dispose();
-    }
+    _streakController?.dispose();
     super.dispose();
   }
 
@@ -1054,7 +1032,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 if ((_streakController?.currentStreak ?? 0) >= 2) ...[
                                   const SizedBox(height: 6),
                                   AnimatedOpacity(
-                                    opacity: _streakOpacity,
+                                    opacity: _streakController?.loaded == true ? 1.0 : 0.0,
                                     duration: const Duration(milliseconds: 400),
                                     child: Text(
                                       "🔥 ${_streakController!.currentStreak} დღე",

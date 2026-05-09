@@ -915,12 +915,12 @@ class AppLocalizations {
   String get perIngredient => _localizedValues[locale.languageCode]?["perIngredient"] ?? "Per ingredient";
 
   // Cook streak
-  String get madeIt => _localizedValues[locale.languageCode]?["madeIt"] ?? "გავაკეთე! 🔥";
-  String get streakFirstDay => _localizedValues[locale.languageCode]?["streakFirstDay"] ?? "პირველი ჩაწვა! 🔥";
-  String streakNDays(int n) => (_localizedValues[locale.languageCode]?["streakNDays"] ?? "{n}-დღიანი სერია! 🔥").replaceAll("{n}", n.toString());
-  String get streakRecord => _localizedValues[locale.languageCode]?["streakRecord"] ?? "რეკორდი! 🏆";
-  String get streakClose => _localizedValues[locale.languageCode]?["streakClose"] ?? "დახურვა";
-  String streakDaysLabel(int n) => (_localizedValues[locale.languageCode]?["streakDaysLabel"] ?? "🔥 {n} დღე").replaceAll("{n}", n.toString());
+  String get madeIt => _localizedValues[locale.languageCode]?["madeIt"] ?? "Made it! 🔥";
+  String get streakFirstDay => _localizedValues[locale.languageCode]?["streakFirstDay"] ?? "Streak started! 🔥";
+  String streakNDays(int n) => (_localizedValues[locale.languageCode]?["streakNDays"] ?? "{n}-day streak! 🔥").replaceAll("{n}", n.toString());
+  String get streakRecord => _localizedValues[locale.languageCode]?["streakRecord"] ?? "New record! 🏆";
+  String get streakClose => _localizedValues[locale.languageCode]?["streakClose"] ?? "Close";
+  String streakDaysLabel(int n) => (_localizedValues[locale.languageCode]?["streakDaysLabel"] ?? "🔥 {n} days").replaceAll("{n}", n.toString());
   String get pleaseLogInToCook => _localizedValues[locale.languageCode]?["pleaseLogInToCook"] ?? "Please log in to mark recipes as cooked";
   String get alreadyCookedToday => _localizedValues[locale.languageCode]?["alreadyCookedToday"] ?? "Cooked today ✓";
 
@@ -1751,12 +1751,12 @@ class AppLocalizations {
       "userUnblocked": "User unblocked",
 
       // Cook streak
-      "madeIt": "გავაკეთე! 🔥",
-      "streakFirstDay": "პირველი ჩაწვა! 🔥",
-      "streakNDays": "{n}-დღიანი სერია! 🔥",
-      "streakRecord": "რეკორდი! 🏆",
-      "streakClose": "დახურვა",
-      "streakDaysLabel": "🔥 {n} დღე",
+      "madeIt": "Made it! 🔥",
+      "streakFirstDay": "Streak started! 🔥",
+      "streakNDays": "{n}-day streak! 🔥",
+      "streakRecord": "New record! 🏆",
+      "streakClose": "Close",
+      "streakDaysLabel": "🔥 {n} days",
       "pleaseLogInToCook": "Please log in to mark recipes as cooked",
       "alreadyCookedToday": "Cooked today ✓",
     },
@@ -2569,13 +2569,13 @@ class AppLocalizations {
       "userUnblocked": "მომხმარებელი განიბლოკა",
 
       // Cook streak
-      "madeIt": "გავაკეთე! 🔥",
-      "streakFirstDay": "პირველი ჩაწვა! 🔥",
+      "madeIt": "მოვამზადე! 🔥",
+      "streakFirstDay": "სერიის დასაწყისი! 🔥",
       "streakNDays": "{n}-დღიანი სერია! 🔥",
       "streakRecord": "რეკორდი! 🏆",
       "streakClose": "დახურვა",
       "streakDaysLabel": "🔥 {n} დღე",
-      "pleaseLogInToCook": "გთხოვთ გაიაროთ ავტორიზაცია რეცეპტის მომზადების მოსანიშნავად",
+      "pleaseLogInToCook": "გთხოვთ გაიაროთ ავტორიზაცია, რათა მონიშნოთ რეცეპტი როგორც მომზადებული",
       "alreadyCookedToday": "დღეს მომზადებული ✓",
     },
   };

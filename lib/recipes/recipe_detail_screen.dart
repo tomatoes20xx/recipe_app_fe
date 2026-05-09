@@ -265,11 +265,14 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
       final result = await recipeApi.cookRecipe(r.id);
       final streakDays = (result["streak_days"] as num?)?.toInt() ?? 1;
       final isNewRecord = result["is_new_record"] as bool? ?? false;
+      final firstCookToday = result["first_cook_today"] as bool? ?? true;
 
       AnalyticsService().logRecipeCook(r.id);
 
       if (!mounted) return;
       setState(() => _cookedThisSession = true);
+
+      if (!firstCookToday) return;
 
       final l = AppLocalizations.of(context);
       await showModalBottomSheet<void>(

@@ -7,8 +7,6 @@ import "package:flutter/material.dart";
 
 import "../api/api_client.dart";
 import "../auth/auth_controller.dart";
-import "../users/streak_controller.dart";
-import "../users/user_api.dart";
 import "../constants/enums.dart";
 import "../feed/feed_api.dart";
 import "../feed/feed_controller.dart";
@@ -65,8 +63,6 @@ class _FeedShellScreenState extends State<FeedShellScreen>
   late final FeedViewController _feedViewController;
   final ScrollController _feedScrollController = ScrollController();
   int _currentIndex = 0;
-  late final StreakController _streakController;
-
   late final NotificationController _notificationController;
   late final NotificationApi _notificationApi;
   StreamSubscription<String>? _fcmTokenRefreshSub;
@@ -88,11 +84,6 @@ class _FeedShellScreenState extends State<FeedShellScreen>
     );
     _feedViewController = FeedViewController();
     _flushPendingSeenIds().then((_) => feed.loadInitial());
-
-    _streakController = StreakController(userApi: UserApi(widget.apiClient));
-    if (widget.auth.isLoggedIn) {
-      _streakController.load();
-    }
 
     _notificationApi = NotificationApi(widget.apiClient);
     _notificationController = NotificationController(notificationApi: _notificationApi);
@@ -241,7 +232,6 @@ class _FeedShellScreenState extends State<FeedShellScreen>
     _feedViewController.dispose();
     _feedScrollController.dispose();
     _notificationController.dispose();
-    _streakController.dispose();
     NotificationService().onBadgeCountUpdate = null;
     _fcmTokenRefreshSub?.cancel();
     widget.auth.onBeforeLogout = null;
@@ -383,7 +373,6 @@ class _FeedShellScreenState extends State<FeedShellScreen>
         shoppingListController: widget.shoppingListController,
         feedViewController: _feedViewController,
         onNavigateToFeed: _ensureHomeTab,
-        streakController: _streakController,
       ),
       body: IndexedStack(
         index: _currentIndex,
@@ -413,12 +402,11 @@ class _FeedShellScreenState extends State<FeedShellScreen>
         ],
       ),
       bottomNavigationBar: ListenableBuilder(
-        listenable: Listenable.merge([_notificationController, _streakController]),
+        listenable: _notificationController,
         builder: (context, _) {
           return _BottomShellNavBar(
             currentIndex: _currentIndex,
             unreadCount: _notificationController.unreadCount,
-            streakCount: _streakController.currentStreak,
             onHomeTap: _onHomeTap,
             onNotificationsTap: () {
                 _setPage(1);
@@ -459,18 +447,6 @@ class _FeedShellScreenState extends State<FeedShellScreen>
             },
             onSearchTap: () => _setPage(2),
             onMenuTap: () => _scaffoldKey.currentState?.openDrawer(),
-            onStreakTap: widget.auth.isLoggedIn ? () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => ProfileScreen(
-                    auth: widget.auth,
-                    apiClient: widget.apiClient,
-                    shoppingListController: widget.shoppingListController,
-                    streakController: _streakController,
-                  ),
-                ),
-              );
-            } : null,
             feedKey: _feedKey,
             searchKey: _searchKey,
             createKey: _createKey,
@@ -487,13 +463,11 @@ class _BottomShellNavBar extends StatelessWidget {
   const _BottomShellNavBar({
     required this.currentIndex,
     required this.unreadCount,
-    required this.streakCount,
     required this.onHomeTap,
     required this.onNotificationsTap,
     required this.onAddRecipeTap,
     required this.onSearchTap,
     required this.onMenuTap,
-    this.onStreakTap,
     required this.feedKey,
     required this.searchKey,
     required this.createKey,
@@ -503,13 +477,11 @@ class _BottomShellNavBar extends StatelessWidget {
 
   final int currentIndex;
   final int unreadCount;
-  final int streakCount;
   final VoidCallback onHomeTap;
   final VoidCallback onNotificationsTap;
   final VoidCallback onAddRecipeTap;
   final VoidCallback onSearchTap;
   final VoidCallback onMenuTap;
-  final VoidCallback? onStreakTap;
   final GlobalKey feedKey;
   final GlobalKey searchKey;
   final GlobalKey createKey;
@@ -570,11 +542,6 @@ class _BottomShellNavBar extends StatelessWidget {
                 isActive: false,
                 onTap: onMenuTap,
               ),
-              if (streakCount >= 2)
-                _StreakNavAction(
-                  streakCount: streakCount,
-                  onTap: onStreakTap ?? () {},
-                ),
             ],
           ),
         ),
@@ -692,55 +659,6 @@ class _BottomNavAction extends StatelessWidget {
   }
 }
 
-class _StreakNavAction extends StatelessWidget {
-  const _StreakNavAction({
-    required this.streakCount,
-    required this.onTap,
-  });
-
-  final int streakCount;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      flex: 1,
-      child: InkResponse(
-        onTap: onTap,
-        radius: 28,
-        child: SizedBox(
-          height: 56,
-          child: Center(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.deepOrange.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(999),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text("🔥", style: TextStyle(fontSize: 16)),
-                  const SizedBox(width: 2),
-                  Text(
-                    streakCount.toString(),
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.deepOrange,
-                      height: 1.0,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _FeedShellDrawer extends StatefulWidget {
   const _FeedShellDrawer({
     required this.feed,
@@ -751,7 +669,6 @@ class _FeedShellDrawer extends StatefulWidget {
     required this.shoppingListController,
     required this.feedViewController,
     required this.onNavigateToFeed,
-    required this.streakController,
   });
 
   final FeedController feed;
@@ -762,7 +679,6 @@ class _FeedShellDrawer extends StatefulWidget {
   final ShoppingListController shoppingListController;
   final FeedViewController feedViewController;
   final VoidCallback onNavigateToFeed;
-  final StreakController streakController;
 
   @override
   State<_FeedShellDrawer> createState() => _FeedShellDrawerState();
@@ -823,7 +739,6 @@ class _FeedShellDrawerState extends State<_FeedShellDrawer> {
                             auth: widget.auth,
                             apiClient: widget.apiClient,
                             shoppingListController: widget.shoppingListController,
-                            streakController: widget.streakController,
                           ),
                         ),
                       );
