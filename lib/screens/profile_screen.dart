@@ -7,11 +7,14 @@ import "../analytics/analytics_service.dart";
 import "../api/api_client.dart";
 import "../auth/auth_api.dart";
 import "../auth/auth_controller.dart";
+import "../feed/feed_models.dart";
+import "../feed/saved_recipes_controller.dart";
 import "../localization/app_localizations.dart";
 import "../recipes/recipe_detail_screen.dart";
 import "../reports/report_bottom_sheet.dart";
 import "../reports/report_models.dart";
 import "../shopping/shopping_list_controller.dart";
+import "../users/liked_recipes_controller.dart";
 import "../users/streak_controller.dart";
 import "../users/user_api.dart";
 import "../users/user_models.dart";
@@ -19,8 +22,8 @@ import "../users/user_recipes_controller.dart";
 import "../utils/email_verification_gate.dart";
 import "../utils/error_utils.dart";
 import "../utils/image_utils.dart";
+import "../utils/paginated_list_controller.dart";
 import "../utils/ui_utils.dart";
-import "../widgets/common/app_bottom_sheet.dart";
 import "../widgets/common/common_widgets.dart";
 import "../widgets/empty_state_widget.dart";
 import "edit_profile_screen.dart";
@@ -40,13 +43,14 @@ class ProfileScreen extends StatefulWidget {
   final AuthController auth;
   final ApiClient apiClient;
   final ShoppingListController shoppingListController;
-  final String? username; // If provided, view this user's profile instead of current user
+  final String? username;
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> {
+class _ProfileScreenState extends State<ProfileScreen>
+    with SingleTickerProviderStateMixin {
   final ImagePicker _imagePicker = ImagePicker();
   bool _isUploading = false;
   bool _isDeleting = false;
@@ -57,109 +61,146 @@ class _ProfileScreenState extends State<ProfileScreen> {
   StreakController? _streakController;
 
   late final UserRecipesController? _recipesController;
-  final ScrollController _recipesScrollController = ScrollController();
+  LikedRecipesController? _likedController;
+  SavedRecipesController? _savedController;
+  TabController? _tabController;
+
+  final ScrollController _scrollController = ScrollController();
+
+  bool get _isSelf => widget.username == null;
 
   @override
   void initState() {
     super.initState();
-    
-    // Initialize recipes controller if viewing a user profile
-    final targetUsername = widget.username ?? widget.auth.me?["username"]?.toString();
+
+    final targetUsername =
+        widget.username ?? widget.auth.me?["username"]?.toString();
     if (targetUsername != null) {
       _recipesController = UserRecipesController(
         userApi: UserApi(widget.apiClient),
         username: targetUsername,
       );
-      _recipesController!.addListener(_onRecipesChanged);
-      _recipesScrollController.addListener(() {
-        if (_recipesScrollController.hasClients &&
-            _recipesScrollController.position.pixels > 
-            _recipesScrollController.position.maxScrollExtent - 300) {
-          _recipesController.loadMore();
-        }
-      });
+      _recipesController!.addListener(_onContentChanged);
       _recipesController.loadInitial();
     } else {
       _recipesController = null;
     }
-    
-    if (widget.username != null) {
-      _loadUserProfile();
-    } else {
-      // Load own profile
+
+    if (_isSelf) {
+      _tabController = TabController(length: 3, vsync: this);
+      _tabController!.addListener(_onTabChanged);
+
+      final userApi = UserApi(widget.apiClient);
+      _likedController = LikedRecipesController(userApi: userApi);
+      _likedController!.addListener(_onContentChanged);
+
+      _savedController = SavedRecipesController(userApi: userApi);
+      _savedController!.addListener(_onContentChanged);
+
       _loadOwnProfile();
       _loadStreak();
-    }
-  }
-
-  Future<void> _loadStreak() async {
-    final ctrl = StreakController(userApi: UserApi(widget.apiClient));
-    _streakController = ctrl;
-    ctrl.addListener(_onStreakChanged);
-    await ctrl.load();
-  }
-
-  void _onStreakChanged() {
-    if (mounted) setState(() {});
-  }
-
-  Future<void> _loadOwnProfile() async {
-    final currentUsername = widget.auth.me?["username"]?.toString();
-    if (currentUsername == null) return;
-
-    try {
-      final userApi = UserApi(widget.apiClient);
-      final profile = await userApi.getUserProfile(currentUsername);
-
-      setState(() {
-        _userProfile = profile;
-      });
-    } catch (e) {
-      // Silently fail - not critical for own profile
-    }
-  }
-
-  /// Unified refresh method that works for both own profile and other users' profiles
-  Future<void> _refreshProfile() async {
-    if (widget.username != null) {
-      // Other user's profile: load profile data
-      await _loadUserProfile();
     } else {
-      // Own profile: refresh auth data and load full profile
-      await widget.auth.bootstrap();
-      await _loadOwnProfile();
+      _loadUserProfile();
     }
 
-    // Refresh recipes (username never changes, so no need to recreate controller)
-    await _recipesController?.refresh();
+    _scrollController.addListener(_onScroll);
   }
 
-  void _onRecipesChanged() {
+  void _onTabChanged() {
+    if (_tabController!.indexIsChanging) return;
+    final tab = _tabController!.index;
+    if (tab == 1 &&
+        _likedController!.items.isEmpty &&
+        !_likedController!.isLoading) {
+      _likedController!.loadInitial();
+    }
+    if (tab == 2 &&
+        _savedController!.items.isEmpty &&
+        !_savedController!.isLoading) {
+      _savedController!.loadInitial();
+    }
+    setState(() {});
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    final pos = _scrollController.position;
+    if (pos.pixels < pos.maxScrollExtent - 300) return;
+    _activeController?.loadMore();
+  }
+
+  PaginatedListController<FeedItem>? get _activeController {
+    if (!_isSelf) return _recipesController;
+    switch (_tabController?.index ?? 0) {
+      case 1:
+        return _likedController;
+      case 2:
+        return _savedController;
+      default:
+        return _recipesController;
+    }
+  }
+
+  void _onContentChanged() {
     if (mounted) setState(() {});
   }
 
   @override
   void dispose() {
-    _recipesScrollController.dispose();
-    _recipesController?.removeListener(_onRecipesChanged);
+    _scrollController.dispose();
+    _tabController?.removeListener(_onTabChanged);
+    _tabController?.dispose();
+    _recipesController?.removeListener(_onContentChanged);
     _recipesController?.dispose();
-    _streakController?.removeListener(_onStreakChanged);
-    // Only dispose if we own the controller (not the shared one)
+    _likedController?.removeListener(_onContentChanged);
+    _likedController?.dispose();
+    _savedController?.removeListener(_onContentChanged);
+    _savedController?.dispose();
+    _streakController?.removeListener(_onContentChanged);
     _streakController?.dispose();
     super.dispose();
   }
 
+  Future<void> _loadStreak() async {
+    final ctrl = StreakController(userApi: UserApi(widget.apiClient));
+    _streakController = ctrl;
+    ctrl.addListener(_onContentChanged);
+    await ctrl.load();
+  }
+
+  Future<void> _loadOwnProfile() async {
+    final currentUsername = widget.auth.me?["username"]?.toString();
+    if (currentUsername == null) return;
+    try {
+      final profile =
+          await UserApi(widget.apiClient).getUserProfile(currentUsername);
+      setState(() => _userProfile = profile);
+    } catch (_) {}
+  }
+
+  Future<void> _refreshProfile() async {
+    if (_isSelf) {
+      await widget.auth.bootstrap();
+      await _loadOwnProfile();
+    } else {
+      await _loadUserProfile();
+    }
+    await _recipesController?.refresh();
+    if (_isSelf) {
+      if (_likedController!.items.isNotEmpty) await _likedController!.refresh();
+      if (_savedController!.items.isNotEmpty) await _savedController!.refresh();
+    }
+  }
+
   Future<void> _loadUserProfile() async {
     if (widget.username == null) return;
-
     setState(() {
       _isLoadingProfile = true;
       _error = null;
     });
-
     try {
-      final userApi = UserApi(widget.apiClient);
-      final profile = await userApi.getUserProfile(widget.username!);
+      final profile =
+          await UserApi(widget.apiClient).getUserProfile(widget.username!);
       setState(() {
         _userProfile = profile;
         _isFollowing = profile.viewerIsFollowing;
@@ -179,7 +220,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     final oldFollowing = _isFollowing;
     final newFollowing = !_isFollowing;
-    
     setState(() {
       _isFollowing = newFollowing;
       _userProfile = _userProfile!.copyWith(
@@ -201,21 +241,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ErrorUtils.showSuccess(
           context,
           newFollowing
-              ? (AppLocalizations.of(context)?.nowFollowingUser(_userProfile!.username) ?? "Now following ${_userProfile!.username}")
-              : (AppLocalizations.of(context)?.unfollowedUser(_userProfile!.username) ?? "Unfollowed ${_userProfile!.username}"),
+              ? (AppLocalizations.of(context)
+                      ?.nowFollowingUser(_userProfile!.username) ??
+                  "Now following ${_userProfile!.username}")
+              : (AppLocalizations.of(context)
+                      ?.unfollowedUser(_userProfile!.username) ??
+                  "Unfollowed ${_userProfile!.username}"),
         );
       }
     } catch (e) {
-      // Rollback on error
       setState(() {
         _isFollowing = oldFollowing;
         _userProfile = _userProfile!.copyWith(
           viewerIsFollowing: oldFollowing,
-          followersCount: _userProfile!.followersCount + (oldFollowing ? 1 : -1),
+          followersCount:
+              _userProfile!.followersCount + (oldFollowing ? 1 : -1),
         );
       });
       if (mounted) {
-        if (e is ApiException && e.statusCode == 403 && e.details is Map && (e.details as Map)['code'] == 'EMAIL_UNVERIFIED') {
+        if (e is ApiException &&
+            e.statusCode == 403 &&
+            e.details is Map &&
+            (e.details as Map)['code'] == 'EMAIL_UNVERIFIED') {
           await checkEmailVerified(context, widget.auth);
         } else {
           ErrorUtils.showError(context, e);
@@ -232,7 +279,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       );
       if (image == null || !mounted) return;
 
-      // Let the user crop to a square before uploading
       final croppedFile = await ImageCropScreen.show(
         context,
         File(image.path),
@@ -242,32 +288,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       setState(() => _isUploading = true);
 
-      // Resize the cropped square to avatar dimensions
       final compressedFile = await ImageUtils.compressAvatar(croppedFile);
       final fileToUpload = compressedFile ?? croppedFile;
 
-      final authApi = AuthApi(widget.apiClient);
-      await authApi.uploadAvatar(fileToUpload);
-
-      // Refresh user data
+      await AuthApi(widget.apiClient).uploadAvatar(fileToUpload);
       await widget.auth.bootstrap();
 
       if (mounted) {
-        final localizations = AppLocalizations.of(context);
         ErrorUtils.showSuccess(
           context,
-          localizations?.avatarUpdatedSuccessfully ??
+          AppLocalizations.of(context)?.avatarUpdatedSuccessfully ??
               "Avatar updated successfully",
         );
       }
     } catch (e) {
-      if (mounted) {
-        ErrorUtils.showError(context, e);
-      }
+      if (mounted) ErrorUtils.showError(context, e);
     } finally {
-      if (mounted) {
-        setState(() => _isUploading = false);
-      }
+      if (mounted) setState(() => _isUploading = false);
     }
   }
 
@@ -283,10 +320,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: SafeArea(
           top: false,
           child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Builder(
-              builder: (context) {
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Builder(builder: (context) {
                 final localizations = AppLocalizations.of(context);
                 if (avatarUrl == null || avatarUrl.isEmpty) {
                   return ListTile(
@@ -297,41 +333,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       _uploadAvatar();
                     },
                   );
-                } else {
-                  return Column(
-                    children: [
-                      ListTile(
-                        leading: const Icon(Icons.photo_library_outlined),
-                        title: Text(localizations?.updateAvatar ?? "Update Avatar"),
-                        onTap: () {
-                          Navigator.of(context).pop();
-                          _uploadAvatar();
-                        },
-                      ),
-                      ListTile(
-                        leading: Icon(
-                          Icons.delete_outline,
-                          color: Theme.of(context).colorScheme.error,
-                        ),
-                        title: Text(
-                          localizations?.deleteAvatar ?? "Delete Avatar",
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.error,
-                          ),
-                        ),
-                        onTap: () {
-                          Navigator.of(context).pop();
-                          _deleteAvatar();
-                        },
-                      ),
-                    ],
-                  );
                 }
-              },
-            ),
-            const SizedBox(height: 8),
-          ],
-        ),
+                return Column(children: [
+                  ListTile(
+                    leading: const Icon(Icons.photo_library_outlined),
+                    title: Text(localizations?.updateAvatar ?? "Update Avatar"),
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      _uploadAvatar();
+                    },
+                  ),
+                  ListTile(
+                    leading: Icon(Icons.delete_outline,
+                        color: Theme.of(context).colorScheme.error),
+                    title: Text(
+                      localizations?.deleteAvatar ?? "Delete Avatar",
+                      style: TextStyle(
+                          color: Theme.of(context).colorScheme.error),
+                    ),
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      _deleteAvatar();
+                    },
+                  ),
+                ]);
+              }),
+              const SizedBox(height: 8),
+            ],
+          ),
         ),
       ),
     );
@@ -343,7 +372,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: Text(localizations?.deleteAvatar ?? "Delete Avatar"),
-        content: Text(localizations?.areYouSureDeleteAvatar ?? "Are you sure you want to remove your avatar?"),
+        content: Text(localizations?.areYouSureDeleteAvatar ??
+            "Are you sure you want to remove your avatar?"),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -356,37 +386,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ],
       ),
     );
-
     if (confirmed != true) return;
 
     try {
       setState(() => _isDeleting = true);
-
-      final authApi = AuthApi(widget.apiClient);
-      await authApi.deleteAvatar();
-      
-      // Refresh user data
+      await AuthApi(widget.apiClient).deleteAvatar();
       await widget.auth.bootstrap();
-
       if (mounted) {
-        final localizations = AppLocalizations.of(context);
         ErrorUtils.showSuccess(
           context,
-          localizations?.avatarRemovedSuccessfully ??
+          AppLocalizations.of(context)?.avatarRemovedSuccessfully ??
               "Avatar removed successfully",
         );
       }
     } catch (e) {
-      if (mounted) {
-        ErrorUtils.showError(context, e);
-      }
+      if (mounted) ErrorUtils.showError(context, e);
     } finally {
-      if (mounted) {
-        setState(() => _isDeleting = false);
-      }
+      if (mounted) setState(() => _isDeleting = false);
     }
   }
-
 
   Future<void> _handleBlockUser() async {
     final profile = _userProfile;
@@ -399,11 +417,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Text(
-            localizations?.blockUser ?? "Block User",
-            style: const TextStyle(fontWeight: FontWeight.w600),
-          ),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Text(localizations?.blockUser ?? "Block User",
+              style: const TextStyle(fontWeight: FontWeight.w600)),
           content: Text(
             localizations?.blockUserConfirm(profile.username) ??
                 "Are you sure you want to block @${profile.username}?",
@@ -417,7 +434,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               onPressed: () => Navigator.of(context).pop(true),
               child: Text(
                 localizations?.blockUser ?? "Block",
-                style: TextStyle(color: Theme.of(context).colorScheme.error, fontWeight: FontWeight.w600),
+                style: TextStyle(
+                    color: Theme.of(context).colorScheme.error,
+                    fontWeight: FontWeight.w600),
               ),
             ),
           ],
@@ -427,7 +446,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
 
     setState(() {
-      _userProfile = _userProfile!.copyWith(viewerIsBlocked: !isCurrentlyBlocked);
+      _userProfile =
+          _userProfile!.copyWith(viewerIsBlocked: !isCurrentlyBlocked);
     });
 
     try {
@@ -448,433 +468,52 @@ class _ProfileScreenState extends State<ProfileScreen> {
       }
     } catch (e) {
       setState(() {
-        _userProfile = _userProfile!.copyWith(viewerIsBlocked: isCurrentlyBlocked);
+        _userProfile =
+            _userProfile!.copyWith(viewerIsBlocked: isCurrentlyBlocked);
       });
-      if (mounted) {
-        ErrorUtils.showError(context, e);
-      }
+      if (mounted) ErrorUtils.showError(context, e);
     }
   }
 
   Future<void> _handleReportUser() async {
     final profile = _userProfile;
     if (profile == null) return;
-
     await showReportBottomSheet(
       context: context,
       targetType: ReportTargetType.user,
       targetId: profile.id,
       apiClient: widget.apiClient,
     );
-    // Success feedback is already shown in the bottom sheet
-    // No additional action needed since backend is idempotent
   }
+
+  // ─────────────────────────────────────────────────────────────
+  // BUILD
+  // ─────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
-    // If viewing another user's profile
-    if (widget.username != null) {
-      if (_isLoadingProfile) {
-        return Scaffold(
-          appBar: AppBar(
-            title: Builder(
-              builder: (context) {
-                final localizations = AppLocalizations.of(context);
-                return Text(localizations?.profile ?? "Profile");
-              },
-            ),
-          ),
-          body: const Center(child: CircularProgressIndicator()),
-        );
-      }
+    if (!_isSelf && _isLoadingProfile) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
 
-      if (_error != null || _userProfile == null) {
-        return Scaffold(
-          appBar: AppBar(
-            title: Builder(
-              builder: (context) {
-                final localizations = AppLocalizations.of(context);
-                return Text(localizations?.profile ?? "Profile");
-              },
-            ),
-          ),
-          body: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.error_outline,
-                  size: 48,
-                  color: Theme.of(context).colorScheme.error,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  _error ?? "User not found",
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
-                Builder(
-                  builder: (context) {
-                    final localizations = AppLocalizations.of(context);
-                    return ElevatedButton(
-                      onPressed: _loadUserProfile,
-                      child: Text(localizations?.retry ?? "Retry"),
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
-        );
-      }
-
-      final theme = Theme.of(context);
-
+    if (!_isSelf && (_error != null || _userProfile == null)) {
       return Scaffold(
-        backgroundColor: theme.colorScheme.surface,
-        body: RefreshIndicator(
-          onRefresh: _refreshProfile,
-          child: CustomScrollView(
-            controller: _recipesScrollController,
-            physics: const AlwaysScrollableScrollPhysics(),
-            slivers: [
-              // Modern App Bar with gradient
-              SliverAppBar(
-                pinned: true,
-                elevation: 0,
-                scrolledUnderElevation: 0.5,
-                backgroundColor: theme.colorScheme.surface,
-                expandedHeight: 200,
-                actions: [
-                  if (widget.auth.isLoggedIn && !_userProfile!.isViewer)
-                    PopupMenuButton<String>(
-                      icon: const Icon(Icons.more_vert),
-                      onSelected: (value) {
-                        if (value == "block") _handleBlockUser();
-                        if (value == "report") _handleReportUser();
-                      },
-                      itemBuilder: (context) {
-                        final localizations = AppLocalizations.of(context);
-                        final isBlocked = _userProfile!.viewerIsBlocked;
-                        return [
-                          PopupMenuItem(
-                            value: "block",
-                            child: Row(
-                              children: [
-                                Icon(
-                                  isBlocked ? Icons.person_add_outlined : Icons.block_outlined,
-                                  size: 20,
-                                  color: theme.colorScheme.error,
-                                ),
-                                const SizedBox(width: 12),
-                                Flexible(
-                                  child: Text(
-                                    isBlocked
-                                        ? (localizations?.unblockUser ?? "Unblock User")
-                                        : (localizations?.blockUser ?? "Block User"),
-                                    style: TextStyle(color: theme.colorScheme.error),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          PopupMenuItem(
-                            value: "report",
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.flag_outlined,
-                                  size: 20,
-                                  color: theme.colorScheme.error,
-                                ),
-                                const SizedBox(width: 12),
-                                Flexible(
-                                  child: Text(
-                                    localizations?.reportUser ?? "Report User",
-                                    style: TextStyle(color: theme.colorScheme.error),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ];
-                      },
-                    ),
-                ],
-                flexibleSpace: FlexibleSpaceBar(
-                  background: Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          theme.colorScheme.primary.withValues(alpha: 0.15),
-                          theme.colorScheme.primary.withValues(alpha: 0.05),
-                        ],
-                      ),
-                    ),
-                    child: SafeArea(
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 60, 20, 20),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            // Avatar with shadow
-                            Container(
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: theme.colorScheme.primary.withValues(alpha: 0.3),
-                                    blurRadius: 20,
-                                    offset: const Offset(0, 8),
-                                  ),
-                                ],
-                              ),
-                              child: buildUserAvatar(
-                                context,
-                                _userProfile!.avatarUrl,
-                                _userProfile!.username,
-                                radius: 45,
-                              ),
-                            ),
-                            const SizedBox(width: 20),
-                            // Name and username
-                            Expanded(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    _userProfile!.displayName ?? _userProfile!.username,
-                                    style: theme.textTheme.headlineSmall?.copyWith(
-                                      fontWeight: FontWeight.w700,
-                                      color: theme.colorScheme.onSurface,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    "@${_userProfile!.username}",
-                                    style: theme.textTheme.bodyLarge?.copyWith(
-                                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
+        appBar: AppBar(),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.error_outline,
+                  size: 48, color: Theme.of(context).colorScheme.error),
+              const SizedBox(height: 16),
+              Text(
+                _error ?? (AppLocalizations.of(context)?.userNotFound ?? "User not found"),
+                textAlign: TextAlign.center,
               ),
-
-              // Profile Content
-              SliverPadding(
-                padding: const EdgeInsets.all(20),
-                sliver: SliverList(
-                  delegate: SliverChildListDelegate([
-                    // Follow button (if not viewing own profile)
-                    if (widget.auth.isLoggedIn && !_userProfile!.isViewer) ...[
-                      SizedBox(
-                        width: double.infinity,
-                        height: 48,
-                        child: FilledButton.icon(
-                          onPressed: _toggleFollow,
-                          icon: Icon(_isFollowing ? Icons.person_remove_outlined : Icons.person_add_outlined),
-                          label: Text(_isFollowing ? "Unfollow" : "Follow"),
-                          style: FilledButton.styleFrom(
-                            backgroundColor: _isFollowing
-                                ? theme.colorScheme.surfaceContainerHighest
-                                : theme.colorScheme.primary,
-                            foregroundColor: _isFollowing
-                                ? theme.colorScheme.onSurface
-                                : theme.colorScheme.onPrimary,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                    ],
-
-                    // Bio (if exists)
-                    if (_userProfile!.bio != null && _userProfile!.bio!.isNotEmpty) ...[
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Text(
-                          _userProfile!.bio!,
-                          style: theme.textTheme.bodyLarge?.copyWith(
-                            height: 1.5,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                    ],
-
-                    // Stats Card
-                    Container(
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: theme.colorScheme.outline.withValues(alpha: 0.1),
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Material(
-                              color: Colors.transparent,
-                              child: InkWell(
-                                onTap: () {
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (_) => FollowersScreen(
-                                        username: _userProfile!.username,
-                                        apiClient: widget.apiClient,
-                                        auth: widget.auth,
-                                        shoppingListController: widget.shoppingListController,
-                                      ),
-                                    ),
-                                  );
-                                },
-                                borderRadius: const BorderRadius.only(
-                                  topLeft: Radius.circular(16),
-                                  bottomLeft: Radius.circular(16),
-                                ),
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-                                  child: Builder(
-                                    builder: (context) {
-                                      final localizations = AppLocalizations.of(context);
-                                      return Column(
-                                        children: [
-                                          Text(
-                                            _userProfile!.followersCount.toString(),
-                                            style: theme.textTheme.titleLarge?.copyWith(
-                                              fontWeight: FontWeight.w700,
-                                              color: theme.colorScheme.primary,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            localizations?.followers ?? "Followers",
-                                            style: theme.textTheme.bodySmall?.copyWith(
-                                              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                                            ),
-                                          ),
-                                        ],
-                                      );
-                                    },
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          Container(
-                            width: 1,
-                            height: 40,
-                            color: theme.colorScheme.outline.withValues(alpha: 0.2),
-                          ),
-                          Expanded(
-                            child: Material(
-                              color: Colors.transparent,
-                              child: InkWell(
-                                onTap: () {
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (_) => FollowingScreen(
-                                        username: _userProfile!.username,
-                                        apiClient: widget.apiClient,
-                                        auth: widget.auth,
-                                        shoppingListController: widget.shoppingListController,
-                                      ),
-                                    ),
-                                  );
-                                },
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-                                  child: Builder(
-                                    builder: (context) {
-                                      final localizations = AppLocalizations.of(context);
-                                      return Column(
-                                        children: [
-                                          Text(
-                                            _userProfile!.followingCount.toString(),
-                                            style: theme.textTheme.titleLarge?.copyWith(
-                                              fontWeight: FontWeight.w700,
-                                              color: theme.colorScheme.primary,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            localizations?.followingTitle ?? "Following",
-                                            style: theme.textTheme.bodySmall?.copyWith(
-                                              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                                            ),
-                                          ),
-                                        ],
-                                      );
-                                    },
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          Container(
-                            width: 1,
-                            height: 40,
-                            color: theme.colorScheme.outline.withValues(alpha: 0.2),
-                          ),
-                          Expanded(
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-                              child: Builder(
-                                builder: (context) {
-                                  final localizations = AppLocalizations.of(context);
-                                  return Column(
-                                    children: [
-                                      Text(
-                                        _userProfile!.totalLikesCount.toString(),
-                                        style: theme.textTheme.titleLarge?.copyWith(
-                                          fontWeight: FontWeight.w700,
-                                          color: theme.colorScheme.primary,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        localizations?.totalLikes ?? "Total Likes",
-                                        style: theme.textTheme.bodySmall?.copyWith(
-                                          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                                        ),
-                                      ),
-                                    ],
-                                  );
-                                },
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    // Recipes section
-                    if (_recipesController != null) _buildRecipesSection(context),
-                  ]),
-                ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _loadUserProfile,
+                child: Text(AppLocalizations.of(context)?.retry ?? "Retry"),
               ),
             ],
           ),
@@ -882,456 +521,545 @@ class _ProfileScreenState extends State<ProfileScreen> {
       );
     }
 
-    // Viewing own profile
-    final user = widget.auth.me;
-
-    if (user == null) {
+    if (_isSelf && widget.auth.me == null) {
       return Scaffold(
         appBar: AppBar(
-          title: Builder(
-            builder: (context) {
-              final localizations = AppLocalizations.of(context);
-              return Text(localizations?.profile ?? "Profile");
-            },
-          ),
+          title: Text(AppLocalizations.of(context)?.profile ?? "Profile"),
         ),
-        body: Builder(
-          builder: (context) {
-            final localizations = AppLocalizations.of(context);
-            return Center(
-              child: Text(localizations?.notLoggedIn ?? "Not logged in"),
-            );
-          },
+        body: Center(
+          child: Text(
+              AppLocalizations.of(context)?.notLoggedIn ?? "Not logged in"),
         ),
       );
     }
 
-    final username = user["username"]?.toString() ?? "Unknown";
-    final displayName = user["display_name"]?.toString(); // Fixed: was "displayName", should be "display_name"
-    final email = user["email"]?.toString() ?? "";
-    final avatarUrl = user["avatar_url"]?.toString();
-
-    final theme = Theme.of(context);
-
     return Scaffold(
-      backgroundColor: theme.colorScheme.surface,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       body: RefreshIndicator(
         onRefresh: _refreshProfile,
         child: CustomScrollView(
-          controller: _recipesScrollController,
+          controller: _scrollController,
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
-            // Modern App Bar with gradient
-            SliverAppBar(
-              pinned: true,
-              elevation: 0,
-              scrolledUnderElevation: 0.5,
-              backgroundColor: theme.colorScheme.surface,
-              expandedHeight: 200,
-              flexibleSpace: FlexibleSpaceBar(
-                background: Container(
+            SliverToBoxAdapter(child: _buildHeader(context)),
+            ..._buildContentSlivers(context),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // HEADER
+  // ─────────────────────────────────────────────────────────────
+
+  Widget _buildHeader(BuildContext context) {
+    final theme = Theme.of(context);
+    final safeTop = MediaQuery.of(context).padding.top;
+
+    // Resolve data for self vs other
+    final String displayName;
+    final String username;
+    final String? avatarUrl;
+    final String? email;
+    final String? bio;
+    final int followersCount;
+    final int followingCount;
+    final int totalLikes;
+
+    if (_isSelf) {
+      final user = widget.auth.me!;
+      username = user["username"]?.toString() ?? "";
+      displayName = user["display_name"]?.toString() ?? username;
+      avatarUrl = user["avatar_url"]?.toString();
+      email = user["email"]?.toString();
+      bio = _userProfile?.bio;
+      followersCount = _userProfile?.followersCount ?? 0;
+      followingCount = _userProfile?.followingCount ?? 0;
+      totalLikes = _userProfile?.totalLikesCount ?? 0;
+    } else {
+      final profile = _userProfile!;
+      username = profile.username;
+      displayName = profile.displayName ?? profile.username;
+      avatarUrl = profile.avatarUrl;
+      email = null;
+      bio = profile.bio;
+      followersCount = profile.followersCount;
+      followingCount = profile.followingCount;
+      totalLikes = profile.totalLikesCount;
+    }
+
+    final normalizedAvatarUrl =
+        (avatarUrl == null || avatarUrl.isEmpty || avatarUrl == "null")
+            ? null
+            : avatarUrl;
+
+    // Cover: first recipe image, else fallback green gradient
+    final items = _recipesController?.items ?? [];
+    final coverImageUrl = items.isNotEmpty && items.first.images.isNotEmpty
+        ? items.first.images.first.url
+        : null;
+
+    final streak = _streakController?.currentStreak ?? 0;
+    const coverHeight = 180.0;
+    const avatarSize = 96.0;
+    const overlapAmount = 56.0;
+    const avatarOverflow = avatarSize - overlapAmount; // 40px below cover
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // ── Cover + top bar + avatar ──────────────────────────
+        SizedBox(
+          height: coverHeight + avatarOverflow,
+          child: Stack(
+            children: [
+              // Cover image
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                height: coverHeight,
+                child: coverImageUrl != null
+                    ? RecipeImageWidget(
+                        imageUrl: coverImageUrl,
+                        width: double.infinity,
+                        height: coverHeight,
+                        fit: BoxFit.cover,
+                        cacheHeight: 360,
+                      )
+                    : const DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [Color(0xFF5AAE94), Color(0xFF2E7A5A)],
+                          ),
+                        ),
+                        child: SizedBox(
+                            height: coverHeight, width: double.infinity),
+                      ),
+              ),
+              // Scrim
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                height: coverHeight,
+                child: DecoratedBox(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
                       colors: [
-                        theme.colorScheme.primary.withValues(alpha: 0.15),
-                        theme.colorScheme.primary.withValues(alpha: 0.05),
+                        Colors.black.withValues(alpha: 0.25),
+                        Colors.transparent,
                       ],
-                    ),
-                  ),
-                  child: SafeArea(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 60, 20, 20),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          // Avatar with edit functionality
-                          GestureDetector(
-                            onTap: _isUploading || _isDeleting
-                                ? null
-                                : () => _showAvatarMenu(context, avatarUrl),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: theme.colorScheme.primary.withValues(alpha: 0.3),
-                                    blurRadius: 20,
-                                    offset: const Offset(0, 8),
-                                  ),
-                                ],
-                              ),
-                              child: Stack(
-                                children: [
-                                  buildUserAvatar(context, avatarUrl, username, radius: 45),
-                                  if (_isUploading || _isDeleting)
-                                    Positioned.fill(
-                                      child: Container(
-                                        decoration: BoxDecoration(
-                                          color: Colors.black.withValues(alpha: 0.5),
-                                          shape: BoxShape.circle,
-                                        ),
-                                        child: const Center(
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  // Edit icon
-                                  Positioned(
-                                    right: 0,
-                                    bottom: 0,
-                                    child: Container(
-                                      width: 32,
-                                      height: 32,
-                                      decoration: BoxDecoration(
-                                        color: theme.colorScheme.primary,
-                                        shape: BoxShape.circle,
-                                        border: Border.all(
-                                          color: theme.colorScheme.surface,
-                                          width: 3,
-                                        ),
-                                      ),
-                                      child: Icon(
-                                        Icons.edit_outlined,
-                                        size: 16,
-                                        color: theme.colorScheme.onPrimary,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 20),
-                          // Name and username
-                          Expanded(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  displayName ?? username,
-                                  style: theme.textTheme.headlineSmall?.copyWith(
-                                    fontWeight: FontWeight.w700,
-                                    color: theme.colorScheme.onSurface,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  "@$username",
-                                  style: theme.textTheme.bodyLarge?.copyWith(
-                                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                                  ),
-                                ),
-                                if ((_streakController?.currentStreak ?? 0) >= 2) ...[
-                                  const SizedBox(height: 6),
-                                  AnimatedOpacity(
-                                    opacity: _streakController?.loaded == true ? 1.0 : 0.0,
-                                    duration: const Duration(milliseconds: 400),
-                                    child: Text(
-                                      "🔥 ${_streakController!.currentStreak} დღე",
-                                      style: theme.textTheme.bodyMedium?.copyWith(
-                                        color: Colors.deepOrange,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
+                      stops: const [0.0, 0.4],
                     ),
                   ),
                 ),
               ),
-            ),
-
-            // Profile Content
-            SliverPadding(
-              padding: const EdgeInsets.all(20),
-              sliver: SliverList(
-                delegate: SliverChildListDelegate([
-                  // Ban / violation warning banner
-                  Builder(
-                    builder: (context) {
-                      final localizations = AppLocalizations.of(context);
-                      if (widget.auth.isPermanentlyBanned) {
-                        return _BanBanner(
-                          message: localizations?.accountPermanentlyBannedMessage ?? "Your account has been permanently suspended.",
-                          color: theme.colorScheme.error,
-                        );
-                      }
-                      if (widget.auth.isSoftBanned) {
-                        return _BanBanner(
-                          message: localizations?.accountSoftBannedUntil(formatDate(context, widget.auth.softBannedUntil!)) ?? "Your account is temporarily suspended.",
-                          color: theme.colorScheme.error,
-                        );
-                      }
-                      if (widget.auth.violationCount == 2) {
-                        return _BanBanner(
-                          message: localizations?.violationWarning2 ?? "Warning: 1 more violation will result in a 7-day suspension",
-                          color: Colors.orange,
-                        );
-                      }
-                      if (widget.auth.violationCount == 5) {
-                        return _BanBanner(
-                          message: localizations?.violationWarning5 ?? "Warning: 1 more violation will result in a permanent ban",
-                          color: theme.colorScheme.error,
-                        );
-                      }
-                      return const SizedBox.shrink();
-                    },
-                  ),
-
-                  // Edit Profile Button
-                  SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: OutlinedButton.icon(
-                      onPressed: () async {
-                        final result = await Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => EditProfileScreen(
-                              auth: widget.auth,
-                              apiClient: widget.apiClient,
-                            ),
-                          ),
-                        );
-                        // Refresh profile if changes were made
-                        if (result == true) {
-                          _refreshProfile();
-                        }
-                      },
-                      icon: const Icon(Icons.edit_outlined),
-                      label: Builder(
-                        builder: (context) {
-                          final localizations = AppLocalizations.of(context);
-                          return Text(localizations?.editProfile ?? "Edit Profile");
-                        },
-                      ),
-                      style: OutlinedButton.styleFrom(
-                        side: BorderSide(
-                          color: theme.colorScheme.outline.withValues(alpha: 0.3),
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
+              // Top bar
+              Positioned(
+                top: safeTop + 8,
+                left: 8,
+                right: 8,
+                child: Row(
+                  children: [
+                    _TopBarButton(
+                      icon: Icons.arrow_back,
+                      onTap: () => Navigator.of(context).maybePop(),
                     ),
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Bio (if exists)
-                  if (_userProfile?.bio != null && _userProfile!.bio!.isNotEmpty) ...[
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                        borderRadius: BorderRadius.circular(16),
+                    const Spacer(),
+                    if (!_isSelf &&
+                        widget.auth.isLoggedIn &&
+                        !(_userProfile?.isViewer ?? true))
+                      _TopBarButton(
+                        icon: Icons.more_vert,
+                        onTap: () => _showMoreMenu(context),
                       ),
-                      child: Text(
-                        _userProfile!.bio!,
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          height: 1.5,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
                   ],
-
-                  // Email (if exists)
-                  if (email.isNotEmpty) ...[
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.email_outlined,
-                            size: 20,
-                            color: theme.colorScheme.primary,
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              email,
-                              style: theme.textTheme.bodyLarge,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                  ],
-
-                  // Stats Card
-                  Container(
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: theme.colorScheme.outline.withValues(alpha: 0.1),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Material(
-                            color: Colors.transparent,
-                            child: InkWell(
-                              onTap: () {
-                                Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (_) => FollowersScreen(
-                                      username: username,
-                                      apiClient: widget.apiClient,
-                                      auth: widget.auth,
-                                      shoppingListController: widget.shoppingListController,
-                                    ),
-                                  ),
-                                );
-                              },
-                              borderRadius: const BorderRadius.only(
-                                topLeft: Radius.circular(16),
-                                bottomLeft: Radius.circular(16),
-                              ),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-                                child: Builder(
-                                  builder: (context) {
-                                    final localizations = AppLocalizations.of(context);
-                                    return Column(
-                                      children: [
-                                        Text(
-                                          _userProfile?.followersCount.toString() ?? "0",
-                                          style: theme.textTheme.titleLarge?.copyWith(
-                                            fontWeight: FontWeight.w700,
-                                            color: theme.colorScheme.primary,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          localizations?.followers ?? "Followers",
-                                          style: theme.textTheme.bodySmall?.copyWith(
-                                            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                                          ),
-                                        ),
-                                      ],
-                                    );
-                                  },
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        Container(
-                          width: 1,
-                          height: 40,
-                          color: theme.colorScheme.outline.withValues(alpha: 0.2),
-                        ),
-                        Expanded(
-                          child: Material(
-                            color: Colors.transparent,
-                            child: InkWell(
-                              onTap: () {
-                                Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (_) => FollowingScreen(
-                                      username: username,
-                                      apiClient: widget.apiClient,
-                                      auth: widget.auth,
-                                      shoppingListController: widget.shoppingListController,
-                                    ),
-                                  ),
-                                );
-                              },
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-                                child: Builder(
-                                  builder: (context) {
-                                    final localizations = AppLocalizations.of(context);
-                                    return Column(
-                                      children: [
-                                        Text(
-                                          _userProfile?.followingCount.toString() ?? "0",
-                                          style: theme.textTheme.titleLarge?.copyWith(
-                                            fontWeight: FontWeight.w700,
-                                            color: theme.colorScheme.primary,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          localizations?.followingTitle ?? "Following",
-                                          style: theme.textTheme.bodySmall?.copyWith(
-                                            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                                          ),
-                                        ),
-                                      ],
-                                    );
-                                  },
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        Container(
-                          width: 1,
-                          height: 40,
-                          color: theme.colorScheme.outline.withValues(alpha: 0.2),
-                        ),
-                        Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-                            child: Builder(
-                              builder: (context) {
-                                final localizations = AppLocalizations.of(context);
-                                return Column(
-                                  children: [
-                                    Text(
-                                      _userProfile?.totalLikesCount.toString() ?? "0",
-                                      style: theme.textTheme.titleLarge?.copyWith(
-                                        fontWeight: FontWeight.w700,
-                                        color: theme.colorScheme.primary,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      localizations?.totalLikes ?? "Total Likes",
-                                      style: theme.textTheme.bodySmall?.copyWith(
-                                        color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                                      ),
-                                    ),
-                                  ],
-                                );
-                              },
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // Recipes section
-                  _buildRecipesSection(context),
-                ]),
+                ),
               ),
+              // Avatar
+              Positioned(
+                top: coverHeight - overlapAmount,
+                left: 20,
+                child: _buildAvatar(
+                    context, normalizedAvatarUrl, username, theme),
+              ),
+            ],
+          ),
+        ),
+
+        // ── Name, stats, actions, tabs ───────────────────────
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Name + streak chip
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Flexible(
+                    child: Text(
+                      displayName,
+                      style: const TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -0.5,
+                        height: 1.1,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  if (_isSelf && streak >= 2) ...[
+                    const SizedBox(width: 8),
+                    _StreakChip(
+                      streak: streak,
+                      loaded: _streakController?.loaded == true,
+                    ),
+                  ],
+                ],
+              ),
+              const SizedBox(height: 2),
+              Text(
+                "@$username",
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                ),
+              ),
+              // Email (self only)
+              if (_isSelf && email != null && email.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.mail_outline,
+                      size: 16,
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      email,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color:
+                            theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+              // Bio (other only)
+              if (!_isSelf && bio != null && bio.isNotEmpty) ...[
+                const SizedBox(height: 10),
+                Text(
+                  bio,
+                  style: TextStyle(
+                    fontSize: 14,
+                    height: 1.5,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
+                  ),
+                ),
+              ],
+              const SizedBox(height: 14),
+              // Stats card
+              _StatsCard(
+                followersCount: followersCount,
+                followingCount: followingCount,
+                totalLikes: totalLikes,
+                username: username,
+                auth: widget.auth,
+                apiClient: widget.apiClient,
+                shoppingListController: widget.shoppingListController,
+              ),
+              const SizedBox(height: 14),
+              // Action row
+              if (_isSelf)
+                _SelfActionRow(
+                  onEditProfile: () async {
+                    final result = await Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => EditProfileScreen(
+                          auth: widget.auth,
+                          apiClient: widget.apiClient,
+                        ),
+                      ),
+                    );
+                    if (result == true) _refreshProfile();
+                  },
+                )
+              else
+                _OtherActionRow(
+                  isFollowing: _isFollowing,
+                  isLoggedIn: widget.auth.isLoggedIn,
+                  onFollow: _toggleFollow,
+                ),
+              // Ban banners
+              if (_isSelf) ...[
+                const SizedBox(height: 8),
+                _buildBanBanners(context),
+              ],
+              // Tabs (self only)
+              if (_isSelf) ...[
+                const SizedBox(height: 18),
+                _buildTabBar(context),
+              ],
+              const SizedBox(height: 14),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAvatar(BuildContext context, String? avatarUrl, String username,
+      ThemeData theme) {
+    Widget avatarContent;
+    if (avatarUrl != null) {
+      avatarContent = RecipeImageWidget(
+        imageUrl: avatarUrl,
+        width: 96,
+        height: 96,
+        fit: BoxFit.cover,
+        cacheWidth: 192,
+        cacheHeight: 192,
+      );
+    } else {
+      avatarContent = Container(
+        width: 96,
+        height: 96,
+        color: theme.colorScheme.primary,
+        child: Center(
+          child: username.isNotEmpty
+              ? Text(
+                  username[0].toUpperCase(),
+                  style: TextStyle(
+                    fontSize: 36,
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.onPrimary,
+                  ),
+                )
+              : Icon(Icons.person_outline_rounded,
+                  size: 48, color: theme.colorScheme.onPrimary),
+        ),
+      );
+    }
+
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Container(
+          width: 96,
+          height: 96,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: theme.colorScheme.surface, width: 4),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x2E000000),
+                blurRadius: 22,
+                offset: Offset(0, 8),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: avatarContent,
+          ),
+        ),
+        // Camera button (self only)
+        if (_isSelf)
+          Positioned(
+            right: -4,
+            bottom: -4,
+            child: GestureDetector(
+              onTap: _isUploading || _isDeleting
+                  ? null
+                  : () => _showAvatarMenu(context, avatarUrl),
+              child: Container(
+                width: 30,
+                height: 30,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF53B175),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: theme.colorScheme.surface, width: 2),
+                ),
+                child: const Icon(Icons.photo_camera,
+                    size: 14, color: Colors.white),
+              ),
+            ),
+          ),
+        // Upload/delete loading overlay
+        if (_isSelf && (_isUploading || _isDeleting))
+          Positioned.fill(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(24),
+              child: Container(
+                color: Colors.black.withValues(alpha: 0.5),
+                child: const Center(
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildTabBar(BuildContext context) {
+    final theme = Theme.of(context);
+    final localizations = AppLocalizations.of(context);
+    final tabs = [
+      (Icons.restaurant_menu_outlined, Icons.restaurant_menu, localizations?.recipes ?? "Recipes"),
+      (Icons.favorite_border, Icons.favorite, localizations?.profileTabLiked ?? "Liked"),
+      (Icons.bookmark_border, Icons.bookmark, localizations?.profileTabSaved ?? "Saved"),
+    ];
+
+    return Row(
+      children: List.generate(tabs.length, (i) {
+        final isActive = (_tabController?.index ?? 0) == i;
+        final outlinedIcon = tabs[i].$1;
+        final filledIcon = tabs[i].$2;
+        final label = tabs[i].$3;
+
+        return Expanded(
+          child: GestureDetector(
+            onTap: () => _tabController?.animateTo(i),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 150),
+              curve: Curves.easeOut,
+              margin: EdgeInsets.only(right: i < tabs.length - 1 ? 6 : 0),
+              height: 40,
+              decoration: BoxDecoration(
+                color: isActive ? theme.colorScheme.onSurface : Colors.transparent,
+                borderRadius: BorderRadius.circular(12),
+                border: isActive
+                    ? null
+                    : Border.all(
+                        color:
+                            theme.colorScheme.outline.withValues(alpha: 0.3)),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    isActive ? filledIcon : outlinedIcon,
+                    size: 16,
+                    color: isActive
+                        ? theme.colorScheme.surface
+                        : theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                  ),
+                  const SizedBox(width: 6),
+                  Flexible(
+                  child: Text(
+                    label,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: isActive
+                          ? theme.colorScheme.surface
+                          : theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                    ),
+                  ),
+                  ),
+                ],
+              ),
+              ),
+            ),
+          ),
+        );
+      }),
+    );
+  }
+
+  Widget _buildBanBanners(BuildContext context) {
+    final localizations = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    if (widget.auth.isPermanentlyBanned) {
+      return _BanBanner(
+        message: localizations?.accountPermanentlyBannedMessage ??
+            "Your account has been permanently suspended.",
+        color: theme.colorScheme.error,
+      );
+    }
+    if (widget.auth.isSoftBanned) {
+      return _BanBanner(
+        message: localizations?.accountSoftBannedUntil(
+                formatDate(context, widget.auth.softBannedUntil!)) ??
+            "Your account is temporarily suspended.",
+        color: theme.colorScheme.error,
+      );
+    }
+    if (widget.auth.violationCount == 2) {
+      return _BanBanner(
+        message: localizations?.violationWarning2 ??
+            "Warning: 1 more violation will result in a 7-day suspension",
+        color: Colors.orange,
+      );
+    }
+    if (widget.auth.violationCount == 5) {
+      return _BanBanner(
+        message: localizations?.violationWarning5 ??
+            "Warning: 1 more violation will result in a permanent ban",
+        color: theme.colorScheme.error,
+      );
+    }
+    return const SizedBox.shrink();
+  }
+
+  void _showMoreMenu(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (_) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: Icon(Icons.flag_outlined,
+                  color: Theme.of(context).colorScheme.error),
+              title: Text(
+                AppLocalizations.of(context)?.reportUser ?? "Report User",
+                style:
+                    TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                _handleReportUser();
+              },
+            ),
+            ListTile(
+              leading: Icon(
+                _userProfile?.viewerIsBlocked == true
+                    ? Icons.person_add_outlined
+                    : Icons.block_outlined,
+                color: Theme.of(context).colorScheme.error,
+              ),
+              title: Text(
+                _userProfile?.viewerIsBlocked == true
+                    ? (AppLocalizations.of(context)?.unblockUser ??
+                        "Unblock User")
+                    : (AppLocalizations.of(context)?.blockUser ??
+                        "Block User"),
+                style:
+                    TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                _handleBlockUser();
+              },
             ),
           ],
         ),
@@ -1339,82 +1067,108 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildRecipesSection(BuildContext context) {
-    final controller = _recipesController;
-    if (controller == null) return const SizedBox.shrink();
-    
-    // Get recipe count from profile if available, otherwise use controller items length
-    final recipeCount = _userProfile?.recipesCount ?? controller.items.length;
+  // ─────────────────────────────────────────────────────────────
+  // CONTENT SLIVERS (recipe grid)
+  // ─────────────────────────────────────────────────────────────
+
+  List<Widget> _buildContentSlivers(BuildContext context) {
+    final controller = _activeController;
+    if (controller == null) return [];
 
     if (controller.isLoading && controller.items.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.all(32),
-        child: Center(child: CircularProgressIndicator()),
-      );
+      return [
+        const SliverFillRemaining(
+          child: Center(child: CircularProgressIndicator()),
+        ),
+      ];
     }
 
     if (controller.error != null && controller.items.isEmpty) {
-      return Card(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: ErrorStateWidget(
-            message: controller.error!,
-            onRetry: () => controller.loadInitial(),
+      return [
+        SliverFillRemaining(
+          child: Center(
+            child: ErrorStateWidget(
+              message: controller.error!,
+              onRetry: controller.loadInitial,
+            ),
           ),
         ),
-      );
+      ];
     }
 
     if (controller.items.isEmpty) {
       final localizations = AppLocalizations.of(context);
-      return EmptyStateWidget(
-        icon: Icons.restaurant_menu_outlined,
-        title: localizations?.noRecipesYet ?? "No recipes yet",
-        description: widget.username == null
-            ? (localizations?.createYourFirstRecipe ??
-                "Create your first recipe!")
-            : (localizations?.userNoRecipesYet ??
-                "This user hasn't created any recipes yet"),
-        wrapInCard: true,
-      );
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-          child: Text(
-            AppLocalizations.of(context)?.recipeCount(recipeCount) ?? "$recipeCount Recipes",
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+      final String title;
+      final String description;
+      final IconData icon;
+      if (_isSelf) {
+        switch (_tabController?.index ?? 0) {
+          case 1:
+            title = localizations?.noLikedRecipesYet ?? "No liked recipes yet";
+            description = localizations?.likedRecipesEmptyDescription ?? "Recipes you like will appear here";
+            icon = Icons.favorite_border;
+            break;
+          case 2:
+            title = localizations?.noSavedRecipes ?? "No saved recipes";
+            description = localizations?.startBookmarkingRecipes ?? "Recipes you save will appear here";
+            icon = Icons.bookmark_border;
+            break;
+          default:
+            title = localizations?.noRecipesYet ?? "No recipes yet";
+            description = localizations?.createYourFirstRecipe ?? "Create your first recipe!";
+            icon = Icons.restaurant_menu_outlined;
+        }
+      } else {
+        title = localizations?.noRecipesYet ?? "No recipes yet";
+        description = localizations?.userNoRecipesYet ?? "This user hasn't created any recipes yet";
+        icon = Icons.restaurant_menu_outlined;
+      }
+      return [
+        SliverFillRemaining(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: EmptyStateWidget(
+                icon: icon, title: title, description: description),
           ),
         ),
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 3,
-            crossAxisSpacing: 2,
-            mainAxisSpacing: 2,
-            childAspectRatio: 0.75,
-          ),
-          itemCount: controller.items.length + (controller.isLoadingMore ? 1 : 0),
-          itemBuilder: (context, index) {
-            if (index >= controller.items.length) {
-              return Container(
-                color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                child: const Center(child: CircularProgressIndicator()),
-              );
-            }
+      ];
+    }
 
-            final recipe = controller.items[index];
-            return RepaintBoundary(
-              child: RecipeGridCard(
-                recipe: recipe,
-                onTap: () {
-                  Navigator.of(context).push(
+    final recipeCount = (_isSelf && (_tabController?.index ?? 0) == 0)
+        ? (_userProfile?.recipesCount ?? controller.items.length)
+        : controller.items.length;
+
+    return [
+      SliverToBoxAdapter(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+          child: Text(
+            AppLocalizations.of(context)?.recipeCount(recipeCount) ??
+                "$recipeCount Recipes",
+            style: Theme.of(context)
+                .textTheme
+                .titleMedium
+                ?.copyWith(fontWeight: FontWeight.w700),
+          ),
+        ),
+      ),
+      SliverPadding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+        sliver: SliverGrid(
+          delegate: SliverChildBuilderDelegate(
+            (context, index) {
+              if (index >= controller.items.length) {
+                return Container(
+                  color:
+                      Theme.of(context).colorScheme.surfaceContainerHighest,
+                  child: const Center(child: CircularProgressIndicator()),
+                );
+              }
+              final recipe = controller.items[index];
+              return RepaintBoundary(
+                child: RecipeGridCard(
+                  recipe: recipe,
+                  onTap: () => Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (_) => RecipeDetailScreen(
                         recipeId: recipe.id,
@@ -1423,18 +1177,326 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         shoppingListController: widget.shoppingListController,
                       ),
                     ),
-                  );
-                },
-              ),
-            );
-          },
+                  ),
+                ),
+              );
+            },
+            childCount: controller.items.length +
+                (controller.isLoadingMore ? 1 : 0),
+          ),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 3,
+            crossAxisSpacing: 2,
+            mainAxisSpacing: 2,
+            childAspectRatio: 0.75,
+          ),
         ),
-        if (controller.isLoadingMore)
-          const Padding(
+      ),
+      if (controller.isLoadingMore)
+        const SliverToBoxAdapter(
+          child: Padding(
             padding: EdgeInsets.all(16),
             child: Center(child: CircularProgressIndicator()),
           ),
-      ],
+        ),
+    ];
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Helper widgets
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _TopBarButton extends StatelessWidget {
+  const _TopBarButton({required this.icon, required this.onTap});
+
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.85),
+          shape: BoxShape.circle,
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x1A000000),
+              blurRadius: 3,
+              offset: Offset(0, 1),
+            ),
+          ],
+        ),
+        child: Icon(icon, size: 22, color: const Color(0xFF1B1B1F)),
+      ),
+    );
+  }
+}
+
+class _StreakChip extends StatelessWidget {
+  const _StreakChip({required this.streak, required this.loaded});
+
+  final int streak;
+  final bool loaded;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedOpacity(
+      opacity: loaded ? 1.0 : 0.0,
+      duration: const Duration(milliseconds: 400),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFFFFB347), Color(0xFFE55A2B)],
+          ),
+          borderRadius: BorderRadius.circular(999),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x59E55A2B),
+              blurRadius: 6,
+              offset: Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Text(
+          "🔥 $streak-day streak",
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _StatsCard extends StatelessWidget {
+  const _StatsCard({
+    required this.followersCount,
+    required this.followingCount,
+    required this.totalLikes,
+    required this.username,
+    required this.auth,
+    required this.apiClient,
+    required this.shoppingListController,
+  });
+
+  final int followersCount;
+  final int followingCount;
+  final int totalLikes;
+  final String username;
+  final AuthController auth;
+  final ApiClient apiClient;
+  final ShoppingListController shoppingListController;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final localizations = AppLocalizations.of(context);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: theme.colorScheme.onSurface.withValues(alpha: 0.15),
+        ),
+      ),
+      child: Row(
+        children: [
+          _StatCell(
+            value: followersCount.toString(),
+            label: localizations?.followers ?? "Followers",
+            onTap: () => Navigator.of(context).push(MaterialPageRoute(
+              builder: (_) => FollowersScreen(
+                username: username,
+                apiClient: apiClient,
+                auth: auth,
+                shoppingListController: shoppingListController,
+              ),
+            )),
+            leftRadius: 16,
+          ),
+          _StatDivider(),
+          _StatCell(
+            value: followingCount.toString(),
+            label: localizations?.followingTitle ?? "Following",
+            onTap: () => Navigator.of(context).push(MaterialPageRoute(
+              builder: (_) => FollowingScreen(
+                username: username,
+                apiClient: apiClient,
+                auth: auth,
+                shoppingListController: shoppingListController,
+              ),
+            )),
+          ),
+          _StatDivider(),
+          _StatCell(
+            value: totalLikes.toString(),
+            label: localizations?.totalLikes ?? "Likes",
+            rightRadius: 16,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StatCell extends StatelessWidget {
+  const _StatCell({
+    required this.value,
+    required this.label,
+    this.onTap,
+    this.leftRadius = 0,
+    this.rightRadius = 0,
+  });
+
+  final String value;
+  final String label;
+  final VoidCallback? onTap;
+  final double leftRadius;
+  final double rightRadius;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final content = Padding(
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 4),
+      child: Column(
+        children: [
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              letterSpacing: -0.3,
+              height: 1.0,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label.toUpperCase(),
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.5,
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (onTap == null) {
+      return Expanded(child: Center(child: content));
+    }
+
+    return Expanded(
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(leftRadius),
+            bottomLeft: Radius.circular(leftRadius),
+            topRight: Radius.circular(rightRadius),
+            bottomRight: Radius.circular(rightRadius),
+          ),
+          child: Center(child: content),
+        ),
+      ),
+    );
+  }
+}
+
+class _StatDivider extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 1,
+      height: 40,
+      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
+    );
+  }
+}
+
+class _SelfActionRow extends StatelessWidget {
+  const _SelfActionRow({required this.onEditProfile});
+
+  final VoidCallback onEditProfile;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return SizedBox(
+      width: double.infinity,
+      height: 46,
+      child: FilledButton.icon(
+        onPressed: onEditProfile,
+        icon: const Icon(Icons.edit_outlined, size: 18),
+        label: Text(
+            AppLocalizations.of(context)?.editProfile ?? "Edit Profile"),
+        style: FilledButton.styleFrom(
+          backgroundColor: theme.colorScheme.onSurface,
+          foregroundColor: theme.colorScheme.surface,
+          textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14)),
+        ),
+      ),
+    );
+  }
+}
+
+class _OtherActionRow extends StatelessWidget {
+  const _OtherActionRow({
+    required this.isFollowing,
+    required this.isLoggedIn,
+    required this.onFollow,
+  });
+
+  final bool isFollowing;
+  final bool isLoggedIn;
+  final VoidCallback onFollow;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!isLoggedIn) return const SizedBox.shrink();
+
+    final theme = Theme.of(context);
+    return SizedBox(
+      width: double.infinity,
+      height: 46,
+      child: FilledButton.icon(
+        onPressed: onFollow,
+        icon: Icon(
+          isFollowing ? Icons.check : Icons.person_add_outlined,
+          size: 18,
+        ),
+        label: Text(isFollowing
+            ? (AppLocalizations.of(context)?.followingUser ?? "Following")
+            : (AppLocalizations.of(context)?.follow ?? "Follow")),
+        style: FilledButton.styleFrom(
+          backgroundColor: isFollowing
+              ? theme.colorScheme.surfaceContainerHighest
+              : theme.colorScheme.onSurface,
+          foregroundColor: isFollowing
+              ? theme.colorScheme.onSurface
+              : theme.colorScheme.surface,
+          textStyle:
+              const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14)),
+        ),
+      ),
     );
   }
 }
@@ -1448,7 +1510,7 @@ class _BanBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(top: 8),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.12),
@@ -1462,7 +1524,10 @@ class _BanBanner extends StatelessWidget {
           Expanded(
             child: Text(
               message,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: color),
+              style: Theme.of(context)
+                  .textTheme
+                  .bodySmall
+                  ?.copyWith(color: color),
             ),
           ),
         ],
@@ -1470,6 +1535,3 @@ class _BanBanner extends StatelessWidget {
     );
   }
 }
-
-
-

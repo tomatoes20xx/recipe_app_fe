@@ -121,6 +121,24 @@ class UserApi {
     return UserRecipesResponse.fromJson(Map<String, dynamic>.from(data as Map));
   }
 
+  /// Get user's liked recipes
+  Future<UserRecipesResponse> getLikedRecipes({
+    int limit = 20,
+    String? cursor,
+    String? q,
+    String sort = 'newest',
+  }) async {
+    final queryParams = <String, String>{
+      "limit": limit.toString(),
+      if (cursor != null) "cursor": cursor,
+      if (q != null && q.isNotEmpty) "q": q,
+      if (sort != 'newest') "sort": sort,
+    };
+
+    final data = await api.get("/users/me/liked", query: queryParams, auth: true);
+    return UserRecipesResponse.fromJson(Map<String, dynamic>.from(data as Map));
+  }
+
   /// Block a user
   Future<void> blockUser(String username) async {
     await api.post("/users/$username/block", auth: true);

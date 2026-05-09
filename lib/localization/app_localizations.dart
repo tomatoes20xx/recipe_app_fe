@@ -885,6 +885,13 @@ class AppLocalizations {
   String get userNoRecipesYet => _localizedValues[locale.languageCode]?["userNoRecipesYet"] ?? "This user hasn't created any recipes yet";
   String recipeCount(int count) =>
       (_localizedValues[locale.languageCode]?["recipeCount"] ?? "{count} Recipes").replaceAll("{count}", count.toString());
+  String get noLikedRecipesYet => _localizedValues[locale.languageCode]?["noLikedRecipesYet"] ?? "No liked recipes yet";
+  String get likedRecipesEmptyDescription => _localizedValues[locale.languageCode]?["likedRecipesEmptyDescription"] ?? "Recipes you like will appear here";
+  String get userNotFound => _localizedValues[locale.languageCode]?["userNotFound"] ?? "User not found";
+
+  // Profile tabs
+  String get profileTabLiked => _localizedValues[locale.languageCode]?["profileTabLiked"] ?? "Liked";
+  String get profileTabSaved => _localizedValues[locale.languageCode]?["profileTabSaved"] ?? "Saved";
 
   // Follower search
   String get noFollowersFound => _localizedValues[locale.languageCode]?["noFollowersFound"] ?? "No followers found";
@@ -1710,6 +1717,13 @@ class AppLocalizations {
       "createYourFirstRecipe": "Create your first recipe!",
       "userNoRecipesYet": "This user hasn't created any recipes yet",
       "recipeCount": "{count} Recipes",
+      "noLikedRecipesYet": "No liked recipes yet",
+      "likedRecipesEmptyDescription": "Recipes you like will appear here",
+      "userNotFound": "User not found",
+
+      // Profile tabs
+      "profileTabLiked": "Liked",
+      "profileTabSaved": "Saved",
 
       // Follower search
       "noFollowersFound": "No followers found",
@@ -2527,6 +2541,13 @@ class AppLocalizations {
       "createYourFirstRecipe": "შექმენი შენი პირველი რეცეპტი!",
       "userNoRecipesYet": "ამ მომხმარებელს ჯერ არ აქვს რეცეპტები",
       "recipeCount": "{count} რეცეპტი",
+      "noLikedRecipesYet": "მოწონებული რეცეპტი ჯერ არ არის",
+      "likedRecipesEmptyDescription": "მოწონებული რეცეპტები აქ გამოჩნდება",
+      "userNotFound": "მომხმარებელი ვერ მოიძებნა",
+
+      // Profile tabs
+      "profileTabLiked": "მოწონებული",
+      "profileTabSaved": "შენახული",
 
       // Follower search
       "noFollowersFound": "მიმდევრები ვერ მოიძებნა",
