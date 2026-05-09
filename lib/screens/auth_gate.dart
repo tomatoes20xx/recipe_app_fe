@@ -54,13 +54,14 @@ class _AuthGateState extends State<AuthGate> {
       // Don't block the app from starting
     }
 
-    // Check for a Play Store update (non-blocking — errors are swallowed)
-    UpdateService.checkForUpdate();
-
     // Check mounted and update state after try-catch, not in finally
     if (mounted) {
       setState(() {
         bootstrapped = true;
+      });
+      // Check for updates after first frame so dialogs have a valid context.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) UpdateService.checkForUpdate(context: context);
       });
     }
   }
