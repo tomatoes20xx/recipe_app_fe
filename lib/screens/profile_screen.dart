@@ -54,6 +54,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   final ImagePicker _imagePicker = ImagePicker();
   bool _isUploading = false;
   bool _isDeleting = false;
+  bool _isSettingCover = false;
   bool _isLoadingProfile = false;
   bool _isFollowing = false;
   UserProfile? _userProfile;
@@ -406,6 +407,192 @@ class _ProfileScreenState extends State<ProfileScreen>
     }
   }
 
+  void _showCoverPhotoMenu(BuildContext context) {
+    final hasCover = _userProfile?.coverPhotoUrl != null;
+    final localizations = AppLocalizations.of(context);
+    showAppBottomSheet(
+      context: context,
+      isScrollControlled: false,
+      builder: (ctx) => Container(
+        decoration: BoxDecoration(
+          color: Theme.of(ctx).colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.photo_library_outlined),
+                title: Text(hasCover
+                    ? (localizations?.changeCoverPhoto ?? "Change cover photo")
+                    : (localizations?.addCoverPhoto ?? "Add cover photo")),
+                onTap: () {
+                  Navigator.of(ctx).pop();
+                  _pickCoverPhoto(context);
+                },
+              ),
+              if (hasCover)
+                ListTile(
+                  leading: Icon(Icons.delete_outline,
+                      color: Theme.of(ctx).colorScheme.error),
+                  title: Text(
+                    localizations?.removeCoverPhoto ?? "Remove cover photo",
+                    style:
+                        TextStyle(color: Theme.of(ctx).colorScheme.error),
+                  ),
+                  onTap: () {
+                    Navigator.of(ctx).pop();
+                    _removeCoverPhoto();
+                  },
+                ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickCoverPhoto(BuildContext parentContext) async {
+    final allItems = _recipesController?.items ?? [];
+    final withImages =
+        allItems.where((r) => r.images.isNotEmpty).toList();
+
+    if (!mounted) return;
+
+    final localizations = AppLocalizations.of(parentContext);
+
+    if (withImages.isEmpty) {
+      ErrorUtils.showError(
+        parentContext,
+        localizations?.noRecipesForCover ?? "Upload a recipe with a photo first",
+      );
+      return;
+    }
+
+    // Collect all images from all recipes (first image per recipe)
+    final imageOptions = withImages
+        .map((r) => r.images.first)
+        .toList();
+
+    final selected = await showAppBottomSheet<String>(
+      context: parentContext,
+      isScrollControlled: true,
+      builder: (ctx) => DraggableScrollableSheet(
+        initialChildSize: 0.6,
+        minChildSize: 0.4,
+        maxChildSize: 0.9,
+        expand: false,
+        builder: (_, scrollCtrl) => Container(
+          decoration: BoxDecoration(
+            color: Theme.of(ctx).colorScheme.surface,
+            borderRadius:
+                const BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+              child: Text(
+                localizations?.selectCoverPhotoTitle ?? "Select cover photo",
+                style: const TextStyle(
+                    fontSize: 17, fontWeight: FontWeight.w700),
+              ),
+            ),
+            const Divider(height: 1),
+            Expanded(
+              child: GridView.builder(
+                controller: scrollCtrl,
+                padding: const EdgeInsets.all(4),
+                gridDelegate:
+                    const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 3,
+                  crossAxisSpacing: 2,
+                  mainAxisSpacing: 2,
+                  childAspectRatio: 1,
+                ),
+                itemCount: imageOptions.length,
+                itemBuilder: (_, i) {
+                  final img = imageOptions[i];
+                  final isActive =
+                      img.url == _userProfile?.coverPhotoUrl;
+                  return GestureDetector(
+                    onTap: () => Navigator.of(ctx).pop(img.url),
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        RecipeImageWidget(
+                          imageUrl: img.url,
+                          fit: BoxFit.cover,
+                          cacheWidth: 300,
+                          cacheHeight: 300,
+                        ),
+                        if (isActive)
+                          Container(
+                            color: Colors.black.withValues(alpha: 0.35),
+                            child: const Icon(Icons.check_circle,
+                                color: Colors.white, size: 28),
+                          ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+        ),
+      ),
+    );
+
+    if (selected == null || !mounted) return;
+    await _applySetCoverPhoto(selected);
+  }
+
+  Future<void> _applySetCoverPhoto(String imageUrl) async {
+    setState(() => _isSettingCover = true);
+    try {
+      await UserApi(widget.apiClient).setCoverPhoto(imageUrl);
+      setState(() {
+        _userProfile = _userProfile?.copyWith(coverPhotoUrl: imageUrl);
+      });
+      if (mounted) {
+        final localizations = AppLocalizations.of(context);
+        ErrorUtils.showSuccess(
+          context,
+          localizations?.coverPhotoUpdated ?? "Cover photo updated",
+        );
+      }
+    } catch (e) {
+      if (mounted) ErrorUtils.showError(context, e);
+    } finally {
+      if (mounted) setState(() => _isSettingCover = false);
+    }
+  }
+
+  Future<void> _removeCoverPhoto() async {
+    setState(() => _isSettingCover = true);
+    try {
+      await UserApi(widget.apiClient).setCoverPhoto(null);
+      setState(() {
+        _userProfile = _userProfile?.copyWith(coverPhotoUrl: null);
+      });
+      if (mounted) {
+        final localizations = AppLocalizations.of(context);
+        ErrorUtils.showSuccess(
+          context,
+          localizations?.coverPhotoRemoved ?? "Cover photo removed",
+        );
+      }
+    } catch (e) {
+      if (mounted) ErrorUtils.showError(context, e);
+    } finally {
+      if (mounted) setState(() => _isSettingCover = false);
+    }
+  }
+
   Future<void> _handleBlockUser() async {
     final profile = _userProfile;
     if (profile == null) return;
@@ -594,11 +781,7 @@ class _ProfileScreenState extends State<ProfileScreen>
             ? null
             : avatarUrl;
 
-    // Cover: first recipe image, else fallback green gradient
-    final items = _recipesController?.items ?? [];
-    final coverImageUrl = items.isNotEmpty && items.first.images.isNotEmpty
-        ? items.first.images.first.url
-        : null;
+    final coverImageUrl = _userProfile?.coverPhotoUrl;
 
     final streak = _streakController?.currentStreak ?? 0;
     const coverHeight = 180.0;
@@ -682,6 +865,38 @@ class _ProfileScreenState extends State<ProfileScreen>
                   ],
                 ),
               ),
+              // Cover edit button (self only)
+              if (_isSelf)
+                Positioned(
+                  bottom: avatarOverflow + 10,
+                  right: 14,
+                  child: GestureDetector(
+                    onTap: _isSettingCover
+                        ? null
+                        : () => _showCoverPhotoMenu(context),
+                    child: Container(
+                      width: 34,
+                      height: 34,
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.55),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.7),
+                            width: 1.5),
+                      ),
+                      child: _isSettingCover
+                          ? const Padding(
+                              padding: EdgeInsets.all(8),
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.white)),
+                            )
+                          : const Icon(Icons.photo_camera,
+                              size: 17, color: Colors.white),
+                    ),
+                  ),
+                ),
               // Avatar
               Positioned(
                 top: coverHeight - overlapAmount,

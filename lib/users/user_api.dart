@@ -155,6 +155,18 @@ class UserApi {
     return Map<String, dynamic>.from(data as Map);
   }
 
+  /// Set or clear the profile cover photo.
+  /// Pass [recipeImageUrl] to set a cover from an uploaded recipe image.
+  /// Pass null to clear the existing cover.
+  Future<String?> setCoverPhoto(String? recipeImageUrl) async {
+    final body = recipeImageUrl != null
+        ? {"recipe_image_url": recipeImageUrl}
+        : {"clear": true};
+    final data = await api.patch("/users/me/cover-photo", body: body, auth: true);
+    final map = Map<String, dynamic>.from(data as Map);
+    return map["cover_photo_url"]?.toString();
+  }
+
   /// Update user profile (display_name, bio)
   Future<Map<String, dynamic>> updateProfile({
     String? displayName,

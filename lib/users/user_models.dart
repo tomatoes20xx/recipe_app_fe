@@ -96,6 +96,7 @@ class UserProfile {
   final String username;
   final String? displayName;
   final String? avatarUrl;
+  final String? coverPhotoUrl;
   final String? bio;
   final int followersCount;
   final int followingCount;
@@ -111,6 +112,7 @@ class UserProfile {
     required this.username,
     this.displayName,
     this.avatarUrl,
+    this.coverPhotoUrl,
     this.bio,
     required this.followersCount,
     required this.followingCount,
@@ -132,6 +134,7 @@ class UserProfile {
       username: json["username"].toString(),
       displayName: json["display_name"]?.toString(),
       avatarUrl: json["avatar_url"]?.toString(),
+      coverPhotoUrl: json["cover_photo_url"]?.toString(),
       bio: json["bio"]?.toString(),
       followersCount: (counts["followers"] ?? 0) as int,
       followingCount: (counts["following"] ?? 0) as int,
@@ -149,6 +152,7 @@ class UserProfile {
     String? username,
     String? displayName,
     String? avatarUrl,
+    Object? coverPhotoUrl = _sentinel,
     String? bio,
     int? followersCount,
     int? followingCount,
@@ -164,6 +168,7 @@ class UserProfile {
       username: username ?? this.username,
       displayName: displayName ?? this.displayName,
       avatarUrl: avatarUrl ?? this.avatarUrl,
+      coverPhotoUrl: coverPhotoUrl == _sentinel ? this.coverPhotoUrl : coverPhotoUrl as String?,
       bio: bio ?? this.bio,
       followersCount: followersCount ?? this.followersCount,
       followingCount: followingCount ?? this.followingCount,
@@ -176,6 +181,8 @@ class UserProfile {
     );
   }
 }
+
+const _sentinel = Object();
 
 class UserPrivacySettings {
   final bool followersPrivate;

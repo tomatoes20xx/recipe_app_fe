@@ -378,6 +378,12 @@ class AppLocalizations {
   String get noStepsYet => _localizedValues[locale.languageCode]?["noStepsYet"] ?? "No steps yet. Add one to get started!";
   String get noIngredientsYet => _localizedValues[locale.languageCode]?["noIngredientsYet"] ?? "No ingredients yet. Add your first ingredient!";
   String get addCoverPhoto => _localizedValues[locale.languageCode]?["addCoverPhoto"] ?? "Add cover photo";
+  String get changeCoverPhoto => _localizedValues[locale.languageCode]?["changeCoverPhoto"] ?? "Change cover photo";
+  String get removeCoverPhoto => _localizedValues[locale.languageCode]?["removeCoverPhoto"] ?? "Remove cover photo";
+  String get selectCoverPhotoTitle => _localizedValues[locale.languageCode]?["selectCoverPhotoTitle"] ?? "Select cover photo";
+  String get coverPhotoUpdated => _localizedValues[locale.languageCode]?["coverPhotoUpdated"] ?? "Cover photo updated";
+  String get coverPhotoRemoved => _localizedValues[locale.languageCode]?["coverPhotoRemoved"] ?? "Cover photo removed";
+  String get noRecipesForCover => _localizedValues[locale.languageCode]?["noRecipesForCover"] ?? "Upload a recipe with a photo first";
   String get tapToUpload => _localizedValues[locale.languageCode]?["tapToUpload"] ?? "Tap to upload";
   String get basicInfo => _localizedValues[locale.languageCode]?["basicInfo"] ?? "Basic Info";
   String get cookingDetails => _localizedValues[locale.languageCode]?["cookingDetails"] ?? "Cooking Details";
@@ -1243,6 +1249,12 @@ class AppLocalizations {
       "noStepsYet": "No steps yet. Add one to get started!",
       "noIngredientsYet": "No ingredients yet. Add your first ingredient!",
       "addCoverPhoto": "Add cover photo",
+      "changeCoverPhoto": "Change cover photo",
+      "removeCoverPhoto": "Remove cover photo",
+      "selectCoverPhotoTitle": "Select cover photo",
+      "coverPhotoUpdated": "Cover photo updated",
+      "coverPhotoRemoved": "Cover photo removed",
+      "noRecipesForCover": "Upload a recipe with a photo first",
       "tapToUpload": "Tap to upload",
       "basicInfo": "Basic Info",
       "cookingDetails": "Cooking Details",
@@ -2066,6 +2078,12 @@ class AppLocalizations {
       "noStepsYet": "ნაბიჯი ჯერ არ არის. დაამატეთ დასაწყებად!",
       "noIngredientsYet": "ინგრედიენტი ჯერ არ არის. დაამატეთ!",
       "addCoverPhoto": "დაამატეთ გარეკანის ფოტო",
+      "changeCoverPhoto": "გარეკანის ფოტოს შეცვლა",
+      "removeCoverPhoto": "გარეკანის ფოტოს წაშლა",
+      "selectCoverPhotoTitle": "აირჩიეთ გარეკანის ფოტო",
+      "coverPhotoUpdated": "გარეკანის ფოტო განახლდა",
+      "coverPhotoRemoved": "გარეკანის ფოტო წაიშალა",
+      "noRecipesForCover": "ჯერ ატვირთეთ რეცეპტი ფოტოთი",
       "tapToUpload": "დააჭირეთ ასატვირთად",
       "basicInfo": "ძირითადი ინფორმაცია",
       "cookingDetails": "მომზადების დეტალები",
