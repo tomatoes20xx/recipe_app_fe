@@ -926,7 +926,7 @@ class AppLocalizations {
   String streakNDays(int n) => (_localizedValues[locale.languageCode]?["streakNDays"] ?? "{n}-day streak!").replaceAll("{n}", n.toString());
   String get streakRecord => _localizedValues[locale.languageCode]?["streakRecord"] ?? "New record! 🏆";
   String get streakClose => _localizedValues[locale.languageCode]?["streakClose"] ?? "Close";
-  String streakDaysLabel(int n) => (_localizedValues[locale.languageCode]?["streakDaysLabel"] ?? "🔥 {n} days").replaceAll("{n}", n.toString());
+  String streakDaysLabel(int n) => (_localizedValues[locale.languageCode]?["streakDaysLabel"] ?? "🔥 {n}-day streak").replaceAll("{n}", n.toString());
   String get pleaseLogInToCook => _localizedValues[locale.languageCode]?["pleaseLogInToCook"] ?? "Please log in to mark recipes as cooked";
   String get alreadyCookedToday => _localizedValues[locale.languageCode]?["alreadyCookedToday"] ?? "Cooked today ✓";
 
@@ -1768,7 +1768,7 @@ class AppLocalizations {
       "streakNDays": "{n}-day streak!",
       "streakRecord": "New record! 🏆",
       "streakClose": "Close",
-      "streakDaysLabel": "🔥 {n} days",
+      "streakDaysLabel": "🔥 {n}-day streak",
       "pleaseLogInToCook": "Please log in to mark recipes as cooked",
       "alreadyCookedToday": "Cooked today ✓",
     },
@@ -2592,7 +2592,7 @@ class AppLocalizations {
       "streakNDays": "{n}-დღიანი სერია!",
       "streakRecord": "რეკორდი! 🏆",
       "streakClose": "დახურვა",
-      "streakDaysLabel": "🔥 {n} დღე",
+      "streakDaysLabel": "🔥 {n}-დღიანი სერია",
       "pleaseLogInToCook": "გთხოვთ გაიაროთ ავტორიზაცია, რათა მონიშნოთ რეცეპტი როგორც მომზადებული",
       "alreadyCookedToday": "დღეს მომზადებული ✓",
     },

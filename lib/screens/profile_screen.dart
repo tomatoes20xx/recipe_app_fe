@@ -1266,7 +1266,7 @@ class _StreakChip extends StatelessWidget {
           ],
         ),
         child: Text(
-          "🔥 $streak-day streak",
+          AppLocalizations.of(context)?.streakDaysLabel(streak) ?? "🔥 $streak-day streak",
           style: const TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w700,
