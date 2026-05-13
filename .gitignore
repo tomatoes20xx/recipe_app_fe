@@ -107,6 +107,7 @@ lib/auth/EMAIL_VERIFICATION_BACKEND.md
 # Firebase / Google Services (contains API keys)
 **/google-services.json
 **/GoogleService-Info.plist
+lib/firebase_options.dart
 
 # Environment files
 .env
