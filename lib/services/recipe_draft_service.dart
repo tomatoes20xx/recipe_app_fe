@@ -1,10 +1,11 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class RecipeDraftService {
   static const String _draftKey = 'recipe_creation_draft';
+  static const _storage = FlutterSecureStorage();
 
   Future<void> saveDraft({
     required String title,
@@ -18,7 +19,6 @@ class RecipeDraftService {
     required List<String> steps,
     required List<String> imagePaths,
   }) async {
-    final prefs = await SharedPreferences.getInstance();
     final draft = <String, dynamic>{
       'title': title,
       'description': description,
@@ -31,12 +31,11 @@ class RecipeDraftService {
       'steps': steps,
       'imagePaths': imagePaths.where((p) => File(p).existsSync()).toList(),
     };
-    await prefs.setString(_draftKey, jsonEncode(draft));
+    await _storage.write(key: _draftKey, value: jsonEncode(draft));
   }
 
   Future<Map<String, dynamic>?> loadDraft() async {
-    final prefs = await SharedPreferences.getInstance();
-    final json = prefs.getString(_draftKey);
+    final json = await _storage.read(key: _draftKey);
     if (json == null) return null;
     try {
       return jsonDecode(json) as Map<String, dynamic>;
@@ -46,12 +45,10 @@ class RecipeDraftService {
   }
 
   Future<bool> hasDraft() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.containsKey(_draftKey);
+    return await _storage.containsKey(key: _draftKey);
   }
 
   Future<void> clearDraft() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_draftKey);
+    await _storage.delete(key: _draftKey);
   }
 }

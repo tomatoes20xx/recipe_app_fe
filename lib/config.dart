@@ -13,12 +13,18 @@ class Config {
   );
 
   /// Google Sign-In Web Client ID — set at build time via --dart-define=GOOGLE_WEB_CLIENT_ID=...
+  /// Note: OAuth client IDs are public by design but should be set explicitly in CI/CD.
+  /// Override: flutter run --dart-define=GOOGLE_WEB_CLIENT_ID=<id>
   static const String googleWebClientId = String.fromEnvironment(
     "GOOGLE_WEB_CLIENT_ID",
     defaultValue: "31640311657-vt82s1udbrrn2t36g3ivhh0jll148q4l.apps.googleusercontent.com",
   );
 
-  /// Google Sign-In iOS Client ID — from GoogleService-Info.plist CLIENT_ID
-  static const String googleIosClientId =
-      '31640311657-m9hij53r5o802ipotb3edkcd7kqqsjt2.apps.googleusercontent.com';
+  /// Google Sign-In iOS Client ID — set at build time via --dart-define=GOOGLE_IOS_CLIENT_ID=...
+  /// Must match CLIENT_ID in GoogleService-Info.plist.
+  /// Override: flutter run --dart-define=GOOGLE_IOS_CLIENT_ID=<id>
+  static const String googleIosClientId = String.fromEnvironment(
+    "GOOGLE_IOS_CLIENT_ID",
+    defaultValue: "31640311657-m9hij53r5o802ipotb3edkcd7kqqsjt2.apps.googleusercontent.com",
+  );
 }
