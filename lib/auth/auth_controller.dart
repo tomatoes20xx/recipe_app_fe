@@ -227,9 +227,12 @@ class AuthController extends ChangeNotifier {
     try {
       await onBeforeLogout?.call();
     } catch (_) {}
-    token = null;
-    me = null;
-    await tokenStorage.deleteToken();
-    notifyListeners();
+    try {
+      await tokenStorage.deleteToken();
+    } finally {
+      token = null;
+      me = null;
+      notifyListeners();
+    }
   }
 }

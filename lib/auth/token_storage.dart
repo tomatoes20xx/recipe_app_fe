@@ -26,9 +26,7 @@ class TokenStorage {
   }
 
   Future<void> deleteToken() async {
+    await _storage.delete(key: _kTokenKey);
     _cached = null;
-    try {
-      await _storage.delete(key: _kTokenKey);
-    } catch (_) {}
   }
 }
