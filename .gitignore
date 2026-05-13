@@ -109,6 +109,9 @@ lib/auth/EMAIL_VERIFICATION_BACKEND.md
 **/GoogleService-Info.plist
 lib/firebase_options.dart
 
+# Android secrets (contains Facebook credentials)
+**/res/values/secrets.xml
+
 # Environment files
 .env
 .env.*
