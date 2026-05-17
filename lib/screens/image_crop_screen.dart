@@ -139,9 +139,11 @@ class _ImageCropScreenState extends State<ImageCropScreen> {
   void _clampOffset(Rect cropRect) {
     final imageW = _imageSize.width * _scale;
     final imageH = _imageSize.height * _scale;
+    // Use min() to guard against floating point error where imageW/imageH is
+    // fractionally smaller than the crop rect, making lo > hi in the clamp.
     _offset = Offset(
-      _offset.dx.clamp(cropRect.right - imageW, cropRect.left),
-      _offset.dy.clamp(cropRect.bottom - imageH, cropRect.top),
+      _offset.dx.clamp(min(cropRect.right - imageW, cropRect.left), cropRect.left),
+      _offset.dy.clamp(min(cropRect.bottom - imageH, cropRect.top), cropRect.top),
     );
   }
 
