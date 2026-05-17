@@ -324,6 +324,7 @@ class _FeedShellScreenState extends State<FeedShellScreen>
           builder: (_) => SharedShoppingListsScreen(
             apiClient: widget.apiClient,
             auth: widget.auth,
+            shoppingListController: widget.shoppingListController,
           ),
         ));
         break;
@@ -960,6 +961,7 @@ class _FeedShellDrawerState extends State<_FeedShellDrawer> {
                           builder: (_) => SharedShoppingListsScreen(
                             apiClient: widget.apiClient,
                             auth: widget.auth,
+                            shoppingListController: widget.shoppingListController,
                           ),
                         ),
                       );

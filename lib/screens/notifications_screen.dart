@@ -265,6 +265,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               builder: (_) => SharedShoppingListsScreen(
                 apiClient: widget.apiClient,
                 auth: widget.auth,
+                shoppingListController: widget.shoppingListController,
               ),
             ),
           );

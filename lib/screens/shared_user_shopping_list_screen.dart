@@ -3,9 +3,11 @@ import "package:flutter/material.dart";
 import "../api/api_client.dart";
 import "../auth/auth_controller.dart";
 import "../localization/app_localizations.dart";
+import "../recipes/recipe_detail_screen.dart";
 import "../sharing/sharing_models.dart";
 import "../shopping/shared_shopping_lists_controller.dart";
 import "../shopping/shopping_list_api.dart";
+import "../shopping/shopping_list_controller.dart";
 import "../shopping/shopping_list_models.dart";
 import "../utils/error_utils.dart";
 import "../utils/ui_utils.dart";
@@ -18,12 +20,14 @@ class SharedUserShoppingListScreen extends StatefulWidget {
     required this.auth,
     required this.userShares,
     required this.controller,
+    required this.shoppingListController,
   });
 
   final ApiClient apiClient;
   final AuthController? auth;
   final UserShares userShares;
   final SharedShoppingListsController controller;
+  final ShoppingListController shoppingListController;
 
   @override
   State<SharedUserShoppingListScreen> createState() => _SharedUserShoppingListScreenState();
@@ -299,25 +303,42 @@ class _SharedUserShoppingListScreenState extends State<SharedUserShoppingListScr
                             ),
                             child: Row(
                               children: [
-                                if (firstItem.recipeImage != null)
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: Image.network(
-                                      buildImageUrl(firstItem.recipeImage!),
-                                      width: 32,
-                                      height: 32,
-                                      fit: BoxFit.cover,
+                                InkWell(
+                                  onTap: () => Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) => RecipeDetailScreen(
+                                        recipeId: recipeId,
+                                        apiClient: widget.apiClient,
+                                        auth: widget.auth,
+                                        shoppingListController: widget.shoppingListController,
+                                      ),
                                     ),
                                   ),
-                                if (firstItem.recipeImage != null) const SizedBox(width: 12),
-                                Expanded(
-                                  child: Text(
-                                    recipeName ?? "Recipe",
-                                    style: theme.textTheme.titleSmall?.copyWith(
-                                      fontWeight: FontWeight.w600,
-                                    ),
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      if (firstItem.recipeImage != null)
+                                        ClipRRect(
+                                          borderRadius: BorderRadius.circular(8),
+                                          child: Image.network(
+                                            buildImageUrl(firstItem.recipeImage!),
+                                            width: 32,
+                                            height: 32,
+                                            fit: BoxFit.cover,
+                                          ),
+                                        ),
+                                      if (firstItem.recipeImage != null) const SizedBox(width: 12),
+                                      Text(
+                                        recipeName ?? "Recipe",
+                                        style: theme.textTheme.titleSmall?.copyWith(
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
+                                const Spacer(),
                                 Text(
                                   "${itemEntries.where((e) => e.value.isChecked).length}/${itemEntries.length}",
                                   style: theme.textTheme.bodySmall?.copyWith(

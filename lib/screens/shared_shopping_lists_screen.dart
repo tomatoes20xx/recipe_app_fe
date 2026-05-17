@@ -5,6 +5,7 @@ import "../auth/auth_controller.dart";
 import "../localization/app_localizations.dart";
 import "../shopping/shared_shopping_lists_controller.dart";
 import "../shopping/shopping_list_api.dart";
+import "../shopping/shopping_list_controller.dart";
 import "../utils/error_utils.dart";
 import "../utils/ui_utils.dart";
 import "../widgets/empty_state_widget.dart";
@@ -15,10 +16,12 @@ class SharedShoppingListsScreen extends StatefulWidget {
     super.key,
     required this.apiClient,
     required this.auth,
+    required this.shoppingListController,
   });
 
   final ApiClient apiClient;
   final AuthController? auth;
+  final ShoppingListController shoppingListController;
 
   @override
   State<SharedShoppingListsScreen> createState() => _SharedShoppingListsScreenState();
@@ -184,6 +187,7 @@ class _SharedShoppingListsScreenState extends State<SharedShoppingListsScreen> {
                             auth: widget.auth,
                             userShares: list,
                             controller: controller,
+                            shoppingListController: widget.shoppingListController,
                           ),
                         ),
                       );
