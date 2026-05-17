@@ -456,26 +456,20 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   Future<void> _pickCoverPhoto(BuildContext parentContext) async {
-    final allItems = _recipesController?.items ?? [];
-    final withImages =
-        allItems.where((r) => r.images.isNotEmpty).toList();
-
+    final controller = _recipesController;
     if (!mounted) return;
 
     final localizations = AppLocalizations.of(parentContext);
 
-    if (withImages.isEmpty) {
+    final hasAnyImages =
+        controller?.items.any((r) => r.images.isNotEmpty) ?? false;
+    if (!hasAnyImages) {
       ErrorUtils.showError(
         parentContext,
         localizations?.noRecipesForCover ?? "Upload a recipe with a photo first",
       );
       return;
     }
-
-    // Collect all images from all recipes (first image per recipe)
-    final imageOptions = withImages
-        .map((r) => r.images.first)
-        .toList();
 
     final selected = await showAppBottomSheet<String>(
       context: parentContext,
@@ -485,64 +479,12 @@ class _ProfileScreenState extends State<ProfileScreen>
         minChildSize: 0.4,
         maxChildSize: 0.9,
         expand: false,
-        builder: (_, scrollCtrl) => Container(
-          decoration: BoxDecoration(
-            color: Theme.of(ctx).colorScheme.surface,
-            borderRadius:
-                const BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-              child: Text(
-                localizations?.selectCoverPhotoTitle ?? "Select cover photo",
-                style: const TextStyle(
-                    fontSize: 17, fontWeight: FontWeight.w700),
-              ),
-            ),
-            const Divider(height: 1),
-            Expanded(
-              child: GridView.builder(
-                controller: scrollCtrl,
-                padding: const EdgeInsets.all(4),
-                gridDelegate:
-                    const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
-                  crossAxisSpacing: 2,
-                  mainAxisSpacing: 2,
-                  childAspectRatio: 1,
-                ),
-                itemCount: imageOptions.length,
-                itemBuilder: (_, i) {
-                  final img = imageOptions[i];
-                  final isActive =
-                      img.url == _userProfile?.coverPhotoUrl;
-                  return GestureDetector(
-                    onTap: () => Navigator.of(ctx).pop(img.url),
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        RecipeImageWidget(
-                          imageUrl: img.url,
-                          fit: BoxFit.cover,
-                          cacheWidth: 300,
-                          cacheHeight: 300,
-                        ),
-                        if (isActive)
-                          Container(
-                            color: Colors.black.withValues(alpha: 0.35),
-                            child: const Icon(Icons.check_circle,
-                                color: Colors.white, size: 28),
-                          ),
-                      ],
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
+        builder: (_, scrollCtrl) => _CoverPhotoGrid(
+          scrollController: scrollCtrl,
+          recipesController: controller,
+          activeCoverUrl: _userProfile?.coverPhotoUrl,
+          onSelected: (url) => Navigator.of(ctx).pop(url),
+          title: localizations?.selectCoverPhotoTitle ?? "Select cover photo",
         ),
       ),
     );
@@ -1743,6 +1685,130 @@ class _BanBanner extends StatelessWidget {
                   .textTheme
                   .bodySmall
                   ?.copyWith(color: color),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CoverPhotoGrid extends StatefulWidget {
+  const _CoverPhotoGrid({
+    required this.scrollController,
+    required this.recipesController,
+    required this.activeCoverUrl,
+    required this.onSelected,
+    required this.title,
+  });
+
+  final ScrollController scrollController;
+  final UserRecipesController? recipesController;
+  final String? activeCoverUrl;
+  final ValueChanged<String> onSelected;
+  final String title;
+
+  @override
+  State<_CoverPhotoGrid> createState() => _CoverPhotoGridState();
+}
+
+class _CoverPhotoGridState extends State<_CoverPhotoGrid> {
+  @override
+  void initState() {
+    super.initState();
+    widget.recipesController?.addListener(_onControllerUpdate);
+    widget.scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    widget.recipesController?.removeListener(_onControllerUpdate);
+    widget.scrollController.removeListener(_onScroll);
+    super.dispose();
+  }
+
+  void _onControllerUpdate() {
+    if (mounted) setState(() {});
+  }
+
+  void _onScroll() {
+    final ctrl = widget.scrollController;
+    if (ctrl.position.pixels >= ctrl.position.maxScrollExtent - 300) {
+      widget.recipesController?.loadMore();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = widget.recipesController;
+    final imageOptions = (controller?.items ?? [])
+        .where((r) => r.images.isNotEmpty)
+        .map((r) => r.images.first)
+        .toList();
+    final isLoadingMore = controller?.isLoadingMore ?? false;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+            child: Text(
+              widget.title,
+              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+            ),
+          ),
+          const Divider(height: 1),
+          Expanded(
+            child: GridView.builder(
+              controller: widget.scrollController,
+              padding: const EdgeInsets.all(4),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3,
+                crossAxisSpacing: 2,
+                mainAxisSpacing: 2,
+                childAspectRatio: 1,
+              ),
+              itemCount: imageOptions.length + (isLoadingMore ? 3 : 0),
+              itemBuilder: (_, i) {
+                if (i >= imageOptions.length) {
+                  return Container(
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                    child: const Center(
+                      child: SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    ),
+                  );
+                }
+                final img = imageOptions[i];
+                final isActive = img.url == widget.activeCoverUrl;
+                return GestureDetector(
+                  onTap: () => widget.onSelected(img.url),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      RecipeImageWidget(
+                        imageUrl: img.url,
+                        fit: BoxFit.cover,
+                        cacheWidth: 300,
+                        cacheHeight: 300,
+                      ),
+                      if (isActive)
+                        Container(
+                          color: Colors.black.withValues(alpha: 0.35),
+                          child: const Icon(Icons.check_circle,
+                              color: Colors.white, size: 28),
+                        ),
+                    ],
+                  ),
+                );
+              },
             ),
           ),
         ],
