@@ -401,6 +401,11 @@ class AppLocalizations {
   String get appPreferences => _localizedValues[locale.languageCode]?["appPreferences"] ?? "App preferences";
   String get feedPreferences => _localizedValues[locale.languageCode]?["feedPreferences"] ?? "Feed Preferences";
   String get quickAccess => _localizedValues[locale.languageCode]?["quickAccess"] ?? "Quick Access";
+  String get library => _localizedValues[locale.languageCode]?["library"] ?? "Library";
+  String get nowViewing => _localizedValues[locale.languageCode]?["nowViewing"] ?? "NOW VIEWING";
+  String get signOut => _localizedValues[locale.languageCode]?["signOut"] ?? "Sign out";
+  String get signOutConfirmTitle => _localizedValues[locale.languageCode]?["signOutConfirmTitle"] ?? "Sign out?";
+  String get signOutConfirmMessage => _localizedValues[locale.languageCode]?["signOutConfirmMessage"] ?? "Are you sure you want to sign out?";
   String get appearance => _localizedValues[locale.languageCode]?["appearance"] ?? "Appearance";
   String get themeMode => _localizedValues[locale.languageCode]?["themeMode"] ?? "Theme Mode";
   String get system => _localizedValues[locale.languageCode]?["system"] ?? "System";
@@ -415,6 +420,7 @@ class AppLocalizations {
   String get englishLanguage => _localizedValues[locale.languageCode]?["englishLanguage"] ?? "English";
   String get georgianLanguage => _localizedValues[locale.languageCode]?["georgianLanguage"] ?? "ქართული";
   String get helpAndSupport => _localizedValues[locale.languageCode]?["helpAndSupport"] ?? "Help & Support";
+  String get help => _localizedValues[locale.languageCode]?["help"] ?? "Help";
   String get termsAndPrivacy => _localizedValues[locale.languageCode]?["termsAndPrivacy"] ?? "Terms & Privacy";
 
   // Profile Edit
@@ -1264,6 +1270,11 @@ class AppLocalizations {
       "appPreferences": "App preferences",
       "feedPreferences": "Feed Preferences",
       "quickAccess": "Quick Access",
+      "library": "Library",
+      "nowViewing": "NOW VIEWING",
+      "signOut": "Sign out",
+      "signOutConfirmTitle": "Sign out?",
+      "signOutConfirmMessage": "Are you sure you want to sign out?",
       "appearance": "Appearance",
       "themeMode": "Theme Mode",
       "system": "System",
@@ -1278,6 +1289,7 @@ class AppLocalizations {
       "englishLanguage": "English",
       "georgianLanguage": "ქართული",
       "helpAndSupport": "Help & Support",
+      "help": "Help",
       "termsAndPrivacy": "Terms & Privacy",
       "editProfile": "Edit Profile",
       "profileUpdateInfo": "Update your profile information. Changes will be visible to other users.",
@@ -2093,6 +2105,11 @@ class AppLocalizations {
       "appPreferences": "აპის პარამეტრები",
       "feedPreferences": "ფიდის პარამეტრები",
       "quickAccess": "სწრაფი წვდომა",
+      "library": "ბიბლიოთეკა",
+      "nowViewing": "აქტიური არხი",
+      "signOut": "გამოსვლა",
+      "signOutConfirmTitle": "გამოსვლა?",
+      "signOutConfirmMessage": "დარწმუნებული ხართ, რომ გსურთ გამოსვლა?",
       "appearance": "გაფორმება",
       "themeMode": "გაფორმების რეჟიმი",
       "system": "სისტემა",
@@ -2107,6 +2124,7 @@ class AppLocalizations {
       "englishLanguage": "ინგლისური",
       "georgianLanguage": "ქართული",
       "helpAndSupport": "დახმარება და მხარდაჭერა",
+      "help": "დახმარება",
       "termsAndPrivacy": "წესები და კონფიდენციალურობა",
       "editProfile": "პროფილის რედაქტირება",
       "profileUpdateInfo": "განაახლეთ თქვენი პროფილის ინფორმაცია. ცვლილებები გამოუჩდნებათ სხვა მომხმარებლებს.",

@@ -35,6 +35,9 @@ import "shared_recipes_screen.dart";
 import "shared_shopping_lists_screen.dart";
 import "shopping_list_screen.dart";
 import "../recipes/recipe_detail_screen.dart";
+import "../users/user_api.dart";
+import "../users/user_models.dart";
+import "help_and_support_screen.dart";
 
 class FeedShellScreen extends StatefulWidget {
   const FeedShellScreen({
@@ -687,11 +690,33 @@ class _FeedShellDrawer extends StatefulWidget {
 
 class _FeedShellDrawerState extends State<_FeedShellDrawer> {
   FeedScope? _expandedScope;
+  UserProfile? _drawerProfile;
+  LibraryCounts? _libraryCounts;
 
   @override
   void initState() {
     super.initState();
     _expandedScope = widget.feed.scope;
+    _loadProfile();
+  }
+
+  Future<void> _loadProfile() async {
+    if (!widget.auth.isLoggedIn) return;
+    final username = widget.auth.me?["username"]?.toString();
+    if (username == null || username.isEmpty) return;
+    final userApi = UserApi(widget.apiClient);
+    try {
+      final results = await Future.wait([
+        userApi.getUserProfile(username),
+        userApi.getLibraryCounts(),
+      ]);
+      if (mounted) {
+        setState(() {
+          _drawerProfile = results[0] as UserProfile;
+          _libraryCounts = results[1] as LibraryCounts;
+        });
+      }
+    } catch (_) {}
   }
 
   void _toggleExpand(FeedScope scope) {
@@ -716,6 +741,321 @@ class _FeedShellDrawerState extends State<_FeedShellDrawer> {
     widget.onNavigateToFeed();
   }
 
+  void _confirmSignOut(BuildContext context, AppLocalizations? localizations) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(localizations?.signOutConfirmTitle ?? "Sign out?"),
+        content: Text(localizations?.signOutConfirmMessage ?? "Are you sure you want to sign out?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(localizations?.cancel ?? "Cancel"),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              Navigator.of(context).pop();
+              widget.auth.logout();
+            },
+            child: Text(
+              localizations?.signOut ?? "Sign out",
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProfileHeader(BuildContext context, AppLocalizations? localizations) {
+    const primaryColor = Color(0xFF53B175);
+    final me = widget.auth.me;
+    final username = me?["username"]?.toString() ?? "";
+    final displayName = me?["display_name"]?.toString() ?? username;
+    final avatarUrl = me?["avatar_url"]?.toString();
+    final profile = _drawerProfile;
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        color: primaryColor,
+        child: Stack(
+          children: [
+            Positioned(
+              top: -35,
+              right: -35,
+              child: Container(
+                width: 130,
+                height: 130,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.09),
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+            Positioned(
+              top: 25,
+              right: 55,
+              child: Container(
+                width: 55,
+                height: 55,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.06),
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+            Positioned(
+              bottom: -45,
+              left: -25,
+              child: Container(
+                width: 150,
+                height: 150,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.07),
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(2.5),
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white,
+                        ),
+                        child: GestureDetector(
+                          onTap: () {
+                            Navigator.of(context).pop();
+                            Navigator.of(context).push(MaterialPageRoute(
+                              builder: (_) => ProfileScreen(
+                                auth: widget.auth,
+                                apiClient: widget.apiClient,
+                                shoppingListController: widget.shoppingListController,
+                              ),
+                            ));
+                          },
+                          child: buildUserAvatar(context, avatarUrl, username, radius: 28),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () {
+                            Navigator.of(context).pop();
+                            Navigator.of(context).push(MaterialPageRoute(
+                              builder: (_) => ProfileScreen(
+                                auth: widget.auth,
+                                apiClient: widget.apiClient,
+                                shoppingListController: widget.shoppingListController,
+                              ),
+                            ));
+                          },
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              FittedBox(
+                                fit: BoxFit.scaleDown,
+                                alignment: Alignment.centerLeft,
+                                child: Text(
+                                  displayName,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 17,
+                                  ),
+                                  maxLines: 1,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              FittedBox(
+                                fit: BoxFit.scaleDown,
+                                alignment: Alignment.centerLeft,
+                                child: Text(
+                                  "@$username",
+                                  style: TextStyle(
+                                    color: Colors.white.withValues(alpha: 0.75),
+                                    fontSize: 13,
+                                  ),
+                                  maxLines: 1,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.of(context).pop();
+                          Navigator.of(context).push(MaterialPageRoute(
+                            builder: (_) => SettingsScreen(
+                              themeController: widget.themeController,
+                              languageController: widget.languageController,
+                              feedViewController: widget.feedViewController,
+                              auth: widget.auth,
+                              apiClient: widget.apiClient,
+                            ),
+                          ));
+                        },
+                        child: Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white.withValues(alpha: 0.18),
+                          ),
+                          child: const Icon(Icons.settings_outlined, color: Colors.white, size: 20),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _ProfileStat(
+                          value: profile?.recipesCount.toString() ?? "",
+                          label: localizations?.recipes ?? "Recipes",
+                          loading: profile == null,
+                        ),
+                      ),
+                      Expanded(
+                        child: _ProfileStat(
+                          value: profile?.followersCount.toString() ?? "",
+                          label: localizations?.followers ?? "Followers",
+                          loading: profile == null,
+                        ),
+                      ),
+                      Expanded(
+                        child: _ProfileStat(
+                          value: profile?.followingCount.toString() ?? "",
+                          label: localizations?.followingTitle ?? "Following",
+                          loading: profile == null,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLibraryGrid(BuildContext context, AppLocalizations? localizations) {
+    final counts = _libraryCounts;
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: _LibraryGridCard(
+                icon: Icons.bookmark_outline_rounded,
+                title: localizations?.savedRecipes ?? "Saved Recipes",
+                loading: counts == null,
+                subtitle: counts != null
+                    ? localizations?.nSaved(counts.savedRecipes) ?? "${counts.savedRecipes} saved"
+                    : null,
+                onTap: () {
+                  Navigator.of(context).pop();
+                  Navigator.of(context).push(MaterialPageRoute(
+                    builder: (_) => SavedRecipesScreen(
+                      apiClient: widget.apiClient,
+                      auth: widget.auth,
+                      shoppingListController: widget.shoppingListController,
+                    ),
+                  ));
+                },
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: ListenableBuilder(
+                listenable: widget.shoppingListController,
+                builder: (context, _) {
+                  final count = widget.shoppingListController.totalCount;
+                  return _LibraryGridCard(
+                    icon: Icons.shopping_cart_outlined,
+                    title: localizations?.shoppingList ?? "Shopping List",
+                    subtitle: "$count ${localizations?.items ?? "items"}",
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      Navigator.of(context).push(MaterialPageRoute(
+                        builder: (_) => ShoppingListScreen(
+                          controller: widget.shoppingListController,
+                          apiClient: widget.apiClient,
+                          auth: widget.auth,
+                        ),
+                      ));
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: _LibraryGridCard(
+                icon: Icons.folder_shared_outlined,
+                title: localizations?.sharedRecipes ?? "Shared Recipes",
+                loading: counts == null,
+                subtitle: counts != null
+                    ? localizations?.nSaved(counts.sharedRecipes) ?? "${counts.sharedRecipes} saved"
+                    : null,
+                onTap: () {
+                  Navigator.of(context).pop();
+                  Navigator.of(context).push(MaterialPageRoute(
+                    builder: (_) => SharedRecipesScreen(
+                      apiClient: widget.apiClient,
+                      auth: widget.auth,
+                      shoppingListController: widget.shoppingListController,
+                    ),
+                  ));
+                },
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _LibraryGridCard(
+                icon: Icons.shopping_basket_outlined,
+                title: localizations?.sharedShoppingLists ?? "Shared Shopping Lists",
+                loading: counts == null,
+                subtitle: counts != null
+                    ? "${counts.sharedShoppingLists} ${localizations?.items ?? "items"}"
+                    : null,
+                onTap: () {
+                  Navigator.of(context).pop();
+                  Navigator.of(context).push(MaterialPageRoute(
+                    builder: (_) => SharedShoppingListsScreen(
+                      apiClient: widget.apiClient,
+                      auth: widget.auth,
+                      shoppingListController: widget.shoppingListController,
+                    ),
+                  ));
+                },
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context);
@@ -724,272 +1064,143 @@ class _FeedShellDrawerState extends State<_FeedShellDrawer> {
       backgroundColor: Theme.of(context).colorScheme.surface,
       child: SafeArea(
         child: ListenableBuilder(
-          listenable: widget.feed,
+          listenable: Listenable.merge([widget.feed, widget.auth]),
           builder: (context, _) {
             return ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-              children: [
-                // Profile section
-                if (widget.auth.isLoggedIn) ...[
-                  _DrawerCard(
-                    onTap: () {
-                      Navigator.of(context).pop();
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => ProfileScreen(
-                            auth: widget.auth,
-                            apiClient: widget.apiClient,
-                            shoppingListController: widget.shoppingListController,
-                          ),
-                        ),
-                      );
-                    },
-                    child: Row(
-                      children: [
-                        buildUserAvatar(
-                          context,
-                          widget.auth.me?["avatar_url"]?.toString(),
-                          widget.auth.me?["username"]?.toString() ?? "",
-                          radius: 24,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                "@${widget.auth.me?["username"] ?? ""}",
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: Theme.of(context).colorScheme.onSurface,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                localizations?.viewProfile ?? "View your profile",
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Icon(
-                          Icons.chevron_right_rounded,
-                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
-                        ),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                    children: <Widget>[
+                      if (widget.auth.isLoggedIn) ...[
+                        _buildProfileHeader(context, localizations),
+                        const SizedBox(height: 24),
                       ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                ],
-
-                // Feed Preferences section
-                _SectionHeader(title: localizations?.feedPreferences ?? "FEED PREFERENCES"),
-                const SizedBox(height: 8),
-
-                // Global
-                _buildExpandableScope(
-                  scope: FeedScope.global,
-                  icon: Icons.public_rounded,
-                  title: localizations?.global ?? "Global",
-                  subtitle: localizations?.seeRecipesFromEveryone ?? "See recipes from everyone",
-                  subItems: [
-                    _SubItem(
-                      label: localizations?.feedSortDiscovery ?? "Discovery",
-                      isActive: widget.feed.scope == FeedScope.global && widget.feed.sort == FeedSort.discovery,
-                      onTap: () => _selectOption(scope: FeedScope.global, sort: FeedSort.discovery),
-                    ),
-                    _SubItem(
-                      label: localizations?.recent ?? "Recent",
-                      isActive: widget.feed.scope == FeedScope.global && widget.feed.sort == FeedSort.recent,
-                      onTap: () => _selectOption(scope: FeedScope.global, sort: FeedSort.recent),
-                    ),
-                    _SubItem(
-                      label: localizations?.top ?? "Top",
-                      isActive: widget.feed.scope == FeedScope.global && widget.feed.sort == FeedSort.top,
-                      onTap: () => _selectOption(scope: FeedScope.global, sort: FeedSort.top),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-
-                // Following
-                _buildExpandableScope(
-                  scope: FeedScope.following,
-                  icon: Icons.people_alt_outlined,
-                  title: localizations?.following ?? "Following",
-                  subtitle: localizations?.seeRecipesFromPeopleYouFollow ?? "See recipes from people you follow",
-                  enabled: widget.auth.isLoggedIn,
-                  onDisabledTap: () {
-                    Navigator.of(context).pop();
-                    ErrorUtils.showInfo(
-                      context,
-                      localizations?.logInToSeeFollowingFeed ?? "Log in to see Following feed",
-                    );
-                  },
-                  subItems: [
-                    _SubItem(
-                      label: localizations?.recent ?? "Recent",
-                      isActive: widget.feed.scope == FeedScope.following && widget.feed.sort == FeedSort.recent,
-                      onTap: () => _selectOption(scope: FeedScope.following, sort: FeedSort.recent),
-                    ),
-                    _SubItem(
-                      label: localizations?.top ?? "Top",
-                      isActive: widget.feed.scope == FeedScope.following && widget.feed.sort == FeedSort.top,
-                      onTap: () => _selectOption(scope: FeedScope.following, sort: FeedSort.top),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-
-                // Popular
-                _buildExpandableScope(
-                  scope: FeedScope.popular,
-                  icon: Icons.local_fire_department_outlined,
-                  title: localizations?.popular ?? "Popular",
-                  subtitle: localizations?.mostPopularRecipes ?? "Most popular recipes",
-                  subItems: [
-                    _SubItem(
-                      label: localizations?.allTime ?? "All Time",
-                      isActive: widget.feed.scope == FeedScope.popular && widget.feed.popularPeriod == PopularPeriod.allTime,
-                      onTap: () => _selectOption(scope: FeedScope.popular, popularPeriod: PopularPeriod.allTime),
-                    ),
-                    _SubItem(
-                      label: localizations?.last30Days ?? "Last 30 Days",
-                      isActive: widget.feed.scope == FeedScope.popular && widget.feed.popularPeriod == PopularPeriod.last30Days,
-                      onTap: () => _selectOption(scope: FeedScope.popular, popularPeriod: PopularPeriod.last30Days),
-                    ),
-                    _SubItem(
-                      label: localizations?.last7Days ?? "Last 7 Days",
-                      isActive: widget.feed.scope == FeedScope.popular && widget.feed.popularPeriod == PopularPeriod.last7Days,
-                      onTap: () => _selectOption(scope: FeedScope.popular, popularPeriod: PopularPeriod.last7Days),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-
-                // Trending
-                _buildExpandableScope(
-                  scope: FeedScope.trending,
-                  icon: Icons.trending_up_rounded,
-                  title: localizations?.trending ?? "Trending",
-                  subtitle: localizations?.trendingNow ?? "Trending now",
-                  subItems: [
-                    _SubItem(
-                      label: localizations?.last7Days ?? "Last 7 Days",
-                      isActive: widget.feed.scope == FeedScope.trending && widget.feed.trendingDays == 7,
-                      onTap: () => _selectOption(scope: FeedScope.trending, trendingDays: 7),
-                    ),
-                    _SubItem(
-                      label: localizations?.last30Days ?? "Last 30 Days",
-                      isActive: widget.feed.scope == FeedScope.trending && widget.feed.trendingDays == 30,
-                      onTap: () => _selectOption(scope: FeedScope.trending, trendingDays: 30),
-                    ),
-                  ],
-                ),
-
-                // Quick Access section
-                if (widget.auth.isLoggedIn) ...[
-                  const SizedBox(height: 24),
-                  _SectionHeader(title: localizations?.quickAccess ?? "QUICK ACCESS"),
-                  const SizedBox(height: 8),
-                  _QuickAccessCard(
-                    icon: Icons.bookmark_outline_rounded,
-                    title: localizations?.savedRecipes ?? "Saved Recipes",
-                    subtitle: localizations?.viewYourBookmarkedRecipes ?? "View your bookmarked recipes",
-                    onTap: () {
-                      Navigator.of(context).pop();
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => SavedRecipesScreen(
-                            apiClient: widget.apiClient,
-                            auth: widget.auth,
-                            shoppingListController: widget.shoppingListController,
+                      _SectionHeader(title: localizations?.feed ?? "FEED"),
+                      const SizedBox(height: 8),
+                      _buildExpandableScope(
+                        scope: FeedScope.global,
+                        icon: Icons.public_rounded,
+                        title: localizations?.global ?? "Global",
+                        subItems: [
+                          _SubItem(
+                            label: localizations?.feedSortDiscovery ?? "Discovery",
+                            isActive: widget.feed.scope == FeedScope.global && widget.feed.sort == FeedSort.discovery,
+                            onTap: () => _selectOption(scope: FeedScope.global, sort: FeedSort.discovery),
                           ),
-                        ),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 8),
-                  _QuickAccessCard(
-                    icon: Icons.shopping_cart_outlined,
-                    title: localizations?.shoppingList ?? "Shopping List",
-                    subtitle: localizations?.manageYourShoppingList ?? "Manage your shopping list",
-                    onTap: () {
-                      Navigator.of(context).pop();
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => ShoppingListScreen(
-                            controller: widget.shoppingListController,
-                            apiClient: widget.apiClient,
-                            auth: widget.auth,
+                          _SubItem(
+                            label: localizations?.recent ?? "Recent",
+                            isActive: widget.feed.scope == FeedScope.global && widget.feed.sort == FeedSort.recent,
+                            onTap: () => _selectOption(scope: FeedScope.global, sort: FeedSort.recent),
                           ),
-                        ),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 8),
-                  _QuickAccessCard(
-                    icon: Icons.folder_shared,
-                    title: localizations?.sharedRecipes ?? "Shared Recipes",
-                    subtitle: localizations?.recipesSharedWithYou ?? "Recipes shared with you",
-                    onTap: () {
-                      Navigator.of(context).pop();
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => SharedRecipesScreen(
-                            apiClient: widget.apiClient,
-                            auth: widget.auth,
-                            shoppingListController: widget.shoppingListController,
+                          _SubItem(
+                            label: localizations?.top ?? "Top",
+                            isActive: widget.feed.scope == FeedScope.global && widget.feed.sort == FeedSort.top,
+                            onTap: () => _selectOption(scope: FeedScope.global, sort: FeedSort.top),
                           ),
-                        ),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 8),
-                  _QuickAccessCard(
-                    icon: Icons.shopping_basket_outlined,
-                    title: localizations?.sharedShoppingLists ?? "Shared Shopping Lists",
-                    subtitle: localizations?.listsSharedWithYou ?? "Shopping lists shared with you",
-                    onTap: () {
-                      Navigator.of(context).pop();
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => SharedShoppingListsScreen(
-                            apiClient: widget.apiClient,
-                            auth: widget.auth,
-                            shoppingListController: widget.shoppingListController,
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      _buildExpandableScope(
+                        scope: FeedScope.following,
+                        icon: Icons.people_alt_outlined,
+                        title: localizations?.following ?? "Following",
+                        enabled: widget.auth.isLoggedIn,
+                        onDisabledTap: () {
+                          Navigator.of(context).pop();
+                          ErrorUtils.showInfo(
+                            context,
+                            localizations?.logInToSeeFollowingFeed ?? "Log in to see Following feed",
+                          );
+                        },
+                        subItems: [
+                          _SubItem(
+                            label: localizations?.recent ?? "Recent",
+                            isActive: widget.feed.scope == FeedScope.following && widget.feed.sort == FeedSort.recent,
+                            onTap: () => _selectOption(scope: FeedScope.following, sort: FeedSort.recent),
                           ),
-                        ),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 8),
-                  _QuickAccessCard(
-                    icon: Icons.settings_outlined,
-                    title: localizations?.settings ?? "Settings",
-                    subtitle: localizations?.appPreferences ?? "App preferences",
-                    onTap: () {
-                      Navigator.of(context).pop();
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => SettingsScreen(
-                            themeController: widget.themeController,
-                            languageController: widget.languageController,
-                            feedViewController: widget.feedViewController,
-                            auth: widget.auth,
-                            apiClient: widget.apiClient,
+                          _SubItem(
+                            label: localizations?.top ?? "Top",
+                            isActive: widget.feed.scope == FeedScope.following && widget.feed.sort == FeedSort.top,
+                            onTap: () => _selectOption(scope: FeedScope.following, sort: FeedSort.top),
                           ),
-                        ),
-                      );
-                    },
-                  ),
-                ],
-              ],
-            );
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      _buildExpandableScope(
+                        scope: FeedScope.popular,
+                        icon: Icons.local_fire_department_outlined,
+                        title: localizations?.popular ?? "Popular",
+                        subItems: [
+                          _SubItem(
+                            label: localizations?.allTime ?? "All Time",
+                            isActive: widget.feed.scope == FeedScope.popular && widget.feed.popularPeriod == PopularPeriod.allTime,
+                            onTap: () => _selectOption(scope: FeedScope.popular, popularPeriod: PopularPeriod.allTime),
+                          ),
+                          _SubItem(
+                            label: localizations?.last30Days ?? "Last 30 Days",
+                            isActive: widget.feed.scope == FeedScope.popular && widget.feed.popularPeriod == PopularPeriod.last30Days,
+                            onTap: () => _selectOption(scope: FeedScope.popular, popularPeriod: PopularPeriod.last30Days),
+                          ),
+                          _SubItem(
+                            label: localizations?.last7Days ?? "Last 7 Days",
+                            isActive: widget.feed.scope == FeedScope.popular && widget.feed.popularPeriod == PopularPeriod.last7Days,
+                            onTap: () => _selectOption(scope: FeedScope.popular, popularPeriod: PopularPeriod.last7Days),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      _buildExpandableScope(
+                        scope: FeedScope.trending,
+                        icon: Icons.trending_up_rounded,
+                        title: localizations?.trending ?? "Trending",
+                        subItems: [
+                          _SubItem(
+                            label: localizations?.last7Days ?? "Last 7 Days",
+                            isActive: widget.feed.scope == FeedScope.trending && widget.feed.trendingDays == 7,
+                            onTap: () => _selectOption(scope: FeedScope.trending, trendingDays: 7),
+                          ),
+                          _SubItem(
+                            label: localizations?.last30Days ?? "Last 30 Days",
+                            isActive: widget.feed.scope == FeedScope.trending && widget.feed.trendingDays == 30,
+                            onTap: () => _selectOption(scope: FeedScope.trending, trendingDays: 30),
+                          ),
+                        ],
+                      ),
+                      if (widget.auth.isLoggedIn) ...[
+                        const SizedBox(height: 24),
+                        _SectionHeader(title: localizations?.library ?? "LIBRARY"),
+                        const SizedBox(height: 8),
+                        _buildLibraryGrid(context, localizations),
+                      ],
+                      const SizedBox(height: 24),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _BottomDrawerButton(
+                              icon: Icons.help_outline_rounded,
+                              label: localizations?.help ?? "Help",
+                              onTap: () {
+                                Navigator.of(context).pop();
+                                Navigator.of(context).push(MaterialPageRoute(
+                                  builder: (_) => const HelpAndSupportScreen(),
+                                ));
+                              },
+                            ),
+                          ),
+                          if (widget.auth.isLoggedIn) ...[
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: _BottomDrawerButton(
+                                icon: Icons.logout_rounded,
+                                label: localizations?.signOut ?? "Sign out",
+                                isDestructive: true,
+                                onTap: () => _confirmSignOut(context, localizations),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                    ],
+                  );
           },
         ),
       ),
@@ -1000,24 +1211,29 @@ class _FeedShellDrawerState extends State<_FeedShellDrawer> {
     required FeedScope scope,
     required IconData icon,
     required String title,
-    required String subtitle,
     required List<_SubItem> subItems,
     bool enabled = true,
     VoidCallback? onDisabledTap,
   }) {
     final isSelected = widget.feed.scope == scope;
     final isExpanded = _expandedScope == scope;
+    final localizations = AppLocalizations.of(context);
+
+    if (isSelected) {
+      return _SelectedFeedCard(
+        icon: icon,
+        title: title,
+        nowViewingLabel: localizations?.nowViewing ?? "NOW VIEWING",
+        subItems: subItems,
+      );
+    }
+
+    final onSurface = Theme.of(context).colorScheme.onSurface;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        _ExpandableFeedOptionCard(
-          icon: icon,
-          title: title,
-          subtitle: subtitle,
-          isSelected: isSelected,
-          isExpanded: isExpanded,
-          enabled: enabled,
+        GestureDetector(
           onTap: () {
             if (!enabled) {
               onDisabledTap?.call();
@@ -1025,23 +1241,58 @@ class _FeedShellDrawerState extends State<_FeedShellDrawer> {
             }
             _toggleExpand(scope);
           },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+            child: Row(
+              children: [
+                Icon(
+                  icon,
+                  size: 22,
+                  color: onSurface.withValues(alpha: enabled ? 0.65 : 0.3),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                      color: onSurface.withValues(alpha: enabled ? 1.0 : 0.4),
+                    ),
+                  ),
+                ),
+                AnimatedRotation(
+                  duration: const Duration(milliseconds: 200),
+                  turns: isExpanded ? 0.25 : 0.0,
+                  child: Icon(
+                    Icons.chevron_right_rounded,
+                    size: 20,
+                    color: onSurface.withValues(alpha: 0.4),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
         AnimatedSize(
           duration: const Duration(milliseconds: 200),
           curve: Curves.easeInOut,
           child: isExpanded
               ? Padding(
-                  padding: const EdgeInsets.only(left: 16, top: 4),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: subItems.map((item) => Padding(
-                      padding: const EdgeInsets.only(bottom: 4),
-                      child: _SubOptionCard(
-                        label: item.label,
-                        isActive: item.isActive,
-                        onTap: item.onTap,
-                      ),
-                    )).toList(),
+                  padding: const EdgeInsets.only(left: 4, bottom: 6),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: subItems
+                          .map((item) => _FeedPillChip(
+                                label: item.label,
+                                isActive: item.isActive,
+                                onTap: item.onTap,
+                              ))
+                          .toList(),
+                    ),
                   ),
                 )
               : const SizedBox.shrink(),
@@ -1085,182 +1336,89 @@ class _SectionHeader extends StatelessWidget {
   }
 }
 
-class _DrawerCard extends StatefulWidget {
-  const _DrawerCard({
-    required this.child,
-    required this.onTap,
-  });
 
-  final Widget child;
-  final VoidCallback onTap;
-
-  @override
-  State<_DrawerCard> createState() => _DrawerCardState();
-}
-
-class _DrawerCardState extends State<_DrawerCard> {
-  bool _isHovered = false;
-  bool _isPressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final baseColor = Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5);
-    final hoverColor = Theme.of(context).colorScheme.primary.withValues(alpha: 0.1);
-    final pressedColor = Theme.of(context).colorScheme.primary.withValues(alpha: 0.15);
-
-    return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      child: GestureDetector(
-        onTapDown: (_) => setState(() => _isPressed = true),
-        onTapUp: (_) => setState(() => _isPressed = false),
-        onTapCancel: () => setState(() => _isPressed = false),
-        onTap: widget.onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          curve: Curves.easeOut,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          decoration: BoxDecoration(
-            color: _isPressed ? pressedColor : (_isHovered ? hoverColor : baseColor),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: widget.child,
-        ),
-      ),
-    );
-  }
-}
-
-class _ExpandableFeedOptionCard extends StatefulWidget {
-  const _ExpandableFeedOptionCard({
+class _SelectedFeedCard extends StatelessWidget {
+  const _SelectedFeedCard({
     required this.icon,
     required this.title,
-    required this.subtitle,
-    required this.isSelected,
-    required this.isExpanded,
-    required this.onTap,
-    this.enabled = true,
+    required this.nowViewingLabel,
+    required this.subItems,
   });
 
   final IconData icon;
   final String title;
-  final String subtitle;
-  final bool isSelected;
-  final bool isExpanded;
-  final VoidCallback onTap;
-  final bool enabled;
-
-  @override
-  State<_ExpandableFeedOptionCard> createState() => _ExpandableFeedOptionCardState();
-}
-
-class _ExpandableFeedOptionCardState extends State<_ExpandableFeedOptionCard> {
-  bool _isHovered = false;
-  bool _isPressed = false;
+  final String nowViewingLabel;
+  final List<_SubItem> subItems;
 
   @override
   Widget build(BuildContext context) {
     final primaryColor = Theme.of(context).colorScheme.primary;
-    final disabledAlpha = widget.enabled ? 1.0 : 0.5;
-    final baseColor = Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5);
-    final hoverColor = primaryColor.withValues(alpha: 0.1);
-    final pressedColor = primaryColor.withValues(alpha: 0.15);
-    final selectedColor = primaryColor.withValues(alpha: 0.12);
-
-    Color bgColor;
-    if (widget.isSelected) {
-      bgColor = selectedColor;
-    } else if (_isPressed) {
-      bgColor = pressedColor;
-    } else if (_isHovered) {
-      bgColor = hoverColor;
-    } else {
-      bgColor = baseColor;
-    }
-
-    return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      child: GestureDetector(
-        onTapDown: (_) => setState(() => _isPressed = true),
-        onTapUp: (_) => setState(() => _isPressed = false),
-        onTapCancel: () => setState(() => _isPressed = false),
-        onTap: widget.onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          curve: Curves.easeOut,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            color: bgColor,
-            borderRadius: BorderRadius.circular(12),
-            border: widget.isSelected
-                ? Border.all(color: primaryColor.withValues(alpha: 0.3), width: 1)
-                : null,
-          ),
-          child: Row(
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: primaryColor.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: primaryColor.withValues(alpha: 0.3), width: 1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.all(6),
+              Container(
+                padding: const EdgeInsets.all(7),
                 decoration: BoxDecoration(
-                  color: widget.isSelected ? primaryColor.withValues(alpha: 0.15) : Colors.transparent,
-                  borderRadius: BorderRadius.circular(8),
+                  color: primaryColor.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(
-                  widget.icon,
-                  size: 22,
-                  color: widget.isSelected
-                      ? primaryColor
-                      : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7 * disabledAlpha),
-                ),
+                child: Icon(icon, size: 20, color: primaryColor),
               ),
               const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      widget.title,
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: widget.isSelected ? FontWeight.w600 : FontWeight.w500,
-                        color: widget.isSelected
-                            ? primaryColor
-                            : Theme.of(context).colorScheme.onSurface.withValues(alpha: disabledAlpha),
-                      ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    nowViewingLabel.toUpperCase(),
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: primaryColor,
+                      letterSpacing: 0.6,
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      widget.subtitle,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5 * disabledAlpha),
-                      ),
+                  ),
+                  const SizedBox(height: 1),
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
-                  ],
-                ),
-              ),
-              AnimatedRotation(
-                duration: const Duration(milliseconds: 200),
-                turns: widget.isExpanded ? 0.5 : 0.0,
-                child: Icon(
-                  Icons.keyboard_arrow_down_rounded,
-                  size: 22,
-                  color: widget.isSelected
-                      ? primaryColor
-                      : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
-                ),
+                  ),
+                ],
               ),
             ],
           ),
-        ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 6,
+            children: subItems
+                .map((item) => _FeedPillChip(
+                      label: item.label,
+                      isActive: item.isActive,
+                      onTap: item.onTap,
+                    ))
+                .toList(),
+          ),
+        ],
       ),
     );
   }
 }
 
-class _SubOptionCard extends StatefulWidget {
-  const _SubOptionCard({
+class _FeedPillChip extends StatefulWidget {
+  const _FeedPillChip({
     required this.label,
     required this.isActive,
     required this.onTap,
@@ -1271,19 +1429,76 @@ class _SubOptionCard extends StatefulWidget {
   final VoidCallback onTap;
 
   @override
-  State<_SubOptionCard> createState() => _SubOptionCardState();
+  State<_FeedPillChip> createState() => _FeedPillChipState();
 }
 
-class _SubOptionCardState extends State<_SubOptionCard> {
+class _FeedPillChipState extends State<_FeedPillChip> {
   bool _isPressed = false;
 
   @override
   Widget build(BuildContext context) {
     final primaryColor = Theme.of(context).colorScheme.primary;
-    final baseColor = widget.isActive
-        ? primaryColor.withValues(alpha: 0.1)
-        : Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3);
-    final pressedColor = primaryColor.withValues(alpha: 0.15);
+    final onSurface = Theme.of(context).colorScheme.onSurface;
+
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _isPressed = true),
+      onTapUp: (_) => setState(() => _isPressed = false),
+      onTapCancel: () => setState(() => _isPressed = false),
+      onTap: widget.onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 120),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+        decoration: BoxDecoration(
+          color: widget.isActive
+              ? primaryColor.withValues(alpha: _isPressed ? 0.85 : 1.0)
+              : _isPressed
+                  ? onSurface.withValues(alpha: 0.08)
+                  : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: widget.isActive ? primaryColor : onSurface.withValues(alpha: 0.25),
+          ),
+        ),
+        child: Text(
+          widget.label,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: widget.isActive ? FontWeight.w600 : FontWeight.w400,
+            color: widget.isActive ? Colors.white : onSurface.withValues(alpha: 0.8),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _LibraryGridCard extends StatefulWidget {
+  const _LibraryGridCard({
+    required this.icon,
+    required this.title,
+    required this.onTap,
+    this.subtitle,
+    this.loading = false,
+  });
+
+  final IconData icon;
+  final String title;
+  final String? subtitle;
+  final bool loading;
+  final VoidCallback onTap;
+
+  @override
+  State<_LibraryGridCard> createState() => _LibraryGridCardState();
+}
+
+class _LibraryGridCardState extends State<_LibraryGridCard> {
+  bool _isPressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final primaryColor = Theme.of(context).colorScheme.primary;
+    final baseColor = Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5);
+    final pressedColor = primaryColor.withValues(alpha: 0.12);
 
     return GestureDetector(
       onTapDown: (_) => setState(() => _isPressed = true),
@@ -1293,32 +1508,113 @@ class _SubOptionCardState extends State<_SubOptionCard> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 120),
         curve: Curves.easeOut,
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: _isPressed ? pressedColor : baseColor,
-          borderRadius: BorderRadius.circular(10),
-          border: widget.isActive
-              ? Border.all(color: primaryColor.withValues(alpha: 0.25), width: 1)
-              : null,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: primaryColor.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(widget.icon, size: 20, color: primaryColor),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              widget.title,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            if (widget.loading) ...[
+              const SizedBox(height: 4),
+              const _SkeletonPill(width: 48, height: 16),
+            ] else if (widget.subtitle != null) ...[
+              const SizedBox(height: 2),
+              Text(
+                widget.subtitle!,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BottomDrawerButton extends StatefulWidget {
+  const _BottomDrawerButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.isDestructive = false,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final bool isDestructive;
+
+  @override
+  State<_BottomDrawerButton> createState() => _BottomDrawerButtonState();
+}
+
+class _BottomDrawerButtonState extends State<_BottomDrawerButton> {
+  bool _isPressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = widget.isDestructive
+        ? Theme.of(context).colorScheme.error
+        : Theme.of(context).colorScheme.onSurface;
+    final baseColor = Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5);
+    final pressedColor = widget.isDestructive
+        ? Theme.of(context).colorScheme.error.withValues(alpha: 0.1)
+        : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08);
+
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _isPressed = true),
+      onTapUp: (_) => setState(() => _isPressed = false),
+      onTapCancel: () => setState(() => _isPressed = false),
+      onTap: widget.onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 120),
+        curve: Curves.easeOut,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        decoration: BoxDecoration(
+          color: _isPressed ? pressedColor : baseColor,
+          borderRadius: BorderRadius.circular(30),
         ),
         child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              widget.isActive ? Icons.check_rounded : Icons.arrow_right_rounded,
-              size: 18,
-              color: widget.isActive
-                  ? primaryColor
-                  : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
-            ),
+            Icon(widget.icon, size: 18, color: color),
             const SizedBox(width: 8),
-            Text(
-              widget.label,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: widget.isActive ? FontWeight.w600 : FontWeight.w400,
-                color: widget.isActive
-                    ? primaryColor
-                    : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8),
+            Flexible(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  widget.label,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: color,
+                  ),
+                  maxLines: 1,
+                ),
               ),
             ),
           ],
@@ -1328,105 +1624,92 @@ class _SubOptionCardState extends State<_SubOptionCard> {
   }
 }
 
-class _QuickAccessCard extends StatefulWidget {
-  const _QuickAccessCard({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-  });
+class _ProfileStat extends StatelessWidget {
+  const _ProfileStat({required this.value, required this.label, this.loading = false});
 
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-
-  @override
-  State<_QuickAccessCard> createState() => _QuickAccessCardState();
-}
-
-class _QuickAccessCardState extends State<_QuickAccessCard> {
-  bool _isHovered = false;
-  bool _isPressed = false;
+  final String value;
+  final String label;
+  final bool loading;
 
   @override
   Widget build(BuildContext context) {
-    final primaryColor = Theme.of(context).colorScheme.primary;
-    final baseColor = Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5);
-    final hoverColor = primaryColor.withValues(alpha: 0.08);
-    final pressedColor = primaryColor.withValues(alpha: 0.12);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        loading
+            ? const _SkeletonPill(width: 32, height: 19, color: Colors.white)
+            : FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  value,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+        const SizedBox(height: 1),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text(
+            label,
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.75),
+              fontWeight: FontWeight.w600,
+              fontSize: 10,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
 
-    return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      child: GestureDetector(
-        onTapDown: (_) => setState(() => _isPressed = true),
-        onTapUp: (_) => setState(() => _isPressed = false),
-        onTapCancel: () => setState(() => _isPressed = false),
-        onTap: widget.onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          curve: Curves.easeOut,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            color: _isPressed ? pressedColor : (_isHovered ? hoverColor : baseColor),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Row(
-            children: [
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: _isHovered || _isPressed
-                      ? primaryColor.withValues(alpha: 0.25)
-                      : primaryColor.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(
-                  widget.icon,
-                  size: 20,
-                  color: primaryColor,
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      widget.title,
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w500,
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      widget.subtitle,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              AnimatedSlide(
-                duration: const Duration(milliseconds: 150),
-                offset: _isHovered ? const Offset(0.1, 0) : Offset.zero,
-                child: Icon(
-                  Icons.chevron_right_rounded,
-                  size: 22,
-                  color: _isHovered
-                      ? primaryColor.withValues(alpha: 0.7)
-                      : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
-                ),
-              ),
-            ],
-          ),
+class _SkeletonPill extends StatefulWidget {
+  const _SkeletonPill({this.width = 40, this.height = 10, this.color});
+
+  final double width;
+  final double height;
+  final Color? color;
+
+  @override
+  State<_SkeletonPill> createState() => _SkeletonPillState();
+}
+
+class _SkeletonPillState extends State<_SkeletonPill> with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+  late Animation<double> _opacity;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 800))
+      ..repeat(reverse: true);
+    _opacity = Tween<double>(begin: 0.2, end: 0.8).animate(
+      CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final base = widget.color ?? Theme.of(context).colorScheme.onSurface;
+    return AnimatedBuilder(
+      animation: _opacity,
+      builder: (_, _) => Container(
+        width: widget.width,
+        height: widget.height,
+        decoration: BoxDecoration(
+          color: base.withValues(alpha: _opacity.value),
+          borderRadius: BorderRadius.circular(4),
         ),
       ),
     );

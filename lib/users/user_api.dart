@@ -167,6 +167,12 @@ class UserApi {
     return map["cover_photo_url"]?.toString();
   }
 
+  /// Get library counts (saved recipes, shared recipes, shared shopping lists)
+  Future<LibraryCounts> getLibraryCounts() async {
+    final data = await api.get("/users/me/library-counts", auth: true);
+    return LibraryCounts.fromJson(Map<String, dynamic>.from(data as Map));
+  }
+
   /// Update user profile (display_name, bio)
   Future<Map<String, dynamic>> updateProfile({
     String? displayName,

@@ -304,8 +304,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                 // Logout Button (if logged in)
                 if (isLoggedIn) ...[
-                  _buildLogoutButton(context),
-                  const SizedBox(height: 12),
                   _buildDeleteAccountButton(context),
                   const SizedBox(height: 28),
                 ],
@@ -535,44 +533,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildLogoutButton(BuildContext context) {
-    final theme = Theme.of(context);
-    final localizations = AppLocalizations.of(context);
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () => _showLogoutDialog(context),
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          decoration: BoxDecoration(
-            color: Colors.red.withValues(alpha: 0.08),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.logout_rounded,
-                size: 20,
-                color: Colors.red.shade600,
-              ),
-              const SizedBox(width: 10),
-              Text(
-                localizations?.logout ?? "Log Out",
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  color: Colors.red.shade600,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildDeleteAccountButton(BuildContext context) {
     final theme = Theme.of(context);
     final localizations = AppLocalizations.of(context);
@@ -737,52 +697,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ErrorUtils.showError(context, e);
       }
     }
-  }
-
-  void _showLogoutDialog(BuildContext context) {
-    final localizations = AppLocalizations.of(context);
-    final theme = Theme.of(context);
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        title: Text(
-          localizations?.logout ?? "Log Out",
-          style: const TextStyle(fontWeight: FontWeight.w600),
-        ),
-        content: Text(
-          localizations?.logoutConfirmation ?? "Are you sure you want to log out?",
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(
-              localizations?.cancel ?? "Cancel",
-              style: TextStyle(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-              ),
-            ),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              widget.auth?.logout();
-              Navigator.of(context).popUntil((route) => route.isFirst);
-            },
-            child: Text(
-              localizations?.logout ?? "Log Out",
-              style: TextStyle(
-                color: Colors.red.shade600,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
   }
 
   Widget _buildAppInfoFooter(BuildContext context) {

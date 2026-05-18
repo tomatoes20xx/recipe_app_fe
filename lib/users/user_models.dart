@@ -182,6 +182,24 @@ class UserProfile {
   }
 }
 
+class LibraryCounts {
+  final int savedRecipes;
+  final int sharedRecipes;
+  final int sharedShoppingLists;
+
+  LibraryCounts({
+    required this.savedRecipes,
+    required this.sharedRecipes,
+    required this.sharedShoppingLists,
+  });
+
+  factory LibraryCounts.fromJson(Map<String, dynamic> json) => LibraryCounts(
+        savedRecipes: (json["savedRecipes"] as num?)?.toInt() ?? 0,
+        sharedRecipes: (json["sharedRecipes"] as num?)?.toInt() ?? 0,
+        sharedShoppingLists: (json["sharedShoppingLists"] as num?)?.toInt() ?? 0,
+      );
+}
+
 const _sentinel = Object();
 
 class UserPrivacySettings {
