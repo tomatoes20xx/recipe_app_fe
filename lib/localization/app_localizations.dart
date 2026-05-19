@@ -244,6 +244,7 @@ class AppLocalizations {
   String get upTo => _localizedValues[locale.languageCode]?["upTo"] ?? "Up to";
   String get servingSize => _localizedValues[locale.languageCode]?["servingSize"] ?? "Servings";
   String get servingsAbbreviation => _localizedValues[locale.languageCode]?["servingsAbbreviation"] ?? "serv.";
+  String get perServing => _localizedValues[locale.languageCode]?["perServing"] ?? "per serving";
 
   // Collections
   String get collections => _localizedValues[locale.languageCode]?["collections"] ?? "Collections";
@@ -1143,6 +1144,7 @@ class AppLocalizations {
       "upTo": "Up to",
       "servingSize": "Servings",
       "servingsAbbreviation": "serv.",
+      "perServing": "per serving",
       "collections": "Collections",
       "allSaved": "All",
       "nSaved": "{count} saved",
@@ -1980,6 +1982,7 @@ class AppLocalizations {
       "upTo": "მაქსიმუმ",
       "servingSize": "პორცია",
       "servingsAbbreviation": "პორც.",
+      "perServing": "1 პორციაზე",
       "collections": "კოლექციები",
       "allSaved": "ყველა",
       "nSaved": "{count} შენახული",

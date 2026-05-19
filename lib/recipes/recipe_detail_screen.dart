@@ -896,21 +896,31 @@ class _ContentBody extends StatelessWidget {
 
           // Ingredients Section
           if (recipe.ingredients.isNotEmpty) ...[
-            _IngredientsSection(
-              ingredients: recipe.ingredients,
-              checkedIds: checkedIngredients,
-              selectedIds: selectedForShopping,
-              isSelectionMode: isSelectionMode,
-              onToggle: onToggleIngredient,
-              scaleFactor: (recipe.servingSize != null && recipe.servingSize! > 0 && selectedServings != null)
+            Builder(builder: (context) {
+              final scaleFactor = (recipe.servingSize != null && recipe.servingSize! > 0 && selectedServings != null)
                   ? selectedServings! / recipe.servingSize!
-                  : 1.0,
-            ),
+                  : 1.0;
+              return _IngredientsSection(
+                ingredients: recipe.ingredients,
+                checkedIds: checkedIngredients,
+                selectedIds: selectedForShopping,
+                isSelectionMode: isSelectionMode,
+                onToggle: onToggleIngredient,
+                scaleFactor: scaleFactor,
+              );
+            }),
             const SizedBox(height: 16),
           ],
 
           // Nutrition Panel
-          _NutritionPanel(recipeId: recipe.id, apiClient: apiClient),
+          _NutritionPanel(
+            recipeId: recipe.id,
+            apiClient: apiClient,
+            scaleFactor: (recipe.servingSize != null && recipe.servingSize! > 0)
+                ? 1.0 / recipe.servingSize!
+                : 1.0,
+            isPerServing: recipe.servingSize != null,
+          ),
           const SizedBox(height: 24),
 
           // Steps Section
@@ -1974,10 +1984,17 @@ class _MadeItButton extends StatelessWidget {
 }
 
 class _NutritionPanel extends StatefulWidget {
-  const _NutritionPanel({required this.recipeId, required this.apiClient});
+  const _NutritionPanel({
+    required this.recipeId,
+    required this.apiClient,
+    this.scaleFactor = 1.0,
+    this.isPerServing = false,
+  });
 
   final String recipeId;
   final ApiClient apiClient;
+  final double scaleFactor;
+  final bool isPerServing;
 
   @override
   State<_NutritionPanel> createState() => _NutritionPanelState();
@@ -2026,6 +2043,13 @@ class _NutritionPanelState extends State<_NutritionPanel> {
           );
         } else {
           final n = snapshot.data!;
+          final s = widget.scaleFactor;
+          final calories = (n.calories * s).round();
+          final protein = (n.protein * s).round();
+          final fat = (n.fat * s).round();
+          final carbs = (n.carbs * s).round();
+          final sugar = (n.sugar * s).round();
+          final gram = localizations?.gram ?? 'g';
           content = Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -2035,7 +2059,7 @@ class _NutritionPanelState extends State<_NutritionPanel> {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    n.calories.round().toString(),
+                    calories.toString(),
                     style: theme.textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.w800,
                       color: primary,
@@ -2052,6 +2076,16 @@ class _NutritionPanelState extends State<_NutritionPanel> {
                       ),
                     ),
                   ),
+                  if (widget.isPerServing) ...[
+                    const Spacer(),
+                    Text(
+                      localizations?.perServing ?? "per serving",
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.45),
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ],
                 ],
               ),
               const SizedBox(height: 12),
@@ -2060,25 +2094,25 @@ class _NutritionPanelState extends State<_NutritionPanel> {
                 children: [
                   _MacroChip(
                     label: localizations?.protein ?? "Protein",
-                    value: "${n.protein.round()}${localizations?.gram ?? 'g'}",
+                    value: "$protein$gram",
                     color: Colors.blue.shade600,
                   ),
                   const SizedBox(width: 8),
                   _MacroChip(
                     label: localizations?.fat ?? "Fat",
-                    value: "${n.fat.round()}${localizations?.gram ?? 'g'}",
+                    value: "$fat$gram",
                     color: Colors.orange.shade600,
                   ),
                   const SizedBox(width: 8),
                   _MacroChip(
                     label: localizations?.carbs ?? "Carbs",
-                    value: "${n.carbs.round()}${localizations?.gram ?? 'g'}",
+                    value: "$carbs$gram",
                     color: Colors.green.shade600,
                   ),
                   const SizedBox(width: 8),
                   _MacroChip(
                     label: localizations?.sugar ?? "Sugar",
-                    value: "${n.sugar.round()}${localizations?.gram ?? 'g'}",
+                    value: "$sugar$gram",
                     color: Colors.teal.shade600,
                   ),
                 ],
@@ -2103,7 +2137,7 @@ class _NutritionPanelState extends State<_NutritionPanel> {
           color: Colors.transparent,
           child: InkWell(
             onTap: nutrition != null
-                ? () => _showNutritionBottomSheet(context, nutrition)
+                ? () => _showNutritionBottomSheet(context, nutrition, widget.scaleFactor, widget.isPerServing)
                 : null,
             borderRadius: BorderRadius.circular(16),
             child: Container(
@@ -2140,12 +2174,12 @@ class _NutritionPanelState extends State<_NutritionPanel> {
     );
   }
 
-  void _showNutritionBottomSheet(BuildContext context, RecipeNutrition nutrition) {
+  void _showNutritionBottomSheet(BuildContext context, RecipeNutrition nutrition, double scaleFactor, bool isPerServing) {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => _NutritionBottomSheet(nutrition: nutrition),
+      builder: (_) => _NutritionBottomSheet(nutrition: nutrition, scaleFactor: scaleFactor, isPerServing: isPerServing),
     );
   }
 }
@@ -2202,9 +2236,15 @@ class _MacroChip extends StatelessWidget {
 }
 
 class _NutritionBottomSheet extends StatelessWidget {
-  const _NutritionBottomSheet({required this.nutrition});
+  const _NutritionBottomSheet({
+    required this.nutrition,
+    this.scaleFactor = 1.0,
+    this.isPerServing = false,
+  });
 
   final RecipeNutrition nutrition;
+  final double scaleFactor;
+  final bool isPerServing;
 
   @override
   Widget build(BuildContext context) {
@@ -2261,51 +2301,83 @@ class _NutritionBottomSheet extends StatelessWidget {
                             ],
                           ),
                           const SizedBox(height: 16),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Text(
-                                nutrition.calories.round().toString(),
-                                style: theme.textTheme.displaySmall?.copyWith(
-                                  fontWeight: FontWeight.w800,
-                                  color: primary,
-                                  height: 1,
+                          Builder(builder: (context) {
+                            final gram = localizations?.gram ?? 'g';
+                            final calories = (nutrition.calories * scaleFactor).round();
+                            final protein = (nutrition.protein * scaleFactor).round();
+                            final fat = (nutrition.fat * scaleFactor).round();
+                            final carbs = (nutrition.carbs * scaleFactor).round();
+                            final sugar = (nutrition.sugar * scaleFactor).round();
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Text(
+                                      calories.toString(),
+                                      style: theme.textTheme.displaySmall?.copyWith(
+                                        fontWeight: FontWeight.w800,
+                                        color: primary,
+                                        height: 1,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Padding(
+                                      padding: const EdgeInsets.only(bottom: 4),
+                                      child: Text(
+                                        localizations?.kcal ?? 'kcal',
+                                        style: theme.textTheme.titleMedium?.copyWith(
+                                          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                                        ),
+                                      ),
+                                    ),
+                                    const Spacer(),
+                                    if (isPerServing)
+                                      Text(
+                                        localizations?.perServing ?? 'per serving',
+                                        style: theme.textTheme.bodySmall?.copyWith(
+                                          color: theme.colorScheme.onSurface.withValues(alpha: 0.45),
+                                          fontStyle: FontStyle.italic,
+                                        ),
+                                      )
+                                    else if (nutrition.isPartial)
+                                      Text(
+                                        localizations?.nutritionPartialNote(nutrition.matched, nutrition.total) ??
+                                            '${nutrition.matched}/${nutrition.total} ingredients',
+                                        style: theme.textTheme.bodySmall?.copyWith(
+                                          color: theme.colorScheme.onSurface.withValues(alpha: 0.45),
+                                          fontStyle: FontStyle.italic,
+                                        ),
+                                      ),
+                                  ],
                                 ),
-                              ),
-                              const SizedBox(width: 6),
-                              Padding(
-                                padding: const EdgeInsets.only(bottom: 4),
-                                child: Text(
-                                  localizations?.kcal ?? 'kcal',
-                                  style: theme.textTheme.titleMedium?.copyWith(
-                                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                                if (isPerServing && nutrition.isPartial) ...[
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    localizations?.nutritionPartialNote(nutrition.matched, nutrition.total) ??
+                                        '${nutrition.matched}/${nutrition.total} ingredients',
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: theme.colorScheme.onSurface.withValues(alpha: 0.45),
+                                      fontStyle: FontStyle.italic,
+                                    ),
                                   ),
+                                ],
+                                const SizedBox(height: 12),
+                                Row(
+                                  children: [
+                                    _MacroChip(label: localizations?.protein ?? 'Protein', value: '$protein$gram', color: Colors.blue.shade600),
+                                    const SizedBox(width: 8),
+                                    _MacroChip(label: localizations?.fat ?? 'Fat', value: '$fat$gram', color: Colors.orange.shade600),
+                                    const SizedBox(width: 8),
+                                    _MacroChip(label: localizations?.carbs ?? 'Carbs', value: '$carbs$gram', color: Colors.green.shade600),
+                                    const SizedBox(width: 8),
+                                    _MacroChip(label: localizations?.sugar ?? 'Sugar', value: '$sugar$gram', color: Colors.teal.shade600),
+                                  ],
                                 ),
-                              ),
-                              const Spacer(),
-                              if (nutrition.isPartial)
-                                Text(
-                                  localizations?.nutritionPartialNote(nutrition.matched, nutrition.total) ??
-                                      '${nutrition.matched}/${nutrition.total} ingredients',
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: theme.colorScheme.onSurface.withValues(alpha: 0.45),
-                                    fontStyle: FontStyle.italic,
-                                  ),
-                                ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          Row(
-                            children: [
-                              _MacroChip(label: localizations?.protein ?? 'Protein', value: '${nutrition.protein.round()}${localizations?.gram ?? 'g'}', color: Colors.blue.shade600),
-                              const SizedBox(width: 8),
-                              _MacroChip(label: localizations?.fat ?? 'Fat', value: '${nutrition.fat.round()}${localizations?.gram ?? 'g'}', color: Colors.orange.shade600),
-                              const SizedBox(width: 8),
-                              _MacroChip(label: localizations?.carbs ?? 'Carbs', value: '${nutrition.carbs.round()}${localizations?.gram ?? 'g'}', color: Colors.green.shade600),
-                              const SizedBox(width: 8),
-                              _MacroChip(label: localizations?.sugar ?? 'Sugar', value: '${nutrition.sugar.round()}${localizations?.gram ?? 'g'}', color: Colors.teal.shade600),
-                            ],
-                          ),
+                              ],
+                            );
+                          }),
                           const SizedBox(height: 20),
                           Divider(color: theme.colorScheme.outlineVariant),
                           const SizedBox(height: 4),
@@ -2332,6 +2404,7 @@ class _NutritionBottomSheet extends StatelessWidget {
                     return _NutritionIngredientRow(
                       ingredient: nutrition.ingredients[index],
                       localizations: localizations,
+                      scaleFactor: scaleFactor,
                     );
                   },
                 ),
@@ -2348,15 +2421,25 @@ class _NutritionIngredientRow extends StatelessWidget {
   const _NutritionIngredientRow({
     required this.ingredient,
     required this.localizations,
+    this.scaleFactor = 1.0,
   });
 
   final NutritionIngredient ingredient;
   final AppLocalizations? localizations;
+  final double scaleFactor;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final found = ingredient.isFound;
+    final gram = localizations?.gram ?? 'g';
+
+    final grams = ingredient.grams != null ? (ingredient.grams! * scaleFactor).round() : null;
+    final calories = ingredient.calories != null ? (ingredient.calories! * scaleFactor).round() : null;
+    final protein = ((ingredient.protein ?? 0) * scaleFactor).round();
+    final fat = ((ingredient.fat ?? 0) * scaleFactor).round();
+    final carbs = ((ingredient.carbs ?? 0) * scaleFactor).round();
+    final sugar = ((ingredient.sugar ?? 0) * scaleFactor).round();
 
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
@@ -2377,25 +2460,25 @@ class _NutritionIngredientRow extends StatelessWidget {
                   style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
                 ),
               ),
-              if (ingredient.grams != null)
+              if (grams != null)
                 Text(
-                  '${ingredient.grams!.round()}${localizations?.gram ?? 'g'}',
+                  '$grams$gram',
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
                   ),
                 ),
-              if (ingredient.grams != null && found && ingredient.calories != null)
+              if (grams != null && found && calories != null)
                 const SizedBox(width: 8),
-              if (found && ingredient.calories != null)
+              if (found && calories != null)
                 Text(
-                  '${ingredient.calories!.round()} ${localizations?.kcal ?? "kcal"}',
+                  '$calories ${localizations?.kcal ?? "kcal"}',
                   style: theme.textTheme.bodyMedium?.copyWith(
                     fontWeight: FontWeight.w700,
                     color: theme.colorScheme.primary,
                   ),
                 ),
               if (!found) ...[
-                if (ingredient.grams != null) const SizedBox(width: 8),
+                if (grams != null) const SizedBox(width: 8),
                 Tooltip(
                   message: localizations?.nutritionNotFoundTooltip ?? 'We were not able to find the nutrition values for this ingredient in the USDA database',
                   triggerMode: TooltipTriggerMode.tap,
@@ -2414,10 +2497,10 @@ class _NutritionIngredientRow extends StatelessWidget {
               spacing: 6,
               runSpacing: 4,
               children: [
-                _MiniMacro(label: localizations?.protein ?? 'P', value: '${(ingredient.protein ?? 0).round()}${localizations?.gram ?? 'g'}', color: Colors.blue.shade600),
-                _MiniMacro(label: localizations?.fat ?? 'F', value: '${(ingredient.fat ?? 0).round()}${localizations?.gram ?? 'g'}', color: Colors.orange.shade600),
-                _MiniMacro(label: localizations?.carbs ?? 'C', value: '${(ingredient.carbs ?? 0).round()}${localizations?.gram ?? 'g'}', color: Colors.green.shade600),
-                _MiniMacro(label: localizations?.sugar ?? 'S', value: '${(ingredient.sugar ?? 0).round()}${localizations?.gram ?? 'g'}', color: Colors.teal.shade600),
+                _MiniMacro(label: localizations?.protein ?? 'P', value: '$protein$gram', color: Colors.blue.shade600),
+                _MiniMacro(label: localizations?.fat ?? 'F', value: '$fat$gram', color: Colors.orange.shade600),
+                _MiniMacro(label: localizations?.carbs ?? 'C', value: '$carbs$gram', color: Colors.green.shade600),
+                _MiniMacro(label: localizations?.sugar ?? 'S', value: '$sugar$gram', color: Colors.teal.shade600),
               ],
             ),
           ] else ...[
