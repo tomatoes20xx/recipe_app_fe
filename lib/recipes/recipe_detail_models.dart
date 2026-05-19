@@ -224,6 +224,7 @@ class RecipeDetail {
   final int? cookingTimeMin;
   final int? cookingTimeMax;
   final String? difficulty; // 'easy', 'medium', 'hard'
+  final int? servingSize;
   final DateTime createdAt;
   final String authorUsername;
   final String? authorDisplayName;
@@ -252,6 +253,7 @@ class RecipeDetail {
     this.cookingTimeMin,
     this.cookingTimeMax,
     this.difficulty,
+    this.servingSize,
     required this.createdAt,
     required this.authorUsername,
     this.authorDisplayName,
@@ -294,6 +296,7 @@ class RecipeDetail {
       cookingTimeMin: json["cooking_time_min"] is int ? json["cooking_time_min"] as int : null,
       cookingTimeMax: json["cooking_time_max"] is int ? json["cooking_time_max"] as int : null,
       difficulty: json["difficulty"]?.toString(),
+      servingSize: json["serving_size"] == null ? null : _asInt(json["serving_size"]),
       createdAt: DateTime.parse(json["created_at"].toString()),
       authorUsername: json["author_username"].toString(),
       authorDisplayName: json["author_display_name"]?.toString(),

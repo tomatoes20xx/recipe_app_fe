@@ -32,6 +32,7 @@ class RecipeApi {
     int? cookingTimeMin,
     int? cookingTimeMax,
     String? difficulty,
+    int? servingSize,
     required List<Map<String, dynamic>> ingredients,
     required List<Map<String, dynamic>> steps,
     List<File>? images,
@@ -69,7 +70,10 @@ class RecipeApi {
     if (difficulty != null && difficulty.isNotEmpty) {
       fields["difficulty"] = difficulty;
     }
-    
+    if (servingSize != null && servingSize > 0) {
+      fields["serving_size"] = servingSize.toString();
+    }
+
     // Create multipart files (empty list if no images)
     final multipartFiles = <http.MultipartFile>[];
     if (images != null && images.isNotEmpty) {
@@ -109,6 +113,7 @@ class RecipeApi {
     int? cookingTimeMin,
     int? cookingTimeMax,
     String? difficulty,
+    int? servingSize,
     List<Map<String, dynamic>>? ingredients,
     List<Map<String, dynamic>>? steps,
   }) async {
@@ -135,6 +140,9 @@ class RecipeApi {
     }
     if (difficulty != null && difficulty.isNotEmpty) {
       body["difficulty"] = difficulty;
+    }
+    if (servingSize != null) {
+      body["serving_size"] = servingSize;
     }
     if (ingredients != null) {
       body["ingredients"] = ingredients;

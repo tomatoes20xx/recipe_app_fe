@@ -43,6 +43,7 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen>
   final _tagController = TextEditingController();
   final _cookingTimeMinController = TextEditingController();
   final _cookingTimeMaxController = TextEditingController();
+  final _servingSizeController = TextEditingController();
   final _scrollController = ScrollController();
 
   final List<String> _tags = [];
@@ -85,6 +86,7 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen>
     _existingImages.addAll(recipe.images);
     _cookingTimeMinController.text = recipe.cookingTimeMin?.toString() ?? "";
     _cookingTimeMaxController.text = recipe.cookingTimeMax?.toString() ?? "";
+    _servingSizeController.text = recipe.servingSize?.toString() ?? "";
     _selectedDifficulty = DifficultyApi.fromApiValue(recipe.difficulty);
 
     // Load ingredients
@@ -116,6 +118,7 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen>
     _tagController.dispose();
     _cookingTimeMinController.dispose();
     _cookingTimeMaxController.dispose();
+    _servingSizeController.dispose();
     _scrollController.dispose();
     for (var ing in _ingredients) {
       ing.quantityController.dispose();
@@ -157,6 +160,7 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen>
       tags: List.from(_tags),
       cookingTimeMin: _cookingTimeMinController.text,
       cookingTimeMax: _cookingTimeMaxController.text,
+      servingSize: _servingSizeController.text,
       difficulty: _selectedDifficulty?.apiValue,
       ingredients: _ingredients
           .map((i) => {
@@ -219,6 +223,8 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen>
           (draft['cookingTimeMin'] as String?) ?? '';
       _cookingTimeMaxController.text =
           (draft['cookingTimeMax'] as String?) ?? '';
+      _servingSizeController.text =
+          (draft['servingSize'] as String?) ?? '';
       final diff = (draft['difficulty'] as String?) ?? '';
       _selectedDifficulty = DifficultyApi.fromApiValue(diff.isEmpty ? null : diff);
 
@@ -549,6 +555,9 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen>
         final cookingTimeMax =
             cookingTimeMaxText.isEmpty ? null : int.tryParse(cookingTimeMaxText);
 
+        final servingSizeText = _servingSizeController.text.trim();
+        final servingSize = servingSizeText.isEmpty ? null : int.tryParse(servingSizeText);
+
         await api.updateRecipe(
           recipeId: widget.recipeId!,
           title: _titleController.text.trim(),
@@ -562,6 +571,7 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen>
           cookingTimeMin: cookingTimeMin,
           cookingTimeMax: cookingTimeMax,
           difficulty: _selectedDifficulty?.apiValue,
+          servingSize: servingSize,
           ingredients: ingredients,
           steps: steps,
         );
@@ -604,11 +614,14 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen>
         // Create new recipe
         final cookingTimeMinText = _cookingTimeMinController.text.trim();
         final cookingTimeMaxText = _cookingTimeMaxController.text.trim();
+        final servingSizeText = _servingSizeController.text.trim();
 
         final cookingTimeMin =
             cookingTimeMinText.isEmpty ? null : int.tryParse(cookingTimeMinText);
         final cookingTimeMax =
             cookingTimeMaxText.isEmpty ? null : int.tryParse(cookingTimeMaxText);
+        final servingSize =
+            servingSizeText.isEmpty ? null : int.tryParse(servingSizeText);
 
         await api.createRecipe(
           title: _titleController.text.trim(),
@@ -622,6 +635,7 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen>
           cookingTimeMin: cookingTimeMin,
           cookingTimeMax: cookingTimeMax,
           difficulty: _selectedDifficulty?.apiValue,
+          servingSize: servingSize,
           ingredients: ingredients,
           steps: steps,
           images: imageFiles.isEmpty ? null : imageFiles,
@@ -1342,6 +1356,56 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen>
             ],
           ),
         ],
+
+        const SizedBox(height: 24),
+
+        // Servings
+        Text(
+          (localizations?.servingSize ?? "Servings").toUpperCase(),
+          style: theme.textTheme.labelSmall?.copyWith(
+            color: theme.colorScheme.primary,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 1.1,
+          ),
+        ),
+        const SizedBox(height: 8),
+        SizedBox(
+          width: 100,
+          child: TextFormField(
+            controller: _servingSizeController,
+            keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            textAlign: TextAlign.center,
+            style: theme.textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.w500,
+            ),
+            decoration: InputDecoration(
+              hintText: '4',
+              hintStyle: TextStyle(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
+              ),
+              filled: true,
+              fillColor: theme.colorScheme.surface,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: theme.colorScheme.primary,
+                  width: 2,
+                ),
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12, vertical: 14),
+            ),
+          ),
+        ),
 
         const SizedBox(height: 24),
 

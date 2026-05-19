@@ -68,6 +68,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
   final Set<String> _selectedForShopping = {};
   bool _isSelectionMode = false;
   bool _viewContentLogged = false;
+  int? _selectedServings;
 
   @override
   void initState() {
@@ -110,6 +111,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
         _localComments = null;
         _viewerHasLiked = c.recipe?.viewerHasLiked;
         _viewerHasBookmarked = c.recipe?.viewerHasBookmarked;
+        _selectedServings ??= c.recipe?.servingSize;
         if (c.recipe?.cookedToday == true) {
           _cookedThisSession = true;
         }
@@ -587,6 +589,8 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                                     selectedForShopping: _selectedForShopping,
                                     isSelectionMode: _isSelectionMode,
                                     onToggleIngredient: _toggleIngredient,
+                                    selectedServings: _selectedServings,
+                                    onServingsChanged: (v) => setState(() => _selectedServings = v),
                                     isOwner: isOwner,
                                     shareCount: r.counts.shares,
                                     onShareTap: _onShareTap,
@@ -768,6 +772,8 @@ class _ContentBody extends StatelessWidget {
     required this.selectedForShopping,
     required this.isSelectionMode,
     required this.onToggleIngredient,
+    this.selectedServings,
+    required this.onServingsChanged,
     required this.isOwner,
     required this.shareCount,
     required this.onShareTap,
@@ -794,6 +800,8 @@ class _ContentBody extends StatelessWidget {
   final Set<String> selectedForShopping;
   final bool isSelectionMode;
   final Function(String) onToggleIngredient;
+  final int? selectedServings;
+  final ValueChanged<int> onServingsChanged;
   final bool isOwner;
   final int shareCount;
   final VoidCallback onShareTap;
@@ -864,11 +872,14 @@ class _ContentBody extends StatelessWidget {
           const SizedBox(height: 16),
 
           // Quick Info Bar
-          if (recipe.cookingTimeMin != null || recipe.cookingTimeMax != null || recipe.difficulty != null) ...[
+          if (recipe.cookingTimeMin != null || recipe.cookingTimeMax != null || recipe.difficulty != null || recipe.servingSize != null) ...[
             _QuickInfoBar(
               cookingTimeMin: recipe.cookingTimeMin,
               cookingTimeMax: recipe.cookingTimeMax,
               difficulty: recipe.difficulty,
+              originalServings: recipe.servingSize,
+              selectedServings: selectedServings,
+              onServingsChanged: onServingsChanged,
             ),
             const SizedBox(height: 16),
           ],
@@ -891,6 +902,9 @@ class _ContentBody extends StatelessWidget {
               selectedIds: selectedForShopping,
               isSelectionMode: isSelectionMode,
               onToggle: onToggleIngredient,
+              scaleFactor: (recipe.servingSize != null && recipe.servingSize! > 0 && selectedServings != null)
+                  ? selectedServings! / recipe.servingSize!
+                  : 1.0,
             ),
             const SizedBox(height: 16),
           ],
@@ -924,11 +938,17 @@ class _QuickInfoBar extends StatelessWidget {
     this.cookingTimeMin,
     this.cookingTimeMax,
     this.difficulty,
+    this.originalServings,
+    this.selectedServings,
+    this.onServingsChanged,
   });
 
   final int? cookingTimeMin;
   final int? cookingTimeMax;
   final String? difficulty;
+  final int? originalServings;
+  final int? selectedServings;
+  final ValueChanged<int>? onServingsChanged;
 
   String _formatCookingTime(AppLocalizations? l) {
     final unit = l?.minuteAbbreviation ?? "min";
@@ -974,7 +994,14 @@ class _QuickInfoBar extends StatelessWidget {
 
     final hasTime = cookingTimeMin != null || cookingTimeMax != null;
     final hasDifficulty = difficulty != null;
-    if (!hasTime && !hasDifficulty) return const SizedBox.shrink();
+    final hasServings = originalServings != null;
+    if (!hasTime && !hasDifficulty && !hasServings) return const SizedBox.shrink();
+
+    final divider = Container(
+      width: 1,
+      height: 32,
+      color: Theme.of(context).colorScheme.outlineVariant,
+    );
 
     return Container(
       decoration: BoxDecoration(
@@ -993,12 +1020,7 @@ class _QuickInfoBar extends StatelessWidget {
                 value: _formatCookingTime(localizations),
               ),
             ),
-          if (hasTime && hasDifficulty)
-            Container(
-              width: 1,
-              height: 32,
-              color: Theme.of(context).colorScheme.outlineVariant,
-            ),
+          if (hasTime && hasDifficulty) divider,
           if (hasDifficulty)
             Expanded(
               child: _QuickInfoItem(
@@ -1006,6 +1028,64 @@ class _QuickInfoBar extends StatelessWidget {
                 iconColor: primary,
                 label: localizations?.difficulty ?? "DIFFICULTY",
                 value: _getLocalizedDifficulty(localizations),
+              ),
+            ),
+          if ((hasTime || hasDifficulty) && hasServings) divider,
+          if (hasServings)
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.people_outline, size: 22, color: primary),
+                    const SizedBox(height: 4),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        (localizations?.servingSize ?? "SERVINGS").toUpperCase(),
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                              letterSpacing: 0.8,
+                            ),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        GestureDetector(
+                          onTap: () {
+                            final current = selectedServings ?? originalServings!;
+                            if (current > 1) onServingsChanged?.call(current - 1);
+                          },
+                          child: Icon(
+                            Icons.remove_circle_outline,
+                            size: 20,
+                            color: (selectedServings ?? originalServings!) > 1
+                                ? primary
+                                : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          '${selectedServings ?? originalServings}',
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
+                        ),
+                        const SizedBox(width: 6),
+                        GestureDetector(
+                          onTap: () {
+                            final current = selectedServings ?? originalServings!;
+                            if (current < 99) onServingsChanged?.call(current + 1);
+                          },
+                          child: Icon(Icons.add_circle_outline, size: 20, color: primary),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
         ],
@@ -1032,26 +1112,32 @@ class _QuickInfoItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, size: 22, color: iconColor),
           const SizedBox(height: 4),
-          Text(
-            label.toUpperCase(),
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
-                  letterSpacing: 0.8,
-                ),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              label.toUpperCase(),
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                    letterSpacing: 0.8,
+                  ),
+            ),
           ),
           const SizedBox(height: 2),
-          Text(
-            value,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: valueColor ?? Theme.of(context).colorScheme.onSurface,
-                ),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              value,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: valueColor ?? Theme.of(context).colorScheme.onSurface,
+                  ),
+            ),
           ),
         ],
       ),
@@ -1338,6 +1424,7 @@ class _IngredientsSection extends StatelessWidget {
     required this.selectedIds,
     required this.isSelectionMode,
     required this.onToggle,
+    this.scaleFactor = 1.0,
   });
 
   final List<RecipeIngredient> ingredients;
@@ -1345,6 +1432,7 @@ class _IngredientsSection extends StatelessWidget {
   final Set<String> selectedIds;
   final bool isSelectionMode;
   final Function(String) onToggle;
+  final double scaleFactor;
 
   @override
   Widget build(BuildContext context) {
@@ -1376,6 +1464,7 @@ class _IngredientsSection extends StatelessWidget {
             isSelected: selectedIds.contains(ing.id),
             isSelectionMode: isSelectionMode,
             onToggle: () => onToggle(ing.id),
+            scaleFactor: scaleFactor,
           ),
         )),
       ],
@@ -1390,6 +1479,7 @@ class _IngredientTile extends StatelessWidget {
     required this.isSelected,
     required this.isSelectionMode,
     required this.onToggle,
+    this.scaleFactor = 1.0,
   });
 
   final RecipeIngredient ingredient;
@@ -1397,11 +1487,22 @@ class _IngredientTile extends StatelessWidget {
   final bool isSelected;
   final bool isSelectionMode;
   final VoidCallback onToggle;
+  final double scaleFactor;
 
   String _formatAmount() {
-    final qty = ingredient.quantity == null ? "" : "${ingredient.quantity}";
+    if (ingredient.quantity == null) {
+      final unit = ingredient.unit == null ? "" : " ${ingredient.unit}";
+      return unit.trim();
+    }
+    final scaled = ingredient.quantity! * scaleFactor;
+    final String qtyStr;
+    if (scaled == scaled.roundToDouble()) {
+      qtyStr = scaled.toInt().toString();
+    } else {
+      qtyStr = scaled.toStringAsFixed(1).replaceAll(RegExp(r'\.?0+$'), '');
+    }
     final unit = ingredient.unit == null ? "" : " ${ingredient.unit}";
-    return "$qty$unit".trim();
+    return "$qtyStr$unit".trim();
   }
 
   @override
