@@ -1,4 +1,3 @@
-import "dart:async";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "../api/api_client.dart";
@@ -51,7 +50,6 @@ class _SearchScreenState extends State<SearchScreen> {
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _searchTextController = TextEditingController();
 
-  Timer? _debounceTimer;
   String? _lastSearchedQuery;
 
   @override
@@ -117,7 +115,6 @@ class _SearchScreenState extends State<SearchScreen> {
 
   @override
   void dispose() {
-    _debounceTimer?.cancel();
     _scrollController.dispose();
     _searchTextController.dispose();
     searchController.removeListener(_onSearchChanged);
@@ -125,9 +122,7 @@ class _SearchScreenState extends State<SearchScreen> {
     super.dispose();
   }
 
-  void _performSearch(String query) {
-    _debounceTimer?.cancel();
-
+  void _performSearch(String query, {bool saveToHistory = false}) {
     final trimmedQuery = query.trim();
 
     if (trimmedQuery.isEmpty) {
@@ -172,10 +167,9 @@ class _SearchScreenState extends State<SearchScreen> {
       filters: filterData.isEmpty ? null : filterData,
     );
 
-    _debounceTimer = Timer(const Duration(milliseconds: 500), () {
-      _lastSearchedQuery = trimmedQuery;
-      searchController.search(trimmedQuery);
-    });
+    // Search runs on submit, so there is nothing to debounce.
+    _lastSearchedQuery = trimmedQuery;
+    searchController.search(trimmedQuery, saveToHistory: saveToHistory);
   }
 
   @override
@@ -222,6 +216,8 @@ class _SearchScreenState extends State<SearchScreen> {
                             ),
                             onPressed: () {
                               _searchTextController.clear();
+                              // So submitting the same query again searches again.
+                              _lastSearchedQuery = null;
                               searchController.clear();
                             },
                           )
@@ -358,8 +354,9 @@ class _SearchScreenState extends State<SearchScreen> {
                   ),
                   onDeleted: () => searchController.removeFromHistory(query),
                   onPressed: () {
-                    _lastSearchedQuery = query;
-                    searchController.search(query, saveToHistory: true);
+                    // Show the query in the box (with its clear button), then search it.
+                    _searchTextController.text = query;
+                    _performSearch(query, saveToHistory: true);
                   },
                   materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   visualDensity: VisualDensity.compact,
@@ -432,6 +429,20 @@ class _SearchScreenState extends State<SearchScreen> {
               localizations?.recipes ?? "Recipes",
             ),
           ),
+          if (searchController.correctedQuery != null)
+            SliverToBoxAdapter(
+              child: _buildSearchNotice(
+                localizations?.searchShowingResultsFor(searchController.correctedQuery!) ??
+                    "Showing results for “${searchController.correctedQuery}”",
+              ),
+            )
+          else if (searchController.relaxedResults)
+            SliverToBoxAdapter(
+              child: _buildSearchNotice(
+                localizations?.searchNoExactMatches ??
+                    "No exact matches — showing similar recipes",
+              ),
+            ),
           SliverList(
             delegate: SliverChildBuilderDelegate(
               (context, index) {
@@ -452,6 +463,27 @@ class _SearchScreenState extends State<SearchScreen> {
         ],
         const SliverToBoxAdapter(child: SizedBox(height: 120)),
       ],
+    );
+  }
+
+  /// A line under the Recipes header explaining a corrected or relaxed search.
+  Widget _buildSearchNotice(String text) {
+    final theme = Theme.of(context);
+    final color = theme.colorScheme.onSurface.withValues(alpha: 0.6);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      child: Row(
+        children: [
+          Icon(Icons.info_outline, size: 16, color: color),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              text,
+              style: theme.textTheme.bodySmall?.copyWith(color: color),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
