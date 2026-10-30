@@ -45,7 +45,10 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
   }
 
   String get _email =>
-      widget.email ?? widget.auth.me?["email"]?.toString() ?? "your email";
+      widget.email ??
+      widget.auth.me?["email"]?.toString() ??
+      AppLocalizations.of(context)?.yourEmail ??
+      "your email";
 
   // ── Send the verification email (first time) ──────────────────────────────
 
@@ -69,7 +72,11 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
       await widget.auth.resendVerificationEmail();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("New code sent to $_email")),
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(context)?.newVerificationCodeSent(_email) ?? "New code sent to $_email",
+            ),
+          ),
         );
       }
     } catch (e) {
@@ -203,13 +210,14 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
         ),
         const SizedBox(height: 24),
         Text(
-          "Verify Your Email",
+          localizations?.verifyEmailTitle ?? "Verify Your Email",
           style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 12),
         Text(
-          "We'll send a 6-digit code to $_email.\nTap below when you're ready.",
+          localizations?.verifyEmailSendPrompt(_email) ??
+              "We'll send a 6-digit code to $_email.\nTap below when you're ready.",
           style: Theme.of(context).textTheme.bodyMedium,
           textAlign: TextAlign.center,
         ),
@@ -219,7 +227,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
           style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
           child: _isSending
               ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-              : const Text("Send verification email"),
+              : Text(localizations?.sendVerificationEmail ?? "Send verification email"),
         ),
         const SizedBox(height: 16),
       ],
@@ -241,13 +249,14 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
         ),
         const SizedBox(height: 24),
         Text(
-          "Check Your Email",
+          localizations?.checkYourEmail ?? "Check Your Email",
           style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 12),
         Text(
-          "We sent a 6-digit code to $_email.\nEnter it below to verify your account.",
+          localizations?.verifyEmailCodeSent(_email) ??
+              "We sent a 6-digit code to $_email.\nEnter it below to verify your account.",
           style: Theme.of(context).textTheme.bodyMedium,
           textAlign: TextAlign.center,
         ),

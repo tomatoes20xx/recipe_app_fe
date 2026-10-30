@@ -531,6 +531,12 @@ class AppLocalizations {
   String get wrongEmailSignOut => _localizedValues[locale.languageCode]?["wrongEmailSignOut"] ?? "Wrong email? Sign out";
   String get wrongEmailSignOutConfirmTitle => _localizedValues[locale.languageCode]?["wrongEmailSignOutConfirmTitle"] ?? "Sign out?";
   String get wrongEmailSignOutConfirmMessage => _localizedValues[locale.languageCode]?["wrongEmailSignOutConfirmMessage"] ?? "You'll be signed out and can register again with the correct email.";
+  String get yourEmail => _localizedValues[locale.languageCode]?["yourEmail"] ?? "your email";
+  String verifyEmailSendPrompt(String email) => (_localizedValues[locale.languageCode]?["verifyEmailSendPrompt"] ?? "We'll send a 6-digit code to {email}.\nTap below when you're ready.").replaceAll("{email}", email);
+  String get sendVerificationEmail => _localizedValues[locale.languageCode]?["sendVerificationEmail"] ?? "Send verification email";
+  String get checkYourEmail => _localizedValues[locale.languageCode]?["checkYourEmail"] ?? "Check Your Email";
+  String verifyEmailCodeSent(String email) => (_localizedValues[locale.languageCode]?["verifyEmailCodeSent"] ?? "We sent a 6-digit code to {email}.\nEnter it below to verify your account.").replaceAll("{email}", email);
+  String newVerificationCodeSent(String email) => (_localizedValues[locale.languageCode]?["newVerificationCodeSent"] ?? "New code sent to {email}").replaceAll("{email}", email);
 
   // Password Reset
   String get resetPassword => _localizedValues[locale.languageCode]?["resetPassword"] ?? "Reset Password";
@@ -1362,6 +1368,12 @@ class AppLocalizations {
       "wrongEmailSignOut": "Wrong email? Sign out",
       "wrongEmailSignOutConfirmTitle": "Sign out?",
       "wrongEmailSignOutConfirmMessage": "You'll be signed out and can register again with the correct email.",
+      "yourEmail": "your email",
+      "verifyEmailSendPrompt": "We'll send a 6-digit code to {email}.\nTap below when you're ready.",
+      "sendVerificationEmail": "Send verification email",
+      "checkYourEmail": "Check Your Email",
+      "verifyEmailCodeSent": "We sent a 6-digit code to {email}.\nEnter it below to verify your account.",
+      "newVerificationCodeSent": "New code sent to {email}",
       "resetPassword": "Reset Password",
       "resetPasswordTitle": "Reset Your Password",
       "resetPasswordMessage": "Enter your email address and we'll send you a code to reset your password.",
@@ -2200,6 +2212,12 @@ class AppLocalizations {
       "wrongEmailSignOut": "არასწორი ელფოსტა? გამოსვლა",
       "wrongEmailSignOutConfirmTitle": "გამოსვლა?",
       "wrongEmailSignOutConfirmMessage": "თქვენ გამოხვალთ სისტემიდან და შეძლებთ ხელახლა დარეგისტრირდეთ სწორი ელფოსტით.",
+      "yourEmail": "თქვენი ელფოსტა",
+      "verifyEmailSendPrompt": "ჩვენ გამოგიგზავნით 6-ნიშნა კოდს {email}-ზე.\nდააჭირეთ ქვემოთ, როცა მზად იქნებით.",
+      "sendVerificationEmail": "დადასტურების კოდის გაგზავნა",
+      "checkYourEmail": "შეამოწმეთ თქვენი ელფოსტა",
+      "verifyEmailCodeSent": "ჩვენ გავაგზავნეთ 6-ნიშნა კოდი {email}-ზე.\nშეიყვანეთ იგი ქვემოთ ანგარიშის დასადასტურებლად.",
+      "newVerificationCodeSent": "ახალი კოდი გაიგზავნა {email}-ზე",
       "resetPassword": "პაროლის აღდგენა",
       "resetPasswordTitle": "აღადგინეთ თქვენი პაროლი",
       "resetPasswordMessage": "შეიყვანეთ თქვენი ელფოსტის მისამართი და ჩვენ გამოგიგზავნით კოდს პაროლის აღსადგენად.",
