@@ -134,6 +134,8 @@ class AppLocalizations {
   String get noStatisticsAvailable => _localizedValues[locale.languageCode]?["noStatisticsAvailable"] ?? "No statistics available";
   String get noRecipesFound => _localizedValues[locale.languageCode]?["noRecipesFound"] ?? "No recipes found";
   String get tryDifferentSearch => _localizedValues[locale.languageCode]?["tryDifferentSearch"] ?? "Try a different search term";
+  String searchShowingResultsFor(String query) => _localizedValues[locale.languageCode]?["searchShowingResultsFor"]?.replaceAll("{query}", query) ?? "Showing results for “$query”";
+  String get searchNoExactMatches => _localizedValues[locale.languageCode]?["searchNoExactMatches"] ?? "No exact matches — showing similar recipes";
   String get noUsersFound => _localizedValues[locale.languageCode]?["noUsersFound"] ?? "No users found";
   String get noResultsFound => _localizedValues[locale.languageCode]?["noResultsFound"] ?? "No results found";
   String get noRecentSearches => _localizedValues[locale.languageCode]?["noRecentSearches"] ?? "No recent searches";
@@ -1073,6 +1075,8 @@ class AppLocalizations {
       "noStatisticsAvailable": "No statistics available",
       "noRecipesFound": "No recipes found",
       "tryDifferentSearch": "Try a different search term",
+      "searchShowingResultsFor": "Showing results for “{query}”",
+      "searchNoExactMatches": "No exact matches — showing similar recipes",
       "noUsersFound": "No users found",
       "noResultsFound": "No results found",
       "noRecentSearches": "No recent searches",
@@ -1917,6 +1921,8 @@ class AppLocalizations {
       "noStatisticsAvailable": "სტატისტიკა მიუწვდომელია",
       "noRecipesFound": "რეცეპტი არ მოიძებნა",
       "tryDifferentSearch": "სცადეთ სხვა საძიებო სიტყვა",
+      "searchShowingResultsFor": "ნაჩვენებია შედეგები: „{query}“",
+      "searchNoExactMatches": "ზუსტი დამთხვევა ვერ მოიძებნა — ნაჩვენებია მსგავსი რეცეპტები",
       "noUsersFound": "მომხმარებელი არ მოიძებნა",
       "noResultsFound": "შედეგები არ მოიძებნა",
       "noRecentSearches": "ბოლო ძიებები არ არის",

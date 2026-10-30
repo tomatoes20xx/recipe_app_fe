@@ -35,13 +35,36 @@ class UnifiedSearchController extends ChangeNotifier {
   bool isLoadingMoreRecipes = false;
   String? error;
 
+  /// The query the backend actually searched for, when it corrected a typo.
+  String? correctedQuery;
+
+  /// True when no recipe matched every word and these are partial matches.
+  bool relaxedResults = false;
+
   List<String> recentSearches = [];
 
   int limit = 10;
 
+  // Bumped whenever the recipe or user results are replaced (new search, filter change,
+  // clear). A response that arrives for an older generation is dropped, so it can't mix
+  // into newer results.
+  int _recipesGen = 0;
+  int _usersGen = 0;
+  bool _disposed = false;
+
+  void _notify() {
+    if (!_disposed) notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
+  }
+
   Future<void> loadRecentSearches() async {
     recentSearches = await historyStorage.getRecentSearches();
-    notifyListeners();
+    _notify();
   }
 
   Future<void> search(String query, {RecipeSearchFilters? filters, bool saveToHistory = false}) async {
@@ -55,13 +78,19 @@ class UnifiedSearchController extends ChangeNotifier {
       recipeFilters = filters;
     }
 
+    final recipesGen = ++_recipesGen;
+    final usersGen = ++_usersGen;
     isLoading = true;
+    isLoadingMoreUsers = false;
+    isLoadingMoreRecipes = false;
     error = null;
+    correctedQuery = null;
+    relaxedResults = false;
     users.clear();
     recipes.clear();
     usersNextCursor = null;
     recipesNextCursor = null;
-    notifyListeners();
+    _notify();
 
     try {
       final res = await searchApi.unifiedSearch(
@@ -75,23 +104,30 @@ class UnifiedSearchController extends ChangeNotifier {
         difficulty: recipeFilters.difficulty?.apiValue,
       );
 
-      users.addAll(res.users.items);
-      usersNextCursor = res.users.nextCursor;
-      usersHasMore = res.users.hasMore;
+      if (usersGen == _usersGen) {
+        users.addAll(res.users.items);
+        usersNextCursor = res.users.nextCursor;
+        usersHasMore = res.users.hasMore;
+      }
 
-      recipes.addAll(res.recipes.items);
-      recipesNextCursor = res.recipes.nextCursor;
-      recipesHasMore = res.recipes.hasMore;
+      if (recipesGen == _recipesGen) {
+        recipes.addAll(res.recipes.items);
+        recipesNextCursor = res.recipes.nextCursor;
+        recipesHasMore = res.recipes.hasMore;
+        correctedQuery = res.recipes.correctedQuery;
+        relaxedResults = res.recipes.relaxed;
+      }
 
-      if (saveToHistory) {
+      if (saveToHistory && usersGen == _usersGen) {
         await historyStorage.addSearch(currentQuery!);
         await loadRecentSearches();
       }
     } catch (e) {
-      error = e.toString();
+      if (recipesGen == _recipesGen) error = e.toString();
     } finally {
-      isLoading = false;
-      notifyListeners();
+      // A newer search, filter change or clear owns the loading state now.
+      if (recipesGen == _recipesGen) isLoading = false;
+      _notify();
     }
   }
 
@@ -107,8 +143,9 @@ class UnifiedSearchController extends ChangeNotifier {
     if (isLoading || isLoadingMoreUsers) return;
     if (!usersHasMore || usersNextCursor == null || currentQuery == null) return;
 
+    final gen = _usersGen;
     isLoadingMoreUsers = true;
-    notifyListeners();
+    _notify();
 
     try {
       final res = await searchApi.unifiedSearch(
@@ -117,15 +154,16 @@ class UnifiedSearchController extends ChangeNotifier {
         limit: limit,
         usersCursor: usersNextCursor,
       );
+      if (gen != _usersGen) return;
 
       users.addAll(res.users.items);
       usersNextCursor = res.users.nextCursor;
       usersHasMore = res.users.hasMore;
     } catch (e) {
-      error = e.toString();
+      if (gen == _usersGen) error = e.toString();
     } finally {
-      isLoadingMoreUsers = false;
-      notifyListeners();
+      if (gen == _usersGen) isLoadingMoreUsers = false;
+      _notify();
     }
   }
 
@@ -133,8 +171,9 @@ class UnifiedSearchController extends ChangeNotifier {
     if (isLoading || isLoadingMoreRecipes) return;
     if (!recipesHasMore || recipesNextCursor == null || currentQuery == null) return;
 
+    final gen = _recipesGen;
     isLoadingMoreRecipes = true;
-    notifyListeners();
+    _notify();
 
     try {
       final res = await searchApi.unifiedSearch(
@@ -149,50 +188,58 @@ class UnifiedSearchController extends ChangeNotifier {
         difficulty: recipeFilters.difficulty?.apiValue,
         recipesCursor: recipesNextCursor,
       );
+      if (gen != _recipesGen) return;
 
       recipes.addAll(res.recipes.items);
       recipesNextCursor = res.recipes.nextCursor;
       recipesHasMore = res.recipes.hasMore;
     } catch (e) {
-      error = e.toString();
+      if (gen == _recipesGen) error = e.toString();
     } finally {
-      isLoadingMoreRecipes = false;
-      notifyListeners();
+      if (gen == _recipesGen) isLoadingMoreRecipes = false;
+      _notify();
     }
   }
 
   Future<void> updateFilters(RecipeSearchFilters filters) async {
     recipeFilters = filters;
-    if (currentQuery != null && currentQuery!.isNotEmpty) {
-      // Only refetch recipes with new filters
-      isLoading = true;
-      error = null;
-      recipes.clear();
-      recipesNextCursor = null;
-      notifyListeners();
+    if (currentQuery == null || currentQuery!.isEmpty) return;
 
-      try {
-        final res = await searchApi.unifiedSearch(
-          query: currentQuery!,
-          types: ["recipes"],
-          limit: limit,
-          cuisine: recipeFilters.cuisine,
-          tags: recipeFilters.tags.isNotEmpty ? recipeFilters.tags : null,
-          ingredients: recipeFilters.ingredients.isNotEmpty ? recipeFilters.ingredients : null,
-          cookingTimeMin: recipeFilters.cookingTimeMin,
-          cookingTimeMax: recipeFilters.cookingTimeMax,
-          difficulty: recipeFilters.difficulty?.apiValue,
-        );
+    // Only refetch recipes with new filters
+    final gen = ++_recipesGen;
+    isLoading = true;
+    isLoadingMoreRecipes = false;
+    error = null;
+    correctedQuery = null;
+    relaxedResults = false;
+    recipes.clear();
+    recipesNextCursor = null;
+    _notify();
 
-        recipes.addAll(res.recipes.items);
-        recipesNextCursor = res.recipes.nextCursor;
-        recipesHasMore = res.recipes.hasMore;
-      } catch (e) {
-        error = e.toString();
-      } finally {
-        isLoading = false;
-        notifyListeners();
-      }
+    try {
+      final res = await searchApi.unifiedSearch(
+        query: currentQuery!,
+        types: ["recipes"],
+        limit: limit,
+        cuisine: recipeFilters.cuisine,
+        tags: recipeFilters.tags.isNotEmpty ? recipeFilters.tags : null,
+        ingredients: recipeFilters.ingredients.isNotEmpty ? recipeFilters.ingredients : null,
+        cookingTimeMin: recipeFilters.cookingTimeMin,
+        cookingTimeMax: recipeFilters.cookingTimeMax,
+        difficulty: recipeFilters.difficulty?.apiValue,
+      );
+      if (gen != _recipesGen) return;
+
+      recipes.addAll(res.recipes.items);
+      recipesNextCursor = res.recipes.nextCursor;
+      recipesHasMore = res.recipes.hasMore;
+      correctedQuery = res.recipes.correctedQuery;
+      relaxedResults = res.recipes.relaxed;
+    } catch (e) {
+      if (gen == _recipesGen) error = e.toString();
+    } finally {
+      if (gen == _recipesGen) isLoading = false;
+      _notify();
     }
   }
 
@@ -204,7 +251,7 @@ class UnifiedSearchController extends ChangeNotifier {
     final newFollowing = !old.viewerIsFollowing;
 
     users[i] = old.copyWith(viewerIsFollowing: newFollowing);
-    notifyListeners();
+    _notify();
 
     try {
       if (newFollowing) {
@@ -215,9 +262,11 @@ class UnifiedSearchController extends ChangeNotifier {
         AnalyticsService().logUnfollow(username);
       }
     } catch (e) {
-      users[i] = old;
+      // The list may have been replaced by a new search in the meantime.
+      final j = users.indexWhere((u) => u.username == username);
+      if (j >= 0) users[j] = old;
       error = e.toString();
-      notifyListeners();
+      _notify();
     }
   }
 
@@ -229,10 +278,12 @@ class UnifiedSearchController extends ChangeNotifier {
   Future<void> clearHistory() async {
     await historyStorage.clearHistory();
     recentSearches.clear();
-    notifyListeners();
+    _notify();
   }
 
   void clear() {
+    _recipesGen++;
+    _usersGen++;
     currentQuery = null;
     users.clear();
     recipes.clear();
@@ -241,9 +292,11 @@ class UnifiedSearchController extends ChangeNotifier {
     usersHasMore = false;
     recipesHasMore = false;
     error = null;
+    correctedQuery = null;
+    relaxedResults = false;
     isLoading = false;
     isLoadingMoreUsers = false;
     isLoadingMoreRecipes = false;
-    notifyListeners();
+    _notify();
   }
 }

@@ -92,10 +92,18 @@ class UnifiedSearchTypeResult<T> {
   final String? nextCursor;
   final bool hasMore;
 
+  /// Set when the backend corrected a typo in the query ("ხინკლი" → "ხინკალი").
+  final String? correctedQuery;
+
+  /// True when no recipe matched every word, so these are partial matches.
+  final bool relaxed;
+
   UnifiedSearchTypeResult({
     required this.items,
     this.nextCursor,
     required this.hasMore,
+    this.correctedQuery,
+    this.relaxed = false,
   });
 }
 
@@ -113,6 +121,8 @@ class UnifiedSearchResponse {
 
     final recipesData = results["recipes"] as Map<String, dynamic>? ?? {};
     final usersData = results["users"] as Map<String, dynamic>? ?? {};
+    // Older backends don't send meta.
+    final recipesMeta = recipesData["meta"] as Map<String, dynamic>? ?? {};
 
     return UnifiedSearchResponse(
       recipes: UnifiedSearchTypeResult<SearchResult>(
@@ -121,6 +131,8 @@ class UnifiedSearchResponse {
             .toList(),
         nextCursor: recipesData["nextCursor"]?.toString(),
         hasMore: recipesData["hasMore"] as bool? ?? false,
+        correctedQuery: recipesMeta["correctedQuery"]?.toString(),
+        relaxed: recipesMeta["relaxed"] as bool? ?? false,
       ),
       users: UnifiedSearchTypeResult<UserSearchResult>(
         items: (usersData["items"] as List<dynamic>? ?? [])
