@@ -110,6 +110,12 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
+  # iOS plugins come from CocoaPods (ios/Podfile.lock). Flutter enables Swift
+  # Package Manager by default on macOS, but Runner.xcodeproj isn't set up for
+  # it, so SwiftPM-capable plugins would be dropped from Pods and not found.
+  config:
+    enable-swift-package-manager: false
+
   # To add assets to your application, add an assets section, like this:
   assets:
     - assets/icon/
