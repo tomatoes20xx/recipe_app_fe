@@ -1,4 +1,5 @@
 import "package:flutter/material.dart";
+import "../api/api_client.dart";
 import "../auth/auth_controller.dart";
 import "../localization/app_localizations.dart";
 import "../utils/error_utils.dart";
@@ -9,6 +10,7 @@ class EmailVerificationScreen extends StatefulWidget {
     required this.auth,
     this.email,
     this.codeSent = false,
+    this.autoSend = false,
   });
 
   final AuthController auth;
@@ -18,6 +20,10 @@ class EmailVerificationScreen extends StatefulWidget {
   /// opening this screen (e.g. from the write-action gate). When false the
   /// screen starts on the "Send email" step.
   final bool codeSent;
+
+  /// Send the code as soon as the screen opens and go straight to code entry
+  /// (used by the account gate, where the user already chose to verify).
+  final bool autoSend;
 
   @override
   State<EmailVerificationScreen> createState() => _EmailVerificationScreenState();
@@ -36,6 +42,12 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
   void initState() {
     super.initState();
     _codeSent = widget.codeSent;
+    if (widget.autoSend && !_codeSent) {
+      _codeSent = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _sendEmail();
+      });
+    }
   }
 
   @override
@@ -57,8 +69,23 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
     try {
       await widget.auth.resendVerificationEmail();
       if (mounted) setState(() => _codeSent = true);
+    } on ApiException catch (e) {
+      // 429 with retry_after is the per-user cooldown: a code went out less
+      // than a minute ago, so it's still valid — just ask for it.
+      final cooldown = e.statusCode == 429 && e.details is Map && (e.details as Map)["retry_after"] != null;
+      if (mounted) {
+        if (cooldown) {
+          setState(() => _codeSent = true);
+        } else {
+          setState(() => _codeSent = false);
+          ErrorUtils.showError(context, e);
+        }
+      }
     } catch (e) {
-      if (mounted) ErrorUtils.showError(context, e);
+      if (mounted) {
+        setState(() => _codeSent = false);
+        ErrorUtils.showError(context, e);
+      }
     } finally {
       if (mounted) setState(() => _isSending = false);
     }

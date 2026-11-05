@@ -3,6 +3,7 @@ import "package:recipe_app_fe/analytics/analytics_service.dart";
 import "package:recipe_app_fe/constants/enums.dart";
 import "../users/user_api.dart";
 import "../users/user_models.dart";
+import "filter_terms.dart";
 import "search_api.dart";
 import "search_filters.dart";
 import "search_history_storage.dart";
@@ -96,8 +97,8 @@ class UnifiedSearchController extends ChangeNotifier {
       final res = await searchApi.unifiedSearch(
         query: currentQuery!,
         limit: limit,
-        cuisine: recipeFilters.cuisine,
-        tags: recipeFilters.tags.isNotEmpty ? recipeFilters.tags : null,
+        cuisine: expandCuisine(recipeFilters.cuisine),
+        tags: expandTags(recipeFilters.tags),
         ingredients: recipeFilters.ingredients.isNotEmpty ? recipeFilters.ingredients : null,
         cookingTimeMin: recipeFilters.cookingTimeMin,
         cookingTimeMax: recipeFilters.cookingTimeMax,
@@ -180,8 +181,8 @@ class UnifiedSearchController extends ChangeNotifier {
         query: currentQuery!,
         types: ["recipes"],
         limit: limit,
-        cuisine: recipeFilters.cuisine,
-        tags: recipeFilters.tags.isNotEmpty ? recipeFilters.tags : null,
+        cuisine: expandCuisine(recipeFilters.cuisine),
+        tags: expandTags(recipeFilters.tags),
         ingredients: recipeFilters.ingredients.isNotEmpty ? recipeFilters.ingredients : null,
         cookingTimeMin: recipeFilters.cookingTimeMin,
         cookingTimeMax: recipeFilters.cookingTimeMax,
@@ -221,8 +222,8 @@ class UnifiedSearchController extends ChangeNotifier {
         query: currentQuery!,
         types: ["recipes"],
         limit: limit,
-        cuisine: recipeFilters.cuisine,
-        tags: recipeFilters.tags.isNotEmpty ? recipeFilters.tags : null,
+        cuisine: expandCuisine(recipeFilters.cuisine),
+        tags: expandTags(recipeFilters.tags),
         ingredients: recipeFilters.ingredients.isNotEmpty ? recipeFilters.ingredients : null,
         cookingTimeMin: recipeFilters.cookingTimeMin,
         cookingTimeMax: recipeFilters.cookingTimeMax,
@@ -265,8 +266,9 @@ class UnifiedSearchController extends ChangeNotifier {
       // The list may have been replaced by a new search in the meantime.
       final j = users.indexWhere((u) => u.username == username);
       if (j >= 0) users[j] = old;
-      error = e.toString();
       _notify();
+      // The screen shows the error; without this it reported success.
+      rethrow;
     }
   }
 

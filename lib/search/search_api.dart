@@ -115,10 +115,15 @@ class SearchApi {
     return UnifiedSearchResponse.fromJson(Map<String, dynamic>.from(data as Map));
   }
 
-  /// Search for recipes that can be made with the given ingredients
+  /// Search for recipes that can be made with the given ingredients.
+  ///
+  /// With [relaxed], an empty first page falls back to the closest recipes
+  /// below the threshold. Send it on every page: a relaxed cursor without the
+  /// flag returns nothing.
   Future<SearchResponse> searchByIngredients({
     required List<String> haveIngredients,
     int matchThreshold = 70,
+    bool relaxed = false,
     String? cuisine,
     int? cookingTimeMin,
     int? cookingTimeMax,
@@ -131,6 +136,7 @@ class SearchApi {
       "have_ingredients": haveIngredients.join(","),
       "match_threshold": matchThreshold.toString(),
       "limit": limit.toString(),
+      if (relaxed) "relaxed": "1",
     };
 
     if (cursor != null) {
@@ -156,12 +162,19 @@ class SearchApi {
     final data = await api.get("/search", query: queryParams, auth: true);
     final results = data["results"] as Map<String, dynamic>? ?? {};
     final recipesData = results["recipes"] as Map<String, dynamic>? ?? {};
+    // Older backends don't send meta.
+    final meta = recipesData["meta"] as Map<String, dynamic>? ?? {};
 
     return SearchResponse(
       items: (recipesData["items"] as List<dynamic>? ?? [])
           .map((e) => SearchResult.fromJson(Map<String, dynamic>.from(e)))
           .toList(),
       nextCursor: recipesData["nextCursor"]?.toString(),
+      relaxed: meta["relaxed"] as bool? ?? false,
+      corrections: (meta["corrections"] as List<dynamic>? ?? [])
+          .whereType<Map>()
+          .map((c) => SearchCorrection(from: c["from"].toString(), to: c["to"].toString()))
+          .toList(),
     );
   }
 }

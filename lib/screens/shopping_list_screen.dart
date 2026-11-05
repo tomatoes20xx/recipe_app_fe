@@ -2,6 +2,7 @@ import "package:flutter/material.dart";
 
 import "../api/api_client.dart";
 import "../auth/auth_controller.dart";
+import "../auth/require_account.dart";
 import "../localization/app_localizations.dart";
 import "../sharing/sharing_models.dart";
 import "../shopping/shopping_list_api.dart";
@@ -304,10 +305,9 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
   }
 
   Future<void> _onShareTap() async {
-    if (!(widget.auth?.isLoggedIn ?? false)) {
-      ErrorUtils.showError(context, AppLocalizations.of(context)?.pleaseLogInToShareList ?? "Please log in to share your shopping list");
-      return;
-    }
+    final auth = widget.auth;
+    if (auth == null || !await requireAccount(context, auth, AccountReason.share)) return;
+    if (!mounted) return;
 
     // First: Select recipes to share
     await showRecipeSelectionBottomSheet(

@@ -97,7 +97,6 @@ class AppLocalizations {
   String get seeRecipesFromEveryone => _localizedValues[locale.languageCode]?["seeRecipesFromEveryone"] ?? "See recipes from everyone";
   String get following => _localizedValues[locale.languageCode]?["following"] ?? "Following";
   String get seeRecipesFromPeopleYouFollow => _localizedValues[locale.languageCode]?["seeRecipesFromPeopleYouFollow"] ?? "See recipes from people you follow";
-  String get logInToSeeFollowingFeed => _localizedValues[locale.languageCode]?["logInToSeeFollowingFeed"] ?? "Log in to see Following feed";
   String get popular => _localizedValues[locale.languageCode]?["popular"] ?? "Popular";
   String get mostPopularRecipes => _localizedValues[locale.languageCode]?["mostPopularRecipes"] ?? "Most popular recipes";
   String get trending => _localizedValues[locale.languageCode]?["trending"] ?? "Trending";
@@ -818,13 +817,11 @@ class AppLocalizations {
   // Comments Screen
   String get deleteCommentTitle => _localizedValues[locale.languageCode]?["deleteCommentTitle"] ?? "Delete comment?";
   String get deleteCommentMessage => _localizedValues[locale.languageCode]?["deleteCommentMessage"] ?? "This will also delete all replies to this comment.";
-  String get pleaseLogInToReportComments => _localizedValues[locale.languageCode]?["pleaseLogInToReportComments"] ?? "Please log in to report comments";
   String get youLabel => _localizedValues[locale.languageCode]?["youLabel"] ?? "You";
   String get replyAction => _localizedValues[locale.languageCode]?["replyAction"] ?? "Reply";
   String get hideReplies => _localizedValues[locale.languageCode]?["hideReplies"] ?? "Hide";
   String get noCommentsYet => _localizedValues[locale.languageCode]?["noCommentsYet"] ?? "No comments yet";
   String get beFirstToComment => _localizedValues[locale.languageCode]?["beFirstToComment"] ?? "Be the first to share your thoughts!";
-  String get pleaseLogInToComment => _localizedValues[locale.languageCode]?["pleaseLogInToComment"] ?? "Please log in to comment";
   String get couldntLoadComments => _localizedValues[locale.languageCode]?["couldntLoadComments"] ?? "Couldn't load comments";
   String get replyingTo => _localizedValues[locale.languageCode]?["replyingTo"] ?? "Replying to ";
   String get writeAReply => _localizedValues[locale.languageCode]?["writeAReply"] ?? "Write a reply...";
@@ -862,13 +859,7 @@ class AppLocalizations {
   String unfollowedUser(String username) => _localizedValues[locale.languageCode]?["unfollowedUser"]?.replaceAll("{username}", username) ?? "Unfollowed $username";
 
   // Login required messages
-  String get pleaseLogInToLike => _localizedValues[locale.languageCode]?["pleaseLogInToLike"] ?? "Please log in to like recipes";
-  String get pleaseLogInToBookmark => _localizedValues[locale.languageCode]?["pleaseLogInToBookmark"] ?? "Please log in to bookmark recipes";
-  String get pleaseLogInToUseCollections => _localizedValues[locale.languageCode]?["pleaseLogInToUseCollections"] ?? "Please log in to use collections";
-  String get pleaseLogInToShare => _localizedValues[locale.languageCode]?["pleaseLogInToShare"] ?? "Please log in to share recipes";
-  String get pleaseLogInToReport => _localizedValues[locale.languageCode]?["pleaseLogInToReport"] ?? "Please log in to report recipes";
   String get logInToViewProfiles => _localizedValues[locale.languageCode]?["logInToViewProfiles"] ?? "Log in to view profiles";
-  String get pleaseLogInToShareList => _localizedValues[locale.languageCode]?["pleaseLogInToShareList"] ?? "Please log in to share your shopping list";
 
   // Privacy
   String get followersListPrivate => _localizedValues[locale.languageCode]?["followersListPrivate"] ?? "This user's followers list is private";
@@ -950,7 +941,6 @@ class AppLocalizations {
   String get streakRecord => _localizedValues[locale.languageCode]?["streakRecord"] ?? "New record! 🏆";
   String get streakClose => _localizedValues[locale.languageCode]?["streakClose"] ?? "Close";
   String streakDaysLabel(int n) => (_localizedValues[locale.languageCode]?["streakDaysLabel"] ?? "🔥 {n}-day streak").replaceAll("{n}", n.toString());
-  String get pleaseLogInToCook => _localizedValues[locale.languageCode]?["pleaseLogInToCook"] ?? "Please log in to mark recipes as cooked";
   String get alreadyCookedToday => _localizedValues[locale.languageCode]?["alreadyCookedToday"] ?? "Cooked today ✓";
 
   // Helper method to get full month names by index (1-12)
@@ -970,6 +960,39 @@ class AppLocalizations {
     ];
     return months[month - 1];
   }
+
+  // Guest mode / account prompts
+  String get authPromptTitleSave => _localizedValues[locale.languageCode]?["authPromptTitleSave"] ?? "Create an account to save recipes";
+  String get authPromptTitleLike => _localizedValues[locale.languageCode]?["authPromptTitleLike"] ?? "Create an account to like recipes";
+  String get authPromptTitleCook => _localizedValues[locale.languageCode]?["authPromptTitleCook"] ?? "Create an account to track what you cook";
+  String get authPromptTitleCollections => _localizedValues[locale.languageCode]?["authPromptTitleCollections"] ?? "Create an account to organize collections";
+  String get authPromptTitleShoppingList => _localizedValues[locale.languageCode]?["authPromptTitleShoppingList"] ?? "Create an account to use the shopping list";
+  String get authPromptTitleShare => _localizedValues[locale.languageCode]?["authPromptTitleShare"] ?? "Create an account to share recipes";
+  String get authPromptTitleReport => _localizedValues[locale.languageCode]?["authPromptTitleReport"] ?? "Create an account to report content";
+  String get authPromptTitleBlock => _localizedValues[locale.languageCode]?["authPromptTitleBlock"] ?? "Create an account to block users";
+  String get authPromptTitleNotifications => _localizedValues[locale.languageCode]?["authPromptTitleNotifications"] ?? "Create an account to get notifications";
+  String get authPromptTitleFollowing => _localizedValues[locale.languageCode]?["authPromptTitleFollowing"] ?? "Create an account to see recipes from people you follow";
+  String get authPromptTitleComment => _localizedValues[locale.languageCode]?["authPromptTitleComment"] ?? "Create an account to comment";
+  String get authPromptTitleFollow => _localizedValues[locale.languageCode]?["authPromptTitleFollow"] ?? "Create an account to follow cooks";
+  String get authPromptTitleCreate => _localizedValues[locale.languageCode]?["authPromptTitleCreate"] ?? "Create an account to share your recipes";
+  String get authPromptTitleGeneric => _localizedValues[locale.languageCode]?["authPromptTitleGeneric"] ?? "Sign up or log in";
+  String get authPromptBody => _localizedValues[locale.languageCode]?["authPromptBody"] ?? "It's free and takes a few seconds.";
+  String get authPromptVerifyNote => _localizedValues[locale.languageCode]?["authPromptVerifyNote"] ?? "We'll email you a 6-digit code to confirm your address.";
+  String get authPromptSignUpEmail => _localizedValues[locale.languageCode]?["authPromptSignUpEmail"] ?? "Sign up with email";
+  String get authPromptLogIn => _localizedValues[locale.languageCode]?["authPromptLogIn"] ?? "I already have an account";
+  String get notNow => _localizedValues[locale.languageCode]?["notNow"] ?? "Not now";
+  String get welcomeBackTitle => _localizedValues[locale.languageCode]?["welcomeBackTitle"] ?? "Welcome back!";
+  String get welcomeBackBody => _localizedValues[locale.languageCode]?["welcomeBackBody"] ?? "Your session ended. Log in again to see your saved recipes.";
+  String get guestDrawerTitle => _localizedValues[locale.languageCode]?["guestDrawerTitle"] ?? "Join Yummy";
+  String get guestDrawerBody => _localizedValues[locale.languageCode]?["guestDrawerBody"] ?? "Save recipes, follow cooks and share your own.";
+  String get guestSignUpOrLogIn => _localizedValues[locale.languageCode]?["guestSignUpOrLogIn"] ?? "Sign up or log in";
+  String get guestNotificationsTitle => _localizedValues[locale.languageCode]?["guestNotificationsTitle"] ?? "Stay in the loop";
+  String get guestNotificationsBody => _localizedValues[locale.languageCode]?["guestNotificationsBody"] ?? "Create an account to get notified when people like and comment on your recipes.";
+
+  // Pantry search notices
+  String pantryRelaxedNotice(int n) => (_localizedValues[locale.languageCode]?["pantryRelaxedNotice"] ?? "No recipe reaches {n}% — showing the closest matches").replaceAll("{n}", "$n");
+  String pantryCorrection(String from, String to) => (_localizedValues[locale.languageCode]?["pantryCorrection"] ?? "Searched for “{to}” instead of “{from}”").replaceAll("{from}", from).replaceAll("{to}", to);
+  String pantryStaples(String list) => (_localizedValues[locale.languageCode]?["pantryStaples"] ?? "You probably have: {list}").replaceAll("{list}", list);
 
   static const Map<String, Map<String, String>> _localizedValues = {
     "en": {
@@ -1042,7 +1065,6 @@ class AppLocalizations {
       "seeRecipesFromEveryone": "See recipes from everyone",
       "following": "Following",
       "seeRecipesFromPeopleYouFollow": "See recipes from people you follow",
-      "logInToSeeFollowingFeed": "Log in to see Following feed",
       "popular": "Popular",
       "mostPopularRecipes": "Most popular recipes",
       "trending": "Trending",
@@ -1681,13 +1703,11 @@ class AppLocalizations {
       // Comments Screen
       "deleteCommentTitle": "Delete comment?",
       "deleteCommentMessage": "This will also delete all replies to this comment.",
-      "pleaseLogInToReportComments": "Please log in to report comments",
       "youLabel": "You",
       "replyAction": "Reply",
       "hideReplies": "Hide",
       "noCommentsYet": "No comments yet",
       "beFirstToComment": "Be the first to share your thoughts!",
-      "pleaseLogInToComment": "Please log in to comment",
       "couldntLoadComments": "Couldn't load comments",
       "replyingTo": "Replying to ",
       "writeAReply": "Write a reply...",
@@ -1708,13 +1728,7 @@ class AppLocalizations {
       "unfollowedUser": "Unfollowed {username}",
 
       // Login required
-      "pleaseLogInToLike": "Please log in to like recipes",
-      "pleaseLogInToBookmark": "Please log in to bookmark recipes",
-      "pleaseLogInToUseCollections": "Please log in to use collections",
-      "pleaseLogInToShare": "Please log in to share recipes",
-      "pleaseLogInToReport": "Please log in to report recipes",
       "logInToViewProfiles": "Log in to view profiles",
-      "pleaseLogInToShareList": "Please log in to share your shopping list",
 
       // Email verification gate
       "emailGateTitle": "Verify your email first",
@@ -1815,8 +1829,40 @@ class AppLocalizations {
       "streakRecord": "New record! 🏆",
       "streakClose": "Close",
       "streakDaysLabel": "🔥 {n}-day streak",
-      "pleaseLogInToCook": "Please log in to mark recipes as cooked",
       "alreadyCookedToday": "Cooked today ✓",
+
+      // Guest mode / account prompts
+      "authPromptTitleSave": "Create an account to save recipes",
+      "authPromptTitleLike": "Create an account to like recipes",
+      "authPromptTitleCook": "Create an account to track what you cook",
+      "authPromptTitleCollections": "Create an account to organize collections",
+      "authPromptTitleShoppingList": "Create an account to use the shopping list",
+      "authPromptTitleShare": "Create an account to share recipes",
+      "authPromptTitleReport": "Create an account to report content",
+      "authPromptTitleBlock": "Create an account to block users",
+      "authPromptTitleNotifications": "Create an account to get notifications",
+      "authPromptTitleFollowing": "Create an account to see recipes from people you follow",
+      "authPromptTitleComment": "Create an account to comment",
+      "authPromptTitleFollow": "Create an account to follow cooks",
+      "authPromptTitleCreate": "Create an account to share your recipes",
+      "authPromptTitleGeneric": "Sign up or log in",
+      "authPromptBody": "It's free and takes a few seconds.",
+      "authPromptVerifyNote": "We'll email you a 6-digit code to confirm your address.",
+      "authPromptSignUpEmail": "Sign up with email",
+      "authPromptLogIn": "I already have an account",
+      "notNow": "Not now",
+      "welcomeBackTitle": "Welcome back!",
+      "welcomeBackBody": "Your session ended. Log in again to see your saved recipes.",
+      "guestDrawerTitle": "Join Yummy",
+      "guestDrawerBody": "Save recipes, follow cooks and share your own.",
+      "guestSignUpOrLogIn": "Sign up or log in",
+      "guestNotificationsTitle": "Stay in the loop",
+      "guestNotificationsBody": "Create an account to get notified when people like and comment on your recipes.",
+
+      // Pantry search notices
+      "pantryRelaxedNotice": "No recipe reaches {n}% — showing the closest matches",
+      "pantryCorrection": "Searched for “{to}” instead of “{from}”",
+      "pantryStaples": "You probably have: {list}",
     },
     "ka": {
       "appTitle": "Yummy",
@@ -1888,7 +1934,6 @@ class AppLocalizations {
       "seeRecipesFromEveryone": "იხილეთ რეცეპტები ყველასგან",
       "following": "გამოწერილი",
       "seeRecipesFromPeopleYouFollow": "იხილეთ რეცეპტები გამოწერილი მომხმარებლებისგან",
-      "logInToSeeFollowingFeed": "შედით სისტემაში გამოწერილი გვერდის სანახავად",
       "popular": "პოპულარული",
       "mostPopularRecipes": "ყველაზე პოპულარული რეცეპტები",
       "trending": "ტრენდული",
@@ -2528,13 +2573,11 @@ class AppLocalizations {
       // Comments Screen
       "deleteCommentTitle": "კომენტარის წაშლა?",
       "deleteCommentMessage": "ეს წაშლის ამ კომენტარის ყველა პასუხსაც.",
-      "pleaseLogInToReportComments": "კომენტარის დასარეპორტებლად გთხოვთ გაიაროთ ავტორიზაცია",
       "youLabel": "შენ",
       "replyAction": "პასუხი",
       "hideReplies": "დამალვა",
       "noCommentsYet": "კომენტარები ჯერ არ არის",
       "beFirstToComment": "იყავი პირველი, ვინც გაუზიარებს თავის მოსაზრებებს!",
-      "pleaseLogInToComment": "კომენტარის დასამატებლად გთხოვთ გაიაროთ ავტორიზაცია",
       "couldntLoadComments": "კომენტარების ჩატვირთვა ვერ მოხერხდა",
       "replyingTo": "პასუხი: ",
       "writeAReply": "დაწერეთ პასუხი...",
@@ -2555,13 +2598,7 @@ class AppLocalizations {
       "unfollowedUser": "{username} გამოწერა გაუქმდა",
 
       // Login required
-      "pleaseLogInToLike": "რეცეპტის მოწონებისთვის გთხოვთ გაიაროთ ავტორიზაცია",
-      "pleaseLogInToBookmark": "რეცეპტის შესანახად გთხოვთ გაიაროთ ავტორიზაცია",
-      "pleaseLogInToUseCollections": "კოლექციების გამოსაყენებლად გთხოვთ გაიაროთ ავტორიზაცია",
-      "pleaseLogInToShare": "რეცეპტის გასაზიარებლად გთხოვთ გაიაროთ ავტორიზაცია",
-      "pleaseLogInToReport": "რეცეპტის დასარეპორტებლად გთხოვთ გაიაროთ ავტორიზაცია",
       "logInToViewProfiles": "პროფილის სანახავად შედით სისტემაში",
-      "pleaseLogInToShareList": "სიის გასაზიარებლად გთხოვთ გაიაროთ ავტორიზაცია",
 
       // Email verification gate
       "emailGateTitle": "დაადასტურეთ თქვენი ელ-ფოსტა",
@@ -2662,8 +2699,40 @@ class AppLocalizations {
       "streakRecord": "რეკორდი! 🏆",
       "streakClose": "დახურვა",
       "streakDaysLabel": "🔥 {n}-დღიანი სერია",
-      "pleaseLogInToCook": "გთხოვთ გაიაროთ ავტორიზაცია, რათა მონიშნოთ რეცეპტი როგორც მომზადებული",
       "alreadyCookedToday": "დღეს მომზადებული ✓",
+
+      // Guest mode / account prompts
+      "authPromptTitleSave": "შექმენით ანგარიში რეცეპტების შესანახად",
+      "authPromptTitleLike": "შექმენით ანგარიში რეცეპტების მოსაწონებლად",
+      "authPromptTitleCook": "შექმენით ანგარიში მომზადებული კერძების აღსარიცხად",
+      "authPromptTitleCollections": "შექმენით ანგარიში კოლექციების შესაქმნელად",
+      "authPromptTitleShoppingList": "შექმენით ანგარიში საყიდლების სიის გამოსაყენებლად",
+      "authPromptTitleShare": "შექმენით ანგარიში რეცეპტების გასაზიარებლად",
+      "authPromptTitleReport": "შექმენით ანგარიში კონტენტის დასარეპორტებლად",
+      "authPromptTitleBlock": "შექმენით ანგარიში მომხმარებლების დასაბლოკად",
+      "authPromptTitleNotifications": "შექმენით ანგარიში შეტყობინებების მისაღებად",
+      "authPromptTitleFollowing": "შექმენით ანგარიში გამოწერილი ავტორების რეცეპტების სანახავად",
+      "authPromptTitleComment": "შექმენით ანგარიში კომენტარის დასაწერად",
+      "authPromptTitleFollow": "შექმენით ანგარიში ავტორების გამოსაწერად",
+      "authPromptTitleCreate": "შექმენით ანგარიში საკუთარი რეცეპტების გამოსაქვეყნებლად",
+      "authPromptTitleGeneric": "დარეგისტრირდით ან შედით",
+      "authPromptBody": "ეს უფასოა და რამდენიმე წამს დაგჭირდებათ.",
+      "authPromptVerifyNote": "ელ-ფოსტის დასადასტურებლად 6-ნიშნა კოდს გამოგიგზავნით.",
+      "authPromptSignUpEmail": "რეგისტრაცია ელ-ფოსტით",
+      "authPromptLogIn": "უკვე მაქვს ანგარიში",
+      "notNow": "ახლა არა",
+      "welcomeBackTitle": "კეთილი იყოს თქვენი დაბრუნება!",
+      "welcomeBackBody": "თქვენი სესია დასრულდა. შენახული რეცეპტების სანახავად თავიდან შედით.",
+      "guestDrawerTitle": "გახდით Yummy-ს წევრი",
+      "guestDrawerBody": "შეინახეთ რეცეპტები, გამოიწერეთ ავტორები და გააზიარეთ საკუთარი.",
+      "guestSignUpOrLogIn": "რეგისტრაცია ან შესვლა",
+      "guestNotificationsTitle": "იყავით საქმის კურსში",
+      "guestNotificationsBody": "შექმენით ანგარიში და შეტყობინებას მიიღებთ, როცა თქვენს რეცეპტებს მოიწონებენ ან კომენტარს დაწერენ.",
+
+      // Pantry search notices
+      "pantryRelaxedNotice": "{n}%-იან დამთხვევას რეცეპტი ვერ აღწევს — გაჩვენებთ ყველაზე ახლოს მყოფებს",
+      "pantryCorrection": "„{from}“-ის ნაცვლად მოიძებნა „{to}“",
+      "pantryStaples": "ალბათ გაქვთ: {list}",
     },
   };
 }

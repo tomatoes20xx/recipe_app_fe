@@ -5,16 +5,14 @@ import "package:flutter/material.dart";
 import "../analytics/analytics_service.dart";
 import "../api/api_client.dart";
 import "../auth/auth_controller.dart";
+import "../auth/require_account.dart";
 import "../collections/add_to_collection_bottom_sheet.dart";
 import "../constants/cuisines.dart";
-import "../constants/dietary_preferences.dart";
-import "../constants/recipe_categories.dart";
 import "../localization/app_localizations.dart";
 import "../screens/create_recipe_screen.dart";
 import "../screens/profile_screen.dart";
 import "../shopping/shopping_list_controller.dart";
 import "../services/push_prompt_service.dart";
-import "../utils/email_verification_gate.dart";
 import "../utils/error_utils.dart";
 import "../utils/ui_utils.dart";
 import "../widgets/ingredient_action_bar.dart";
@@ -23,6 +21,7 @@ import "../widgets/section_title_widget.dart";
 import "../widgets/sharing/follower_selection_bottom_sheet.dart";
 import "../reports/report_bottom_sheet.dart";
 import "../reports/report_models.dart";
+import "../search/filter_terms.dart";
 import "comments_bottom_sheet.dart";
 import "liked_by_bottom_sheet.dart";
 import "recipe_api.dart";
@@ -164,14 +163,31 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     });
   }
 
+  /// Login-tier gate for this screen. After a fresh sign-in the recipe is
+  /// reloaded, so viewer flags (liked, saved, cooked today) are the account's
+  /// and not the guest's all-false ones. Returns false if the user backed out.
+  Future<bool> _requireAccount(AccountReason reason) async {
+    final auth = widget.auth;
+    if (auth == null) return false;
+    final wasGuest = !auth.isLoggedIn;
+    if (!await requireAccount(context, auth, reason)) return false;
+    if (wasGuest && mounted) await c.reloadQuietly();
+    return mounted;
+  }
+
+  Future<bool> _handleAuthError(Object e, AccountReason reason) async {
+    final auth = widget.auth;
+    return auth != null && await handleAuthError(context, auth, e, reason);
+  }
+
   Future<void> _toggleLike() async {
+    if (c.recipe == null || _isLiking) return;
+    final wasGuest = !(widget.auth?.isLoggedIn ?? false);
+    if (!await _requireAccount(AccountReason.like)) return;
+    // Just signed in to an account that already likes this: nothing to do.
+    if (wasGuest && _viewerHasLiked == true) return;
     final r = c.recipe;
-    if (r == null || _isLiking) return;
-    if (!(widget.auth?.isLoggedIn ?? false)) {
-      ErrorUtils.showError(context, AppLocalizations.of(context)?.pleaseLogInToLike ?? "Please log in to like recipes");
-      return;
-    }
-    if (!await checkEmailVerified(context, widget.auth!)) return;
+    if (r == null) return;
 
     setState(() => _isLiking = true);
 
@@ -194,12 +210,8 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
         _localLikes = base + (wasLiked ? -1 : 1);
       });
     } catch (e) {
-      if (mounted) {
-        if (_isEmailUnverified(e)) {
-          await checkEmailVerified(context, widget.auth!);
-        } else {
-          ErrorUtils.showError(context, e);
-        }
+      if (mounted && !await _handleAuthError(e, AccountReason.like) && mounted) {
+        ErrorUtils.showError(context, e);
       }
     } finally {
       if (mounted) {
@@ -208,19 +220,13 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     }
   }
 
-  bool _isEmailUnverified(Object e) =>
-      e is ApiException &&
-      e.statusCode == 403 &&
-      e.details is Map &&
-      (e.details as Map)['code'] == 'EMAIL_UNVERIFIED';
-
   Future<void> _toggleBookmark() async {
+    if (c.recipe == null || _isBookmarking) return;
+    final wasGuest = !(widget.auth?.isLoggedIn ?? false);
+    if (!await _requireAccount(AccountReason.save)) return;
+    if (wasGuest && _viewerHasBookmarked == true) return;
     final r = c.recipe;
-    if (r == null || _isBookmarking) return;
-    if (!(widget.auth?.isLoggedIn ?? false)) {
-      ErrorUtils.showError(context, AppLocalizations.of(context)?.pleaseLogInToBookmark ?? "Please log in to bookmark recipes");
-      return;
-    }
+    if (r == null) return;
 
     setState(() => _isBookmarking = true);
 
@@ -243,7 +249,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
         _localBookmarks = base + (wasBookmarked ? -1 : 1);
       });
     } catch (e) {
-      if (mounted) {
+      if (mounted && !await _handleAuthError(e, AccountReason.save) && mounted) {
         ErrorUtils.showError(context, e);
       }
     } finally {
@@ -254,13 +260,11 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
   }
 
   Future<void> _cookRecipe() async {
+    if (c.recipe == null || _isCooking || _cookedThisSession) return;
+    if (!await _requireAccount(AccountReason.cook)) return;
+    // The reload after sign-in may show it was already cooked today.
     final r = c.recipe;
-    if (r == null || _isCooking || _cookedThisSession) return;
-    if (!(widget.auth?.isLoggedIn ?? false)) {
-      ErrorUtils.showError(context, AppLocalizations.of(context)?.pleaseLogInToCook ?? "Please log in to mark recipes as cooked");
-      return;
-    }
-    if (!await checkEmailVerified(context, widget.auth!)) return;
+    if (r == null || _cookedThisSession) return;
 
     setState(() => _isCooking = true);
 
@@ -283,12 +287,8 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
         isNewRecord: isNewRecord,
       );
     } catch (e) {
-      if (mounted) {
-        if (_isEmailUnverified(e)) {
-          await checkEmailVerified(context, widget.auth!);
-        } else {
-          ErrorUtils.showError(context, e);
-        }
+      if (mounted && !await _handleAuthError(e, AccountReason.cook) && mounted) {
+        ErrorUtils.showError(context, e);
       }
     } finally {
       if (mounted) {
@@ -298,12 +298,10 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
   }
 
   Future<void> _onBookmarkLongPress() async {
+    if (c.recipe == null) return;
+    if (!await _requireAccount(AccountReason.collections)) return;
     final r = c.recipe;
-    if (r == null) return;
-    if (!(widget.auth?.isLoggedIn ?? false)) {
-      ErrorUtils.showError(context, AppLocalizations.of(context)?.pleaseLogInToUseCollections ?? "Please log in to use collections");
-      return;
-    }
+    if (r == null || !mounted) return;
     final result = await showAddToCollectionBottomSheet(
       context: context,
       apiClient: widget.apiClient,
@@ -322,10 +320,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
   }
 
   Future<void> _onShareTap() async {
-    if (!(widget.auth?.isLoggedIn ?? false)) {
-      ErrorUtils.showError(context, AppLocalizations.of(context)?.pleaseLogInToShare ?? "Please log in to share recipes");
-      return;
-    }
+    if (!await _requireAccount(AccountReason.share)) return;
 
     // Load shared-with list if not already loaded
     if (_sharingController.sharedWith.isEmpty && !_sharingController.isLoading) {
@@ -422,10 +417,9 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     final r = c.recipe;
     if (r == null) return;
 
-    if (!(widget.auth?.isLoggedIn ?? false)) {
-      ErrorUtils.showError(context, AppLocalizations.of(context)?.pleaseLogInToReport ?? "Please log in to report recipes");
-      return;
-    }
+    if (!await _requireAccount(AccountReason.report) || !mounted) return;
+    // Signing in may reveal this is the viewer's own recipe.
+    if (widget.auth?.me?["username"]?.toString() == r.authorUsername) return;
 
     await showReportBottomSheet(
       context: context,
@@ -489,7 +483,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                         onPressed: () => _showDeleteConfirmation(context, r),
                       ),
                     ],
-                    if (!isOwner && widget.auth?.isLoggedIn == true && r != null)
+                    if (!isOwner && widget.auth != null && r != null)
                       _AppBarIconButton(
                         icon: Icons.flag_outlined,
                         tooltip: AppLocalizations.of(context)?.reportRecipe ?? "Report Recipe",
@@ -929,8 +923,8 @@ class _ContentBody extends StatelessWidget {
 
           const SizedBox(height: 24),
 
-          // "Made It!" cook button
-          if (auth?.isLoggedIn == true)
+          // "Made It!" cook button (guests are asked to sign in on tap)
+          if (auth != null)
             _MadeItButton(
               isCooking: isCooking,
               cookedThisSession: cookedThisSession,
@@ -1758,9 +1752,10 @@ class _HashtagPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context);
-    // Check if this tag matches a predefined category or dietary preference
-    final category = recipeCategories.where((c) => c.tag == tag).firstOrNull;
-    final dietary = dietaryPreferences.where((d) => d.tag == tag).firstOrNull;
+    // A predefined category or dietary preference, stored as its slug or as
+    // the English or Georgian label: show it in the current language.
+    final category = findCategory(tag);
+    final dietary = findDietary(tag);
     final displayLabel = category != null
         ? category.getLabel(localizations)
         : dietary != null

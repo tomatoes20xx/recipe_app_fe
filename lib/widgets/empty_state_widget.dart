@@ -12,6 +12,7 @@ class EmptyStateWidget extends StatelessWidget {
     this.description,
     this.actionLabel,
     this.onAction,
+    this.actionIcon = Icons.refresh_rounded,
     this.wrapInCard = false,
     this.iconSize = 64,
     this.titleStyle,
@@ -32,6 +33,9 @@ class EmptyStateWidget extends StatelessWidget {
   
   /// Optional action button callback
   final VoidCallback? onAction;
+
+  /// Icon on the action button (default: refresh, for retry actions)
+  final IconData actionIcon;
   
   /// Whether to wrap in a Card widget
   final bool wrapInCard;
@@ -79,7 +83,7 @@ class EmptyStateWidget extends StatelessWidget {
           const SizedBox(height: 24),
           FilledButton.icon(
             onPressed: onAction,
-            icon: const Icon(Icons.refresh_rounded),
+            icon: Icon(actionIcon),
             label: Text(actionLabel!),
             style: FilledButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),

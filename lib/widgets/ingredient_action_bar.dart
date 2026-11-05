@@ -3,6 +3,7 @@ import "package:uuid/uuid.dart";
 
 import "../api/api_client.dart";
 import "../auth/auth_controller.dart";
+import "../auth/require_account.dart";
 import "../localization/app_localizations.dart";
 import "../recipes/recipe_detail_models.dart";
 import "../screens/shopping_list_screen.dart";
@@ -147,6 +148,9 @@ class _IngredientActionBarState extends State<IngredientActionBar> {
   }
 
   Future<void> _addToShoppingList(BuildContext context) async {
+    final auth = widget.auth;
+    if (auth == null || !await requireAccount(context, auth, AccountReason.shoppingList)) return;
+    if (!context.mounted) return;
     final localizations = AppLocalizations.of(context);
     const uuid = Uuid();
 

@@ -28,6 +28,15 @@ class RecipeDetailController extends ChangeNotifier {
     }
   }
 
+  /// Re-fetches without the loading state, so the screen keeps its content
+  /// and scroll position (used after sign-in to pick up viewer flags).
+  Future<void> reloadQuietly() async {
+    try {
+      recipe = await api.getRecipeDetail(recipeId);
+      notifyListeners();
+    } catch (_) {}
+  }
+
   Future<void> refresh() async {
     // RefreshIndicator expects a Future<void>
     await load();

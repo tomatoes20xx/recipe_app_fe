@@ -4,16 +4,15 @@ import "package:cached_network_image/cached_network_image.dart";
 import "../../analytics/analytics_service.dart";
 import "../../api/api_client.dart";
 import "../../auth/auth_controller.dart";
-import "../../collections/add_to_collection_bottom_sheet.dart";
 import "../../constants/enums.dart";
 import "../../feed/feed_controller.dart";
 import "../../feed/feed_models.dart";
 import "../../recipes/comments_bottom_sheet.dart";
 import "../../screens/profile_screen.dart";
 import "../../shopping/shopping_list_controller.dart";
-import "../../services/push_prompt_service.dart";
 import "../../utils/ui_utils.dart";
 import "expandable_description.dart";
+import "feed_actions.dart";
 
 /// Feed card widget for list view
 class FeedCard extends StatefulWidget {
@@ -277,11 +276,7 @@ class _EngagementRow extends StatelessWidget {
           active: item.viewerHasLiked,
           activeColor: const Color(0xFFE53935),
           onTap: () async {
-            final wasLiked = item.viewerHasLiked;
-            await feed.toggleLike(item.id);
-            if (!wasLiked && context.mounted) {
-              PushPromptService().onLikeCompleted(context, apiClient);
-            }
+            await likeFromFeed(context, feed: feed, recipeId: item.id, auth: auth, apiClient: apiClient);
             onActionCompleted?.call();
           },
         ),
@@ -313,26 +308,19 @@ class _EngagementRow extends StatelessWidget {
           active: item.viewerHasBookmarked,
           activeColor: const Color(0xFFE53935),
           onTap: () async {
-            final wasBookmarked = item.viewerHasBookmarked;
-            await feed.toggleBookmark(item.id);
-            if (!wasBookmarked && context.mounted) {
-              PushPromptService().onSaveCompleted(context, apiClient);
-            }
+            await saveFromFeed(context, feed: feed, recipeId: item.id, auth: auth, apiClient: apiClient);
             onActionCompleted?.call();
           },
-          onLongPress: auth.isLoggedIn
-              ? () async {
-                  final result = await showAddToCollectionBottomSheet(
-                    context: context,
-                    apiClient: apiClient,
-                    recipeId: item.id,
-                  );
-                  if (result.changed) {
-                    feed.updateBookmarkState(item.id, result.isBookmarked);
-                    onActionCompleted?.call();
-                  }
-                }
-              : null,
+          onLongPress: () async {
+            final changed = await openCollectionsFromFeed(
+              context,
+              feed: feed,
+              recipeId: item.id,
+              auth: auth,
+              apiClient: apiClient,
+            );
+            if (changed) onActionCompleted?.call();
+          },
         ),
       ],
     );

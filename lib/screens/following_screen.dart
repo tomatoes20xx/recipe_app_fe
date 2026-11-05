@@ -3,6 +3,7 @@ import "package:flutter/material.dart";
 import "../analytics/analytics_service.dart";
 import "../api/api_client.dart";
 import "../auth/auth_controller.dart";
+import "../auth/require_account.dart";
 import "../localization/app_localizations.dart";
 import "../shopping/shopping_list_controller.dart";
 import "../users/following_controller.dart";
@@ -69,6 +70,11 @@ class _FollowingScreenState extends State<FollowingScreen> {
   Future<void> _toggleFollow(UserSearchResult user) async {
     final oldFollowing = user.viewerIsFollowing;
     final newFollowing = !oldFollowing;
+    final wasGuest = !widget.auth.isLoggedIn;
+    if (!await requireVerifiedAccount(context, widget.auth, AccountReason.follow)) return;
+    if (!mounted) return;
+    // Rows were loaded as a guest; show the account's real follow state.
+    if (wasGuest) controller.refresh();
 
     try {
       final userApi = UserApi(widget.apiClient);
@@ -90,7 +96,9 @@ class _FollowingScreenState extends State<FollowingScreen> {
         );
       }
     } catch (e) {
-      if (mounted) {
+      if (mounted &&
+          !await handleAuthError(context, widget.auth, e, AccountReason.follow) &&
+          mounted) {
         ErrorUtils.showError(context, e);
       }
     }

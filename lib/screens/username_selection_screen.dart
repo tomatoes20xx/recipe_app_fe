@@ -151,8 +151,8 @@ class _UsernameSelectionScreenState extends State<UsernameSelectionScreen> {
       }
 
       if (mounted) {
-        // Success - navigate to home
-        Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+        // Success - return to whatever asked for the account
+        Navigator.of(context).pop(true);
       }
     } on ApiException catch (e) {
       if (mounted) {

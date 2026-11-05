@@ -1,4 +1,5 @@
 import "../localization/app_localizations.dart";
+import "../search/filter_terms.dart";
 
 class CuisineOption {
   final String value;
@@ -57,8 +58,9 @@ final List<CuisineOption> cuisineOptions = [
   ),
 ];
 
-/// Look up the localized label for a cuisine value, or return the value as-is if not predefined.
+/// Look up the localized label for a cuisine, or return it as-is if not predefined.
+/// Recipes store the value ("Georgian") or either language's label ("ქართული").
 String getLocalizedCuisine(String value, AppLocalizations? l) {
-  final option = cuisineOptions.where((c) => c.value.toLowerCase() == value.toLowerCase()).firstOrNull;
+  final option = findCuisine(value);
   return option != null ? option.getLabel(l) : value;
 }

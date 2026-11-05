@@ -7,7 +7,6 @@ import "../services/update_service.dart";
 import "../shopping/shopping_list_controller.dart";
 import "../theme/theme_controller.dart";
 import "feed_shell_screen.dart";
-import "login_screen.dart";
 
 class AuthGate extends StatefulWidget {
   const AuthGate({
@@ -45,8 +44,8 @@ class _AuthGateState extends State<AuthGate> {
       await widget.auth.bootstrap().timeout(
         const Duration(seconds: 10),
         onTimeout: () {
-          // If bootstrap takes too long, just continue without auth
-          // User can still login manually
+          // If bootstrap takes too long, just continue as a guest
+          // User can still log in from any account prompt
         },
       );
     } catch (e) {
@@ -74,24 +73,15 @@ class _AuthGateState extends State<AuthGate> {
       );
     }
 
-    // This makes AuthGate rebuild automatically on login/logout
-    return AnimatedBuilder(
-      animation: widget.auth,
-      builder: (context, _) {
-        if (widget.auth.isLoggedIn) {
-          // Always show the main app — unverified users see a banner inside
-          // FeedShellScreen and are gated only on write actions.
-          return FeedShellScreen(
-            auth: widget.auth,
-            apiClient: widget.apiClient,
-            themeController: widget.themeController,
-            languageController: widget.languageController,
-            shoppingListController: widget.shoppingListController,
-          );
-        }
-
-        return LoginScreen(auth: widget.auth);
-      },
+    // Guests get the full app too: sign-in is asked for only when an action
+    // needs an account (see auth/require_account.dart). The shell stays
+    // mounted across sign-in/out and reacts to auth changes itself.
+    return FeedShellScreen(
+      auth: widget.auth,
+      apiClient: widget.apiClient,
+      themeController: widget.themeController,
+      languageController: widget.languageController,
+      shoppingListController: widget.shoppingListController,
     );
   }
 }

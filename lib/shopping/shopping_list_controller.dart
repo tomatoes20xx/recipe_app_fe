@@ -66,8 +66,10 @@ class ShoppingListController extends ChangeNotifier {
         _lastSyncTime = DateTime.parse(lastSyncString);
       }
 
-      // Try to load from API first (source of truth)
-      if (api != null) {
+      // Try to load from API first (source of truth). Guests have no server
+      // list, so skip the call instead of collecting a 401.
+      final hasSession = (await api?.api.tokenStorage.readToken())?.isNotEmpty == true;
+      if (api != null && hasSession) {
         try {
           final serverItems = await api!.getItems();
           _items = serverItems;
@@ -82,7 +84,7 @@ class ShoppingListController extends ChangeNotifier {
           await _loadFromCache();
         }
       } else {
-        // No API - load from cache (backward compatibility)
+        // No API or no session - load from cache (backward compatibility)
         await _loadFromCache();
       }
     } catch (e) {
@@ -304,6 +306,20 @@ class ShoppingListController extends ChangeNotifier {
       } catch (e) {
         log("Error syncing checked items deletion to server: $e", name: "ShoppingListController");
       }
+    }
+  }
+
+  /// Forget the local copy without touching the server (used on sign-out,
+  /// so the next person on this device doesn't see the list).
+  Future<void> clearLocal() async {
+    _items.clear();
+    _lastSyncTime = null;
+    notifyListeners();
+    try {
+      await _storage.delete(key: _storageKey);
+      await _storage.delete(key: _lastSyncKey);
+    } catch (e) {
+      log("Error clearing shopping list cache: $e", name: "ShoppingListController");
     }
   }
 
