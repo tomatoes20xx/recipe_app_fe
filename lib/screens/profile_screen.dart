@@ -7,6 +7,7 @@ import "../analytics/analytics_service.dart";
 import "../api/api_client.dart";
 import "../auth/auth_api.dart";
 import "../auth/auth_controller.dart";
+import "../auth/require_account.dart";
 import "../feed/feed_models.dart";
 import "../feed/saved_recipes_controller.dart";
 import "../localization/app_localizations.dart";
@@ -19,7 +20,6 @@ import "../users/streak_controller.dart";
 import "../users/user_api.dart";
 import "../users/user_models.dart";
 import "../users/user_recipes_controller.dart";
-import "../utils/email_verification_gate.dart";
 import "../utils/error_utils.dart";
 import "../utils/image_utils.dart";
 import "../utils/paginated_list_controller.dart";
@@ -215,9 +215,35 @@ class _ProfileScreenState extends State<ProfileScreen>
     }
   }
 
+  /// Gate for actions on another user's profile. After a fresh sign-in the
+  /// profile is reloaded so follow/block state is the account's, not the
+  /// guest's. Returns false if the user backed out or it's their own profile.
+  Future<bool> _requireAccountHere(AccountReason reason, {bool verified = false}) async {
+    final wasGuest = !widget.auth.isLoggedIn;
+    final ok = verified
+        ? await requireVerifiedAccount(context, widget.auth, reason)
+        : await requireAccount(context, widget.auth, reason);
+    if (!ok || !mounted) return false;
+    if (wasGuest && widget.username != null) {
+      try {
+        final profile = await UserApi(widget.apiClient).getUserProfile(widget.username!);
+        if (!mounted) return false;
+        setState(() {
+          _userProfile = profile;
+          _isFollowing = profile.viewerIsFollowing;
+        });
+        if (profile.isViewer) return false;
+      } catch (_) {}
+    }
+    return mounted;
+  }
+
   Future<void> _toggleFollow() async {
     if (widget.username == null || _userProfile == null) return;
-    if (!await checkEmailVerified(context, widget.auth)) return;
+    final wasGuest = !widget.auth.isLoggedIn;
+    if (!await _requireAccountHere(AccountReason.follow, verified: true)) return;
+    // Just signed in to an account that already follows them.
+    if (wasGuest && _isFollowing) return;
 
     final oldFollowing = _isFollowing;
     final newFollowing = !_isFollowing;
@@ -259,15 +285,10 @@ class _ProfileScreenState extends State<ProfileScreen>
               _userProfile!.followersCount + (oldFollowing ? 1 : -1),
         );
       });
-      if (mounted) {
-        if (e is ApiException &&
-            e.statusCode == 403 &&
-            e.details is Map &&
-            (e.details as Map)['code'] == 'EMAIL_UNVERIFIED') {
-          await checkEmailVerified(context, widget.auth);
-        } else {
-          ErrorUtils.showError(context, e);
-        }
+      if (mounted &&
+          !await handleAuthError(context, widget.auth, e, AccountReason.follow) &&
+          mounted) {
+        ErrorUtils.showError(context, e);
       }
     }
   }
@@ -536,6 +557,8 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   Future<void> _handleBlockUser() async {
+    if (_userProfile == null) return;
+    if (!await _requireAccountHere(AccountReason.block) || !mounted) return;
     final profile = _userProfile;
     if (profile == null) return;
 
@@ -605,8 +628,10 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   Future<void> _handleReportUser() async {
+    if (_userProfile == null) return;
+    if (!await _requireAccountHere(AccountReason.report)) return;
     final profile = _userProfile;
-    if (profile == null) return;
+    if (profile == null || !mounted) return;
     await showReportBottomSheet(
       context: context,
       targetType: ReportTargetType.user,
@@ -797,9 +822,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                       onTap: () => Navigator.of(context).maybePop(),
                     ),
                     const Spacer(),
-                    if (!_isSelf &&
-                        widget.auth.isLoggedIn &&
-                        !(_userProfile?.isViewer ?? true))
+                    if (!_isSelf && !(_userProfile?.isViewer ?? true))
                       _TopBarButton(
                         icon: Icons.more_vert,
                         onTap: () => _showMoreMenu(context),
@@ -955,7 +978,6 @@ class _ProfileScreenState extends State<ProfileScreen>
               else
                 _OtherActionRow(
                   isFollowing: _isFollowing,
-                  isLoggedIn: widget.auth.isLoggedIn,
                   onFollow: _toggleFollow,
                 ),
               // Ban banners
@@ -1616,18 +1638,14 @@ class _SelfActionRow extends StatelessWidget {
 class _OtherActionRow extends StatelessWidget {
   const _OtherActionRow({
     required this.isFollowing,
-    required this.isLoggedIn,
     required this.onFollow,
   });
 
   final bool isFollowing;
-  final bool isLoggedIn;
   final VoidCallback onFollow;
 
   @override
   Widget build(BuildContext context) {
-    if (!isLoggedIn) return const SizedBox.shrink();
-
     final theme = Theme.of(context);
     return SizedBox(
       width: double.infinity,

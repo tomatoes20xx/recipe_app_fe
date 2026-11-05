@@ -2,15 +2,20 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../constants/enums.dart';
 import '../recipes/recipe_api.dart';
+import '../search/filter_terms.dart';
 import '../utils/paginated_list_controller.dart';
 import 'feed_api.dart';
 import 'feed_models.dart' as feed_models;
 
 class FeedController extends PaginatedListController<feed_models.FeedItem> {
-  FeedController({required this.feedApi, this.recipeApi});
+  FeedController({required this.feedApi, this.recipeApi, this.isSignedIn});
 
   final FeedApi feedApi;
   final RecipeApi? recipeApi;
+
+  /// Guests can't post seen IDs (the endpoint needs a login); they stay
+  /// queued locally and are flushed when the user signs in.
+  final bool Function()? isSignedIn;
 
   FeedScope scope = FeedScope.global;
   FeedSort sort = FeedSort.discovery;
@@ -56,7 +61,10 @@ class FeedController extends PaginatedListController<feed_models.FeedItem> {
 
   @override
   Future<void> loadInitial() async {
-    if (scope == FeedScope.global && sort == FeedSort.discovery && _sessionSeenIds.isNotEmpty) {
+    if (scope == FeedScope.global &&
+        sort == FeedSort.discovery &&
+        _sessionSeenIds.isNotEmpty &&
+        (isSignedIn?.call() ?? true)) {
       final ids = _sessionSeenIds.toList();
       _sessionSeenIds.clear();
       try {
@@ -76,7 +84,7 @@ class FeedController extends PaginatedListController<feed_models.FeedItem> {
         period: popularPeriod.apiValue,
         limit: limit,
         cursor: cursor,
-        tags: selectedCategory != null ? [selectedCategory!] : null,
+        tags: selectedCategory != null ? tagTerms(selectedCategory!) : null,
       );
       final rawItems = (res['items'] as List<dynamic>? ?? []);
       return PaginatedResponse(
@@ -89,7 +97,7 @@ class FeedController extends PaginatedListController<feed_models.FeedItem> {
         days: trendingDays,
         limit: limit,
         cursor: cursor,
-        tags: selectedCategory != null ? [selectedCategory!] : null,
+        tags: selectedCategory != null ? tagTerms(selectedCategory!) : null,
       );
       final rawItems = (res['items'] as List<dynamic>? ?? []);
       return PaginatedResponse(
@@ -103,7 +111,7 @@ class FeedController extends PaginatedListController<feed_models.FeedItem> {
         scope: scope.apiValue,
         sort: sort.apiValue,
         windowDays: windowDays,
-        tags: selectedCategory != null ? [selectedCategory!] : null,
+        tags: selectedCategory != null ? tagTerms(selectedCategory!) : null,
       );
       return PaginatedResponse(items: res.items, nextCursor: res.nextCursor);
     }
@@ -170,9 +178,10 @@ class FeedController extends PaginatedListController<feed_models.FeedItem> {
     }
   }
 
-  Future<void> toggleLike(String recipeId) async {
+  /// Optimistic like/unlike. Returns the error (after rolling back) or null.
+  Future<Object?> toggleLike(String recipeId) async {
     final i = indexWhere((x) => x.id == recipeId);
-    if (i < 0) return;
+    if (i < 0) return null;
     final old = items[i];
     final nextLiked = !old.viewerHasLiked;
     updateItemAt(i, old.copyWith(viewerHasLiked: nextLiked, likes: old.likes + (nextLiked ? 1 : -1)));
@@ -183,16 +192,19 @@ class FeedController extends PaginatedListController<feed_models.FeedItem> {
       } else {
         await feedApi.unlike(recipeId);
       }
+      return null;
     } catch (e) {
       updateItemAt(i, old);
       error = e.toString();
       notifyListeners();
+      return e;
     }
   }
 
-  Future<void> toggleBookmark(String recipeId) async {
+  /// Optimistic save/unsave. Returns the error (after rolling back) or null.
+  Future<Object?> toggleBookmark(String recipeId) async {
     final i = indexWhere((x) => x.id == recipeId);
-    if (i < 0) return;
+    if (i < 0) return null;
     final old = items[i];
     final next = !old.viewerHasBookmarked;
     updateItemAt(i, old.copyWith(viewerHasBookmarked: next, bookmarks: old.bookmarks + (next ? 1 : -1)));
@@ -203,10 +215,12 @@ class FeedController extends PaginatedListController<feed_models.FeedItem> {
       } else {
         await feedApi.unbookmark(recipeId);
       }
+      return null;
     } catch (e) {
       updateItemAt(i, old);
       error = e.toString();
       notifyListeners();
+      return e;
     }
   }
 

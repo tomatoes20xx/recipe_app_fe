@@ -10,28 +10,37 @@ import "../localization/app_localizations.dart";
 class AppTourService {
   static const _storage = FlutterSecureStorage();
 
-  static String _key(String userId) => 'app_tour_completed_$userId';
+  /// Device-wide, so guests get the tour (and the ATT sheet after it) on
+  /// first launch and don't see it again after signing up.
+  static const _key = 'app_tour_completed';
 
-  /// Check if user has completed the tour
-  static Future<bool> hasTourCompleted(String userId) async {
-    final completed = await _storage.read(key: _key(userId));
-    return completed == 'true';
+  /// Before guest mode the flag was per user: `app_tour_completed_<userId>`.
+  static const _legacyKeyPrefix = 'app_tour_completed_';
+
+  /// Check if the tour has been completed on this device
+  static Future<bool> hasTourCompleted() async {
+    if (await _storage.read(key: _key) == 'true') return true;
+    final all = await _storage.readAll();
+    final legacyDone = all.entries.any(
+      (e) => e.key.startsWith(_legacyKeyPrefix) && e.value == 'true',
+    );
+    if (legacyDone) await markTourCompleted();
+    return legacyDone;
   }
 
   /// Mark tour as completed
-  static Future<void> markTourCompleted(String userId) async {
-    await _storage.write(key: _key(userId), value: 'true');
+  static Future<void> markTourCompleted() async {
+    await _storage.write(key: _key, value: 'true');
   }
 
   /// Reset tour (for testing)
-  static Future<void> resetTour(String userId) async {
-    await _storage.delete(key: _key(userId));
+  static Future<void> resetTour() async {
+    await _storage.delete(key: _key);
   }
 
   /// Create and show the tour
   static void showTour(
     BuildContext context, {
-    required String userId,
     required GlobalKey feedKey,
     required GlobalKey searchKey,
     required GlobalKey createKey,
@@ -161,9 +170,9 @@ class AppTourService {
       opacityShadow: 0.8,
       hideSkip: false,
       textSkip: localizations?.skip ?? "Skip",
-      onFinish: () => _completeTour(context, userId, onFinish),
+      onFinish: () => _completeTour(context, onFinish),
       onSkip: () {
-        _completeTour(context, userId, onFinish);
+        _completeTour(context, onFinish);
         return true;
       },
     );
@@ -174,8 +183,8 @@ class AppTourService {
     });
   }
 
-  static void _completeTour(BuildContext context, String userId, VoidCallback? onFinish) {
-    markTourCompleted(userId);
+  static void _completeTour(BuildContext context, VoidCallback? onFinish) {
+    markTourCompleted();
     // Brief delay lets the tour overlay finish dismissing before the sheet appears
     Future.delayed(const Duration(milliseconds: 300), () {
       showAttPermissionSheet(context);

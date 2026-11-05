@@ -3,6 +3,7 @@ import "package:flutter/services.dart";
 import "../api/api_client.dart";
 import "../analytics/analytics_api.dart";
 import "../auth/auth_controller.dart";
+import "../auth/require_account.dart";
 import "../constants/cuisines.dart";
 import "../constants/dietary_preferences.dart";
 import "../constants/enums.dart";
@@ -22,6 +23,7 @@ import "../utils/ui_utils.dart";
 import "../widgets/common/app_bottom_sheet.dart";
 import "../widgets/common/common_widgets.dart";
 import "../widgets/empty_state_widget.dart";
+import "../widgets/search/search_notice.dart";
 import "pantry_search_screen.dart";
 import "profile_screen.dart";
 
@@ -93,7 +95,11 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Future<void> _handleFollowToggle(UserSearchResult user) async {
+    final auth = widget.auth;
+    if (auth == null) return;
     final newFollowing = !user.viewerIsFollowing;
+    if (!await requireVerifiedAccount(context, auth, AccountReason.follow)) return;
+    if (!mounted) return;
 
     try {
       await searchController.toggleFollow(user.username);
@@ -107,7 +113,7 @@ class _SearchScreenState extends State<SearchScreen> {
         );
       }
     } catch (e) {
-      if (mounted) {
+      if (mounted && !await handleAuthError(context, auth, e, AccountReason.follow) && mounted) {
         ErrorUtils.showError(context, e);
       }
     }
@@ -122,7 +128,7 @@ class _SearchScreenState extends State<SearchScreen> {
     super.dispose();
   }
 
-  void _performSearch(String query, {bool saveToHistory = false}) {
+  Future<void> _performSearch(String query, {bool saveToHistory = false}) async {
     final trimmedQuery = query.trim();
 
     if (trimmedQuery.isEmpty) {
@@ -169,7 +175,13 @@ class _SearchScreenState extends State<SearchScreen> {
 
     // Search runs on submit, so there is nothing to debounce.
     _lastSearchedQuery = trimmedQuery;
-    searchController.search(trimmedQuery, saveToHistory: saveToHistory);
+    await searchController.search(trimmedQuery, saveToHistory: saveToHistory);
+    // A failed search must not block submitting the same text again.
+    if (searchController.error != null &&
+        searchController.currentQuery == trimmedQuery &&
+        _lastSearchedQuery == trimmedQuery) {
+      _lastSearchedQuery = null;
+    }
   }
 
   @override
@@ -373,6 +385,10 @@ class _SearchScreenState extends State<SearchScreen> {
     final hasUsers = searchController.users.isNotEmpty;
     final hasRecipes = searchController.recipes.isNotEmpty;
     final localizations = AppLocalizations.of(context);
+    // With users on screen, a recipe reload (filter change) or a recipe error
+    // still needs its own section; otherwise recipes would just vanish.
+    final recipesLoading = searchController.isLoading && !hasRecipes;
+    final recipesError = searchController.error != null && !hasRecipes;
 
     if (!hasUsers && !hasRecipes) {
       return EmptyStateWidget(
@@ -423,7 +439,7 @@ class _SearchScreenState extends State<SearchScreen> {
             ),
           ),
         ],
-        if (hasRecipes) ...[
+        if (hasRecipes || recipesLoading || recipesError) ...[
           SliverToBoxAdapter(
             child: _buildSectionHeader(
               localizations?.recipes ?? "Recipes",
@@ -431,16 +447,30 @@ class _SearchScreenState extends State<SearchScreen> {
           ),
           if (searchController.correctedQuery != null)
             SliverToBoxAdapter(
-              child: _buildSearchNotice(
+              child: SearchNotice(
                 localizations?.searchShowingResultsFor(searchController.correctedQuery!) ??
                     "Showing results for “${searchController.correctedQuery}”",
               ),
-            )
-          else if (searchController.relaxedResults)
+            ),
+          if (searchController.relaxedResults)
             SliverToBoxAdapter(
-              child: _buildSearchNotice(
+              child: SearchNotice(
                 localizations?.searchNoExactMatches ??
                     "No exact matches — showing similar recipes",
+              ),
+            ),
+          if (recipesLoading)
+            const SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.all(24),
+                child: Center(child: CircularProgressIndicator()),
+              ),
+            )
+          else if (recipesError)
+            SliverToBoxAdapter(
+              child: ErrorStateWidget(
+                message: ErrorUtils.getUserFriendlyMessage(searchController.error!, context),
+                onRetry: () => searchController.updateFilters(searchController.recipeFilters),
               ),
             ),
           SliverList(
@@ -463,27 +493,6 @@ class _SearchScreenState extends State<SearchScreen> {
         ],
         const SliverToBoxAdapter(child: SizedBox(height: 120)),
       ],
-    );
-  }
-
-  /// A line under the Recipes header explaining a corrected or relaxed search.
-  Widget _buildSearchNotice(String text) {
-    final theme = Theme.of(context);
-    final color = theme.colorScheme.onSurface.withValues(alpha: 0.6);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-      child: Row(
-        children: [
-          Icon(Icons.info_outline, size: 16, color: color),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              text,
-              style: theme.textTheme.bodySmall?.copyWith(color: color),
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -561,7 +570,7 @@ class _SearchScreenState extends State<SearchScreen> {
                   ),
                 ),
               );
-            } else if (widget.auth?.isLoggedIn == true) {
+            } else if (widget.auth != null) {
               Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (_) => ProfileScreen(
@@ -605,7 +614,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     ],
                   ),
                 ),
-                if (widget.auth?.isLoggedIn == true && !isCurrentUser)
+                if (widget.auth != null && !isCurrentUser)
                   FollowButton(
                     isFollowing: user.viewerIsFollowing,
                     onTap: () => _handleFollowToggle(user),

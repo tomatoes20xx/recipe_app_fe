@@ -7,6 +7,7 @@ import "package:flutter/material.dart";
 
 import "../api/api_client.dart";
 import "../auth/auth_controller.dart";
+import "../auth/require_account.dart";
 import "../constants/enums.dart";
 import "../feed/feed_api.dart";
 import "../feed/feed_controller.dart";
@@ -21,10 +22,8 @@ import "../services/notification_service.dart";
 import "../services/push_prompt_service.dart";
 import "../shopping/shopping_list_controller.dart";
 import "../theme/theme_controller.dart";
-import "../utils/error_utils.dart";
 import "../utils/ui_utils.dart";
 import "create_recipe_screen.dart";
-import "email_verification_screen.dart";
 import "home_screen.dart";
 import "notifications_screen.dart";
 import "profile_screen.dart";
@@ -70,6 +69,9 @@ class _FeedShellScreenState extends State<FeedShellScreen>
   late final NotificationApi _notificationApi;
   StreamSubscription<String>? _fcmTokenRefreshSub;
 
+  /// Auth state the shell last reacted to (see [_onAuthChanged]).
+  late bool _wasSignedIn;
+
   // Tour keys
   final GlobalKey _feedKey = GlobalKey();
   final GlobalKey _searchKey = GlobalKey();
@@ -84,6 +86,7 @@ class _FeedShellScreenState extends State<FeedShellScreen>
     feed = FeedController(
       feedApi: FeedApi(widget.apiClient),
       recipeApi: RecipeApi(widget.apiClient),
+      isSignedIn: () => widget.auth.isLoggedIn,
     );
     _feedViewController = FeedViewController();
     _flushPendingSeenIds().then((_) => feed.loadInitial());
@@ -93,8 +96,12 @@ class _FeedShellScreenState extends State<FeedShellScreen>
     // Note: We don't add a listener that calls setState here.
     // Instead, we use ListenableBuilder in the widget tree to only rebuild
     // the notification badge, not the entire screen.
-    _notificationController.refreshUnreadCount();
-    _registerFcmToken();
+    _wasSignedIn = widget.auth.isLoggedIn;
+    if (_wasSignedIn) {
+      _notificationController.refreshUnreadCount();
+      _registerFcmToken();
+    }
+    widget.auth.addListener(_onAuthChanged);
     NotificationService().onNotificationTap = _navigateFromNotification;
     final pendingTap = NotificationService().pendingTap;
     if (pendingTap != null) {
@@ -110,8 +117,41 @@ class _FeedShellScreenState extends State<FeedShellScreen>
       }
     };
 
-    // Check and show tour for first-time users
-    _checkAndShowTour();
+    // A stored session the server rejected: offer to log back in once.
+    // Otherwise show the tour on a device's first launch.
+    if (widget.auth.sessionExpired) {
+      widget.auth.sessionExpired = false;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) requireAccount(context, widget.auth, AccountReason.sessionExpired);
+      });
+    } else {
+      _checkAndShowTour();
+    }
+  }
+
+  /// The shell stays mounted across sign-in and sign-out, so per-account
+  /// setup that used to run in initState runs here on each transition.
+  void _onAuthChanged() {
+    final signedIn = widget.auth.isLoggedIn;
+    if (signedIn == _wasSignedIn) return;
+    _wasSignedIn = signedIn;
+
+    if (signedIn) {
+      // Seen IDs queued while browsing as a guest now count for the account.
+      // The feed keeps its loaded items so the user stays where they were.
+      _flushPendingSeenIds();
+      _registerFcmToken();
+      _notificationController.refreshUnreadCount();
+      widget.shoppingListController.syncWithServer();
+    } else {
+      _fcmTokenRefreshSub?.cancel();
+      _fcmTokenRefreshSub = null;
+      widget.auth.onBeforeLogout = null;
+      _notificationController.clear();
+      widget.shoppingListController.clearLocal();
+      _ensureHomeTab();
+      feed.refresh();
+    }
   }
 
   Future<void> _flushPendingSeenIds() async {
@@ -127,16 +167,13 @@ class _FeedShellScreenState extends State<FeedShellScreen>
   }
 
   Future<void> _checkAndShowTour() async {
-    final userId = widget.auth.me?["id"]?.toString();
-    if (userId == null || userId.isEmpty) return;
-    final tourCompleted = await AppTourService.hasTourCompleted(userId);
+    final tourCompleted = await AppTourService.hasTourCompleted();
     if (!tourCompleted && mounted) {
       // Delay to ensure widgets are built
       Future.delayed(const Duration(seconds: 1), () {
         if (mounted) {
           AppTourService.showTour(
             context,
-            userId: userId,
             feedKey: _feedKey,
             searchKey: _searchKey,
             createKey: _createKey,
@@ -148,89 +185,10 @@ class _FeedShellScreenState extends State<FeedShellScreen>
     }
   }
 
-  /// Returns true if the user is allowed to perform a write action.
-  /// Shows a bottom sheet gate if email is not verified.
-  Future<bool> _checkEmailVerified() async {
-    // me not loaded yet (slow network at startup) — fetch it now.
-    if (widget.auth.me == null && widget.auth.isLoggedIn) {
-      await widget.auth.refreshMe();
-    }
-    if (widget.auth.me == null || widget.auth.emailVerified) return true;
-
-    final email = widget.auth.me?['email']?.toString() ?? '';
-    bool openVerification = false;
-    await showModalBottomSheet<void>(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) {
-        final l = AppLocalizations.of(ctx);
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2))),
-              const SizedBox(height: 20),
-              const Text('📧', style: TextStyle(fontSize: 40)),
-              const SizedBox(height: 12),
-              Text(
-                l?.emailGateTitle ?? 'Verify your email first',
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                l?.emailGateMessage(email) ?? 'To continue, please verify your email address ($email).',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-              ),
-              const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    openVerification = true;
-                    Navigator.of(ctx).pop();
-                  },
-                  child: Text(l?.emailGateButton ?? 'Verify email'),
-                ),
-              ),
-              const SizedBox(height: 8),
-              TextButton(
-                onPressed: () => Navigator.of(ctx).pop(),
-                child: Text(l?.attPermissionSkip ?? 'Not now'),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-    if (openVerification) {
-      await _openVerificationScreen(codeSent: widget.auth.verificationEmailSent);
-    }
-    return false;
-  }
-
-  Future<void> _openVerificationScreen({bool codeSent = false}) async {
-    final navigator = Navigator.of(context);
-    final verified = await navigator.push<bool>(
-      MaterialPageRoute(
-        builder: (_) => EmailVerificationScreen(
-          auth: widget.auth,
-          email: widget.auth.me?['email'] ?? '',
-          codeSent: codeSent,
-        ),
-      ),
-    );
-    if (verified == true) {
-      await widget.auth.refreshMe();
-    }
-  }
-
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    widget.auth.removeListener(_onAuthChanged);
     feed.dispose();
     _feedViewController.dispose();
     _feedScrollController.dispose();
@@ -265,6 +223,7 @@ class _FeedShellScreenState extends State<FeedShellScreen>
     if (token != null) {
       _notificationApi.registerFcmToken(token, platform).catchError((_) {});
     }
+    _fcmTokenRefreshSub?.cancel();
     _fcmTokenRefreshSub = FirebaseMessaging.instance.onTokenRefresh.listen(
       (newToken) => _notificationApi.registerFcmToken(newToken, platform).catchError((_) {}),
     );
@@ -389,7 +348,9 @@ class _FeedShellScreenState extends State<FeedShellScreen>
             feed: feed,
             feedViewController: _feedViewController,
             scrollController: _feedScrollController,
-            onNotificationRefresh: _notificationController.refreshUnreadCount,
+            onNotificationRefresh: () {
+              if (widget.auth.isLoggedIn) _notificationController.refreshUnreadCount();
+            },
             shoppingListController: widget.shoppingListController,
           ),
           NotificationsScreen(
@@ -414,10 +375,11 @@ class _FeedShellScreenState extends State<FeedShellScreen>
             onHomeTap: _onHomeTap,
             onNotificationsTap: () {
                 _setPage(1);
-                _notificationController.silentRefresh();
+                if (widget.auth.isLoggedIn) _notificationController.silentRefresh();
               },
             onAddRecipeTap: () async {
-              if (!await _checkEmailVerified()) return;
+              if (!await requireVerifiedAccount(context, widget.auth, AccountReason.create)) return;
+              if (!context.mounted) return;
               if (widget.auth.isSoftBanned || widget.auth.isPermanentlyBanned) {
                 final localizations = AppLocalizations.of(context);
                 final bannedUntil = widget.auth.softBannedUntil;
@@ -768,6 +730,89 @@ class _FeedShellDrawerState extends State<_FeedShellDrawer> {
     );
   }
 
+  /// Closes the drawer, then (for guests) asks for an account before
+  /// running [action]. The drawer is gone by then, so everything goes
+  /// through the root navigator.
+  Future<void> _closeAndRequireAccount(AccountReason reason, void Function(NavigatorState) action) async {
+    final navigator = Navigator.of(context);
+    navigator.pop();
+    if (!await requireAccount(navigator.context, widget.auth, reason)) return;
+    if (navigator.mounted) action(navigator);
+  }
+
+  void _openSettings() {
+    Navigator.of(context).pop();
+    Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => SettingsScreen(
+        themeController: widget.themeController,
+        languageController: widget.languageController,
+        feedViewController: widget.feedViewController,
+        auth: widget.auth,
+        apiClient: widget.apiClient,
+      ),
+    ));
+  }
+
+  Widget _buildGuestHeader(BuildContext context, AppLocalizations? localizations) {
+    const primaryColor = Color(0xFF53B175);
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        color: primaryColor,
+        padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.asset("assets/icon/app_icon.png", width: 48, height: 48, fit: BoxFit.cover),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    localizations?.guestDrawerTitle ?? "Join Yummy",
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 17),
+                  ),
+                ),
+                GestureDetector(
+                  onTap: _openSettings,
+                  child: Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white.withValues(alpha: 0.18),
+                    ),
+                    child: const Icon(Icons.settings_outlined, color: Colors.white, size: 20),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Text(
+              localizations?.guestDrawerBody ?? "Save recipes, follow cooks and share your own.",
+              style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 13),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: () => _closeAndRequireAccount(AccountReason.account, (_) {}),
+                style: FilledButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: primaryColor,
+                ),
+                child: Text(localizations?.guestSignUpOrLogIn ?? "Sign up or log in"),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildProfileHeader(BuildContext context, AppLocalizations? localizations) {
     const primaryColor = Color(0xFF53B175);
     final me = widget.auth.me;
@@ -895,18 +940,7 @@ class _FeedShellDrawerState extends State<_FeedShellDrawer> {
                       ),
                       const SizedBox(width: 10),
                       GestureDetector(
-                        onTap: () {
-                          Navigator.of(context).pop();
-                          Navigator.of(context).push(MaterialPageRoute(
-                            builder: (_) => SettingsScreen(
-                              themeController: widget.themeController,
-                              languageController: widget.languageController,
-                              feedViewController: widget.feedViewController,
-                              auth: widget.auth,
-                              apiClient: widget.apiClient,
-                            ),
-                          ));
-                        },
+                        onTap: _openSettings,
                         child: Container(
                           width: 36,
                           height: 36,
@@ -956,6 +990,7 @@ class _FeedShellDrawerState extends State<_FeedShellDrawer> {
 
   Widget _buildLibraryGrid(BuildContext context, AppLocalizations? localizations) {
     final counts = _libraryCounts;
+    final signedIn = widget.auth.isLoggedIn;
     return Column(
       children: [
         Row(
@@ -964,20 +999,19 @@ class _FeedShellDrawerState extends State<_FeedShellDrawer> {
               child: _LibraryGridCard(
                 icon: Icons.bookmark_outline_rounded,
                 title: localizations?.savedRecipes ?? "Saved Recipes",
-                loading: counts == null,
+                loading: signedIn && counts == null,
                 subtitle: counts != null
                     ? localizations?.nSaved(counts.savedRecipes) ?? "${counts.savedRecipes} saved"
                     : null,
-                onTap: () {
-                  Navigator.of(context).pop();
-                  Navigator.of(context).push(MaterialPageRoute(
+                onTap: () => _closeAndRequireAccount(AccountReason.save, (navigator) {
+                  navigator.push(MaterialPageRoute(
                     builder: (_) => SavedRecipesScreen(
                       apiClient: widget.apiClient,
                       auth: widget.auth,
                       shoppingListController: widget.shoppingListController,
                     ),
                   ));
-                },
+                }),
               ),
             ),
             const SizedBox(width: 8),
@@ -989,17 +1023,16 @@ class _FeedShellDrawerState extends State<_FeedShellDrawer> {
                   return _LibraryGridCard(
                     icon: Icons.shopping_cart_outlined,
                     title: localizations?.shoppingList ?? "Shopping List",
-                    subtitle: "$count ${localizations?.items ?? "items"}",
-                    onTap: () {
-                      Navigator.of(context).pop();
-                      Navigator.of(context).push(MaterialPageRoute(
+                    subtitle: signedIn ? "$count ${localizations?.items ?? "items"}" : null,
+                    onTap: () => _closeAndRequireAccount(AccountReason.shoppingList, (navigator) {
+                      navigator.push(MaterialPageRoute(
                         builder: (_) => ShoppingListScreen(
                           controller: widget.shoppingListController,
                           apiClient: widget.apiClient,
                           auth: widget.auth,
                         ),
                       ));
-                    },
+                    }),
                   );
                 },
               ),
@@ -1013,20 +1046,19 @@ class _FeedShellDrawerState extends State<_FeedShellDrawer> {
               child: _LibraryGridCard(
                 icon: Icons.folder_shared_outlined,
                 title: localizations?.sharedRecipes ?? "Shared Recipes",
-                loading: counts == null,
+                loading: signedIn && counts == null,
                 subtitle: counts != null
                     ? localizations?.nSaved(counts.sharedRecipes) ?? "${counts.sharedRecipes} saved"
                     : null,
-                onTap: () {
-                  Navigator.of(context).pop();
-                  Navigator.of(context).push(MaterialPageRoute(
+                onTap: () => _closeAndRequireAccount(AccountReason.account, (navigator) {
+                  navigator.push(MaterialPageRoute(
                     builder: (_) => SharedRecipesScreen(
                       apiClient: widget.apiClient,
                       auth: widget.auth,
                       shoppingListController: widget.shoppingListController,
                     ),
                   ));
-                },
+                }),
               ),
             ),
             const SizedBox(width: 8),
@@ -1034,20 +1066,19 @@ class _FeedShellDrawerState extends State<_FeedShellDrawer> {
               child: _LibraryGridCard(
                 icon: Icons.shopping_basket_outlined,
                 title: localizations?.sharedShoppingLists ?? "Shared Shopping Lists",
-                loading: counts == null,
+                loading: signedIn && counts == null,
                 subtitle: counts != null
                     ? "${counts.sharedShoppingLists} ${localizations?.items ?? "items"}"
                     : null,
-                onTap: () {
-                  Navigator.of(context).pop();
-                  Navigator.of(context).push(MaterialPageRoute(
+                onTap: () => _closeAndRequireAccount(AccountReason.account, (navigator) {
+                  navigator.push(MaterialPageRoute(
                     builder: (_) => SharedShoppingListsScreen(
                       apiClient: widget.apiClient,
                       auth: widget.auth,
                       shoppingListController: widget.shoppingListController,
                     ),
                   ));
-                },
+                }),
               ),
             ),
           ],
@@ -1069,10 +1100,11 @@ class _FeedShellDrawerState extends State<_FeedShellDrawer> {
             return ListView(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                     children: <Widget>[
-                      if (widget.auth.isLoggedIn) ...[
-                        _buildProfileHeader(context, localizations),
-                        const SizedBox(height: 24),
-                      ],
+                      if (widget.auth.isLoggedIn)
+                        _buildProfileHeader(context, localizations)
+                      else
+                        _buildGuestHeader(context, localizations),
+                      const SizedBox(height: 24),
                       _SectionHeader(title: localizations?.feed ?? "FEED"),
                       const SizedBox(height: 8),
                       _buildExpandableScope(
@@ -1104,11 +1136,12 @@ class _FeedShellDrawerState extends State<_FeedShellDrawer> {
                         title: localizations?.following ?? "Following",
                         enabled: widget.auth.isLoggedIn,
                         onDisabledTap: () {
-                          Navigator.of(context).pop();
-                          ErrorUtils.showInfo(
-                            context,
-                            localizations?.logInToSeeFollowingFeed ?? "Log in to see Following feed",
-                          );
+                          final feed = widget.feed;
+                          final onNavigateToFeed = widget.onNavigateToFeed;
+                          _closeAndRequireAccount(AccountReason.following, (_) {
+                            feed.setScopeAndOptions(newScope: FeedScope.following, newSort: FeedSort.recent);
+                            onNavigateToFeed();
+                          });
                         },
                         subItems: [
                           _SubItem(
@@ -1164,12 +1197,10 @@ class _FeedShellDrawerState extends State<_FeedShellDrawer> {
                           ),
                         ],
                       ),
-                      if (widget.auth.isLoggedIn) ...[
-                        const SizedBox(height: 24),
-                        _SectionHeader(title: localizations?.library ?? "LIBRARY"),
-                        const SizedBox(height: 8),
-                        _buildLibraryGrid(context, localizations),
-                      ],
+                      const SizedBox(height: 24),
+                      _SectionHeader(title: localizations?.library ?? "LIBRARY"),
+                      const SizedBox(height: 8),
+                      _buildLibraryGrid(context, localizations),
                       const SizedBox(height: 24),
                       Row(
                         children: [

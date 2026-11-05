@@ -1,5 +1,6 @@
 import "package:flutter/material.dart";
 
+import "../analytics/analytics_api.dart";
 import "../api/api_client.dart";
 import "../auth/auth_controller.dart";
 import "../localization/app_localizations.dart";
@@ -9,6 +10,7 @@ import "../search/search_models.dart";
 import "../shopping/shopping_list_controller.dart";
 import "../utils/error_utils.dart";
 import "../widgets/empty_state_widget.dart";
+import "../widgets/search/search_notice.dart";
 
 class PantrySearchScreen extends StatefulWidget {
   const PantrySearchScreen({
@@ -42,6 +44,18 @@ class _PantrySearchScreenState extends State<PantrySearchScreen> {
   String? _error;
   int _matchThreshold = 70;
 
+  // What the current results were searched with. Chips and the slider stay
+  // editable, so paging must reuse these, not the live values.
+  List<String> _searchedIngredients = const [];
+  int _searchedThreshold = 70;
+
+  // Bumped on every new search; responses for an older one are dropped.
+  int _gen = 0;
+
+  /// Nothing reached the threshold; showing the closest recipes below it.
+  bool _relaxed = false;
+  List<SearchCorrection> _corrections = const [];
+
   @override
   void initState() {
     super.initState();
@@ -60,19 +74,23 @@ class _PantrySearchScreenState extends State<PantrySearchScreen> {
   void _onScroll() {
     if (_scrollController.hasClients &&
         _scrollController.position.pixels > _scrollController.position.maxScrollExtent - 300 &&
+        !_isLoading &&
         !_isLoadingMore &&
         _nextCursor != null) {
       _loadMore();
     }
   }
 
-  void _addIngredient(String ingredient) {
-    final trimmed = ingredient.trim().toLowerCase();
-    if (trimmed.isEmpty) return;
-    if (_selectedIngredients.contains(trimmed)) return;
-
+  /// Adds one chip per comma-separated entry ("ქათამი, ხახვი" → 2 chips).
+  void _addIngredient(String input) {
+    final entries = input
+        .split(",")
+        .map((e) => e.trim().toLowerCase())
+        .where((e) => e.isNotEmpty);
     setState(() {
-      _selectedIngredients.add(trimmed);
+      for (final entry in entries) {
+        if (!_selectedIngredients.contains(entry)) _selectedIngredients.add(entry);
+      }
       _ingredientController.clear();
     });
   }
@@ -89,50 +107,76 @@ class _PantrySearchScreenState extends State<PantrySearchScreen> {
       return;
     }
 
+    _focusNode.unfocus(); // let the results show instead of the keyboard
+    final gen = ++_gen;
+    final ingredients = List<String>.unmodifiable(_selectedIngredients);
+    final threshold = _matchThreshold;
+
     setState(() {
       _isLoading = true;
+      _isLoadingMore = false;
       _error = null;
       _results = [];
       _nextCursor = null;
+      _relaxed = false;
+      _corrections = const [];
       _hasSearched = true;
       _chipsExpanded = false;
+      _searchedIngredients = ingredients;
+      _searchedThreshold = threshold;
     });
 
     try {
       final response = await searchApi.searchByIngredients(
-        haveIngredients: _selectedIngredients,
-        matchThreshold: _matchThreshold,
+        haveIngredients: ingredients,
+        matchThreshold: threshold,
+        relaxed: true,
       );
 
-      if (!mounted) return;
+      if (!mounted || gen != _gen) return;
 
       setState(() {
         _results = response.items;
         _nextCursor = response.nextCursor;
+        _relaxed = response.relaxed;
+        _corrections = response.corrections;
         _isLoading = false;
       });
+
+      // Pantry searches weren't tracked before; this is the data for tuning.
+      AnalyticsApi(widget.apiClient).trackSearch(
+        query: ingredients.join(", "),
+        filters: {
+          "mode": "pantry",
+          "threshold": threshold,
+          "relaxed": response.relaxed,
+          "results": response.items.length,
+        },
+      );
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted || gen != _gen) return;
       setState(() {
-        _error = e.toString();
+        _error = ErrorUtils.getUserFriendlyMessage(e, context);
         _isLoading = false;
       });
     }
   }
 
   Future<void> _loadMore() async {
-    if (_isLoadingMore || _nextCursor == null) return;
+    if (_isLoading || _isLoadingMore || _nextCursor == null) return;
+    final gen = _gen;
 
     setState(() => _isLoadingMore = true);
 
     try {
       final response = await searchApi.searchByIngredients(
-        haveIngredients: _selectedIngredients,
-        matchThreshold: _matchThreshold,
+        haveIngredients: _searchedIngredients,
+        matchThreshold: _searchedThreshold,
+        relaxed: true,
         cursor: _nextCursor,
       );
 
-      if (!mounted) return;
+      if (!mounted || gen != _gen) return;
 
       setState(() {
         _results.addAll(response.items);
@@ -140,7 +184,7 @@ class _PantrySearchScreenState extends State<PantrySearchScreen> {
         _isLoadingMore = false;
       });
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted || gen != _gen) return;
       setState(() => _isLoadingMore = false);
     }
   }
@@ -206,7 +250,7 @@ class _PantrySearchScreenState extends State<PantrySearchScreen> {
           children: [
             Text(localizations?.somethingWentWrong ?? "Something went wrong"),
             const SizedBox(height: 8),
-            Text(_error!, style: Theme.of(context).textTheme.bodySmall),
+            Text(_error!, style: Theme.of(context).textTheme.bodySmall, textAlign: TextAlign.center),
             const SizedBox(height: 16),
             FilledButton(
               onPressed: _search,
@@ -233,11 +277,32 @@ class _PantrySearchScreenState extends State<PantrySearchScreen> {
       );
     }
 
+    final notices = <String>[
+      for (final c in _corrections)
+        localizations?.pantryCorrection(c.from, c.to) ?? "Searched for “${c.to}” instead of “${c.from}”",
+      if (_relaxed)
+        localizations?.pantryRelaxedNotice(_searchedThreshold) ??
+            "No recipe reaches $_searchedThreshold% — showing the closest matches",
+    ];
+    final headerCount = notices.isEmpty ? 0 : 1;
+
     return ListView.builder(
       controller: _scrollController,
       padding: const EdgeInsets.all(16),
-      itemCount: _results.length + (_isLoadingMore ? 1 : 0),
-      itemBuilder: (context, index) {
+      itemCount: headerCount + _results.length + (_isLoadingMore ? 1 : 0),
+      itemBuilder: (context, i) {
+        if (i < headerCount) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Column(
+              children: [
+                for (final text in notices)
+                  SearchNotice(text, padding: const EdgeInsets.only(bottom: 4)),
+              ],
+            ),
+          );
+        }
+        final index = i - headerCount;
         if (index == _results.length) {
           return const Center(
             child: Padding(
@@ -476,6 +541,31 @@ class _RecipeMatchCard extends StatelessWidget {
                           "${localizations?.missing ?? "Missing"}: ${match.missing.join(", ")}",
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                 color: Theme.of(context).colorScheme.error,
+                              ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+
+                // Staples the percentage assumes you have (salt, water, oil…)
+                if (match.staples.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(
+                        Icons.kitchen_outlined,
+                        size: 16,
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          localizations?.pantryStaples(match.staples.join(", ")) ??
+                              "You probably have: ${match.staples.join(", ")}",
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                               ),
                         ),
                       ),

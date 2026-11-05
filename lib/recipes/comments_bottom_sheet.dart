@@ -4,10 +4,10 @@ import 'package:flutter/services.dart';
 import '../analytics/analytics_service.dart';
 import '../api/api_client.dart';
 import '../auth/auth_controller.dart';
+import '../auth/require_account.dart';
 import '../localization/app_localizations.dart';
 import '../reports/report_bottom_sheet.dart';
 import '../reports/report_models.dart';
-import '../utils/email_verification_gate.dart';
 import '../utils/error_utils.dart';
 import '../widgets/common/app_bottom_sheet.dart';
 import 'comment_input_section.dart';
@@ -185,8 +185,19 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
     }
   }
 
-  void _onReply(Comment c) {
+  /// Commenting needs a verified account. Returns true once the user has one
+  /// (a guest signs up and verifies in one go).
+  Future<bool> _requireCommentAccess() async {
+    final auth = widget.auth;
+    if (auth == null) return false;
+    final ok = await requireVerifiedAccount(context, auth, AccountReason.comment);
+    if (mounted) setState(() {}); // input section depends on auth state
+    return ok && mounted;
+  }
+
+  Future<void> _onReply(Comment c) async {
     HapticFeedback.lightImpact();
+    if (!await _requireCommentAccess()) return;
     setState(() {
       _replyingToId = c.id;
       _replyingToUsername = c.authorUsername;
@@ -261,11 +272,10 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
 
   Future<void> _onReportComment(String commentId) async {
     HapticFeedback.lightImpact();
-    if (!(widget.auth?.isLoggedIn ?? false)) {
-      final localizations = AppLocalizations.of(context);
-      ErrorUtils.showError(context, localizations?.pleaseLogInToReportComments ?? "Please log in to report comments");
-      return;
-    }
+    final auth = widget.auth;
+    if (auth == null || !await requireAccount(context, auth, AccountReason.report)) return;
+    if (!mounted) return;
+    setState(() {});
     await showReportBottomSheet(
       context: context,
       targetType: ReportTargetType.comment,
@@ -277,17 +287,12 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
   Future<void> _submitComment() async {
     final content = _commentController.text.trim();
     if (content.isEmpty) return;
-    if (!(widget.auth?.isLoggedIn ?? false)) {
-      final localizations = AppLocalizations.of(context);
-      ErrorUtils.showInfo(context, localizations?.pleaseLogInToComment ?? "Please log in to comment");
-      return;
-    }
     if (widget.auth?.isSoftBanned == true || widget.auth?.isPermanentlyBanned == true) {
       final localizations = AppLocalizations.of(context);
       ErrorUtils.showError(context, localizations?.cannotCommentWhileBanned ?? "You cannot comment while your account is suspended");
       return;
     }
-    if (!await checkEmailVerified(context, widget.auth!)) return;
+    if (!await _requireCommentAccess()) return;
 
     HapticFeedback.lightImpact();
 
@@ -309,12 +314,9 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
       });
       widget.onCommentPosted?.call();
     } catch (e) {
-      if (mounted) {
-        if (e is ApiException && e.statusCode == 403 && e.details is Map && (e.details as Map)['code'] == 'EMAIL_UNVERIFIED') {
-          await checkEmailVerified(context, widget.auth!);
-        } else {
-          ErrorUtils.showError(context, e);
-        }
+      final auth = widget.auth;
+      if (mounted && !(auth != null && await handleAuthError(context, auth, e, AccountReason.comment)) && mounted) {
+        ErrorUtils.showError(context, e);
       }
     } finally {
       if (mounted) {
@@ -442,6 +444,9 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
               isSubmitting: _isSubmitting,
               hasText: _hasText,
               onSubmit: _submitComment,
+              onRequestAccount: () async {
+                if (await _requireCommentAccess()) _focusNode.requestFocus();
+              },
               onCancelReply: () => setState(() {
                 _replyingToId = null;
                 _replyingToUsername = null;

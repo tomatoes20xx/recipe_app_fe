@@ -16,6 +16,7 @@ class CommentInputSection extends StatelessWidget {
     required this.hasText,
     required this.onSubmit,
     required this.onCancelReply,
+    this.onRequestAccount,
   });
 
   final AuthController? auth;
@@ -27,6 +28,9 @@ class CommentInputSection extends StatelessWidget {
   final bool hasText;
   final VoidCallback onSubmit;
   final VoidCallback onCancelReply;
+
+  /// Guests see a "Log in to comment" button that calls this.
+  final VoidCallback? onRequestAccount;
 
   @override
   Widget build(BuildContext context) {
@@ -72,14 +76,18 @@ class CommentInputSection extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Divider(height: 1, color: colorScheme.outlineVariant.withValues(alpha: 0.3)),
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Text(
-              localizations?.logInToComment ?? "Log in to comment",
-              style: textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurface.withValues(alpha: 0.45),
+          SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: SizedBox(
+                width: double.infinity,
+                child: TextButton.icon(
+                  onPressed: onRequestAccount,
+                  icon: const Icon(Icons.chat_bubble_outline, size: 18),
+                  label: Text(localizations?.logInToComment ?? "Log in to comment"),
+                ),
               ),
-              textAlign: TextAlign.center,
             ),
           ),
         ],

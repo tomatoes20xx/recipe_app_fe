@@ -2,6 +2,7 @@ import "package:flutter/foundation.dart";
 
 import "../analytics/analytics_service.dart";
 import "../api/api_client.dart";
+import "../services/google_auth_service.dart";
 import "auth_api.dart";
 import "token_storage.dart";
 
@@ -52,6 +53,10 @@ class AuthController extends ChangeNotifier {
   /// when the user returns to a write action after already requesting a code.
   bool verificationEmailSent = false;
 
+  /// Set when [bootstrap] found a stored session the server no longer accepts.
+  /// The shell shows a one-time "welcome back, log in" prompt for it.
+  bool sessionExpired = false;
+
   /// Refresh the cached /me data and notify listeners (e.g. after email verification)
   Future<void> refreshMe() async {
     try {
@@ -81,6 +86,7 @@ class AuthController extends ChangeNotifier {
         me = await authApi.me().timeout(const Duration(seconds: 10));
       } on ApiException catch (e) {
         if (e.statusCode == 401 || e.statusCode == 403) {
+          sessionExpired = true;
           await logout();
           return;
         }
@@ -227,11 +233,14 @@ class AuthController extends ChangeNotifier {
     try {
       await onBeforeLogout?.call();
     } catch (_) {}
+    // So the next Google sign-in shows the account picker again.
+    GoogleAuthService().signOut();
     try {
       await tokenStorage.deleteToken();
     } finally {
       token = null;
       me = null;
+      verificationEmailSent = false;
       notifyListeners();
     }
   }

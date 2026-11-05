@@ -1,6 +1,7 @@
 import "package:flutter/material.dart";
 import "../api/api_client.dart";
 import "../auth/auth_controller.dart";
+import "../auth/require_account.dart";
 import "../localization/app_localizations.dart";
 import "../notifications/notification_api.dart";
 import "../notifications/notification_controller.dart";
@@ -39,9 +40,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   void initState() {
     super.initState();
     widget.notificationController.addListener(_onControllerChanged);
+    _wasSignedIn = widget.auth.isLoggedIn;
+    widget.auth.addListener(_onAuthChanged);
     _scrollController.addListener(_onScroll);
     // Defer loading until after the build phase completes
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Guests have no notifications; the guest state asks them to sign up.
+      if (!widget.auth.isLoggedIn) return;
       // Always refresh notifications when entering this screen
       if (widget.notificationController.items.isEmpty) {
         widget.notificationController.loadInitial();
@@ -64,9 +69,21 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }
   }
 
+  late bool _wasSignedIn;
+
+  void _onAuthChanged() {
+    final signedIn = widget.auth.isLoggedIn;
+    if (signedIn == _wasSignedIn) return;
+    _wasSignedIn = signedIn;
+    if (!mounted) return;
+    setState(() {});
+    if (signedIn) widget.notificationController.loadInitial(unreadOnly: _showUnreadOnly);
+  }
+
   @override
   void dispose() {
     widget.notificationController.removeListener(_onControllerChanged);
+    widget.auth.removeListener(_onAuthChanged);
     _scrollController.dispose();
     // Don't dispose the controller - it's owned by FeedShellScreen
     super.dispose();
@@ -359,8 +376,25 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }
   }
 
+  Widget _buildGuestState(BuildContext context) {
+    final localizations = AppLocalizations.of(context);
+    return Scaffold(
+      appBar: AppBar(title: Text(localizations?.notifications ?? "Notifications")),
+      body: EmptyStateWidget(
+        icon: Icons.notifications_none,
+        title: localizations?.guestNotificationsTitle ?? "Stay in the loop",
+        description: localizations?.guestNotificationsBody ??
+            "Create an account to get notified when people like and comment on your recipes.",
+        actionLabel: localizations?.createAccount ?? "Create account",
+        actionIcon: Icons.person_add_outlined,
+        onAction: () => requireAccount(context, widget.auth, AccountReason.notifications),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (!widget.auth.isLoggedIn) return _buildGuestState(context);
     return Scaffold(
       appBar: AppBar(
         title: Builder(

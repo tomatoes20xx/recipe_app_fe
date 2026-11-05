@@ -3,16 +3,34 @@ import "package:flutter_secure_storage/flutter_secure_storage.dart";
 
 import "../api/api_client.dart";
 import "../auth/auth_controller.dart";
+import "../auth/google_sign_in_flow.dart";
 import "../localization/app_localizations.dart";
-import "../services/google_auth_service.dart";
 import "../utils/error_utils.dart";
 import "forgot_password_screen.dart";
 import "terms_and_privacy_screen.dart";
-import "username_selection_screen.dart";
 
+/// Email login / sign-up, opened on top of the app when a guest picks an
+/// account option. Pops `true` once the user is signed in.
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key, required this.auth});
+  const LoginScreen({super.key, required this.auth, this.signUp = false});
   final AuthController auth;
+
+  /// Start in sign-up mode instead of login.
+  final bool signUp;
+
+  /// Route name, so the password-reset flow can return here.
+  static const routeName = "/login";
+
+  /// Pushes the screen and resolves to true when the user signed in.
+  static Future<bool> open(NavigatorState navigator, AuthController auth, {required bool signUp}) async {
+    final result = await navigator.push<bool>(
+      MaterialPageRoute(
+        settings: const RouteSettings(name: routeName),
+        builder: (_) => LoginScreen(auth: auth, signUp: signUp),
+      ),
+    );
+    return result == true && auth.isLoggedIn;
+  }
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -24,10 +42,9 @@ class _LoginScreenState extends State<LoginScreen>
   final _passwordController = TextEditingController();
   final _usernameController = TextEditingController();
   final _displayNameController = TextEditingController();
-  final _googleAuthService = GoogleAuthService();
   final _storage = const FlutterSecureStorage();
 
-  bool _isSignUp = false;
+  late bool _isSignUp = widget.signUp;
   bool _obscurePassword = true;
   bool _rememberMe = false;
   bool _termsAccepted = false;
@@ -130,59 +147,20 @@ class _LoginScreenState extends State<LoginScreen>
     }
   }
 
-  // ── Google Sign-In ──
+  /// Signed in: hand control back to whoever opened this screen.
+  void _finish() {
+    if (mounted && widget.auth.isLoggedIn) Navigator.of(context).pop(true);
+  }
 
+  // ── Google Sign-In ──
 
   Future<void> _handleGoogleSignIn() async {
     if (_isSubmitting) return;
     setState(() { _isSubmitting = true; error = null; });
-    final localizations = AppLocalizations.of(context);
 
     try {
-      final account = await _googleAuthService.signInWithGoogle();
-      if (account == null) return;
-
-      final idToken = await _googleAuthService.getIdToken(account);
-      if (idToken == null) {
-        throw Exception("Failed to get ID token");
-      }
-
-      final response = await widget.auth.loginWithGoogle(idToken);
-
-      if (response.needsUsername && response.tempToken != null) {
-        if (mounted) {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => UsernameSelectionScreen(
-                tempToken: response.tempToken!,
-                suggestedDisplayName: response.suggestedDisplayName,
-                authApi: widget.auth.authApi,
-                authController: widget.auth,
-                avatarUrl: response.avatarUrl,
-                email: response.email,
-              ),
-            ),
-          );
-        }
-      } else {
-        await _saveRememberMePreference();
-      }
-    } on ApiException catch (e) {
-      if (e.statusCode == 403) {
-        if (!mounted) return;
-        _showBannedDialog(localizations);
-        return;
-      }
-      setState(() => error = e.message);
-      if (mounted) {
-        ErrorUtils.showError(context, e);
-      }
-    } catch (e) {
-      const errorMessage = "Google Sign-In failed. Please try again.";
-      setState(() => error = errorMessage);
-      if (mounted) {
-        ErrorUtils.showError(context, localizations?.googleSignInFailed ?? errorMessage);
-      }
+      final signedIn = await signInWithGoogleFlow(Navigator.of(context), widget.auth);
+      if (signedIn) _finish();
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
@@ -193,7 +171,6 @@ class _LoginScreenState extends State<LoginScreen>
   Future<void> _handleEmailLogin() async {
     if (_isSubmitting) return;
     setState(() { _isSubmitting = true; error = null; });
-    final localizations = AppLocalizations.of(context);
 
     try {
       await widget.auth.login(
@@ -202,10 +179,11 @@ class _LoginScreenState extends State<LoginScreen>
         rememberMe: _rememberMe,
       );
       await _saveRememberMePreference();
+      _finish();
     } on ApiException catch (e) {
       if (e.statusCode == 403) {
         if (!mounted) return;
-        _showBannedDialog(localizations);
+        showBannedDialog(context);
         return;
       }
       setState(() => error = e.message);
@@ -278,7 +256,7 @@ class _LoginScreenState extends State<LoginScreen>
             ? null
             : _displayNameController.text.trim(),
       );
-      // AuthGate rebuilds on notifyListeners() inside signup() and routes to FeedShellScreen.
+      _finish();
     } on ApiException catch (e) {
       setState(() => error = e.message);
     } catch (_) {
@@ -286,26 +264,6 @@ class _LoginScreenState extends State<LoginScreen>
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
-  }
-
-  // ── Helpers ──
-
-  Future<void> _showBannedDialog(AppLocalizations? localizations) async {
-    await showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
-        title: Text(localizations?.accountPermanentlyBanned ?? "Account Permanently Suspended"),
-        content: Text(localizations?.accountPermanentlyBannedMessage ??
-            "Your account has been permanently suspended due to repeated violations of our community guidelines."),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: Text(localizations?.ok ?? "OK"),
-          ),
-        ],
-      ),
-    );
   }
 
   // ── Build ──
@@ -327,7 +285,14 @@ class _LoginScreenState extends State<LoginScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const SizedBox(height: 20),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: IconButton(
+                      icon: const Icon(Icons.close),
+                      tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
+                      onPressed: loading ? null : () => Navigator.of(context).maybePop(false),
+                    ),
+                  ),
                   _buildHeroSection(theme, localizations),
                   const SizedBox(height: 32),
                   _buildGoogleButton(theme, localizations, loading),

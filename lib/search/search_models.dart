@@ -8,12 +8,17 @@ class IngredientMatch {
   final List<String> matched;
   final List<String> missing;
 
+  /// Lines left out of the percentage because everyone has them (salt,
+  /// pepper, water, oil). Empty on backends older than 2026-11-01.
+  final List<String> staples;
+
   IngredientMatch({
     required this.percentage,
     required this.matchedCount,
     required this.totalCount,
     required this.matched,
     required this.missing,
+    this.staples = const [],
   });
 
   factory IngredientMatch.fromJson(Map<String, dynamic> json) {
@@ -23,6 +28,7 @@ class IngredientMatch {
       totalCount: json["total_count"] as int? ?? 0,
       matched: (json["matched"] as List<dynamic>? ?? []).map((e) => e.toString()).toList(),
       missing: (json["missing"] as List<dynamic>? ?? []).map((e) => e.toString()).toList(),
+      staples: (json["staples"] as List<dynamic>? ?? []).map((e) => e.toString()).toList(),
     );
   }
 }
@@ -72,11 +78,31 @@ class SearchResult {
   }
 }
 
+/// A pantry entry the backend corrected before searching ("ქატამი" → "ქათამი").
+class SearchCorrection {
+  final String from;
+  final String to;
+
+  SearchCorrection({required this.from, required this.to});
+}
+
 class SearchResponse {
   final List<SearchResult> items;
   final String? nextCursor;
 
-  SearchResponse({required this.items, required this.nextCursor});
+  /// Pantry search: nothing reached the threshold, so these are the closest
+  /// recipes below it (only when the request sent relaxed=1).
+  final bool relaxed;
+
+  /// Pantry search: entries corrected for typos.
+  final List<SearchCorrection> corrections;
+
+  SearchResponse({
+    required this.items,
+    required this.nextCursor,
+    this.relaxed = false,
+    this.corrections = const [],
+  });
 
   factory SearchResponse.fromJson(Map<String, dynamic> json) {
     final rawItems = (json["items"] as List<dynamic>? ?? []);

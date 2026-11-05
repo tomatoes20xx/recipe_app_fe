@@ -165,7 +165,6 @@ class _CommentListViewState extends State<CommentListView> {
     final timeAgo = formatRelativeTime(context, c.createdAt);
     final hasReplies = node.children.isNotEmpty;
     final isCollapsed = widget.collapsedIds.contains(c.id);
-    final isLoggedIn = widget.auth?.isLoggedIn ?? false;
     final totalReplyCount = _countAllReplies(node);
     final displayName = c.authorDisplayName ?? c.authorUsername;
     final colorScheme = Theme.of(context).colorScheme;
@@ -323,15 +322,14 @@ class _CommentListViewState extends State<CommentListView> {
               const SizedBox(height: 8),
               Row(
                 children: [
-                  if (isLoggedIn)
-                    CommentActionButton(
+                  CommentActionButton(
                       icon: Icons.reply_rounded,
                       label: localizations?.replyAction ?? "Reply",
                       onTap: () => widget.onReply(c),
                       color: colorScheme.onSurface.withValues(alpha: 0.5),
                     ),
                   if (c.viewerIsMe) ...[
-                    if (isLoggedIn) const SizedBox(width: 16),
+                    const SizedBox(width: 16),
                     CommentActionButton(
                       icon: Icons.delete_outline_rounded,
                       label: localizations?.delete ?? "Delete",
@@ -339,7 +337,7 @@ class _CommentListViewState extends State<CommentListView> {
                       color: colorScheme.error.withValues(alpha: 0.7),
                     ),
                   ],
-                  if (isLoggedIn && !c.viewerIsMe) ...[
+                  if (!c.viewerIsMe) ...[
                     const SizedBox(width: 16),
                     CommentActionButton(
                       icon: Icons.flag_outlined,
@@ -349,7 +347,7 @@ class _CommentListViewState extends State<CommentListView> {
                     ),
                   ],
                   if (hasReplies) ...[
-                    if (isLoggedIn || c.viewerIsMe) const SizedBox(width: 16),
+                    const SizedBox(width: 16),
                     CommentActionButton(
                       icon: isCollapsed ? Icons.expand_more_rounded : Icons.expand_less_rounded,
                       label: isCollapsed

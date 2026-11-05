@@ -82,6 +82,17 @@ class AnalyticsService {
     _faLog('email_verify_complete');
   }
 
+  /// A guest (or unverified user) was asked for an account. [reason] is the
+  /// action that triggered it (save, like, comment, …).
+  void logAuthPromptShown(String reason) {
+    _faLog('auth_prompt_shown', params: {'reason': reason});
+  }
+
+  /// What they picked in that prompt: google, emailSignUp, logIn or dismiss.
+  void logAuthPromptChoice(String reason, String method) {
+    _faLog('auth_prompt_choice', params: {'reason': reason, 'method': method});
+  }
+
   // ── Feed ──────────────────────────────────────────────────────────────────
   // These are NOT auto-tracked server-side → hit backend + Firebase.
 

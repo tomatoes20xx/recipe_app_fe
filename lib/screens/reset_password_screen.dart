@@ -2,6 +2,7 @@ import "package:flutter/material.dart";
 import "../auth/auth_controller.dart";
 import "../localization/app_localizations.dart";
 import "../utils/error_utils.dart";
+import "login_screen.dart";
 
 class ResetPasswordScreen extends StatefulWidget {
   const ResetPasswordScreen({
@@ -103,7 +104,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
         // Go back to login screen after a brief delay to show success message
         Future.delayed(const Duration(milliseconds: 500), () {
           if (mounted) {
-            Navigator.of(context).popUntil((route) => route.isFirst);
+            Navigator.of(context).popUntil(
+              (route) => route.settings.name == LoginScreen.routeName || route.isFirst,
+            );
           }
         });
       }
