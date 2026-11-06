@@ -21,22 +21,26 @@ import "../services/app_tour_service.dart";
 import "../services/notification_service.dart";
 import "../services/push_prompt_service.dart";
 import "../shopping/shopping_list_controller.dart";
+import "../theme/app_tokens.dart";
 import "../theme/theme_controller.dart";
+import "../users/streak_controller.dart";
+import "../users/user_api.dart";
 import "../utils/ui_utils.dart";
+import "../widgets/common/profile_avatar.dart";
 import "create_recipe_screen.dart";
 import "home_screen.dart";
 import "notifications_screen.dart";
 import "profile_screen.dart";
-import "saved_recipes_screen.dart";
+import "profile_tab_screen.dart";
 import "search_screen.dart";
-import "settings_screen.dart";
-import "shared_recipes_screen.dart";
 import "shared_shopping_lists_screen.dart";
-import "shopping_list_screen.dart";
 import "../recipes/recipe_detail_screen.dart";
-import "../users/user_api.dart";
-import "../users/user_models.dart";
-import "help_and_support_screen.dart";
+
+// IndexedStack pages, in bottom-nav order. Add opens a screen, not a page.
+const _homePage = 0;
+const _searchPage = 1;
+const _notificationsPage = 2;
+const _profilePage = 3;
 
 class FeedShellScreen extends StatefulWidget {
   const FeedShellScreen({
@@ -60,13 +64,15 @@ class FeedShellScreen extends StatefulWidget {
 
 class _FeedShellScreenState extends State<FeedShellScreen>
     with WidgetsBindingObserver {
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   late final FeedController feed;
   late final FeedViewController _feedViewController;
   final ScrollController _feedScrollController = ScrollController();
-  int _currentIndex = 0;
+  int _currentIndex = _homePage;
   late final NotificationController _notificationController;
   late final NotificationApi _notificationApi;
+
+  /// Shared by the Home streak chip and the Profile tab's streak card.
+  late final StreakController _streakController;
   StreamSubscription<String>? _fcmTokenRefreshSub;
 
   /// Auth state the shell last reacted to (see [_onAuthChanged]).
@@ -77,7 +83,7 @@ class _FeedShellScreenState extends State<FeedShellScreen>
   final GlobalKey _searchKey = GlobalKey();
   final GlobalKey _createKey = GlobalKey();
   final GlobalKey _notificationsKey = GlobalKey();
-  final GlobalKey _menuKey = GlobalKey();
+  final GlobalKey _menuKey = GlobalKey(); // the Profile tab item
 
   @override
   void initState() {
@@ -96,9 +102,11 @@ class _FeedShellScreenState extends State<FeedShellScreen>
     // Note: We don't add a listener that calls setState here.
     // Instead, we use ListenableBuilder in the widget tree to only rebuild
     // the notification badge, not the entire screen.
+    _streakController = StreakController(userApi: UserApi(widget.apiClient));
     _wasSignedIn = widget.auth.isLoggedIn;
     if (_wasSignedIn) {
       _notificationController.refreshUnreadCount();
+      _streakController.load();
       _registerFcmToken();
     }
     widget.auth.addListener(_onAuthChanged);
@@ -142,15 +150,22 @@ class _FeedShellScreenState extends State<FeedShellScreen>
       _flushPendingSeenIds();
       _registerFcmToken();
       _notificationController.refreshUnreadCount();
+      _streakController.load();
       widget.shoppingListController.syncWithServer();
     } else {
       _fcmTokenRefreshSub?.cancel();
       _fcmTokenRefreshSub = null;
       widget.auth.onBeforeLogout = null;
       _notificationController.clear();
+      _streakController.clear();
       widget.shoppingListController.clearLocal();
       _ensureHomeTab();
-      feed.refresh();
+      // Following needs an account, so a signed-out user goes back to For you.
+      if (feed.scope == FeedScope.following) {
+        feed.setScopeAndOptions(newScope: FeedScope.global);
+      } else {
+        feed.refresh();
+      }
     }
   }
 
@@ -193,6 +208,7 @@ class _FeedShellScreenState extends State<FeedShellScreen>
     _feedViewController.dispose();
     _feedScrollController.dispose();
     _notificationController.dispose();
+    _streakController.dispose();
     NotificationService().onBadgeCountUpdate = null;
     _fcmTokenRefreshSub?.cancel();
     widget.auth.onBeforeLogout = null;
@@ -205,6 +221,7 @@ class _FeedShellScreenState extends State<FeedShellScreen>
       PushPromptService().onForegrounded(context, widget.auth, widget.apiClient);
       if (widget.auth.isLoggedIn) {
         _notificationController.refreshUnreadCount();
+        _streakController.load();
       }
     }
     if (state == AppLifecycleState.paused || state == AppLifecycleState.detached) {
@@ -301,7 +318,7 @@ class _FeedShellScreenState extends State<FeedShellScreen>
   }
 
   void _onHomeTap() {
-    if (_currentIndex == 0) {
+    if (_currentIndex == _homePage) {
       if (_feedScrollController.hasClients) {
         _feedScrollController.animateTo(
           0,
@@ -310,33 +327,57 @@ class _FeedShellScreenState extends State<FeedShellScreen>
         );
       }
     } else {
-      _setPage(0);
+      _setPage(_homePage);
     }
   }
 
   void _ensureHomeTab() {
-    if (_currentIndex != 0) {
+    if (_currentIndex != _homePage) {
       setState(() {
-        _currentIndex = 0;
+        _currentIndex = _homePage;
       });
+    }
+  }
+
+  Future<void> _onAddRecipeTap() async {
+    if (!await requireVerifiedAccount(context, widget.auth, AccountReason.create)) return;
+    if (!mounted) return;
+    if (widget.auth.isSoftBanned || widget.auth.isPermanentlyBanned) {
+      final localizations = AppLocalizations.of(context);
+      final bannedUntil = widget.auth.softBannedUntil;
+      await showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(bannedUntil != null
+              ? (localizations?.accountSoftBanned ?? "Account Temporarily Suspended")
+              : (localizations?.accountPermanentlyBanned ?? "Account Permanently Suspended")),
+          content: Text(bannedUntil != null
+              ? (localizations?.accountSoftBannedUntil(formatDate(context, bannedUntil)) ?? "Your account is suspended.")
+              : (localizations?.accountPermanentlyBannedMessage ?? "Your account has been permanently suspended.")),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(localizations?.ok ?? "OK"),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+    final result = await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => CreateRecipeScreen(apiClient: widget.apiClient),
+      ),
+    );
+    if (result == true) {
+      _notificationController.refreshUnreadCount();
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      key: _scaffoldKey,
       backgroundColor: Theme.of(context).colorScheme.surface,
-      drawer: _FeedShellDrawer(
-        feed: feed,
-        auth: widget.auth,
-        apiClient: widget.apiClient,
-        themeController: widget.themeController,
-        languageController: widget.languageController,
-        shoppingListController: widget.shoppingListController,
-        feedViewController: _feedViewController,
-        onNavigateToFeed: _ensureHomeTab,
-      ),
       body: IndexedStack(
         index: _currentIndex,
         children: [
@@ -348,9 +389,16 @@ class _FeedShellScreenState extends State<FeedShellScreen>
             feed: feed,
             feedViewController: _feedViewController,
             scrollController: _feedScrollController,
+            streakController: _streakController,
+            onStreakTap: () => _setPage(_profilePage),
             onNotificationRefresh: () {
               if (widget.auth.isLoggedIn) _notificationController.refreshUnreadCount();
             },
+            shoppingListController: widget.shoppingListController,
+          ),
+          SearchScreen(
+            apiClient: widget.apiClient,
+            auth: widget.auth,
             shoppingListController: widget.shoppingListController,
           ),
           NotificationsScreen(
@@ -359,60 +407,36 @@ class _FeedShellScreenState extends State<FeedShellScreen>
             notificationController: _notificationController,
             shoppingListController: widget.shoppingListController,
           ),
-          SearchScreen(
-            apiClient: widget.apiClient,
+          ProfileTabScreen(
             auth: widget.auth,
+            apiClient: widget.apiClient,
+            themeController: widget.themeController,
+            languageController: widget.languageController,
+            feedViewController: _feedViewController,
             shoppingListController: widget.shoppingListController,
+            streakController: _streakController,
+            isActive: _currentIndex == _profilePage,
           ),
         ],
       ),
       bottomNavigationBar: ListenableBuilder(
-        listenable: _notificationController,
+        listenable: Listenable.merge([_notificationController, widget.auth]),
         builder: (context, _) {
+          final me = widget.auth.me;
           return _BottomShellNavBar(
             currentIndex: _currentIndex,
             unreadCount: _notificationController.unreadCount,
+            isSignedIn: widget.auth.isLoggedIn,
+            username: me?["username"]?.toString() ?? "",
+            avatarUrl: me?["avatar_url"]?.toString(),
             onHomeTap: _onHomeTap,
+            onSearchTap: () => _setPage(_searchPage),
+            onAddRecipeTap: _onAddRecipeTap,
             onNotificationsTap: () {
-                _setPage(1);
-                if (widget.auth.isLoggedIn) _notificationController.silentRefresh();
-              },
-            onAddRecipeTap: () async {
-              if (!await requireVerifiedAccount(context, widget.auth, AccountReason.create)) return;
-              if (!context.mounted) return;
-              if (widget.auth.isSoftBanned || widget.auth.isPermanentlyBanned) {
-                final localizations = AppLocalizations.of(context);
-                final bannedUntil = widget.auth.softBannedUntil;
-                await showDialog<void>(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: Text(bannedUntil != null
-                        ? (localizations?.accountSoftBanned ?? "Account Temporarily Suspended")
-                        : (localizations?.accountPermanentlyBanned ?? "Account Permanently Suspended")),
-                    content: Text(bannedUntil != null
-                        ? (localizations?.accountSoftBannedUntil(formatDate(context, bannedUntil)) ?? "Your account is suspended.")
-                        : (localizations?.accountPermanentlyBannedMessage ?? "Your account has been permanently suspended.")),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        child: Text(localizations?.ok ?? "OK"),
-                      ),
-                    ],
-                  ),
-                );
-                return;
-              }
-              final result = await Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => CreateRecipeScreen(apiClient: widget.apiClient),
-                ),
-              );
-              if (result == true) {
-                _notificationController.refreshUnreadCount();
-              }
+              _setPage(_notificationsPage);
+              if (widget.auth.isLoggedIn) _notificationController.silentRefresh();
             },
-            onSearchTap: () => _setPage(2),
-            onMenuTap: () => _scaffoldKey.currentState?.openDrawer(),
+            onProfileTap: () => _setPage(_profilePage),
             feedKey: _feedKey,
             searchKey: _searchKey,
             createKey: _createKey,
@@ -425,15 +449,19 @@ class _FeedShellScreenState extends State<FeedShellScreen>
   }
 }
 
+/// Home · Search · Add · Notifications · Profile, icons only.
 class _BottomShellNavBar extends StatelessWidget {
   const _BottomShellNavBar({
     required this.currentIndex,
     required this.unreadCount,
+    required this.isSignedIn,
+    required this.username,
+    required this.avatarUrl,
     required this.onHomeTap,
-    required this.onNotificationsTap,
-    required this.onAddRecipeTap,
     required this.onSearchTap,
-    required this.onMenuTap,
+    required this.onAddRecipeTap,
+    required this.onNotificationsTap,
+    required this.onProfileTap,
     required this.feedKey,
     required this.searchKey,
     required this.createKey,
@@ -443,11 +471,14 @@ class _BottomShellNavBar extends StatelessWidget {
 
   final int currentIndex;
   final int unreadCount;
+  final bool isSignedIn;
+  final String username;
+  final String? avatarUrl;
   final VoidCallback onHomeTap;
-  final VoidCallback onNotificationsTap;
-  final VoidCallback onAddRecipeTap;
   final VoidCallback onSearchTap;
-  final VoidCallback onMenuTap;
+  final VoidCallback onAddRecipeTap;
+  final VoidCallback onNotificationsTap;
+  final VoidCallback onProfileTap;
   final GlobalKey feedKey;
   final GlobalKey searchKey;
   final GlobalKey createKey;
@@ -456,1291 +487,169 @@ class _BottomShellNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final surfaceColor = Theme.of(context).colorScheme.surface;
-    final borderColor = Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08);
+    final t = AppTokens.of(context);
     final localizations = AppLocalizations.of(context);
+    Color iconColor(int page) => currentIndex == page ? t.brandInk : t.ink2;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: surfaceColor,
-        border: Border(top: BorderSide(color: borderColor)),
-      ),
+    final notificationsLabel = localizations?.notifications ?? "Notifications";
+    final profileActive = currentIndex == _profilePage;
+    final ringWidth = profileActive ? 2.0 : 1.5;
+
+    // Material rather than a colored Container, so the slots' ink is visible.
+    return Material(
+      color: t.card,
+      shape: Border(top: BorderSide(color: t.line)),
       child: SafeArea(
         top: false,
         child: SizedBox(
-          height: 56,
+          height: 64,
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _BottomNavAction(
+              _NavSlot(
                 key: feedKey,
-                icon: Icons.home_rounded,
                 label: localizations?.home ?? "Home",
-                isActive: currentIndex == 0,
+                isActive: currentIndex == _homePage,
                 onTap: onHomeTap,
+                child: Icon(
+                  currentIndex == _homePage ? Icons.home_rounded : Icons.home_outlined,
+                  size: 24,
+                  color: iconColor(_homePage),
+                ),
               ),
-              _BottomNavAction(
-                key: notificationsKey,
-                icon: Icons.notifications_outlined,
-                label: localizations?.notifications ?? "Notifications",
-                isActive: currentIndex == 1,
-                badgeCount: unreadCount,
-                onTap: onNotificationsTap,
-              ),
-              _BottomNavAction(
-                key: createKey,
-                icon: Icons.add_rounded,
-                label: localizations?.add ?? "Add",
-                isActive: false,
-                onTap: onAddRecipeTap,
-              ),
-              _BottomNavAction(
+              _NavSlot(
                 key: searchKey,
-                icon: Icons.search_rounded,
                 label: localizations?.search ?? "Search",
-                isActive: currentIndex == 2,
+                isActive: currentIndex == _searchPage,
                 onTap: onSearchTap,
+                child: Icon(Icons.search_rounded, size: 24, color: iconColor(_searchPage)),
               ),
-              _BottomNavAction(
-                key: menuKey,
-                icon: Icons.menu_rounded,
-                label: localizations?.menu ?? "Menu",
-                isActive: false,
-                onTap: onMenuTap,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _BottomNavAction extends StatelessWidget {
-  const _BottomNavAction({
-    super.key,
-    required this.icon,
-    required this.label,
-    required this.onTap,
-    required this.isActive,
-    this.badgeCount = 0,
-  });
-
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-  final bool isActive;
-  final int badgeCount;
-
-  @override
-  Widget build(BuildContext context) {
-    final activeColor = Theme.of(context).colorScheme.primary;
-    final inactiveColor = Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8);
-    final iconColor = isActive ? activeColor : inactiveColor;
-
-    final borderColor = Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2);
-
-    return Expanded(
-      flex: isActive ? 2 : 1,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          return InkResponse(
-            onTap: onTap,
-            radius: 28,
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Align(
-                  alignment: Alignment.center,
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      maxWidth: isActive ? constraints.maxWidth : constraints.maxWidth,
-                    ),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      curve: Curves.easeOut,
-                      padding: EdgeInsets.symmetric(horizontal: isActive ? 12 : 8, vertical: 6),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(999),
-                        border: isActive ? Border.all(color: borderColor, width: 1) : null,
-                      ),
-                      child: IntrinsicWidth(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(icon, size: 26, color: iconColor),
-                            if (isActive) ...[
-                              const SizedBox(width: 6),
-                              Flexible(
-                                child: Text(
-                                  label,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    color: iconColor,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                    height: 1.0,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                if (badgeCount > 0)
-                  AnimatedPositioned(
-                    duration: const Duration(milliseconds: 200),
-                    curve: Curves.easeOut,
-                    right: isActive ? 8 : 4,
-                    top: 2,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.error,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      constraints: const BoxConstraints(minWidth: 16),
-                      child: Text(
-                        badgeCount > 99 ? "99+" : badgeCount.toString(),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          );
-        },
-      ),
-    );
-  }
-}
-
-class _FeedShellDrawer extends StatefulWidget {
-  const _FeedShellDrawer({
-    required this.feed,
-    required this.auth,
-    required this.apiClient,
-    required this.themeController,
-    required this.languageController,
-    required this.shoppingListController,
-    required this.feedViewController,
-    required this.onNavigateToFeed,
-  });
-
-  final FeedController feed;
-  final AuthController auth;
-  final ApiClient apiClient;
-  final ThemeController themeController;
-  final LanguageController languageController;
-  final ShoppingListController shoppingListController;
-  final FeedViewController feedViewController;
-  final VoidCallback onNavigateToFeed;
-
-  @override
-  State<_FeedShellDrawer> createState() => _FeedShellDrawerState();
-}
-
-class _FeedShellDrawerState extends State<_FeedShellDrawer> {
-  FeedScope? _expandedScope;
-  UserProfile? _drawerProfile;
-  LibraryCounts? _libraryCounts;
-
-  @override
-  void initState() {
-    super.initState();
-    _expandedScope = widget.feed.scope;
-    _loadProfile();
-  }
-
-  Future<void> _loadProfile() async {
-    if (!widget.auth.isLoggedIn) return;
-    final username = widget.auth.me?["username"]?.toString();
-    if (username == null || username.isEmpty) return;
-    final userApi = UserApi(widget.apiClient);
-    try {
-      final results = await Future.wait([
-        userApi.getUserProfile(username),
-        userApi.getLibraryCounts(),
-      ]);
-      if (mounted) {
-        setState(() {
-          _drawerProfile = results[0] as UserProfile;
-          _libraryCounts = results[1] as LibraryCounts;
-        });
-      }
-    } catch (_) {}
-  }
-
-  void _toggleExpand(FeedScope scope) {
-    setState(() {
-      _expandedScope = _expandedScope == scope ? null : scope;
-    });
-  }
-
-  void _selectOption({
-    required FeedScope scope,
-    FeedSort? sort,
-    PopularPeriod? popularPeriod,
-    int? trendingDays,
-  }) {
-    widget.feed.setScopeAndOptions(
-      newScope: scope,
-      newSort: sort,
-      newPopularPeriod: popularPeriod,
-      newTrendingDays: trendingDays,
-    );
-    Navigator.of(context).pop();
-    widget.onNavigateToFeed();
-  }
-
-  void _confirmSignOut(BuildContext context, AppLocalizations? localizations) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(localizations?.signOutConfirmTitle ?? "Sign out?"),
-        content: Text(localizations?.signOutConfirmMessage ?? "Are you sure you want to sign out?"),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: Text(localizations?.cancel ?? "Cancel"),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              Navigator.of(context).pop();
-              widget.auth.logout();
-            },
-            child: Text(
-              localizations?.signOut ?? "Sign out",
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Closes the drawer, then (for guests) asks for an account before
-  /// running [action]. The drawer is gone by then, so everything goes
-  /// through the root navigator.
-  Future<void> _closeAndRequireAccount(AccountReason reason, void Function(NavigatorState) action) async {
-    final navigator = Navigator.of(context);
-    navigator.pop();
-    if (!await requireAccount(navigator.context, widget.auth, reason)) return;
-    if (navigator.mounted) action(navigator);
-  }
-
-  void _openSettings() {
-    Navigator.of(context).pop();
-    Navigator.of(context).push(MaterialPageRoute(
-      builder: (_) => SettingsScreen(
-        themeController: widget.themeController,
-        languageController: widget.languageController,
-        feedViewController: widget.feedViewController,
-        auth: widget.auth,
-        apiClient: widget.apiClient,
-      ),
-    ));
-  }
-
-  Widget _buildGuestHeader(BuildContext context, AppLocalizations? localizations) {
-    const primaryColor = Color(0xFF53B175);
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        color: primaryColor,
-        padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Image.asset("assets/icon/app_icon.png", width: 48, height: 48, fit: BoxFit.cover),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    localizations?.guestDrawerTitle ?? "Join Yummy",
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 17),
-                  ),
-                ),
-                GestureDetector(
-                  onTap: _openSettings,
-                  child: Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.white.withValues(alpha: 0.18),
-                    ),
-                    child: const Icon(Icons.settings_outlined, color: Colors.white, size: 20),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Text(
-              localizations?.guestDrawerBody ?? "Save recipes, follow cooks and share your own.",
-              style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 13),
-            ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: () => _closeAndRequireAccount(AccountReason.account, (_) {}),
-                style: FilledButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: primaryColor,
-                ),
-                child: Text(localizations?.guestSignUpOrLogIn ?? "Sign up or log in"),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildProfileHeader(BuildContext context, AppLocalizations? localizations) {
-    const primaryColor = Color(0xFF53B175);
-    final me = widget.auth.me;
-    final username = me?["username"]?.toString() ?? "";
-    final displayName = me?["display_name"]?.toString() ?? username;
-    final avatarUrl = me?["avatar_url"]?.toString();
-    final profile = _drawerProfile;
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        color: primaryColor,
-        child: Stack(
-          children: [
-            Positioned(
-              top: -35,
-              right: -35,
-              child: Container(
-                width: 130,
-                height: 130,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.09),
-                  shape: BoxShape.circle,
+              _NavSlot(
+                key: createKey,
+                label: localizations?.add ?? "Add",
+                onTap: onAddRecipeTap,
+                child: Container(
+                  width: 48,
+                  height: 40,
+                  decoration: BoxDecoration(color: t.fill, borderRadius: BorderRadius.circular(14)),
+                  child: const Icon(Icons.add_rounded, size: 22, color: Colors.white),
                 ),
               ),
-            ),
-            Positioned(
-              top: 25,
-              right: 55,
-              child: Container(
-                width: 55,
-                height: 55,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.06),
-                  shape: BoxShape.circle,
-                ),
-              ),
-            ),
-            Positioned(
-              bottom: -45,
-              left: -25,
-              child: Container(
-                width: 150,
-                height: 150,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.07),
-                  shape: BoxShape.circle,
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(2.5),
-                        decoration: const BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.white,
-                        ),
-                        child: GestureDetector(
-                          onTap: () {
-                            Navigator.of(context).pop();
-                            Navigator.of(context).push(MaterialPageRoute(
-                              builder: (_) => ProfileScreen(
-                                auth: widget.auth,
-                                apiClient: widget.apiClient,
-                                shoppingListController: widget.shoppingListController,
-                              ),
-                            ));
-                          },
-                          child: buildUserAvatar(context, avatarUrl, username, radius: 28),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () {
-                            Navigator.of(context).pop();
-                            Navigator.of(context).push(MaterialPageRoute(
-                              builder: (_) => ProfileScreen(
-                                auth: widget.auth,
-                                apiClient: widget.apiClient,
-                                shoppingListController: widget.shoppingListController,
-                              ),
-                            ));
-                          },
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              FittedBox(
-                                fit: BoxFit.scaleDown,
-                                alignment: Alignment.centerLeft,
-                                child: Text(
-                                  displayName,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 17,
-                                  ),
-                                  maxLines: 1,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              FittedBox(
-                                fit: BoxFit.scaleDown,
-                                alignment: Alignment.centerLeft,
-                                child: Text(
-                                  "@$username",
-                                  style: TextStyle(
-                                    color: Colors.white.withValues(alpha: 0.75),
-                                    fontSize: 13,
-                                  ),
-                                  maxLines: 1,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      GestureDetector(
-                        onTap: _openSettings,
+              _NavSlot(
+                key: notificationsKey,
+                label: unreadCount > 0 ? "$notificationsLabel ($unreadCount)" : notificationsLabel,
+                isActive: currentIndex == _notificationsPage,
+                onTap: onNotificationsTap,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Icon(Icons.notifications_outlined, size: 24, color: iconColor(_notificationsPage)),
+                    if (unreadCount > 0)
+                      Positioned(
+                        left: 12,
+                        top: -7,
                         child: Container(
-                          width: 36,
-                          height: 36,
+                          constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+                          padding: const EdgeInsets.symmetric(horizontal: 3),
+                          alignment: Alignment.center,
                           decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.white.withValues(alpha: 0.18),
+                            color: t.badge,
+                            borderRadius: BorderRadius.circular(9),
+                            border: Border.all(color: t.card, width: 2),
                           ),
-                          child: const Icon(Icons.settings_outlined, color: Colors.white, size: 20),
+                          child: Text(
+                            unreadCount > 99 ? "99+" : unreadCount.toString(),
+                            textScaler: TextScaler.noScaling,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              height: 1.0,
+                            ),
+                          ),
                         ),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _ProfileStat(
-                          value: profile?.recipesCount.toString() ?? "",
-                          label: localizations?.recipes ?? "Recipes",
-                          loading: profile == null,
-                        ),
-                      ),
-                      Expanded(
-                        child: _ProfileStat(
-                          value: profile?.followersCount.toString() ?? "",
-                          label: localizations?.followers ?? "Followers",
-                          loading: profile == null,
-                        ),
-                      ),
-                      Expanded(
-                        child: _ProfileStat(
-                          value: profile?.followingCount.toString() ?? "",
-                          label: localizations?.followingTitle ?? "Following",
-                          loading: profile == null,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+              _NavSlot(
+                key: menuKey,
+                label: localizations?.profile ?? "Profile",
+                isActive: profileActive,
+                onTap: onProfileTap,
+                child: isSignedIn
+                    ? Container(
+                        width: 28,
+                        height: 28,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: profileActive ? t.brand : t.line, width: ringWidth),
+                        ),
+                        child: ProfileAvatar(
+                          avatarUrl: avatarUrl,
+                          name: username,
+                          size: 28 - 2 * ringWidth,
+                        ),
+                      )
+                    : Icon(Icons.person_outline_rounded, size: 24, color: iconColor(_profilePage)),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
+}
 
-  Widget _buildLibraryGrid(BuildContext context, AppLocalizations? localizations) {
-    final counts = _libraryCounts;
-    final signedIn = widget.auth.isLoggedIn;
-    return Column(
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: _LibraryGridCard(
-                icon: Icons.bookmark_outline_rounded,
-                title: localizations?.savedRecipes ?? "Saved Recipes",
-                loading: signedIn && counts == null,
-                subtitle: counts != null
-                    ? localizations?.nSaved(counts.savedRecipes) ?? "${counts.savedRecipes} saved"
-                    : null,
-                onTap: () => _closeAndRequireAccount(AccountReason.save, (navigator) {
-                  navigator.push(MaterialPageRoute(
-                    builder: (_) => SavedRecipesScreen(
-                      apiClient: widget.apiClient,
-                      auth: widget.auth,
-                      shoppingListController: widget.shoppingListController,
-                    ),
-                  ));
-                }),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: ListenableBuilder(
-                listenable: widget.shoppingListController,
-                builder: (context, _) {
-                  final count = widget.shoppingListController.totalCount;
-                  return _LibraryGridCard(
-                    icon: Icons.shopping_cart_outlined,
-                    title: localizations?.shoppingList ?? "Shopping List",
-                    subtitle: signedIn ? "$count ${localizations?.items ?? "items"}" : null,
-                    onTap: () => _closeAndRequireAccount(AccountReason.shoppingList, (navigator) {
-                      navigator.push(MaterialPageRoute(
-                        builder: (_) => ShoppingListScreen(
-                          controller: widget.shoppingListController,
-                          apiClient: widget.apiClient,
-                          auth: widget.auth,
-                        ),
-                      ));
-                    }),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            Expanded(
-              child: _LibraryGridCard(
-                icon: Icons.folder_shared_outlined,
-                title: localizations?.sharedRecipes ?? "Shared Recipes",
-                loading: signedIn && counts == null,
-                subtitle: counts != null
-                    ? localizations?.nSaved(counts.sharedRecipes) ?? "${counts.sharedRecipes} saved"
-                    : null,
-                onTap: () => _closeAndRequireAccount(AccountReason.account, (navigator) {
-                  navigator.push(MaterialPageRoute(
-                    builder: (_) => SharedRecipesScreen(
-                      apiClient: widget.apiClient,
-                      auth: widget.auth,
-                      shoppingListController: widget.shoppingListController,
-                    ),
-                  ));
-                }),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: _LibraryGridCard(
-                icon: Icons.shopping_basket_outlined,
-                title: localizations?.sharedShoppingLists ?? "Shared Shopping Lists",
-                loading: signedIn && counts == null,
-                subtitle: counts != null
-                    ? "${counts.sharedShoppingLists} ${localizations?.items ?? "items"}"
-                    : null,
-                onTap: () => _closeAndRequireAccount(AccountReason.account, (navigator) {
-                  navigator.push(MaterialPageRoute(
-                    builder: (_) => SharedShoppingListsScreen(
-                      apiClient: widget.apiClient,
-                      auth: widget.auth,
-                      shoppingListController: widget.shoppingListController,
-                    ),
-                  ));
-                }),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
+/// One equal-width bottom-nav slot. Tab slots get the 4×4 active dot under
+/// the icon (with a matching spacer above, so icons stay centered); Add has
+/// no dot and no selected state.
+class _NavSlot extends StatelessWidget {
+  const _NavSlot({
+    super.key,
+    required this.label,
+    required this.onTap,
+    required this.child,
+    this.isActive,
+  });
+
+  final String label;
+  final VoidCallback onTap;
+  final Widget child;
+
+  /// Null for Add, which is an action rather than a tab.
+  final bool? isActive;
 
   @override
   Widget build(BuildContext context) {
-    final localizations = AppLocalizations.of(context);
-
-    return Drawer(
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      child: SafeArea(
-        child: ListenableBuilder(
-          listenable: Listenable.merge([widget.feed, widget.auth]),
-          builder: (context, _) {
-            return ListView(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                    children: <Widget>[
-                      if (widget.auth.isLoggedIn)
-                        _buildProfileHeader(context, localizations)
-                      else
-                        _buildGuestHeader(context, localizations),
-                      const SizedBox(height: 24),
-                      _SectionHeader(title: localizations?.feed ?? "FEED"),
-                      const SizedBox(height: 8),
-                      _buildExpandableScope(
-                        scope: FeedScope.global,
-                        icon: Icons.public_rounded,
-                        title: localizations?.global ?? "Global",
-                        subItems: [
-                          _SubItem(
-                            label: localizations?.feedSortDiscovery ?? "Discovery",
-                            isActive: widget.feed.scope == FeedScope.global && widget.feed.sort == FeedSort.discovery,
-                            onTap: () => _selectOption(scope: FeedScope.global, sort: FeedSort.discovery),
-                          ),
-                          _SubItem(
-                            label: localizations?.recent ?? "Recent",
-                            isActive: widget.feed.scope == FeedScope.global && widget.feed.sort == FeedSort.recent,
-                            onTap: () => _selectOption(scope: FeedScope.global, sort: FeedSort.recent),
-                          ),
-                          _SubItem(
-                            label: localizations?.top ?? "Top",
-                            isActive: widget.feed.scope == FeedScope.global && widget.feed.sort == FeedSort.top,
-                            onTap: () => _selectOption(scope: FeedScope.global, sort: FeedSort.top),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      _buildExpandableScope(
-                        scope: FeedScope.following,
-                        icon: Icons.people_alt_outlined,
-                        title: localizations?.following ?? "Following",
-                        enabled: widget.auth.isLoggedIn,
-                        onDisabledTap: () {
-                          final feed = widget.feed;
-                          final onNavigateToFeed = widget.onNavigateToFeed;
-                          _closeAndRequireAccount(AccountReason.following, (_) {
-                            feed.setScopeAndOptions(newScope: FeedScope.following, newSort: FeedSort.recent);
-                            onNavigateToFeed();
-                          });
-                        },
-                        subItems: [
-                          _SubItem(
-                            label: localizations?.recent ?? "Recent",
-                            isActive: widget.feed.scope == FeedScope.following && widget.feed.sort == FeedSort.recent,
-                            onTap: () => _selectOption(scope: FeedScope.following, sort: FeedSort.recent),
-                          ),
-                          _SubItem(
-                            label: localizations?.top ?? "Top",
-                            isActive: widget.feed.scope == FeedScope.following && widget.feed.sort == FeedSort.top,
-                            onTap: () => _selectOption(scope: FeedScope.following, sort: FeedSort.top),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      _buildExpandableScope(
-                        scope: FeedScope.popular,
-                        icon: Icons.local_fire_department_outlined,
-                        title: localizations?.popular ?? "Popular",
-                        subItems: [
-                          _SubItem(
-                            label: localizations?.allTime ?? "All Time",
-                            isActive: widget.feed.scope == FeedScope.popular && widget.feed.popularPeriod == PopularPeriod.allTime,
-                            onTap: () => _selectOption(scope: FeedScope.popular, popularPeriod: PopularPeriod.allTime),
-                          ),
-                          _SubItem(
-                            label: localizations?.last30Days ?? "Last 30 Days",
-                            isActive: widget.feed.scope == FeedScope.popular && widget.feed.popularPeriod == PopularPeriod.last30Days,
-                            onTap: () => _selectOption(scope: FeedScope.popular, popularPeriod: PopularPeriod.last30Days),
-                          ),
-                          _SubItem(
-                            label: localizations?.last7Days ?? "Last 7 Days",
-                            isActive: widget.feed.scope == FeedScope.popular && widget.feed.popularPeriod == PopularPeriod.last7Days,
-                            onTap: () => _selectOption(scope: FeedScope.popular, popularPeriod: PopularPeriod.last7Days),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      _buildExpandableScope(
-                        scope: FeedScope.trending,
-                        icon: Icons.trending_up_rounded,
-                        title: localizations?.trending ?? "Trending",
-                        subItems: [
-                          _SubItem(
-                            label: localizations?.last7Days ?? "Last 7 Days",
-                            isActive: widget.feed.scope == FeedScope.trending && widget.feed.trendingDays == 7,
-                            onTap: () => _selectOption(scope: FeedScope.trending, trendingDays: 7),
-                          ),
-                          _SubItem(
-                            label: localizations?.last30Days ?? "Last 30 Days",
-                            isActive: widget.feed.scope == FeedScope.trending && widget.feed.trendingDays == 30,
-                            onTap: () => _selectOption(scope: FeedScope.trending, trendingDays: 30),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 24),
-                      _SectionHeader(title: localizations?.library ?? "LIBRARY"),
-                      const SizedBox(height: 8),
-                      _buildLibraryGrid(context, localizations),
-                      const SizedBox(height: 24),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _BottomDrawerButton(
-                              icon: Icons.help_outline_rounded,
-                              label: localizations?.help ?? "Help",
-                              onTap: () {
-                                Navigator.of(context).pop();
-                                Navigator.of(context).push(MaterialPageRoute(
-                                  builder: (_) => const HelpAndSupportScreen(),
-                                ));
-                              },
-                            ),
-                          ),
-                          if (widget.auth.isLoggedIn) ...[
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: _BottomDrawerButton(
-                                icon: Icons.logout_rounded,
-                                label: localizations?.signOut ?? "Sign out",
-                                isDestructive: true,
-                                onTap: () => _confirmSignOut(context, localizations),
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                    ],
-                  );
-          },
-        ),
-      ),
-    );
-  }
-
-  Widget _buildExpandableScope({
-    required FeedScope scope,
-    required IconData icon,
-    required String title,
-    required List<_SubItem> subItems,
-    bool enabled = true,
-    VoidCallback? onDisabledTap,
-  }) {
-    final isSelected = widget.feed.scope == scope;
-    final isExpanded = _expandedScope == scope;
-    final localizations = AppLocalizations.of(context);
-
-    if (isSelected) {
-      return _SelectedFeedCard(
-        icon: icon,
-        title: title,
-        nowViewingLabel: localizations?.nowViewing ?? "NOW VIEWING",
-        subItems: subItems,
-      );
-    }
-
-    final onSurface = Theme.of(context).colorScheme.onSurface;
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        GestureDetector(
-          onTap: () {
-            if (!enabled) {
-              onDisabledTap?.call();
-              return;
-            }
-            _toggleExpand(scope);
-          },
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
-            child: Row(
-              children: [
-                Icon(
-                  icon,
-                  size: 22,
-                  color: onSurface.withValues(alpha: enabled ? 0.65 : 0.3),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500,
-                      color: onSurface.withValues(alpha: enabled ? 1.0 : 0.4),
-                    ),
-                  ),
-                ),
-                AnimatedRotation(
-                  duration: const Duration(milliseconds: 200),
-                  turns: isExpanded ? 0.25 : 0.0,
-                  child: Icon(
-                    Icons.chevron_right_rounded,
-                    size: 20,
-                    color: onSurface.withValues(alpha: 0.4),
+    final t = AppTokens.of(context);
+    final isTab = isActive != null;
+    return Expanded(
+      child: Semantics(
+        button: true,
+        selected: isActive,
+        label: label,
+        excludeSemantics: true,
+        child: InkResponse(
+          onTap: onTap,
+          radius: 28,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (isTab) const SizedBox(height: 8),
+              child,
+              if (isTab) ...[
+                const SizedBox(height: 4),
+                Container(
+                  width: 4,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: isActive! ? t.brand : Colors.transparent,
+                    shape: BoxShape.circle,
                   ),
                 ),
               ],
-            ),
-          ),
-        ),
-        AnimatedSize(
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeInOut,
-          child: isExpanded
-              ? Padding(
-                  padding: const EdgeInsets.only(left: 4, bottom: 6),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: subItems
-                          .map((item) => _FeedPillChip(
-                                label: item.label,
-                                isActive: item.isActive,
-                                onTap: item.onTap,
-                              ))
-                          .toList(),
-                    ),
-                  ),
-                )
-              : const SizedBox.shrink(),
-        ),
-      ],
-    );
-  }
-}
-
-class _SubItem {
-  const _SubItem({
-    required this.label,
-    required this.isActive,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool isActive;
-  final VoidCallback onTap;
-}
-
-class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({required this.title});
-
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 4),
-      child: Text(
-        title.toUpperCase(),
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-          letterSpacing: 0.5,
-          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
-        ),
-      ),
-    );
-  }
-}
-
-
-class _SelectedFeedCard extends StatelessWidget {
-  const _SelectedFeedCard({
-    required this.icon,
-    required this.title,
-    required this.nowViewingLabel,
-    required this.subItems,
-  });
-
-  final IconData icon;
-  final String title;
-  final String nowViewingLabel;
-  final List<_SubItem> subItems;
-
-  @override
-  Widget build(BuildContext context) {
-    final primaryColor = Theme.of(context).colorScheme.primary;
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: primaryColor.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: primaryColor.withValues(alpha: 0.3), width: 1),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(7),
-                decoration: BoxDecoration(
-                  color: primaryColor.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(icon, size: 20, color: primaryColor),
-              ),
-              const SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    nowViewingLabel.toUpperCase(),
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                      color: primaryColor,
-                      letterSpacing: 0.6,
-                    ),
-                  ),
-                  const SizedBox(height: 1),
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                  ),
-                ],
-              ),
             ],
           ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 6,
-            children: subItems
-                .map((item) => _FeedPillChip(
-                      label: item.label,
-                      isActive: item.isActive,
-                      onTap: item.onTap,
-                    ))
-                .toList(),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _FeedPillChip extends StatefulWidget {
-  const _FeedPillChip({
-    required this.label,
-    required this.isActive,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool isActive;
-  final VoidCallback onTap;
-
-  @override
-  State<_FeedPillChip> createState() => _FeedPillChipState();
-}
-
-class _FeedPillChipState extends State<_FeedPillChip> {
-  bool _isPressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final primaryColor = Theme.of(context).colorScheme.primary;
-    final onSurface = Theme.of(context).colorScheme.onSurface;
-
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _isPressed = true),
-      onTapUp: (_) => setState(() => _isPressed = false),
-      onTapCancel: () => setState(() => _isPressed = false),
-      onTap: widget.onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 120),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-        decoration: BoxDecoration(
-          color: widget.isActive
-              ? primaryColor.withValues(alpha: _isPressed ? 0.85 : 1.0)
-              : _isPressed
-                  ? onSurface.withValues(alpha: 0.08)
-                  : Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: widget.isActive ? primaryColor : onSurface.withValues(alpha: 0.25),
-          ),
-        ),
-        child: Text(
-          widget.label,
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: widget.isActive ? FontWeight.w600 : FontWeight.w400,
-            color: widget.isActive ? Colors.white : onSurface.withValues(alpha: 0.8),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _LibraryGridCard extends StatefulWidget {
-  const _LibraryGridCard({
-    required this.icon,
-    required this.title,
-    required this.onTap,
-    this.subtitle,
-    this.loading = false,
-  });
-
-  final IconData icon;
-  final String title;
-  final String? subtitle;
-  final bool loading;
-  final VoidCallback onTap;
-
-  @override
-  State<_LibraryGridCard> createState() => _LibraryGridCardState();
-}
-
-class _LibraryGridCardState extends State<_LibraryGridCard> {
-  bool _isPressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final primaryColor = Theme.of(context).colorScheme.primary;
-    final baseColor = Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5);
-    final pressedColor = primaryColor.withValues(alpha: 0.12);
-
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _isPressed = true),
-      onTapUp: (_) => setState(() => _isPressed = false),
-      onTapCancel: () => setState(() => _isPressed = false),
-      onTap: widget.onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 120),
-        curve: Curves.easeOut,
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: _isPressed ? pressedColor : baseColor,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: primaryColor.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(widget.icon, size: 20, color: primaryColor),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              widget.title,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-            if (widget.loading) ...[
-              const SizedBox(height: 4),
-              const _SkeletonPill(width: 48, height: 16),
-            ] else if (widget.subtitle != null) ...[
-              const SizedBox(height: 2),
-              Text(
-                widget.subtitle!,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _BottomDrawerButton extends StatefulWidget {
-  const _BottomDrawerButton({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-    this.isDestructive = false,
-  });
-
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-  final bool isDestructive;
-
-  @override
-  State<_BottomDrawerButton> createState() => _BottomDrawerButtonState();
-}
-
-class _BottomDrawerButtonState extends State<_BottomDrawerButton> {
-  bool _isPressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = widget.isDestructive
-        ? Theme.of(context).colorScheme.error
-        : Theme.of(context).colorScheme.onSurface;
-    final baseColor = Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5);
-    final pressedColor = widget.isDestructive
-        ? Theme.of(context).colorScheme.error.withValues(alpha: 0.1)
-        : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08);
-
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _isPressed = true),
-      onTapUp: (_) => setState(() => _isPressed = false),
-      onTapCancel: () => setState(() => _isPressed = false),
-      onTap: widget.onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 120),
-        curve: Curves.easeOut,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-        decoration: BoxDecoration(
-          color: _isPressed ? pressedColor : baseColor,
-          borderRadius: BorderRadius.circular(30),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(widget.icon, size: 18, color: color),
-            const SizedBox(width: 8),
-            Flexible(
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text(
-                  widget.label,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: color,
-                  ),
-                  maxLines: 1,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ProfileStat extends StatelessWidget {
-  const _ProfileStat({required this.value, required this.label, this.loading = false});
-
-  final String value;
-  final String label;
-  final bool loading;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        loading
-            ? const _SkeletonPill(width: 32, height: 19, color: Colors.white)
-            : FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  value,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 13,
-                  ),
-                ),
-              ),
-        const SizedBox(height: 1),
-        FittedBox(
-          fit: BoxFit.scaleDown,
-          alignment: Alignment.centerLeft,
-          child: Text(
-            label,
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.75),
-              fontWeight: FontWeight.w600,
-              fontSize: 10,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _SkeletonPill extends StatefulWidget {
-  const _SkeletonPill({this.width = 40, this.height = 10, this.color});
-
-  final double width;
-  final double height;
-  final Color? color;
-
-  @override
-  State<_SkeletonPill> createState() => _SkeletonPillState();
-}
-
-class _SkeletonPillState extends State<_SkeletonPill> with SingleTickerProviderStateMixin {
-  late final AnimationController _ctrl;
-  late Animation<double> _opacity;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 800))
-      ..repeat(reverse: true);
-    _opacity = Tween<double>(begin: 0.2, end: 0.8).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut),
-    );
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final base = widget.color ?? Theme.of(context).colorScheme.onSurface;
-    return AnimatedBuilder(
-      animation: _opacity,
-      builder: (_, _) => Container(
-        width: widget.width,
-        height: widget.height,
-        decoration: BoxDecoration(
-          color: base.withValues(alpha: _opacity.value),
-          borderRadius: BorderRadius.circular(4),
         ),
       ),
     );

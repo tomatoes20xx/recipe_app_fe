@@ -302,8 +302,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                 const SizedBox(height: 28),
 
-                // Logout Button (if logged in)
+                // Sign out + delete account (if logged in)
                 if (isLoggedIn) ...[
+                  _buildSettingsGroup(
+                    context,
+                    children: [
+                      _buildSettingsTile(
+                        context,
+                        icon: Icons.logout_rounded,
+                        iconColor: Colors.red.shade400,
+                        titleColor: Colors.red.shade400,
+                        title: localizations?.signOut ?? "Sign out",
+                        onTap: () => _confirmSignOut(context, localizations),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
                   _buildDeleteAccountButton(context),
                   const SizedBox(height: 28),
                 ],
@@ -420,6 +434,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     required Color iconColor,
     required String title,
     String? subtitle,
+    Color? titleColor,
     required VoidCallback onTap,
   }) {
     final theme = Theme.of(context);
@@ -456,6 +471,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       title,
                       style: theme.textTheme.bodyLarge?.copyWith(
                         fontWeight: FontWeight.w500,
+                        color: titleColor,
                       ),
                     ),
                     if (subtitle != null) ...[
@@ -530,6 +546,35 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ],
             ),
+    );
+  }
+
+  /// Moved here from the removed side drawer. Signing out lands the user back
+  /// on the shell's Home tab (the shell switches to it on sign-out).
+  void _confirmSignOut(BuildContext context, AppLocalizations? localizations) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(localizations?.signOutConfirmTitle ?? "Sign out?"),
+        content: Text(localizations?.signOutConfirmMessage ?? "Are you sure you want to sign out?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(localizations?.cancel ?? "Cancel"),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              Navigator.of(context).popUntil((route) => route.isFirst);
+              widget.auth?.logout();
+            },
+            child: Text(
+              localizations?.signOut ?? "Sign out",
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
+          ),
+        ],
+      ),
     );
   }
 

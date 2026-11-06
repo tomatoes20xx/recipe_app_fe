@@ -19,6 +19,11 @@ abstract class PaginatedListController<T> extends ChangeNotifier {
 
   bool _disposed = false;
 
+  /// Bumped by every first-page load and [clear], so a response from a load
+  /// that has since been replaced (e.g. the user switched feed tabs while it
+  /// was in flight) is dropped instead of mixed into the new list.
+  int _loadGeneration = 0;
+
   @override
   void dispose() {
     _disposed = true;
@@ -44,16 +49,18 @@ abstract class PaginatedListController<T> extends ChangeNotifier {
     if (isLoading || isLoadingMore) return;
     if (nextCursor == null) return;
 
+    final generation = _loadGeneration;
     isLoadingMore = true;
     error = null;
     notifyListeners();
 
     try {
       final res = await fetchPage(nextCursor);
+      if (generation != _loadGeneration) return;
       _items.addAll(res.items);
       nextCursor = res.nextCursor;
     } catch (e) {
-      onFetchError(e);
+      if (generation == _loadGeneration) onFetchError(e);
     } finally {
       isLoadingMore = false;
       notifyListeners();
@@ -63,6 +70,7 @@ abstract class PaginatedListController<T> extends ChangeNotifier {
   Future<void> refresh() => loadInitial();
 
   void clear() {
+    _loadGeneration++;
     _items.clear();
     nextCursor = null;
     error = null;
@@ -83,6 +91,7 @@ abstract class PaginatedListController<T> extends ChangeNotifier {
   /// Call directly from subclasses that need to reload unconditionally.
   @protected
   Future<void> doLoadInitial() async {
+    final generation = ++_loadGeneration;
     isLoading = true;
     error = null;
     _items.clear();
@@ -91,13 +100,17 @@ abstract class PaginatedListController<T> extends ChangeNotifier {
 
     try {
       final res = await fetchPage(null);
+      if (generation != _loadGeneration) return;
       _items.addAll(res.items);
       nextCursor = res.nextCursor;
     } catch (e) {
-      onFetchError(e);
+      if (generation == _loadGeneration) onFetchError(e);
     } finally {
-      isLoading = false;
-      notifyListeners();
+      // A newer load owns isLoading now.
+      if (generation == _loadGeneration) {
+        isLoading = false;
+        notifyListeners();
+      }
     }
   }
 

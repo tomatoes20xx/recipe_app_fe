@@ -45,7 +45,6 @@ class AppLocalizations {
 
   // Navigation & Tooltips
   String get home => _localizedValues[locale.languageCode]?["home"] ?? "Home";
-  String get menu => _localizedValues[locale.languageCode]?["menu"] ?? "Menu";
   String get createRecipe => _localizedValues[locale.languageCode]?["createRecipe"] ?? "Create Recipe";
   String get notifications => _localizedValues[locale.languageCode]?["notifications"] ?? "Notifications";
   String get markAllRead => _localizedValues[locale.languageCode]?["markAllRead"] ?? "Mark all read";
@@ -76,7 +75,6 @@ class AppLocalizations {
   String get logoutConfirmation => _localizedValues[locale.languageCode]?["logoutConfirmation"] ?? "Are you sure you want to log out?";
 
   // Common UI
-  String get feed => _localizedValues[locale.languageCode]?["feed"] ?? "Feed";
   String get recent => _localizedValues[locale.languageCode]?["recent"] ?? "Recent";
   String get top => _localizedValues[locale.languageCode]?["top"] ?? "Top";
   String get sortBy => _localizedValues[locale.languageCode]?["sortBy"] ?? "Sort by";
@@ -89,11 +87,23 @@ class AppLocalizations {
   String get clearAll => _localizedValues[locale.languageCode]?["clearAll"] ?? "Clear All";
   String get applyFilters => _localizedValues[locale.languageCode]?["applyFilters"] ?? "Apply Filters";
 
-  // Feed Scopes (Drawer menu)
+  // Feed scopes
   String get feedSortDiscovery => _localizedValues[locale.languageCode]?["feedSortDiscovery"] ?? "Discovery";
+  // Home feed header, sort sheet and Profile tab
+  String get feedTabForYou => _localizedValues[locale.languageCode]?["feedTabForYou"] ?? "For you";
+  String get sortSheetTitle => _localizedValues[locale.languageCode]?["sortSheetTitle"] ?? "Sort";
+  String get periodSheetTitle => _localizedValues[locale.languageCode]?["periodSheetTitle"] ?? "Period";
+  String get sortDiscoveryDesc => _localizedValues[locale.languageCode]?["sortDiscoveryDesc"] ?? "Recipes you haven't seen yet";
+  String get sortRecentDesc => _localizedValues[locale.languageCode]?["sortRecentDesc"] ?? "Most recently added";
+  String get sortTopDesc => _localizedValues[locale.languageCode]?["sortTopDesc"] ?? "Most liked recipes";
+  String get followingRecentDesc => _localizedValues[locale.languageCode]?["followingRecentDesc"] ?? "New recipes from people you follow";
+  String get followingTopDesc => _localizedValues[locale.languageCode]?["followingTopDesc"] ?? "Their most liked recipes";
+  String get streakKeepGoing => _localizedValues[locale.languageCode]?["streakKeepGoing"] ?? "Keep your streak going today";
+  String streakCardTitle(int n) => (_localizedValues[locale.languageCode]?["streakCardTitle"] ?? "{n}-day streak").replaceAll("{n}", n.toString());
+  String get myRecipes => _localizedValues[locale.languageCode]?["myRecipes"] ?? "My recipes";
+
   String get feedDiscoveryEmptyTitle => _localizedValues[locale.languageCode]?["feedDiscoveryEmptyTitle"] ?? "You're all caught up!";
   String get feedDiscoveryEmptySubtitle => _localizedValues[locale.languageCode]?["feedDiscoveryEmptySubtitle"] ?? "You've seen all recipes. Check back soon for new ones.";
-  String get global => _localizedValues[locale.languageCode]?["global"] ?? "Global";
   String get seeRecipesFromEveryone => _localizedValues[locale.languageCode]?["seeRecipesFromEveryone"] ?? "See recipes from everyone";
   String get following => _localizedValues[locale.languageCode]?["following"] ?? "Following";
   String get seeRecipesFromPeopleYouFollow => _localizedValues[locale.languageCode]?["seeRecipesFromPeopleYouFollow"] ?? "See recipes from people you follow";
@@ -406,7 +416,6 @@ class AppLocalizations {
   String get feedPreferences => _localizedValues[locale.languageCode]?["feedPreferences"] ?? "Feed Preferences";
   String get quickAccess => _localizedValues[locale.languageCode]?["quickAccess"] ?? "Quick Access";
   String get library => _localizedValues[locale.languageCode]?["library"] ?? "Library";
-  String get nowViewing => _localizedValues[locale.languageCode]?["nowViewing"] ?? "NOW VIEWING";
   String get signOut => _localizedValues[locale.languageCode]?["signOut"] ?? "Sign out";
   String get signOutConfirmTitle => _localizedValues[locale.languageCode]?["signOutConfirmTitle"] ?? "Sign out?";
   String get signOutConfirmMessage => _localizedValues[locale.languageCode]?["signOutConfirmMessage"] ?? "Are you sure you want to sign out?";
@@ -424,7 +433,6 @@ class AppLocalizations {
   String get englishLanguage => _localizedValues[locale.languageCode]?["englishLanguage"] ?? "English";
   String get georgianLanguage => _localizedValues[locale.languageCode]?["georgianLanguage"] ?? "ქართული";
   String get helpAndSupport => _localizedValues[locale.languageCode]?["helpAndSupport"] ?? "Help & Support";
-  String get help => _localizedValues[locale.languageCode]?["help"] ?? "Help";
   String get termsAndPrivacy => _localizedValues[locale.languageCode]?["termsAndPrivacy"] ?? "Terms & Privacy";
 
   // Profile Edit
@@ -626,8 +634,8 @@ class AppLocalizations {
   String get tourCreateDescription => _localizedValues[locale.languageCode]?["tourCreateDescription"] ?? "Tap here to create and share your own recipes with the community. Add photos, ingredients, and steps!";
   String get tourNotificationsTitle => _localizedValues[locale.languageCode]?["tourNotificationsTitle"] ?? "Stay Updated 🔔";
   String get tourNotificationsDescription => _localizedValues[locale.languageCode]?["tourNotificationsDescription"] ?? "Get notified when someone likes your recipes, follows you, or comments on your posts!";
-  String get tourMenuTitle => _localizedValues[locale.languageCode]?["tourMenuTitle"] ?? "More Features 📱";
-  String get tourMenuDescription => _localizedValues[locale.languageCode]?["tourMenuDescription"] ?? "Access saved recipes, notifications, settings, and more from the menu.";
+  String get tourMenuTitle => _localizedValues[locale.languageCode]?["tourMenuTitle"] ?? "Your profile";
+  String get tourMenuDescription => _localizedValues[locale.languageCode]?["tourMenuDescription"] ?? "Your saved recipes, shopping list and settings are all on your profile.";
   String get tourSortTitle => _localizedValues[locale.languageCode]?["tourSortTitle"] ?? "Sort Your Feed 🔽";
   String get tourSortDescription => _localizedValues[locale.languageCode]?["tourSortDescription"] ?? "Switch between Recent (newest first) and Top (most popular) posts. Choose what matters to you!";
   String get tourViewToggleTitle => _localizedValues[locale.languageCode]?["tourViewToggleTitle"] ?? "Switch Views 👁️";
@@ -1020,7 +1028,6 @@ class AppLocalizations {
       "hidePassword": "Hide password",
       "appTagline": "What are you cooking this evening?",
       "home": "Home",
-      "menu": "Menu",
       "createRecipe": "Create Recipe",
       "notifications": "Notifications",
       "markAllRead": "Mark all read",
@@ -1046,7 +1053,6 @@ class AppLocalizations {
       "search": "Search",
       "logout": "Logout",
       "logoutConfirmation": "Are you sure you want to log out?",
-      "feed": "Feed",
       "recent": "Recent",
       "top": "Top",
       "sortBy": "Sort by",
@@ -1059,9 +1065,19 @@ class AppLocalizations {
       "clearAll": "Clear All",
       "applyFilters": "Apply Filters",
       "feedSortDiscovery": "Discovery",
+      "feedTabForYou": "For you",
+      "sortSheetTitle": "Sort",
+      "periodSheetTitle": "Period",
+      "sortDiscoveryDesc": "Recipes you haven't seen yet",
+      "sortRecentDesc": "Most recently added",
+      "sortTopDesc": "Most liked recipes",
+      "followingRecentDesc": "New recipes from people you follow",
+      "followingTopDesc": "Their most liked recipes",
+      "streakKeepGoing": "Keep your streak going today",
+      "streakCardTitle": "{n}-day streak",
+      "myRecipes": "My recipes",
       "feedDiscoveryEmptyTitle": "You're all caught up!",
       "feedDiscoveryEmptySubtitle": "You've seen all recipes. Check back soon for new ones.",
-      "global": "Global",
       "seeRecipesFromEveryone": "See recipes from everyone",
       "following": "Following",
       "seeRecipesFromPeopleYouFollow": "See recipes from people you follow",
@@ -1309,7 +1325,6 @@ class AppLocalizations {
       "feedPreferences": "Feed Preferences",
       "quickAccess": "Quick Access",
       "library": "Library",
-      "nowViewing": "NOW VIEWING",
       "signOut": "Sign out",
       "signOutConfirmTitle": "Sign out?",
       "signOutConfirmMessage": "Are you sure you want to sign out?",
@@ -1327,7 +1342,6 @@ class AppLocalizations {
       "englishLanguage": "English",
       "georgianLanguage": "ქართული",
       "helpAndSupport": "Help & Support",
-      "help": "Help",
       "termsAndPrivacy": "Terms & Privacy",
       "editProfile": "Edit Profile",
       "profileUpdateInfo": "Update your profile information. Changes will be visible to other users.",
@@ -1530,8 +1544,8 @@ class AppLocalizations {
       "tourCreateDescription": "Tap here to create and share your own recipes with the community. Add photos, ingredients, and steps!",
       "tourNotificationsTitle": "Stay Updated 🔔",
       "tourNotificationsDescription": "Get notified when someone likes your recipes, follows you, or comments on your posts!",
-      "tourMenuTitle": "More Features 📱",
-      "tourMenuDescription": "Access saved recipes, notifications, settings, and more from the menu.",
+      "tourMenuTitle": "Your profile",
+      "tourMenuDescription": "Your saved recipes, shopping list and settings are all on your profile.",
       "tourSortTitle": "Sort Your Feed 🔽",
       "tourSortDescription": "Switch between Recent (newest first) and Top (most popular) posts. Choose what matters to you!",
       "tourViewToggleTitle": "Switch Views 👁️",
@@ -1889,7 +1903,6 @@ class AppLocalizations {
       "hidePassword": "პაროლის დამალვა",
       "appTagline": "ამ საღამოს რას ამზადებ?",
       "home": "მთავარი",
-      "menu": "მენიუ",
       "createRecipe": "რეცეპტის შექმნა",
       "notifications": "შეტყობინებები",
       "markAllRead": "ყველას წაკითხულად მონიშვნა",
@@ -1915,7 +1928,6 @@ class AppLocalizations {
       "search": "ძიება",
       "logout": "გასვლა",
       "logoutConfirmation": "დარწმუნებული ხართ, რომ გსურთ გასვლა?",
-      "feed": "არხი",
       "recent": "უახლესი",
       "top": "ყველაზე პოპულარული",
       "sortBy": "დალაგების კრიტერიუმი",
@@ -1928,9 +1940,19 @@ class AppLocalizations {
       "clearAll": "ყველას გასუფთავება",
       "applyFilters": "გაფილტვრა",
       "feedSortDiscovery": "აღმოჩენა",
+      "feedTabForYou": "შენთვის",
+      "sortSheetTitle": "დალაგება",
+      "periodSheetTitle": "პერიოდი",
+      "sortDiscoveryDesc": "რეცეპტები, რომლებიც ჯერ არ გინახავს",
+      "sortRecentDesc": "ბოლოს დამატებული რეცეპტები",
+      "sortTopDesc": "ყველაზე მოწონებული რეცეპტები",
+      "followingRecentDesc": "გამოწერილი ავტორების ახალი რეცეპტები",
+      "followingTopDesc": "მათი ყველაზე მოწონებული რეცეპტები",
+      "streakKeepGoing": "გააგრძელე სერია დღესაც",
+      "streakCardTitle": "{n}-დღიანი სერია",
+      "myRecipes": "ჩემი რეცეპტები",
       "feedDiscoveryEmptyTitle": "ყველაფერი ნანახია!",
       "feedDiscoveryEmptySubtitle": "ყველა რეცეპტი ნანახია. მალე დაბრუნდი ახლისთვის.",
-      "global": "გლობალური",
       "seeRecipesFromEveryone": "იხილეთ რეცეპტები ყველასგან",
       "following": "გამოწერილი",
       "seeRecipesFromPeopleYouFollow": "იხილეთ რეცეპტები გამოწერილი მომხმარებლებისგან",
@@ -2178,7 +2200,6 @@ class AppLocalizations {
       "feedPreferences": "ფიდის პარამეტრები",
       "quickAccess": "სწრაფი წვდომა",
       "library": "ბიბლიოთეკა",
-      "nowViewing": "აქტიური არხი",
       "signOut": "გამოსვლა",
       "signOutConfirmTitle": "გამოსვლა?",
       "signOutConfirmMessage": "დარწმუნებული ხართ, რომ გსურთ გამოსვლა?",
@@ -2196,7 +2217,6 @@ class AppLocalizations {
       "englishLanguage": "ინგლისური",
       "georgianLanguage": "ქართული",
       "helpAndSupport": "დახმარება და მხარდაჭერა",
-      "help": "დახმარება",
       "termsAndPrivacy": "წესები და კონფიდენციალურობა",
       "editProfile": "პროფილის რედაქტირება",
       "profileUpdateInfo": "განაახლეთ თქვენი პროფილის ინფორმაცია. ცვლილებები გამოუჩდნებათ სხვა მომხმარებლებს.",
@@ -2400,8 +2420,8 @@ class AppLocalizations {
       "tourCreateDescription": "დააჭირეთ აქ თქვენი რეცეპტის შესაქმნელად და სხვა მომხმარებლებთან გასაზიარებლად. დაამატეთ ფოტოები, ინგრედიენტები და ნაბიჯები!",
       "tourNotificationsTitle": "იყავით ინფორმირებული 🔔",
       "tourNotificationsDescription": "მიიღეთ შეტყობინებები როდესაც ვიღაც მოიწონებს თქვენს რეცეპტებს, გამოგიწერთ ან კომენტარს დაგიწერთ!",
-      "tourMenuTitle": "სხვა ფუნქციები 📱",
-      "tourMenuDescription": "წვდომა შენახულ რეცეპტებზე, შეტყობინებებზე, პარამეტრებზე და სხვა აპლიკაციის ფუნქციებზე მენიუდან.",
+      "tourMenuTitle": "თქვენი პროფილი",
+      "tourMenuDescription": "შენახული რეცეპტები, საყიდლების სია და პარამეტრები თქვენს პროფილზეა.",
       "tourSortTitle": "დაალაგეთ თქვენი არხი 🔽",
       "tourSortDescription": "გადართეთ უახლესი (ახალი პირველი) და ტოპ (ყველაზე პოპულარული) პოსტებს შორის. აირჩიეთ რაც მნიშვნელოვანია თქვენთვის!",
       "tourViewToggleTitle": "გადართეთ ხედები 👁️",

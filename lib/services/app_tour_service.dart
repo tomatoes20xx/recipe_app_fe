@@ -140,7 +140,7 @@ class AppTourService {
       ),
     );
 
-    // 6. Menu
+    // 6. Profile tab (menuKey is on the Profile item of the bottom nav)
     targets.add(
       TargetFocus(
         identify: "menu",
@@ -153,9 +153,9 @@ class AppTourService {
             align: ContentAlign.top,
             builder: (context, controller) => _buildContent(
               context,
-              title: localizations?.tourMenuTitle ?? "More Features 📱",
+              title: localizations?.tourMenuTitle ?? "Your profile",
               description: localizations?.tourMenuDescription ??
-                  "Access saved recipes, notifications, settings, and more from the menu.",
+                  "Your saved recipes, shopping list and settings are all on your profile.",
               isLast: true,
             ),
           ),
