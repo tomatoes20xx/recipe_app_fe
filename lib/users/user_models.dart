@@ -187,16 +187,21 @@ class LibraryCounts {
   final int sharedRecipes;
   final int sharedShoppingLists;
 
+  /// Null when the backend predates this field; the row then shows no count.
+  final int? likedRecipes;
+
   LibraryCounts({
     required this.savedRecipes,
     required this.sharedRecipes,
     required this.sharedShoppingLists,
+    this.likedRecipes,
   });
 
   factory LibraryCounts.fromJson(Map<String, dynamic> json) => LibraryCounts(
         savedRecipes: (json["savedRecipes"] as num?)?.toInt() ?? 0,
         sharedRecipes: (json["sharedRecipes"] as num?)?.toInt() ?? 0,
         sharedShoppingLists: (json["sharedShoppingLists"] as num?)?.toInt() ?? 0,
+        likedRecipes: (json["likedRecipes"] as num?)?.toInt(),
       );
 }
 

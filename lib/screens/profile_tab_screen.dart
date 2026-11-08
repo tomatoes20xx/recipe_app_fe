@@ -1064,10 +1064,11 @@ class _ProfileTabScreenState extends State<ProfileTabScreen> {
                 }),
               ),
               Divider(height: 1, thickness: 1, color: t.line),
-              // No count: /users/me/library-counts doesn't return one for likes.
               _LibraryRow(
                 icon: Icons.favorite_border_rounded,
                 label: l?.likedRecipes ?? "Liked recipes",
+                count: counts?.likedRecipes,
+                loading: countsLoading,
                 onTap: () => _requireAccountThen(AccountReason.like, (navigator) {
                   navigator.push(MaterialPageRoute(
                     builder: (_) => LikedRecipesScreen(
