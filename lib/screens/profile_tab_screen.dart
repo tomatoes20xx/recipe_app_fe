@@ -855,10 +855,10 @@ class _ProfileTabScreenState extends State<ProfileTabScreen> {
   Widget _buildStreakCard(AppTokens t, AppLocalizations? l) {
     final streak = widget.streakController;
     final n = streak.currentStreak;
-    // UTC, like the server's streak days, so the dots always match [n].
-    final done = streak.streakDatesUtc;
-    final now = DateTime.now().toUtc();
-    final today = DateTime.utc(now.year, now.month, now.day);
+    // Both come from the server, in the user's own timezone, so the dots
+    // always match [n] and "today" flips at the user's midnight.
+    final done = streak.streakDays;
+    final today = streak.today;
     // Same check as today's dot, so the subtitle and the tick always agree.
     final doneToday = done.contains(today);
     final monday = today.subtract(Duration(days: today.weekday - 1));

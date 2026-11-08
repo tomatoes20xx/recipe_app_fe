@@ -4,6 +4,7 @@ import "dart:io";
 
 import "package:firebase_messaging/firebase_messaging.dart";
 import "package:flutter/material.dart";
+import "package:flutter_timezone/flutter_timezone.dart";
 
 import "../api/api_client.dart";
 import "../auth/auth_controller.dart";
@@ -73,6 +74,10 @@ class _FeedShellScreenState extends State<FeedShellScreen>
 
   /// Shared by the Home streak chip and the Profile tab's streak card.
   late final StreakController _streakController;
+
+  /// The timezone the server last accepted for this account (null until
+  /// sent, and again after sign-out).
+  String? _syncedTimezone;
   StreamSubscription<String>? _fcmTokenRefreshSub;
 
   /// Auth state the shell last reacted to (see [_onAuthChanged]).
@@ -106,7 +111,7 @@ class _FeedShellScreenState extends State<FeedShellScreen>
     _wasSignedIn = widget.auth.isLoggedIn;
     if (_wasSignedIn) {
       _notificationController.refreshUnreadCount();
-      _streakController.load();
+      _syncTimezoneThenLoadStreak();
       _registerFcmToken();
     }
     widget.auth.addListener(_onAuthChanged);
@@ -150,7 +155,7 @@ class _FeedShellScreenState extends State<FeedShellScreen>
       _flushPendingSeenIds();
       _registerFcmToken();
       _notificationController.refreshUnreadCount();
-      _streakController.load();
+      _syncTimezoneThenLoadStreak();
       widget.shoppingListController.syncWithServer();
     } else {
       _fcmTokenRefreshSub?.cancel();
@@ -158,6 +163,7 @@ class _FeedShellScreenState extends State<FeedShellScreen>
       widget.auth.onBeforeLogout = null;
       _notificationController.clear();
       _streakController.clear();
+      _syncedTimezone = null; // the next account reports its own
       widget.shoppingListController.clearLocal();
       _ensureHomeTab();
       // Following needs an account, so a signed-out user goes back to For you.
@@ -167,6 +173,21 @@ class _FeedShellScreenState extends State<FeedShellScreen>
         feed.refresh();
       }
     }
+  }
+
+  /// Reports the device's timezone (only when it changed) so the server
+  /// counts streak days at the user's own midnight, then loads the streak,
+  /// which is counted in that zone. A failed report keeps the server's last
+  /// zone (Georgian time by default) and still loads the streak.
+  Future<void> _syncTimezoneThenLoadStreak() async {
+    try {
+      final timezone = (await FlutterTimezone.getLocalTimezone()).identifier;
+      if (timezone != _syncedTimezone && widget.auth.isLoggedIn) {
+        await UserApi(widget.apiClient).updateTimezone(timezone);
+        _syncedTimezone = timezone;
+      }
+    } catch (_) {}
+    if (widget.auth.isLoggedIn) await _streakController.load();
   }
 
   Future<void> _flushPendingSeenIds() async {
@@ -221,7 +242,8 @@ class _FeedShellScreenState extends State<FeedShellScreen>
       PushPromptService().onForegrounded(context, widget.auth, widget.apiClient);
       if (widget.auth.isLoggedIn) {
         _notificationController.refreshUnreadCount();
-        _streakController.load();
+        // The device may have changed timezone while in the background.
+        _syncTimezoneThenLoadStreak();
       }
     }
     if (state == AppLifecycleState.paused || state == AppLifecycleState.detached) {

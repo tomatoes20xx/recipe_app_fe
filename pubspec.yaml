@@ -80,6 +80,7 @@ dependencies:
   app_tracking_transparency: ^2.0.6
   # Lottie animations
   lottie: ^3.3.3
+  flutter_timezone: ^5.1.1
 
 dev_dependencies:
   flutter_test:

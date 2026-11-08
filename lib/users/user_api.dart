@@ -155,6 +155,12 @@ class UserApi {
     return Map<String, dynamic>.from(data as Map);
   }
 
+  /// Tell the server the device's IANA timezone (e.g. "Asia/Tbilisi"), so
+  /// streak days follow the user's own midnight.
+  Future<void> updateTimezone(String timezone) async {
+    await api.patch("/users/me/timezone", body: {"timezone": timezone}, auth: true);
+  }
+
   /// Set or clear the profile cover photo.
   /// Pass [recipeImageUrl] to set a cover from an uploaded recipe image.
   /// Pass null to clear the existing cover.
