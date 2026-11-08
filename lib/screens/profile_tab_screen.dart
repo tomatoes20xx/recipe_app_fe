@@ -1,9 +1,12 @@
+import "dart:io";
 import "dart:math" as math;
 
 import "package:flutter/material.dart";
+import "package:image_picker/image_picker.dart";
 import "package:intl/intl.dart";
 
 import "../api/api_client.dart";
+import "../auth/auth_api.dart";
 import "../auth/auth_controller.dart";
 import "../auth/require_account.dart";
 import "../feed/feed_models.dart";
@@ -18,27 +21,30 @@ import "../users/streak_controller.dart";
 import "../users/user_api.dart";
 import "../users/user_models.dart";
 import "../users/user_recipes_controller.dart";
+import "../utils/error_utils.dart";
+import "../utils/image_utils.dart";
 import "../utils/ui_utils.dart";
+import "../widgets/common/common_widgets.dart";
 import "../widgets/common/profile_avatar.dart";
+import "../widgets/common/profile_stats_card.dart";
+import "../widgets/common/recipe_grid_tile.dart";
+import "../widgets/common/skeleton_pill.dart";
 import "edit_profile_screen.dart";
 import "followers_screen.dart";
 import "following_screen.dart";
-import "profile_screen.dart";
+import "image_crop_screen.dart";
+import "my_recipes_screen.dart";
 import "saved_recipes_screen.dart";
 import "settings_screen.dart";
 import "shared_recipes_screen.dart";
 import "shared_shopping_lists_screen.dart";
 import "shopping_list_screen.dart";
 
-/// The Profile tab of the shell: the user's identity, stats, streak, library
-/// and latest recipes, with settings (and sign out) behind the gear. Guests
-/// get a sign-up card instead of the personal sections.
-///
-/// This is not [ProfileScreen] with a flag: that screen's own-profile layout
-/// differs in every section, and its recipe list is bound to one username for
-/// its lifetime, while this tab stays mounted across sign-in and sign-out.
-/// "See all" and the identity row open [ProfileScreen] for the full view
-/// (all recipes, liked/saved tabs, avatar and cover photo).
+/// The Profile tab of the shell and the only screen for your own profile:
+/// cover and avatar (both editable), stats, streak, library and your latest
+/// recipes, with settings (and sign out) behind the gear. "See all" and the
+/// recipes stat open [MyRecipesScreen]. Guests get a sign-up card instead of
+/// the personal sections.
 class ProfileTabScreen extends StatefulWidget {
   const ProfileTabScreen({
     super.key,
@@ -77,6 +83,11 @@ class _ProfileTabScreenState extends State<ProfileTabScreen> {
   UserProfile? _profile;
   LibraryCounts? _libraryCounts;
   UserRecipesController? _recipes;
+
+  final ImagePicker _imagePicker = ImagePicker();
+  bool _isUploading = false;
+  bool _isDeleting = false;
+  bool _isSettingCover = false;
 
   @override
   void initState() {
@@ -193,12 +204,21 @@ class _ProfileTabScreenState extends State<ProfileTabScreen> {
     ));
   }
 
-  void _openFullProfile() {
-    _push(ProfileScreen(
-      auth: widget.auth,
-      apiClient: widget.apiClient,
-      shoppingListController: widget.shoppingListController,
+  /// Full recipe list, liked recipes and likes received. Coming back reloads
+  /// counts and, if the recipe count changed, the preview (see [_load]).
+  Future<void> _openMyRecipes() async {
+    final username = _username;
+    if (username == null) return;
+    await Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => MyRecipesScreen(
+        auth: widget.auth,
+        apiClient: widget.apiClient,
+        shoppingListController: widget.shoppingListController,
+        username: username,
+        initialTab: 0,
+      ),
     ));
+    if (mounted) _load();
   }
 
   Future<void> _openEditProfile() async {
@@ -212,6 +232,305 @@ class _ProfileTabScreenState extends State<ProfileTabScreen> {
   }
 
   // ─────────────────────────────────────────────────────────────
+  // AVATAR + COVER PHOTO (moved here from ProfileScreen's self mode)
+  // ─────────────────────────────────────────────────────────────
+
+  /// Avatar and cover menus: a `sheet` bottom sheet with the sort sheet's
+  /// drag handle.
+  void _showMenuSheet(List<Widget> Function(BuildContext sheetContext) items) {
+    final t = AppTokens.of(context);
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: t.sheet,
+      barrierColor: t.scrim,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (sheetContext) => SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.only(top: 8, bottom: 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(color: t.line, borderRadius: BorderRadius.circular(2)),
+              ),
+              const SizedBox(height: 14),
+              ...items(sheetContext),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _uploadAvatar() async {
+    try {
+      final XFile? image = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 85,
+      );
+      if (image == null || !mounted) return;
+
+      final croppedFile = await ImageCropScreen.show(
+        context,
+        File(image.path),
+        aspectRatio: 1.0,
+      );
+      if (croppedFile == null || !mounted) return;
+
+      setState(() => _isUploading = true);
+
+      final compressedFile = await ImageUtils.compressAvatar(croppedFile);
+      final fileToUpload = compressedFile ?? croppedFile;
+
+      await AuthApi(widget.apiClient).uploadAvatar(fileToUpload);
+      await widget.auth.bootstrap();
+
+      if (mounted) {
+        ErrorUtils.showSuccess(
+          context,
+          AppLocalizations.of(context)?.avatarUpdatedSuccessfully ??
+              "Avatar updated successfully",
+        );
+      }
+    } catch (e) {
+      if (mounted) ErrorUtils.showError(context, e);
+    } finally {
+      if (mounted) setState(() => _isUploading = false);
+    }
+  }
+
+  void _showAvatarMenu(String? avatarUrl) {
+    _showMenuSheet((context) {
+      final localizations = AppLocalizations.of(context);
+      if (avatarUrl == null || avatarUrl.isEmpty) {
+        return [
+          ListTile(
+            leading: const Icon(Icons.add_photo_alternate_outlined),
+            title: Text(localizations?.addAvatar ?? "Add Avatar"),
+            onTap: () {
+              Navigator.of(context).pop();
+              _uploadAvatar();
+            },
+          ),
+        ];
+      }
+      return [
+        ListTile(
+          leading: const Icon(Icons.photo_library_outlined),
+          title: Text(localizations?.updateAvatar ?? "Update Avatar"),
+          onTap: () {
+            Navigator.of(context).pop();
+            _uploadAvatar();
+          },
+        ),
+        ListTile(
+          leading: Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.error),
+          title: Text(
+            localizations?.deleteAvatar ?? "Delete Avatar",
+            style: TextStyle(color: Theme.of(context).colorScheme.error),
+          ),
+          onTap: () {
+            Navigator.of(context).pop();
+            _deleteAvatar();
+          },
+        ),
+      ];
+    });
+  }
+
+  Future<void> _deleteAvatar() async {
+    final localizations = AppLocalizations.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(localizations?.deleteAvatar ?? "Delete Avatar"),
+        content: Text(localizations?.areYouSureDeleteAvatar ??
+            "Are you sure you want to remove your avatar?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(localizations?.cancel ?? "Cancel"),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(localizations?.delete ?? "Delete"),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    try {
+      setState(() => _isDeleting = true);
+      await AuthApi(widget.apiClient).deleteAvatar();
+      await widget.auth.bootstrap();
+      if (mounted) {
+        ErrorUtils.showSuccess(
+          context,
+          AppLocalizations.of(context)?.avatarRemovedSuccessfully ??
+              "Avatar removed successfully",
+        );
+      }
+    } catch (e) {
+      if (mounted) ErrorUtils.showError(context, e);
+    } finally {
+      if (mounted) setState(() => _isDeleting = false);
+    }
+  }
+
+  void _showCoverPhotoMenu() {
+    final hasCover = _profile?.coverPhotoUrl != null;
+    final parentContext = context;
+    _showMenuSheet((ctx) {
+      final localizations = AppLocalizations.of(ctx);
+      return [
+        ListTile(
+          leading: const Icon(Icons.photo_library_outlined),
+          title: Text(hasCover
+              ? (localizations?.changeCoverPhoto ?? "Change cover photo")
+              : (localizations?.addCoverPhoto ?? "Add cover photo")),
+          onTap: () {
+            Navigator.of(ctx).pop();
+            _pickCoverPhoto(parentContext);
+          },
+        ),
+        if (hasCover)
+          ListTile(
+            leading: Icon(Icons.delete_outline, color: Theme.of(ctx).colorScheme.error),
+            title: Text(
+              localizations?.removeCoverPhoto ?? "Remove cover photo",
+              style: TextStyle(color: Theme.of(ctx).colorScheme.error),
+            ),
+            onTap: () {
+              Navigator.of(ctx).pop();
+              _removeCoverPhoto();
+            },
+          ),
+      ];
+    });
+  }
+
+  Future<void> _pickCoverPhoto(BuildContext parentContext) async {
+    final controller = _recipes;
+    if (!mounted) return;
+
+    final localizations = AppLocalizations.of(parentContext);
+
+    final hasAnyImages =
+        controller?.items.any((r) => r.images.isNotEmpty) ?? false;
+    if (!hasAnyImages) {
+      ErrorUtils.showError(
+        parentContext,
+        localizations?.noRecipesForCover ?? "Upload a recipe with a photo first",
+      );
+      return;
+    }
+
+    final selected = await showAppBottomSheet<String>(
+      context: parentContext,
+      isScrollControlled: true,
+      builder: (ctx) => DraggableScrollableSheet(
+        initialChildSize: 0.6,
+        minChildSize: 0.4,
+        maxChildSize: 0.9,
+        expand: false,
+        builder: (_, scrollCtrl) => _CoverPhotoGrid(
+          scrollController: scrollCtrl,
+          recipesController: controller,
+          activeCoverUrl: _profile?.coverPhotoUrl,
+          onSelected: (url) => Navigator.of(ctx).pop(url),
+          title: localizations?.selectCoverPhotoTitle ?? "Select cover photo",
+        ),
+      ),
+    );
+
+    if (selected == null || !mounted) return;
+    await _applySetCoverPhoto(selected);
+  }
+
+  Future<void> _applySetCoverPhoto(String imageUrl) async {
+    setState(() => _isSettingCover = true);
+    try {
+      await UserApi(widget.apiClient).setCoverPhoto(imageUrl);
+      if (!mounted) return;
+      setState(() {
+        _profile = _profile?.copyWith(coverPhotoUrl: imageUrl);
+      });
+      final localizations = AppLocalizations.of(context);
+      ErrorUtils.showSuccess(
+        context,
+        localizations?.coverPhotoUpdated ?? "Cover photo updated",
+      );
+    } catch (e) {
+      if (mounted) ErrorUtils.showError(context, e);
+    } finally {
+      if (mounted) setState(() => _isSettingCover = false);
+    }
+  }
+
+  Future<void> _removeCoverPhoto() async {
+    setState(() => _isSettingCover = true);
+    try {
+      await UserApi(widget.apiClient).setCoverPhoto(null);
+      if (!mounted) return;
+      setState(() {
+        _profile = _profile?.copyWith(coverPhotoUrl: null);
+      });
+      final localizations = AppLocalizations.of(context);
+      ErrorUtils.showSuccess(
+        context,
+        localizations?.coverPhotoRemoved ?? "Cover photo removed",
+      );
+    } catch (e) {
+      if (mounted) ErrorUtils.showError(context, e);
+    } finally {
+      if (mounted) setState(() => _isSettingCover = false);
+    }
+  }
+
+  /// Moved from ProfileScreen's self mode: same conditions and copy.
+  /// Null when none applies.
+  Widget? _buildBanBanner(BuildContext context) {
+    final localizations = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    if (widget.auth.isPermanentlyBanned) {
+      return _BanBanner(
+        message: localizations?.accountPermanentlyBannedMessage ??
+            "Your account has been permanently suspended.",
+        color: theme.colorScheme.error,
+      );
+    }
+    if (widget.auth.isSoftBanned) {
+      return _BanBanner(
+        message: localizations?.accountSoftBannedUntil(
+                formatDate(context, widget.auth.softBannedUntil!)) ??
+            "Your account is temporarily suspended.",
+        color: theme.colorScheme.error,
+      );
+    }
+    if (widget.auth.violationCount == 2) {
+      return _BanBanner(
+        message: localizations?.violationWarning2 ??
+            "Warning: 1 more violation will result in a 7-day suspension",
+        color: Colors.orange,
+      );
+    }
+    if (widget.auth.violationCount == 5) {
+      return _BanBanner(
+        message: localizations?.violationWarning5 ??
+            "Warning: 1 more violation will result in a permanent ban",
+        color: theme.colorScheme.error,
+      );
+    }
+    return null;
+  }
+
+  // ─────────────────────────────────────────────────────────────
   // BUILD
   // ─────────────────────────────────────────────────────────────
 
@@ -220,6 +539,7 @@ class _ProfileTabScreenState extends State<ProfileTabScreen> {
     final t = AppTokens.of(context);
     final l = AppLocalizations.of(context);
     final signedIn = widget.auth.isLoggedIn;
+    final banBanner = signedIn ? _buildBanBanner(context) : null;
     const gap = SizedBox(height: 24);
 
     return Material(
@@ -238,9 +558,13 @@ class _ProfileTabScreenState extends State<ProfileTabScreen> {
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                   children: [
                     if (signedIn) ...[
-                      _buildIdentity(t),
+                      if (banBanner != null) ...[
+                        banBanner,
+                        const SizedBox(height: 16),
+                      ],
+                      _buildHeader(t, l),
                       gap,
-                      _buildStatsCard(t, l),
+                      _buildStatsCard(l),
                       gap,
                       _buildEditProfileButton(t, l),
                       gap,
@@ -301,98 +625,215 @@ class _ProfileTabScreenState extends State<ProfileTabScreen> {
     );
   }
 
-  Widget _buildIdentity(AppTokens t) {
+  /// Cover photo with the avatar overlapping its bottom edge and the name
+  /// beside the avatar, below the cover. Both photos are editable here.
+  Widget _buildHeader(AppTokens t, AppLocalizations? l) {
     final me = widget.auth.me;
     final username = me?["username"]?.toString() ?? "";
     final displayName = me?["display_name"]?.toString();
     final name = (displayName == null || displayName.isEmpty) ? username : displayName;
+    final avatarUrl = me?["avatar_url"]?.toString();
+    final hasAvatar = avatarUrl != null && avatarUrl.isNotEmpty && avatarUrl != "null";
+    final coverUrl = _profile?.coverPhotoUrl;
+    final avatarBusy = _isUploading || _isDeleting;
 
-    return InkWell(
-      onTap: _openFullProfile,
-      borderRadius: BorderRadius.circular(16),
-      child: Row(
-        children: [
-          // 3px gap in the screen color, then a 2px brand ring.
-          Container(
-            padding: const EdgeInsets.all(3),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: t.brand, width: 2),
-            ),
-            child: ProfileAvatar(avatarUrl: me?["avatar_url"]?.toString(), name: username, size: 72),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    const coverHeight = 132.0;
+    const avatarSize = 80.0;
+    const avatarBox = avatarSize + 2 * (3 + 2); // 3px gap + 2px ring each side
+    const avatarTop = coverHeight - 40;
+    const nameLeft = 16 + avatarBox + 12;
+
+    const spinner = SizedBox(
+      width: 16,
+      height: 16,
+      child: CircularProgressIndicator(
+        strokeWidth: 2,
+        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+      ),
+    );
+
+    return Stack(
+      children: [
+        // Sizes the header to include the avatar's overhang.
+        const SizedBox(width: double.infinity, height: avatarTop + avatarBox),
+        Positioned(
+          top: 0,
+          left: 0,
+          right: 0,
+          height: coverHeight,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: Stack(
+              fit: StackFit.expand,
               children: [
-                Text(
-                  name,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: t.ink),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  "@$username",
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontSize: 14, color: t.ink2),
+                if (coverUrl != null)
+                  RecipeImageWidget(
+                    imageUrl: coverUrl,
+                    width: double.infinity,
+                    height: coverHeight,
+                    fit: BoxFit.cover,
+                    cacheHeight: 360,
+                  )
+                else
+                  ColoredBox(color: t.soft),
+                // 36px button at a 12px inset; the 4px padding around it
+                // makes the tap target 44px.
+                Positioned(
+                  right: 8,
+                  bottom: 8,
+                  child: Semantics(
+                    button: true,
+                    enabled: !_isSettingCover,
+                    label: coverUrl != null
+                        ? (l?.changeCoverPhoto ?? "Change cover photo")
+                        : (l?.addCoverPhoto ?? "Add cover photo"),
+                    excludeSemantics: true,
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: _isSettingCover ? null : _showCoverPhotoMenu,
+                      child: Padding(
+                        padding: const EdgeInsets.all(4),
+                        child: Container(
+                          width: 36,
+                          height: 36,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.45),
+                            shape: BoxShape.circle,
+                          ),
+                          child: _isSettingCover
+                              ? spinner
+                              : const Icon(Icons.photo_camera, size: 18, color: Colors.white),
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
               ],
             ),
           ),
-        ],
-      ),
+        ),
+        // Name + handle: beside the avatar, 8px below the cover.
+        Padding(
+          padding: const EdgeInsets.only(top: coverHeight + 8, left: nameLeft),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                name,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: t.ink),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                "@$username",
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(fontSize: 14, color: t.ink2),
+              ),
+            ],
+          ),
+        ),
+        Positioned(
+          top: avatarTop,
+          left: 16,
+          child: Semantics(
+            button: true,
+            enabled: !avatarBusy,
+            label: hasAvatar ? (l?.updateAvatar ?? "Update Avatar") : (l?.addAvatar ?? "Add Avatar"),
+            excludeSemantics: true,
+            child: GestureDetector(
+              onTap: avatarBusy ? null : () => _showAvatarMenu(hasAvatar ? avatarUrl : null),
+              child: SizedBox(
+                width: avatarBox,
+                height: avatarBox,
+                child: Stack(
+                  children: [
+                    // 3px gap in the screen color, then a 2px brand ring.
+                    Container(
+                      padding: const EdgeInsets.all(3),
+                      decoration: BoxDecoration(
+                        color: t.bg,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: t.brand, width: 2),
+                      ),
+                      child: Stack(
+                        children: [
+                          ProfileAvatar(avatarUrl: avatarUrl, name: username, size: avatarSize),
+                          if (avatarBusy)
+                            ClipOval(
+                              child: Container(
+                                width: avatarSize,
+                                height: avatarSize,
+                                color: Colors.black.withValues(alpha: 0.5),
+                                alignment: Alignment.center,
+                                child: spinner,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    Positioned(
+                      right: 0,
+                      bottom: 0,
+                      child: Container(
+                        width: 28,
+                        height: 28,
+                        decoration: BoxDecoration(
+                          color: t.fill,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: t.bg, width: 2),
+                        ),
+                        child: const Icon(Icons.photo_camera, size: 15, color: Colors.white),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
-  Widget _buildStatsCard(AppTokens t, AppLocalizations? l) {
+  Widget _buildStatsCard(AppLocalizations? l) {
     final profile = _profile;
     final username = _username;
-    final divider = VerticalDivider(width: 1, thickness: 1, indent: 12, endIndent: 12, color: t.line);
-
-    return Material(
-      color: t.card,
-      clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: t.line),
-      ),
-      child: IntrinsicHeight(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _StatCell(value: profile?.recipesCount, label: l?.recipes ?? "Recipes"),
-            divider,
-            _StatCell(
-              value: profile?.followersCount,
-              label: l?.followers ?? "Followers",
-              onTap: username == null
-                  ? null
-                  : () => _push(FollowersScreen(
-                        username: username,
-                        apiClient: widget.apiClient,
-                        auth: widget.auth,
-                        shoppingListController: widget.shoppingListController,
-                      )),
-            ),
-            divider,
-            _StatCell(
-              value: profile?.followingCount,
-              label: l?.followingTitle ?? "Following",
-              onTap: username == null
-                  ? null
-                  : () => _push(FollowingScreen(
-                        username: username,
-                        apiClient: widget.apiClient,
-                        auth: widget.auth,
-                        shoppingListController: widget.shoppingListController,
-                      )),
-            ),
-          ],
+    return ProfileStatsCard(
+      stats: [
+        ProfileStat(
+          value: profile?.recipesCount,
+          label: l?.recipes ?? "Recipes",
+          onTap: username == null ? null : _openMyRecipes,
         ),
-      ),
+        ProfileStat(
+          value: profile?.followersCount,
+          label: l?.followers ?? "Followers",
+          onTap: username == null
+              ? null
+              : () => _push(FollowersScreen(
+                    username: username,
+                    apiClient: widget.apiClient,
+                    auth: widget.auth,
+                    shoppingListController: widget.shoppingListController,
+                  )),
+        ),
+        ProfileStat(
+          value: profile?.followingCount,
+          label: l?.followingTitle ?? "Following",
+          onTap: username == null
+              ? null
+              : () => _push(FollowingScreen(
+                    username: username,
+                    apiClient: widget.apiClient,
+                    auth: widget.auth,
+                    shoppingListController: widget.shoppingListController,
+                  )),
+        ),
+      ],
     );
   }
 
@@ -673,17 +1114,10 @@ class _ProfileTabScreenState extends State<ProfileTabScreen> {
           for (var i = 0; i < shown.length; i += 2)
             Padding(
               padding: EdgeInsets.only(bottom: i + 2 < shown.length ? 16 : 0),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(child: _RecipeTile(recipe: shown[i], onTap: () => _openRecipe(shown[i]))),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: i + 1 < shown.length
-                        ? _RecipeTile(recipe: shown[i + 1], onTap: () => _openRecipe(shown[i + 1]))
-                        : const SizedBox.shrink(),
-                  ),
-                ],
+              child: RecipeGridRow(
+                left: shown[i],
+                right: i + 1 < shown.length ? shown[i + 1] : null,
+                onTap: _openRecipe,
               ),
             ),
         ],
@@ -716,14 +1150,18 @@ class _ProfileTabScreenState extends State<ProfileTabScreen> {
                 ),
               ),
             ),
-            TextButton(
-              onPressed: _openFullProfile,
-              style: TextButton.styleFrom(
-                foregroundColor: t.brandInk,
-                textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-              ),
-              child: Text(l?.seeAll ?? "See all"),
-            ),
+            if (total > 0)
+              TextButton(
+                onPressed: _openMyRecipes,
+                style: TextButton.styleFrom(
+                  foregroundColor: t.brandInk,
+                  textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                ),
+                child: Text(l?.seeAll ?? "See all"),
+              )
+            else
+              // Keeps the header row the same height without the button.
+              const SizedBox(height: 48),
           ],
         ),
         const SizedBox(height: 8),
@@ -745,49 +1183,6 @@ class _ProfileTabScreenState extends State<ProfileTabScreen> {
 // ─────────────────────────────────────────────────────────────────────────────
 // Helper widgets
 // ─────────────────────────────────────────────────────────────────────────────
-
-class _StatCell extends StatelessWidget {
-  const _StatCell({required this.value, required this.label, this.onTap});
-
-  /// Null while the profile is loading.
-  final int? value;
-  final String label;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = AppTokens.of(context);
-    return Expanded(
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              if (value == null)
-                const _SkeletonPill(width: 28, height: 18)
-              else
-                Text(
-                  "$value",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: t.ink),
-                ),
-              const SizedBox(height: 2),
-              Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 12, color: t.ink2),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 class _StreakDay extends StatelessWidget {
   const _StreakDay({required this.label, required this.isToday, required this.isDone});
@@ -907,7 +1302,7 @@ class _LibraryTile extends StatelessWidget {
               ),
               if (loading) ...[
                 const SizedBox(height: 4),
-                const _SkeletonPill(width: 48, height: 14),
+                const SkeletonPill(width: 48, height: 14),
               ] else if (subtitle != null) ...[
                 const SizedBox(height: 2),
                 Text(subtitle!, style: TextStyle(fontSize: 13, color: t.ink2)),
@@ -955,7 +1350,7 @@ class _LibraryRow extends StatelessWidget {
                 ),
               ),
               if (loading)
-                const _SkeletonPill(width: 20, height: 14)
+                const SkeletonPill(width: 20, height: 14)
               else if (count != null)
                 Text("$count", style: TextStyle(fontSize: 14, color: t.ink2)),
               const SizedBox(width: 4),
@@ -968,100 +1363,162 @@ class _LibraryRow extends StatelessWidget {
   }
 }
 
-class _RecipeTile extends StatelessWidget {
-  const _RecipeTile({required this.recipe, required this.onTap});
+// Moved here unchanged from ProfileScreen's self mode.
+class _BanBanner extends StatelessWidget {
+  const _BanBanner({required this.message, required this.color});
 
-  final FeedItem recipe;
-  final VoidCallback onTap;
+  final String message;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
-    final t = AppTokens.of(context);
-    final image = recipe.images.isNotEmpty ? recipe.images.first : null;
-    return MergeSemantics(
-      child: Semantics(
-        button: true,
-        child: GestureDetector(
-          onTap: onTap,
-          behavior: HitTestBehavior.opaque,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: SizedBox(
-                  height: 132,
-                  width: double.infinity,
-                  child: image != null
-                      ? RecipeImageWidget(
-                          imageUrl: image.url,
-                          width: double.infinity,
-                          height: 132,
-                          fit: BoxFit.cover,
-                          cacheWidth: 400,
-                        )
-                      : const RecipeFallbackImage(iconSize: 32),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                recipe.title,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: t.ink),
-              ),
-            ],
+    return Container(
+      margin: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.4)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.warning_amber_rounded, color: color, size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              message,
+              style: Theme.of(context)
+                  .textTheme
+                  .bodySmall
+                  ?.copyWith(color: color),
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
 }
 
-/// Pulsing placeholder for a count that is still loading (moved here from
-/// the removed drawer).
-class _SkeletonPill extends StatefulWidget {
-  const _SkeletonPill({this.width = 40, this.height = 10});
+// Moved here unchanged from ProfileScreen's self mode.
+class _CoverPhotoGrid extends StatefulWidget {
+  const _CoverPhotoGrid({
+    required this.scrollController,
+    required this.recipesController,
+    required this.activeCoverUrl,
+    required this.onSelected,
+    required this.title,
+  });
 
-  final double width;
-  final double height;
+  final ScrollController scrollController;
+  final UserRecipesController? recipesController;
+  final String? activeCoverUrl;
+  final ValueChanged<String> onSelected;
+  final String title;
 
   @override
-  State<_SkeletonPill> createState() => _SkeletonPillState();
+  State<_CoverPhotoGrid> createState() => _CoverPhotoGridState();
 }
 
-class _SkeletonPillState extends State<_SkeletonPill> with SingleTickerProviderStateMixin {
-  late final AnimationController _ctrl;
-  late Animation<double> _opacity;
-
+class _CoverPhotoGridState extends State<_CoverPhotoGrid> {
   @override
   void initState() {
     super.initState();
-    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 800))
-      ..repeat(reverse: true);
-    _opacity = Tween<double>(begin: 0.2, end: 0.8).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut),
-    );
+    widget.recipesController?.addListener(_onControllerUpdate);
+    widget.scrollController.addListener(_onScroll);
   }
 
   @override
   void dispose() {
-    _ctrl.dispose();
+    widget.recipesController?.removeListener(_onControllerUpdate);
+    widget.scrollController.removeListener(_onScroll);
     super.dispose();
+  }
+
+  void _onControllerUpdate() {
+    if (mounted) setState(() {});
+  }
+
+  void _onScroll() {
+    final ctrl = widget.scrollController;
+    if (ctrl.position.pixels >= ctrl.position.maxScrollExtent - 300) {
+      widget.recipesController?.loadMore();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final base = AppTokens.of(context).ink2;
-    return AnimatedBuilder(
-      animation: _opacity,
-      builder: (_, _) => Container(
-        width: widget.width,
-        height: widget.height,
-        decoration: BoxDecoration(
-          color: base.withValues(alpha: _opacity.value),
-          borderRadius: BorderRadius.circular(4),
-        ),
+    final controller = widget.recipesController;
+    final imageOptions = (controller?.items ?? [])
+        .where((r) => r.images.isNotEmpty)
+        .map((r) => r.images.first)
+        .toList();
+    final isLoadingMore = controller?.isLoadingMore ?? false;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+            child: Text(
+              widget.title,
+              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+            ),
+          ),
+          const Divider(height: 1),
+          Expanded(
+            child: GridView.builder(
+              controller: widget.scrollController,
+              padding: const EdgeInsets.all(4),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3,
+                crossAxisSpacing: 2,
+                mainAxisSpacing: 2,
+                childAspectRatio: 1,
+              ),
+              itemCount: imageOptions.length + (isLoadingMore ? 3 : 0),
+              itemBuilder: (_, i) {
+                if (i >= imageOptions.length) {
+                  return Container(
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                    child: const Center(
+                      child: SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    ),
+                  );
+                }
+                final img = imageOptions[i];
+                final isActive = img.url == widget.activeCoverUrl;
+                return GestureDetector(
+                  onTap: () => widget.onSelected(img.url),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      RecipeImageWidget(
+                        imageUrl: img.url,
+                        fit: BoxFit.cover,
+                        cacheWidth: 300,
+                        cacheHeight: 300,
+                      ),
+                      if (isActive)
+                        Container(
+                          color: Colors.black.withValues(alpha: 0.35),
+                          child: const Icon(Icons.check_circle,
+                              color: Colors.white, size: 28),
+                        ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }

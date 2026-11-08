@@ -1,145 +1,75 @@
-import "dart:io";
-
 import "package:flutter/material.dart";
-import "package:image_picker/image_picker.dart";
 
 import "../analytics/analytics_service.dart";
 import "../api/api_client.dart";
-import "../auth/auth_api.dart";
 import "../auth/auth_controller.dart";
 import "../auth/require_account.dart";
-import "../feed/feed_models.dart";
-import "../feed/saved_recipes_controller.dart";
 import "../localization/app_localizations.dart";
 import "../recipes/recipe_detail_screen.dart";
 import "../reports/report_bottom_sheet.dart";
 import "../reports/report_models.dart";
 import "../shopping/shopping_list_controller.dart";
-import "../users/liked_recipes_controller.dart";
-import "../users/streak_controller.dart";
 import "../users/user_api.dart";
 import "../users/user_models.dart";
 import "../users/user_recipes_controller.dart";
 import "../utils/error_utils.dart";
-import "../utils/image_utils.dart";
-import "../utils/paginated_list_controller.dart";
 import "../utils/ui_utils.dart";
 import "../widgets/common/common_widgets.dart";
 import "../widgets/empty_state_widget.dart";
-import "edit_profile_screen.dart";
 import "followers_screen.dart";
 import "following_screen.dart";
-import "image_crop_screen.dart";
 
+/// A user's public profile. Opening your own username shows this public view
+/// too (how others see you); your editable profile is the shell's Profile tab.
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({
     super.key,
     required this.auth,
     required this.apiClient,
     required this.shoppingListController,
-    this.username,
+    required this.username,
   });
 
   final AuthController auth;
   final ApiClient apiClient;
   final ShoppingListController shoppingListController;
-  final String? username;
+  final String username;
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen>
-    with SingleTickerProviderStateMixin {
-  final ImagePicker _imagePicker = ImagePicker();
-  bool _isUploading = false;
-  bool _isDeleting = false;
-  bool _isSettingCover = false;
+class _ProfileScreenState extends State<ProfileScreen> {
   bool _isLoadingProfile = false;
   bool _isFollowing = false;
   UserProfile? _userProfile;
   String? _error;
-  StreakController? _streakController;
 
-  late final UserRecipesController? _recipesController;
-  LikedRecipesController? _likedController;
-  SavedRecipesController? _savedController;
-  TabController? _tabController;
+  late final UserRecipesController _recipesController;
 
   final ScrollController _scrollController = ScrollController();
-
-  bool get _isSelf => widget.username == null;
 
   @override
   void initState() {
     super.initState();
 
-    final targetUsername =
-        widget.username ?? widget.auth.me?["username"]?.toString();
-    if (targetUsername != null) {
-      _recipesController = UserRecipesController(
-        userApi: UserApi(widget.apiClient),
-        username: targetUsername,
-      );
-      _recipesController!.addListener(_onContentChanged);
-      _recipesController.loadInitial();
-    } else {
-      _recipesController = null;
-    }
+    _recipesController = UserRecipesController(
+      userApi: UserApi(widget.apiClient),
+      username: widget.username,
+    );
+    _recipesController.addListener(_onContentChanged);
+    _recipesController.loadInitial();
 
-    if (_isSelf) {
-      _tabController = TabController(length: 3, vsync: this);
-      _tabController!.addListener(_onTabChanged);
-
-      final userApi = UserApi(widget.apiClient);
-      _likedController = LikedRecipesController(userApi: userApi);
-      _likedController!.addListener(_onContentChanged);
-
-      _savedController = SavedRecipesController(userApi: userApi);
-      _savedController!.addListener(_onContentChanged);
-
-      _loadOwnProfile();
-      _loadStreak();
-    } else {
-      _loadUserProfile();
-    }
+    _loadUserProfile();
 
     _scrollController.addListener(_onScroll);
-  }
-
-  void _onTabChanged() {
-    if (_tabController!.indexIsChanging) return;
-    final tab = _tabController!.index;
-    if (tab == 1 &&
-        _likedController!.items.isEmpty &&
-        !_likedController!.isLoading) {
-      _likedController!.loadInitial();
-    }
-    if (tab == 2 &&
-        _savedController!.items.isEmpty &&
-        !_savedController!.isLoading) {
-      _savedController!.loadInitial();
-    }
-    setState(() {});
   }
 
   void _onScroll() {
     if (!_scrollController.hasClients) return;
     final pos = _scrollController.position;
     if (pos.pixels < pos.maxScrollExtent - 300) return;
-    _activeController?.loadMore();
-  }
-
-  PaginatedListController<FeedItem>? get _activeController {
-    if (!_isSelf) return _recipesController;
-    switch (_tabController?.index ?? 0) {
-      case 1:
-        return _likedController;
-      case 2:
-        return _savedController;
-      default:
-        return _recipesController;
-    }
+    _recipesController.loadMore();
   }
 
   void _onContentChanged() {
@@ -149,59 +79,24 @@ class _ProfileScreenState extends State<ProfileScreen>
   @override
   void dispose() {
     _scrollController.dispose();
-    _tabController?.removeListener(_onTabChanged);
-    _tabController?.dispose();
-    _recipesController?.removeListener(_onContentChanged);
-    _recipesController?.dispose();
-    _likedController?.removeListener(_onContentChanged);
-    _likedController?.dispose();
-    _savedController?.removeListener(_onContentChanged);
-    _savedController?.dispose();
-    _streakController?.removeListener(_onContentChanged);
-    _streakController?.dispose();
+    _recipesController.removeListener(_onContentChanged);
+    _recipesController.dispose();
     super.dispose();
   }
 
-  Future<void> _loadStreak() async {
-    final ctrl = StreakController(userApi: UserApi(widget.apiClient));
-    _streakController = ctrl;
-    ctrl.addListener(_onContentChanged);
-    await ctrl.load();
-  }
-
-  Future<void> _loadOwnProfile() async {
-    final currentUsername = widget.auth.me?["username"]?.toString();
-    if (currentUsername == null) return;
-    try {
-      final profile =
-          await UserApi(widget.apiClient).getUserProfile(currentUsername);
-      setState(() => _userProfile = profile);
-    } catch (_) {}
-  }
-
   Future<void> _refreshProfile() async {
-    if (_isSelf) {
-      await widget.auth.bootstrap();
-      await _loadOwnProfile();
-    } else {
-      await _loadUserProfile();
-    }
-    await _recipesController?.refresh();
-    if (_isSelf) {
-      if (_likedController!.items.isNotEmpty) await _likedController!.refresh();
-      if (_savedController!.items.isNotEmpty) await _savedController!.refresh();
-    }
+    await _loadUserProfile();
+    await _recipesController.refresh();
   }
 
   Future<void> _loadUserProfile() async {
-    if (widget.username == null) return;
     setState(() {
       _isLoadingProfile = true;
       _error = null;
     });
     try {
       final profile =
-          await UserApi(widget.apiClient).getUserProfile(widget.username!);
+          await UserApi(widget.apiClient).getUserProfile(widget.username);
       setState(() {
         _userProfile = profile;
         _isFollowing = profile.viewerIsFollowing;
@@ -224,9 +119,9 @@ class _ProfileScreenState extends State<ProfileScreen>
         ? await requireVerifiedAccount(context, widget.auth, reason)
         : await requireAccount(context, widget.auth, reason);
     if (!ok || !mounted) return false;
-    if (wasGuest && widget.username != null) {
+    if (wasGuest) {
       try {
-        final profile = await UserApi(widget.apiClient).getUserProfile(widget.username!);
+        final profile = await UserApi(widget.apiClient).getUserProfile(widget.username);
         if (!mounted) return false;
         setState(() {
           _userProfile = profile;
@@ -239,7 +134,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   Future<void> _toggleFollow() async {
-    if (widget.username == null || _userProfile == null) return;
+    if (_userProfile == null) return;
     final wasGuest = !widget.auth.isLoggedIn;
     if (!await _requireAccountHere(AccountReason.follow, verified: true)) return;
     // Just signed in to an account that already follows them.
@@ -258,11 +153,11 @@ class _ProfileScreenState extends State<ProfileScreen>
     try {
       final userApi = UserApi(widget.apiClient);
       if (newFollowing) {
-        await userApi.followUser(widget.username!);
-        AnalyticsService().logFollow(widget.username!);
+        await userApi.followUser(widget.username);
+        AnalyticsService().logFollow(widget.username);
       } else {
-        await userApi.unfollowUser(widget.username!);
-        AnalyticsService().logUnfollow(widget.username!);
+        await userApi.unfollowUser(widget.username);
+        AnalyticsService().logUnfollow(widget.username);
       }
       if (mounted) {
         ErrorUtils.showSuccess(
@@ -290,269 +185,6 @@ class _ProfileScreenState extends State<ProfileScreen>
           mounted) {
         ErrorUtils.showError(context, e);
       }
-    }
-  }
-
-  Future<void> _uploadAvatar() async {
-    try {
-      final XFile? image = await _imagePicker.pickImage(
-        source: ImageSource.gallery,
-        imageQuality: 85,
-      );
-      if (image == null || !mounted) return;
-
-      final croppedFile = await ImageCropScreen.show(
-        context,
-        File(image.path),
-        aspectRatio: 1.0,
-      );
-      if (croppedFile == null || !mounted) return;
-
-      setState(() => _isUploading = true);
-
-      final compressedFile = await ImageUtils.compressAvatar(croppedFile);
-      final fileToUpload = compressedFile ?? croppedFile;
-
-      await AuthApi(widget.apiClient).uploadAvatar(fileToUpload);
-      await widget.auth.bootstrap();
-
-      if (mounted) {
-        ErrorUtils.showSuccess(
-          context,
-          AppLocalizations.of(context)?.avatarUpdatedSuccessfully ??
-              "Avatar updated successfully",
-        );
-      }
-    } catch (e) {
-      if (mounted) ErrorUtils.showError(context, e);
-    } finally {
-      if (mounted) setState(() => _isUploading = false);
-    }
-  }
-
-  void _showAvatarMenu(BuildContext context, String? avatarUrl) {
-    showAppBottomSheet(
-      context: context,
-      isScrollControlled: false,
-      builder: (context) => Container(
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        child: SafeArea(
-          top: false,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Builder(builder: (context) {
-                final localizations = AppLocalizations.of(context);
-                if (avatarUrl == null || avatarUrl.isEmpty) {
-                  return ListTile(
-                    leading: const Icon(Icons.add_photo_alternate_outlined),
-                    title: Text(localizations?.addAvatar ?? "Add Avatar"),
-                    onTap: () {
-                      Navigator.of(context).pop();
-                      _uploadAvatar();
-                    },
-                  );
-                }
-                return Column(children: [
-                  ListTile(
-                    leading: const Icon(Icons.photo_library_outlined),
-                    title: Text(localizations?.updateAvatar ?? "Update Avatar"),
-                    onTap: () {
-                      Navigator.of(context).pop();
-                      _uploadAvatar();
-                    },
-                  ),
-                  ListTile(
-                    leading: Icon(Icons.delete_outline,
-                        color: Theme.of(context).colorScheme.error),
-                    title: Text(
-                      localizations?.deleteAvatar ?? "Delete Avatar",
-                      style: TextStyle(
-                          color: Theme.of(context).colorScheme.error),
-                    ),
-                    onTap: () {
-                      Navigator.of(context).pop();
-                      _deleteAvatar();
-                    },
-                  ),
-                ]);
-              }),
-              const SizedBox(height: 8),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Future<void> _deleteAvatar() async {
-    final localizations = AppLocalizations.of(context);
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(localizations?.deleteAvatar ?? "Delete Avatar"),
-        content: Text(localizations?.areYouSureDeleteAvatar ??
-            "Are you sure you want to remove your avatar?"),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(localizations?.cancel ?? "Cancel"),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: Text(localizations?.delete ?? "Delete"),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true) return;
-
-    try {
-      setState(() => _isDeleting = true);
-      await AuthApi(widget.apiClient).deleteAvatar();
-      await widget.auth.bootstrap();
-      if (mounted) {
-        ErrorUtils.showSuccess(
-          context,
-          AppLocalizations.of(context)?.avatarRemovedSuccessfully ??
-              "Avatar removed successfully",
-        );
-      }
-    } catch (e) {
-      if (mounted) ErrorUtils.showError(context, e);
-    } finally {
-      if (mounted) setState(() => _isDeleting = false);
-    }
-  }
-
-  void _showCoverPhotoMenu(BuildContext context) {
-    final hasCover = _userProfile?.coverPhotoUrl != null;
-    final localizations = AppLocalizations.of(context);
-    showAppBottomSheet(
-      context: context,
-      isScrollControlled: false,
-      builder: (ctx) => Container(
-        decoration: BoxDecoration(
-          color: Theme.of(ctx).colorScheme.surface,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        child: SafeArea(
-          top: false,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.photo_library_outlined),
-                title: Text(hasCover
-                    ? (localizations?.changeCoverPhoto ?? "Change cover photo")
-                    : (localizations?.addCoverPhoto ?? "Add cover photo")),
-                onTap: () {
-                  Navigator.of(ctx).pop();
-                  _pickCoverPhoto(context);
-                },
-              ),
-              if (hasCover)
-                ListTile(
-                  leading: Icon(Icons.delete_outline,
-                      color: Theme.of(ctx).colorScheme.error),
-                  title: Text(
-                    localizations?.removeCoverPhoto ?? "Remove cover photo",
-                    style:
-                        TextStyle(color: Theme.of(ctx).colorScheme.error),
-                  ),
-                  onTap: () {
-                    Navigator.of(ctx).pop();
-                    _removeCoverPhoto();
-                  },
-                ),
-              const SizedBox(height: 8),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Future<void> _pickCoverPhoto(BuildContext parentContext) async {
-    final controller = _recipesController;
-    if (!mounted) return;
-
-    final localizations = AppLocalizations.of(parentContext);
-
-    final hasAnyImages =
-        controller?.items.any((r) => r.images.isNotEmpty) ?? false;
-    if (!hasAnyImages) {
-      ErrorUtils.showError(
-        parentContext,
-        localizations?.noRecipesForCover ?? "Upload a recipe with a photo first",
-      );
-      return;
-    }
-
-    final selected = await showAppBottomSheet<String>(
-      context: parentContext,
-      isScrollControlled: true,
-      builder: (ctx) => DraggableScrollableSheet(
-        initialChildSize: 0.6,
-        minChildSize: 0.4,
-        maxChildSize: 0.9,
-        expand: false,
-        builder: (_, scrollCtrl) => _CoverPhotoGrid(
-          scrollController: scrollCtrl,
-          recipesController: controller,
-          activeCoverUrl: _userProfile?.coverPhotoUrl,
-          onSelected: (url) => Navigator.of(ctx).pop(url),
-          title: localizations?.selectCoverPhotoTitle ?? "Select cover photo",
-        ),
-      ),
-    );
-
-    if (selected == null || !mounted) return;
-    await _applySetCoverPhoto(selected);
-  }
-
-  Future<void> _applySetCoverPhoto(String imageUrl) async {
-    setState(() => _isSettingCover = true);
-    try {
-      await UserApi(widget.apiClient).setCoverPhoto(imageUrl);
-      setState(() {
-        _userProfile = _userProfile?.copyWith(coverPhotoUrl: imageUrl);
-      });
-      if (mounted) {
-        final localizations = AppLocalizations.of(context);
-        ErrorUtils.showSuccess(
-          context,
-          localizations?.coverPhotoUpdated ?? "Cover photo updated",
-        );
-      }
-    } catch (e) {
-      if (mounted) ErrorUtils.showError(context, e);
-    } finally {
-      if (mounted) setState(() => _isSettingCover = false);
-    }
-  }
-
-  Future<void> _removeCoverPhoto() async {
-    setState(() => _isSettingCover = true);
-    try {
-      await UserApi(widget.apiClient).setCoverPhoto(null);
-      setState(() {
-        _userProfile = _userProfile?.copyWith(coverPhotoUrl: null);
-      });
-      if (mounted) {
-        final localizations = AppLocalizations.of(context);
-        ErrorUtils.showSuccess(
-          context,
-          localizations?.coverPhotoRemoved ?? "Cover photo removed",
-        );
-      }
-    } catch (e) {
-      if (mounted) ErrorUtils.showError(context, e);
-    } finally {
-      if (mounted) setState(() => _isSettingCover = false);
     }
   }
 
@@ -646,11 +278,11 @@ class _ProfileScreenState extends State<ProfileScreen>
 
   @override
   Widget build(BuildContext context) {
-    if (!_isSelf && _isLoadingProfile) {
+    if (_isLoadingProfile) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    if (!_isSelf && (_error != null || _userProfile == null)) {
+    if (_error != null || _userProfile == null) {
       return Scaffold(
         appBar: AppBar(),
         body: Center(
@@ -671,18 +303,6 @@ class _ProfileScreenState extends State<ProfileScreen>
               ),
             ],
           ),
-        ),
-      );
-    }
-
-    if (_isSelf && widget.auth.me == null) {
-      return Scaffold(
-        appBar: AppBar(
-          title: Text(AppLocalizations.of(context)?.profile ?? "Profile"),
-        ),
-        body: Center(
-          child: Text(
-              AppLocalizations.of(context)?.notLoggedIn ?? "Not logged in"),
         ),
       );
     }
@@ -711,46 +331,19 @@ class _ProfileScreenState extends State<ProfileScreen>
     final theme = Theme.of(context);
     final safeTop = MediaQuery.of(context).padding.top;
 
-    // Resolve data for self vs other
-    final String displayName;
-    final String username;
-    final String? avatarUrl;
-    final String? email;
-    final String? bio;
-    final int followersCount;
-    final int followingCount;
-    final int totalLikes;
-
-    if (_isSelf) {
-      final user = widget.auth.me!;
-      username = user["username"]?.toString() ?? "";
-      displayName = user["display_name"]?.toString() ?? username;
-      avatarUrl = user["avatar_url"]?.toString();
-      email = user["email"]?.toString();
-      bio = _userProfile?.bio;
-      followersCount = _userProfile?.followersCount ?? 0;
-      followingCount = _userProfile?.followingCount ?? 0;
-      totalLikes = _userProfile?.totalLikesCount ?? 0;
-    } else {
-      final profile = _userProfile!;
-      username = profile.username;
-      displayName = profile.displayName ?? profile.username;
-      avatarUrl = profile.avatarUrl;
-      email = null;
-      bio = profile.bio;
-      followersCount = profile.followersCount;
-      followingCount = profile.followingCount;
-      totalLikes = profile.totalLikesCount;
-    }
+    final profile = _userProfile!;
+    final username = profile.username;
+    final displayName = profile.displayName ?? profile.username;
+    final avatarUrl = profile.avatarUrl;
+    final bio = profile.bio;
 
     final normalizedAvatarUrl =
         (avatarUrl == null || avatarUrl.isEmpty || avatarUrl == "null")
             ? null
             : avatarUrl;
 
-    final coverImageUrl = _userProfile?.coverPhotoUrl;
+    final coverImageUrl = profile.coverPhotoUrl;
 
-    final streak = _streakController?.currentStreak ?? 0;
     const coverHeight = 180.0;
     const avatarSize = 96.0;
     const overlapAmount = 56.0;
@@ -822,7 +415,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                       onTap: () => Navigator.of(context).maybePop(),
                     ),
                     const Spacer(),
-                    if (!_isSelf && !(_userProfile?.isViewer ?? true))
+                    if (!profile.isViewer)
                       _TopBarButton(
                         icon: Icons.more_vert,
                         onTap: () => _showMoreMenu(context),
@@ -830,38 +423,6 @@ class _ProfileScreenState extends State<ProfileScreen>
                   ],
                 ),
               ),
-              // Cover edit button (self only)
-              if (_isSelf)
-                Positioned(
-                  bottom: avatarOverflow + 10,
-                  right: 14,
-                  child: GestureDetector(
-                    onTap: _isSettingCover
-                        ? null
-                        : () => _showCoverPhotoMenu(context),
-                    child: Container(
-                      width: 34,
-                      height: 34,
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.55),
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.7),
-                            width: 1.5),
-                      ),
-                      child: _isSettingCover
-                          ? const Padding(
-                              padding: EdgeInsets.all(8),
-                              child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                      Colors.white)),
-                            )
-                          : const Icon(Icons.photo_camera,
-                              size: 17, color: Colors.white),
-                    ),
-                  ),
-                ),
               // Avatar
               Positioned(
                 top: coverHeight - overlapAmount,
@@ -873,13 +434,12 @@ class _ProfileScreenState extends State<ProfileScreen>
           ),
         ),
 
-        // ── Name, stats, actions, tabs ───────────────────────
+        // ── Name, stats, actions ─────────────────────────────
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Name + streak chip
               Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
@@ -896,13 +456,6 @@ class _ProfileScreenState extends State<ProfileScreen>
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  if (_isSelf && streak >= 2) ...[
-                    const SizedBox(width: 8),
-                    _StreakChip(
-                      streak: streak,
-                      loaded: _streakController?.loaded == true,
-                    ),
-                  ],
                 ],
               ),
               const SizedBox(height: 2),
@@ -914,30 +467,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                   color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                 ),
               ),
-              // Email (self only)
-              if (_isSelf && email != null && email.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Icon(
-                      Icons.mail_outline,
-                      size: 16,
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      email,
-                      style: TextStyle(
-                        fontSize: 13,
-                        color:
-                            theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-              // Bio (other only)
-              if (!_isSelf && bio != null && bio.isNotEmpty) ...[
+              if (bio != null && bio.isNotEmpty) ...[
                 const SizedBox(height: 10),
                 Text(
                   bio,
@@ -951,44 +481,21 @@ class _ProfileScreenState extends State<ProfileScreen>
               const SizedBox(height: 14),
               // Stats card
               _StatsCard(
-                followersCount: followersCount,
-                followingCount: followingCount,
-                totalLikes: totalLikes,
+                followersCount: profile.followersCount,
+                followingCount: profile.followingCount,
+                totalLikes: profile.totalLikesCount,
                 username: username,
                 auth: widget.auth,
                 apiClient: widget.apiClient,
                 shoppingListController: widget.shoppingListController,
               ),
-              const SizedBox(height: 14),
-              // Action row
-              if (_isSelf)
-                _SelfActionRow(
-                  onEditProfile: () async {
-                    final result = await Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => EditProfileScreen(
-                          auth: widget.auth,
-                          apiClient: widget.apiClient,
-                        ),
-                      ),
-                    );
-                    if (result == true) _refreshProfile();
-                  },
-                )
-              else
+              // Your own public profile has nothing to follow.
+              if (!profile.isViewer) ...[
+                const SizedBox(height: 14),
                 _OtherActionRow(
                   isFollowing: _isFollowing,
                   onFollow: _toggleFollow,
                 ),
-              // Ban banners
-              if (_isSelf) ...[
-                const SizedBox(height: 8),
-                _buildBanBanners(context),
-              ],
-              // Tabs (self only)
-              if (_isSelf) ...[
-                const SizedBox(height: 18),
-                _buildTabBar(context),
               ],
               const SizedBox(height: 14),
             ],
@@ -1031,172 +538,25 @@ class _ProfileScreenState extends State<ProfileScreen>
       );
     }
 
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        Container(
-          width: 96,
-          height: 96,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: theme.colorScheme.surface, width: 4),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x2E000000),
-                blurRadius: 22,
-                offset: Offset(0, 8),
-              ),
-            ],
+    return Container(
+      width: 96,
+      height: 96,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: theme.colorScheme.surface, width: 4),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x2E000000),
+            blurRadius: 22,
+            offset: Offset(0, 8),
           ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: avatarContent,
-          ),
-        ),
-        // Camera button (self only)
-        if (_isSelf)
-          Positioned(
-            right: -4,
-            bottom: -4,
-            child: GestureDetector(
-              onTap: _isUploading || _isDeleting
-                  ? null
-                  : () => _showAvatarMenu(context, avatarUrl),
-              child: Container(
-                width: 30,
-                height: 30,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF53B175),
-                  shape: BoxShape.circle,
-                  border: Border.all(color: theme.colorScheme.surface, width: 2),
-                ),
-                child: const Icon(Icons.photo_camera,
-                    size: 14, color: Colors.white),
-              ),
-            ),
-          ),
-        // Upload/delete loading overlay
-        if (_isSelf && (_isUploading || _isDeleting))
-          Positioned.fill(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(24),
-              child: Container(
-                color: Colors.black.withValues(alpha: 0.5),
-                child: const Center(
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                  ),
-                ),
-              ),
-            ),
-          ),
-      ],
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: avatarContent,
+      ),
     );
-  }
-
-  Widget _buildTabBar(BuildContext context) {
-    final theme = Theme.of(context);
-    final localizations = AppLocalizations.of(context);
-    final tabs = [
-      (Icons.restaurant_menu_outlined, Icons.restaurant_menu, localizations?.recipes ?? "Recipes"),
-      (Icons.favorite_border, Icons.favorite, localizations?.profileTabLiked ?? "Liked"),
-      (Icons.bookmark_border, Icons.bookmark, localizations?.profileTabSaved ?? "Saved"),
-    ];
-
-    return Row(
-      children: List.generate(tabs.length, (i) {
-        final isActive = (_tabController?.index ?? 0) == i;
-        final outlinedIcon = tabs[i].$1;
-        final filledIcon = tabs[i].$2;
-        final label = tabs[i].$3;
-
-        return Expanded(
-          child: GestureDetector(
-            onTap: () => _tabController?.animateTo(i),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 150),
-              curve: Curves.easeOut,
-              margin: EdgeInsets.only(right: i < tabs.length - 1 ? 6 : 0),
-              height: 40,
-              decoration: BoxDecoration(
-                color: isActive ? theme.colorScheme.primary : Colors.transparent,
-                borderRadius: BorderRadius.circular(12),
-                border: isActive
-                    ? null
-                    : Border.all(
-                        color:
-                            theme.colorScheme.outline.withValues(alpha: 0.3)),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    isActive ? filledIcon : outlinedIcon,
-                    size: 16,
-                    color: isActive
-                        ? theme.colorScheme.surface
-                        : theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                  ),
-                  const SizedBox(width: 6),
-                  Flexible(
-                  child: Text(
-                    label,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: isActive
-                          ? theme.colorScheme.surface
-                          : theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                    ),
-                  ),
-                  ),
-                ],
-              ),
-              ),
-            ),
-          ),
-        );
-      }),
-    );
-  }
-
-  Widget _buildBanBanners(BuildContext context) {
-    final localizations = AppLocalizations.of(context);
-    final theme = Theme.of(context);
-    if (widget.auth.isPermanentlyBanned) {
-      return _BanBanner(
-        message: localizations?.accountPermanentlyBannedMessage ??
-            "Your account has been permanently suspended.",
-        color: theme.colorScheme.error,
-      );
-    }
-    if (widget.auth.isSoftBanned) {
-      return _BanBanner(
-        message: localizations?.accountSoftBannedUntil(
-                formatDate(context, widget.auth.softBannedUntil!)) ??
-            "Your account is temporarily suspended.",
-        color: theme.colorScheme.error,
-      );
-    }
-    if (widget.auth.violationCount == 2) {
-      return _BanBanner(
-        message: localizations?.violationWarning2 ??
-            "Warning: 1 more violation will result in a 7-day suspension",
-        color: Colors.orange,
-      );
-    }
-    if (widget.auth.violationCount == 5) {
-      return _BanBanner(
-        message: localizations?.violationWarning5 ??
-            "Warning: 1 more violation will result in a permanent ban",
-        color: theme.colorScheme.error,
-      );
-    }
-    return const SizedBox.shrink();
   }
 
   void _showMoreMenu(BuildContext context) {
@@ -1251,8 +611,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   // ─────────────────────────────────────────────────────────────
 
   List<Widget> _buildContentSlivers(BuildContext context) {
-    final controller = _activeController;
-    if (controller == null) return [];
+    final controller = _recipesController;
 
     if (controller.isLoading && controller.items.isEmpty) {
       return [
@@ -1277,45 +636,21 @@ class _ProfileScreenState extends State<ProfileScreen>
 
     if (controller.items.isEmpty) {
       final localizations = AppLocalizations.of(context);
-      final String title;
-      final String description;
-      final IconData icon;
-      if (_isSelf) {
-        switch (_tabController?.index ?? 0) {
-          case 1:
-            title = localizations?.noLikedRecipesYet ?? "No liked recipes yet";
-            description = localizations?.likedRecipesEmptyDescription ?? "Recipes you like will appear here";
-            icon = Icons.favorite_border;
-            break;
-          case 2:
-            title = localizations?.noSavedRecipes ?? "No saved recipes";
-            description = localizations?.startBookmarkingRecipes ?? "Recipes you save will appear here";
-            icon = Icons.bookmark_border;
-            break;
-          default:
-            title = localizations?.noRecipesYet ?? "No recipes yet";
-            description = localizations?.createYourFirstRecipe ?? "Create your first recipe!";
-            icon = Icons.restaurant_menu_outlined;
-        }
-      } else {
-        title = localizations?.noRecipesYet ?? "No recipes yet";
-        description = localizations?.userNoRecipesYet ?? "This user hasn't created any recipes yet";
-        icon = Icons.restaurant_menu_outlined;
-      }
       return [
         SliverFillRemaining(
           child: Padding(
             padding: const EdgeInsets.all(24),
             child: EmptyStateWidget(
-                icon: icon, title: title, description: description),
+              icon: Icons.restaurant_menu_outlined,
+              title: localizations?.noRecipesYet ?? "No recipes yet",
+              description: localizations?.userNoRecipesYet ?? "This user hasn't created any recipes yet",
+            ),
           ),
         ),
       ];
     }
 
-    final recipeCount = (_isSelf && (_tabController?.index ?? 0) == 0)
-        ? (_userProfile?.recipesCount ?? controller.items.length)
-        : controller.items.length;
+    final recipeCount = controller.items.length;
 
     return [
       SliverToBoxAdapter(
@@ -1411,47 +746,6 @@ class _TopBarButton extends StatelessWidget {
           ],
         ),
         child: Icon(icon, size: 22, color: Theme.of(context).colorScheme.primary),
-      ),
-    );
-  }
-}
-
-class _StreakChip extends StatelessWidget {
-  const _StreakChip({required this.streak, required this.loaded});
-
-  final int streak;
-  final bool loaded;
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedOpacity(
-      opacity: loaded ? 1.0 : 0.0,
-      duration: const Duration(milliseconds: 400),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFFFFB347), Color(0xFFE55A2B)],
-          ),
-          borderRadius: BorderRadius.circular(999),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x59E55A2B),
-              blurRadius: 6,
-              offset: Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Text(
-          AppLocalizations.of(context)?.streakDaysLabel(streak) ?? "🔥 $streak-day streak",
-          style: const TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w700,
-            color: Colors.white,
-          ),
-        ),
       ),
     );
   }
@@ -1607,34 +901,6 @@ class _StatDivider extends StatelessWidget {
   }
 }
 
-class _SelfActionRow extends StatelessWidget {
-  const _SelfActionRow({required this.onEditProfile});
-
-  final VoidCallback onEditProfile;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return SizedBox(
-      width: double.infinity,
-      height: 46,
-      child: FilledButton.icon(
-        onPressed: onEditProfile,
-        icon: const Icon(Icons.edit_outlined, size: 18),
-        label: Text(
-            AppLocalizations.of(context)?.editProfile ?? "Edit Profile"),
-        style: FilledButton.styleFrom(
-          backgroundColor: theme.colorScheme.primary,
-          foregroundColor: theme.colorScheme.onPrimary,
-          textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14)),
-        ),
-      ),
-    );
-  }
-}
-
 class _OtherActionRow extends StatelessWidget {
   const _OtherActionRow({
     required this.isFollowing,
@@ -1671,165 +937,6 @@ class _OtherActionRow extends StatelessWidget {
           shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(14)),
         ),
-      ),
-    );
-  }
-}
-
-class _BanBanner extends StatelessWidget {
-  const _BanBanner({required this.message, required this.color});
-
-  final String message;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(top: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.4)),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.warning_amber_rounded, color: color, size: 20),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              message,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodySmall
-                  ?.copyWith(color: color),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _CoverPhotoGrid extends StatefulWidget {
-  const _CoverPhotoGrid({
-    required this.scrollController,
-    required this.recipesController,
-    required this.activeCoverUrl,
-    required this.onSelected,
-    required this.title,
-  });
-
-  final ScrollController scrollController;
-  final UserRecipesController? recipesController;
-  final String? activeCoverUrl;
-  final ValueChanged<String> onSelected;
-  final String title;
-
-  @override
-  State<_CoverPhotoGrid> createState() => _CoverPhotoGridState();
-}
-
-class _CoverPhotoGridState extends State<_CoverPhotoGrid> {
-  @override
-  void initState() {
-    super.initState();
-    widget.recipesController?.addListener(_onControllerUpdate);
-    widget.scrollController.addListener(_onScroll);
-  }
-
-  @override
-  void dispose() {
-    widget.recipesController?.removeListener(_onControllerUpdate);
-    widget.scrollController.removeListener(_onScroll);
-    super.dispose();
-  }
-
-  void _onControllerUpdate() {
-    if (mounted) setState(() {});
-  }
-
-  void _onScroll() {
-    final ctrl = widget.scrollController;
-    if (ctrl.position.pixels >= ctrl.position.maxScrollExtent - 300) {
-      widget.recipesController?.loadMore();
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final controller = widget.recipesController;
-    final imageOptions = (controller?.items ?? [])
-        .where((r) => r.images.isNotEmpty)
-        .map((r) => r.images.first)
-        .toList();
-    final isLoadingMore = controller?.isLoadingMore ?? false;
-
-    return Container(
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-            child: Text(
-              widget.title,
-              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
-            ),
-          ),
-          const Divider(height: 1),
-          Expanded(
-            child: GridView.builder(
-              controller: widget.scrollController,
-              padding: const EdgeInsets.all(4),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
-                crossAxisSpacing: 2,
-                mainAxisSpacing: 2,
-                childAspectRatio: 1,
-              ),
-              itemCount: imageOptions.length + (isLoadingMore ? 3 : 0),
-              itemBuilder: (_, i) {
-                if (i >= imageOptions.length) {
-                  return Container(
-                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                    child: const Center(
-                      child: SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                    ),
-                  );
-                }
-                final img = imageOptions[i];
-                final isActive = img.url == widget.activeCoverUrl;
-                return GestureDetector(
-                  onTap: () => widget.onSelected(img.url),
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      RecipeImageWidget(
-                        imageUrl: img.url,
-                        fit: BoxFit.cover,
-                        cacheWidth: 300,
-                        cacheHeight: 300,
-                      ),
-                      if (isActive)
-                        Container(
-                          color: Colors.black.withValues(alpha: 0.35),
-                          child: const Icon(Icons.check_circle,
-                              color: Colors.white, size: 28),
-                        ),
-                    ],
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
       ),
     );
   }

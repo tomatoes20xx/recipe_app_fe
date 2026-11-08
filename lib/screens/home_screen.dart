@@ -15,6 +15,7 @@ import "../shopping/shopping_list_controller.dart";
 import "../theme/app_tokens.dart";
 import "../theme/theme_controller.dart";
 import "../users/streak_controller.dart";
+import "../widgets/common/underline_tab.dart";
 import "../widgets/feed/feed_list.dart";
 import "../widgets/streak_celebration_overlay.dart";
 import "../widgets/feed/full_screen_feed_list.dart";
@@ -338,7 +339,7 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           for (final scope in FeedScope.values)
             Expanded(
-              child: _ScopeTab(
+              child: UnderlineTab(
                 label: _scopeLabel(localizations, scope),
                 isActive: feed.scope == scope,
                 onTap: () => _onScopeTap(scope),
@@ -610,54 +611,6 @@ class _Pill extends StatelessWidget {
             ),
             child: Row(mainAxisSize: MainAxisSize.min, children: children),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ScopeTab extends StatelessWidget {
-  const _ScopeTab({required this.label, required this.isActive, required this.onTap});
-
-  final String label;
-  final bool isActive;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = AppTokens.of(context);
-    return Semantics(
-      button: true,
-      selected: isActive,
-      child: InkWell(
-        onTap: onTap,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(4, 12, 4, 9),
-              child: Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
-                  color: isActive ? t.ink : t.ink2,
-                ),
-              ),
-            ),
-            // Sits directly on the row's bottom border.
-            Container(
-              height: 3,
-              margin: const EdgeInsets.symmetric(horizontal: 8),
-              decoration: BoxDecoration(
-                color: isActive ? t.brand : Colors.transparent,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(3)),
-              ),
-            ),
-          ],
         ),
       ),
     );

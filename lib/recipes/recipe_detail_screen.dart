@@ -1698,15 +1698,13 @@ class _UserInfoRow extends StatelessWidget {
               ErrorUtils.showError(context, AppLocalizations.of(context)?.logInToViewProfiles ?? "Log in to view profiles");
               return;
             }
-            // If viewing own profile, pass null to show edit functionality
-            final isOwnProfile = auth!.me?["username"]?.toString() == r.authorUsername;
             Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (_) => ProfileScreen(
                   auth: auth!,
                   apiClient: apiClient,
                   shoppingListController: shoppingListController,
-                  username: isOwnProfile ? null : r.authorUsername,
+                  username: r.authorUsername,
                 ),
               ),
             );

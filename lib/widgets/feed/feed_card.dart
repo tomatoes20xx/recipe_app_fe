@@ -176,15 +176,13 @@ class _AuthorRow extends StatelessWidget {
 
     return GestureDetector(
       onTap: () {
-        // If viewing own profile, pass null to show edit functionality
-        final isOwnProfile = auth.me?["username"]?.toString() == item.authorUsername;
         Navigator.of(context).push(
           MaterialPageRoute(
             builder: (_) => ProfileScreen(
               auth: auth,
               apiClient: apiClient,
               shoppingListController: shoppingListController,
-              username: isOwnProfile ? null : item.authorUsername,
+              username: item.authorUsername,
             ),
           ),
         );

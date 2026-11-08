@@ -245,30 +245,16 @@ class _FollowersScreenState extends State<FollowersScreen> {
                       onTap: () => _toggleFollow(user),
                     ),
               onTap: () {
-                if (user.viewerIsMe) {
-                  // Navigate to own profile
-                  Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(
-                      builder: (_) => ProfileScreen(
-                        auth: widget.auth,
-                        apiClient: widget.apiClient,
-                        shoppingListController: widget.shoppingListController,
-                      ),
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => ProfileScreen(
+                      auth: widget.auth,
+                      apiClient: widget.apiClient,
+                      shoppingListController: widget.shoppingListController,
+                      username: user.username,
                     ),
-                  );
-                } else {
-                  // Navigate to other user's profile
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => ProfileScreen(
-                        auth: widget.auth,
-                        apiClient: widget.apiClient,
-                        shoppingListController: widget.shoppingListController,
-                        username: user.username,
-                      ),
-                    ),
-                  );
-                }
+                  ),
+                );
               },
             ),
           ),

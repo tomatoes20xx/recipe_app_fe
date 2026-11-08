@@ -312,14 +312,13 @@ class _AuthorInfo extends StatelessWidget {
 
     return GestureDetector(
       onTap: () {
-        final isOwnProfile = auth.me?["username"]?.toString() == item.authorUsername;
         Navigator.of(context).push(
           MaterialPageRoute(
             builder: (_) => ProfileScreen(
               auth: auth,
               apiClient: apiClient,
               shoppingListController: shoppingListController,
-              username: isOwnProfile ? null : item.authorUsername,
+              username: item.authorUsername,
             ),
           ),
         );

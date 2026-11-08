@@ -153,7 +153,6 @@ class AppLocalizations {
   String get users => _localizedValues[locale.languageCode]?["users"] ?? "Users";
   String get recipes => _localizedValues[locale.languageCode]?["recipes"] ?? "Recipes";
   String get seeAll => _localizedValues[locale.languageCode]?["seeAll"] ?? "See all";
-  String get notLoggedIn => _localizedValues[locale.languageCode]?["notLoggedIn"] ?? "Not logged in";
   String get errorLoadingStatistics => _localizedValues[locale.languageCode]?["errorLoadingStatistics"] ?? "Error loading statistics";
   String get noEventDataAvailable => _localizedValues[locale.languageCode]?["noEventDataAvailable"] ?? "No event data available";
   String get noRecipeDataAvailable => _localizedValues[locale.languageCode]?["noRecipeDataAvailable"] ?? "No recipe data available";
@@ -913,7 +912,6 @@ class AppLocalizations {
 
   // Profile tabs
   String get profileTabLiked => _localizedValues[locale.languageCode]?["profileTabLiked"] ?? "Liked";
-  String get profileTabSaved => _localizedValues[locale.languageCode]?["profileTabSaved"] ?? "Saved";
 
   // Follower search
   String get noFollowersFound => _localizedValues[locale.languageCode]?["noFollowersFound"] ?? "No followers found";
@@ -948,7 +946,6 @@ class AppLocalizations {
   String streakNDays(int n) => (_localizedValues[locale.languageCode]?["streakNDays"] ?? "{n}-day streak!").replaceAll("{n}", n.toString());
   String get streakRecord => _localizedValues[locale.languageCode]?["streakRecord"] ?? "New record! 🏆";
   String get streakClose => _localizedValues[locale.languageCode]?["streakClose"] ?? "Close";
-  String streakDaysLabel(int n) => (_localizedValues[locale.languageCode]?["streakDaysLabel"] ?? "🔥 {n}-day streak").replaceAll("{n}", n.toString());
   String get alreadyCookedToday => _localizedValues[locale.languageCode]?["alreadyCookedToday"] ?? "Cooked today ✓";
 
   // Helper method to get full month names by index (1-12)
@@ -1123,7 +1120,6 @@ class AppLocalizations {
       "users": "Users",
       "recipes": "Recipes",
       "seeAll": "See all",
-      "notLoggedIn": "Not logged in",
       "errorLoadingStatistics": "Error loading statistics",
       "noEventDataAvailable": "No event data available",
       "noRecipeDataAvailable": "No recipe data available",
@@ -1797,7 +1793,6 @@ class AppLocalizations {
 
       // Profile tabs
       "profileTabLiked": "Liked",
-      "profileTabSaved": "Saved",
 
       // Follower search
       "noFollowersFound": "No followers found",
@@ -1842,7 +1837,6 @@ class AppLocalizations {
       "streakNDays": "{n}-day streak!",
       "streakRecord": "New record! 🏆",
       "streakClose": "Close",
-      "streakDaysLabel": "🔥 {n}-day streak",
       "alreadyCookedToday": "Cooked today ✓",
 
       // Guest mode / account prompts
@@ -1998,7 +1992,6 @@ class AppLocalizations {
       "users": "მომხმარებლები",
       "recipes": "რეცეპტები",
       "seeAll": "ყველას ნახვა",
-      "notLoggedIn": "არ ხართ შესული",
       "errorLoadingStatistics": "სტატისტიკის ჩატვირთვის შეცდომა",
       "noEventDataAvailable": "მოვლენების მონაცემები მიუწვდომელია",
       "noRecipeDataAvailable": "რეცეპტების მონაცემები მიუწვდომელია",
@@ -2673,7 +2666,6 @@ class AppLocalizations {
 
       // Profile tabs
       "profileTabLiked": "მოწონებული",
-      "profileTabSaved": "შენახული",
 
       // Follower search
       "noFollowersFound": "მიმდევრები ვერ მოიძებნა",
@@ -2718,7 +2710,6 @@ class AppLocalizations {
       "streakNDays": "{n}-დღიანი სერია!",
       "streakRecord": "რეკორდი! 🏆",
       "streakClose": "დახურვა",
-      "streakDaysLabel": "🔥 {n}-დღიანი სერია",
       "alreadyCookedToday": "დღეს მომზადებული ✓",
 
       // Guest mode / account prompts

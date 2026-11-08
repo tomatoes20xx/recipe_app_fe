@@ -560,17 +560,7 @@ class _SearchScreenState extends State<SearchScreen> {
           onTap: () {
             // Save search to history when user taps a result
             searchController.commitCurrentQueryToHistory();
-            if (isCurrentUser) {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => ProfileScreen(
-                    auth: widget.auth!,
-                    apiClient: widget.apiClient,
-                    shoppingListController: widget.shoppingListController,
-                  ),
-                ),
-              );
-            } else if (widget.auth != null) {
+            if (widget.auth != null) {
               Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (_) => ProfileScreen(
