@@ -99,6 +99,7 @@ class AppLocalizations {
   String get followingRecentDesc => _localizedValues[locale.languageCode]?["followingRecentDesc"] ?? "New recipes from people you follow";
   String get followingTopDesc => _localizedValues[locale.languageCode]?["followingTopDesc"] ?? "Their most liked recipes";
   String get streakKeepGoing => _localizedValues[locale.languageCode]?["streakKeepGoing"] ?? "Keep your streak going today";
+  String get streakDoneToday => _localizedValues[locale.languageCode]?["streakDoneToday"] ?? "You cooked today. See you tomorrow!";
   String streakCardTitle(int n) => (_localizedValues[locale.languageCode]?["streakCardTitle"] ?? "{n}-day streak").replaceAll("{n}", n.toString());
   String get myRecipes => _localizedValues[locale.languageCode]?["myRecipes"] ?? "My recipes";
 
@@ -716,6 +717,7 @@ class AppLocalizations {
   String get readOnlyDescription => _localizedValues[locale.languageCode]?["readOnlyDescription"] ?? "Others can view but not edit";
   String get collaborativeDescription => _localizedValues[locale.languageCode]?["collaborativeDescription"] ?? "Others can check/uncheck items";
   String get sharedRecipes => _localizedValues[locale.languageCode]?["sharedRecipes"] ?? "Shared Recipes";
+  String get likedRecipes => _localizedValues[locale.languageCode]?["likedRecipes"] ?? "Liked recipes";
   String get sharedShoppingLists => _localizedValues[locale.languageCode]?["sharedShoppingLists"] ?? "Shared Shopping Lists";
   String get recipesSharedWithYou => _localizedValues[locale.languageCode]?["recipesSharedWithYou"] ?? "Recipes shared with you";
   String get listsSharedWithYou => _localizedValues[locale.languageCode]?["listsSharedWithYou"] ?? "Shopping lists shared with you";
@@ -911,7 +913,6 @@ class AppLocalizations {
   String get userNotFound => _localizedValues[locale.languageCode]?["userNotFound"] ?? "User not found";
 
   // Profile tabs
-  String get profileTabLiked => _localizedValues[locale.languageCode]?["profileTabLiked"] ?? "Liked";
 
   // Follower search
   String get noFollowersFound => _localizedValues[locale.languageCode]?["noFollowersFound"] ?? "No followers found";
@@ -1071,6 +1072,7 @@ class AppLocalizations {
       "followingRecentDesc": "New recipes from people you follow",
       "followingTopDesc": "Their most liked recipes",
       "streakKeepGoing": "Keep your streak going today",
+      "streakDoneToday": "You cooked today. See you tomorrow!",
       "streakCardTitle": "{n}-day streak",
       "myRecipes": "My recipes",
       "feedDiscoveryEmptyTitle": "You're all caught up!",
@@ -1612,6 +1614,7 @@ class AppLocalizations {
       "readOnlyDescription": "Others can view but not edit",
       "collaborativeDescription": "Others can check/uncheck items",
       "sharedRecipes": "Shared Recipes",
+      "likedRecipes": "Liked recipes",
       "sharedShoppingLists": "Shared Shopping Lists",
       "recipesSharedWithYou": "Recipes shared with you",
       "listsSharedWithYou": "Shopping lists shared with you",
@@ -1792,7 +1795,6 @@ class AppLocalizations {
       "userNotFound": "User not found",
 
       // Profile tabs
-      "profileTabLiked": "Liked",
 
       // Follower search
       "noFollowersFound": "No followers found",
@@ -1943,6 +1945,7 @@ class AppLocalizations {
       "followingRecentDesc": "გამოწერილი ავტორების ახალი რეცეპტები",
       "followingTopDesc": "მათი ყველაზე მოწონებული რეცეპტები",
       "streakKeepGoing": "გააგრძელე სერია დღესაც",
+      "streakDoneToday": "დღეს უკვე მოამზადე. ხვალ გააგრძელე!",
       "streakCardTitle": "{n}-დღიანი სერია",
       "myRecipes": "ჩემი რეცეპტები",
       "feedDiscoveryEmptyTitle": "ყველაფერი ნანახია!",
@@ -2485,6 +2488,7 @@ class AppLocalizations {
       "readOnlyDescription": "სხვებს შეუძლიათ ნახვა, მაგრამ ვერ შეცვლიან",
       "collaborativeDescription": "სხვებს შეუძლიათ ელემენტების მონიშვნა/მოხსნა",
       "sharedRecipes": "გაზიარებული რეცეპტები",
+      "likedRecipes": "მოწონებული რეცეპტები",
       "sharedShoppingLists": "გაზიარებული სიები",
       "recipesSharedWithYou": "თქვენთან გაზიარებული რეცეპტები",
       "listsSharedWithYou": "თქვენთან გაზიარებული სიები",
@@ -2665,7 +2669,6 @@ class AppLocalizations {
       "userNotFound": "მომხმარებელი ვერ მოიძებნა",
 
       // Profile tabs
-      "profileTabLiked": "მოწონებული",
 
       // Follower search
       "noFollowersFound": "მიმდევრები ვერ მოიძებნა",

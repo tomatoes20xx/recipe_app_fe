@@ -33,6 +33,7 @@ import "edit_profile_screen.dart";
 import "followers_screen.dart";
 import "following_screen.dart";
 import "image_crop_screen.dart";
+import "liked_recipes_screen.dart";
 import "my_recipes_screen.dart";
 import "saved_recipes_screen.dart";
 import "settings_screen.dart";
@@ -204,8 +205,8 @@ class _ProfileTabScreenState extends State<ProfileTabScreen> {
     ));
   }
 
-  /// Full recipe list, liked recipes and likes received. Coming back reloads
-  /// counts and, if the recipe count changed, the preview (see [_load]).
+  /// Full recipe list and likes received. Coming back reloads counts and, if
+  /// the recipe count changed, the preview (see [_load]).
   Future<void> _openMyRecipes() async {
     final username = _username;
     if (username == null) return;
@@ -215,7 +216,6 @@ class _ProfileTabScreenState extends State<ProfileTabScreen> {
         apiClient: widget.apiClient,
         shoppingListController: widget.shoppingListController,
         username: username,
-        initialTab: 0,
       ),
     ));
     if (mounted) _load();
@@ -859,6 +859,8 @@ class _ProfileTabScreenState extends State<ProfileTabScreen> {
     final done = streak.streakDatesUtc;
     final now = DateTime.now().toUtc();
     final today = DateTime.utc(now.year, now.month, now.day);
+    // Same check as today's dot, so the subtitle and the tick always agree.
+    final doneToday = done.contains(today);
     final monday = today.subtract(Duration(days: today.weekday - 1));
     final weekday = DateFormat.E(Localizations.localeOf(context).languageCode);
 
@@ -891,7 +893,9 @@ class _ProfileTabScreenState extends State<ProfileTabScreen> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      l?.streakKeepGoing ?? "Keep your streak going today",
+                      doneToday
+                          ? (l?.streakDoneToday ?? "You cooked today. See you tomorrow!")
+                          : (l?.streakKeepGoing ?? "Keep your streak going today"),
                       style: TextStyle(fontSize: 13, color: t.ink2),
                     ),
                   ],
@@ -1052,6 +1056,21 @@ class _ProfileTabScreenState extends State<ProfileTabScreen> {
                 onTap: () => _requireAccountThen(AccountReason.account, (navigator) {
                   navigator.push(MaterialPageRoute(
                     builder: (_) => SharedRecipesScreen(
+                      apiClient: widget.apiClient,
+                      auth: widget.auth,
+                      shoppingListController: widget.shoppingListController,
+                    ),
+                  ));
+                }),
+              ),
+              Divider(height: 1, thickness: 1, color: t.line),
+              // No count: /users/me/library-counts doesn't return one for likes.
+              _LibraryRow(
+                icon: Icons.favorite_border_rounded,
+                label: l?.likedRecipes ?? "Liked recipes",
+                onTap: () => _requireAccountThen(AccountReason.like, (navigator) {
+                  navigator.push(MaterialPageRoute(
+                    builder: (_) => LikedRecipesScreen(
                       apiClient: widget.apiClient,
                       auth: widget.auth,
                       shoppingListController: widget.shoppingListController,
