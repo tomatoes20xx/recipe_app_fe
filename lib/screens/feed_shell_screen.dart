@@ -23,6 +23,7 @@ import "../services/notification_service.dart";
 import "../services/push_prompt_service.dart";
 import "../shopping/shopping_list_controller.dart";
 import "../theme/app_tokens.dart";
+import "../theme/status_bar.dart";
 import "../theme/theme_controller.dart";
 import "../users/streak_controller.dart";
 import "../users/user_api.dart";
@@ -400,34 +401,44 @@ class _FeedShellScreenState extends State<FeedShellScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
+      // This is the home route, which pages don't inset for (see
+      // theme/status_bar.dart): each tab keeps below the status bar itself,
+      // except the signed-in Profile tab, whose cover goes behind it. Only
+      // the visible tab paints, so only its status-bar style applies.
       body: IndexedStack(
         index: _currentIndex,
         children: [
-          HomeScreen(
-            auth: widget.auth,
-            apiClient: widget.apiClient,
-            themeController: widget.themeController,
-            languageController: widget.languageController,
-            feed: feed,
-            feedViewController: _feedViewController,
-            scrollController: _feedScrollController,
-            streakController: _streakController,
-            onStreakTap: () => _setPage(_profilePage),
-            onNotificationRefresh: () {
-              if (widget.auth.isLoggedIn) _notificationController.refreshUnreadCount();
-            },
-            shoppingListController: widget.shoppingListController,
+          StatusBarInset(
+            child: HomeScreen(
+              auth: widget.auth,
+              apiClient: widget.apiClient,
+              themeController: widget.themeController,
+              languageController: widget.languageController,
+              feed: feed,
+              feedViewController: _feedViewController,
+              scrollController: _feedScrollController,
+              streakController: _streakController,
+              onStreakTap: () => _setPage(_profilePage),
+              onNotificationRefresh: () {
+                if (widget.auth.isLoggedIn) _notificationController.refreshUnreadCount();
+              },
+              shoppingListController: widget.shoppingListController,
+            ),
           ),
-          SearchScreen(
-            apiClient: widget.apiClient,
-            auth: widget.auth,
-            shoppingListController: widget.shoppingListController,
+          StatusBarInset(
+            child: SearchScreen(
+              apiClient: widget.apiClient,
+              auth: widget.auth,
+              shoppingListController: widget.shoppingListController,
+            ),
           ),
-          NotificationsScreen(
-            apiClient: widget.apiClient,
-            auth: widget.auth,
-            notificationController: _notificationController,
-            shoppingListController: widget.shoppingListController,
+          StatusBarInset(
+            child: NotificationsScreen(
+              apiClient: widget.apiClient,
+              auth: widget.auth,
+              notificationController: _notificationController,
+              shoppingListController: widget.shoppingListController,
+            ),
           ),
           ProfileTabScreen(
             auth: widget.auth,

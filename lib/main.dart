@@ -26,6 +26,7 @@ import "localization/language_controller.dart";
 import "screens/auth_gate.dart";
 import "shopping/shopping_list_api.dart";
 import "shopping/shopping_list_controller.dart";
+import "theme/status_bar.dart";
 import "theme/theme_controller.dart";
 
 void main() async {
@@ -160,6 +161,7 @@ class MyApp extends StatelessWidget {
             colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF53B175), brightness: Brightness.light)
                 .copyWith(primary: const Color(0xFF53B175), onPrimary: Colors.white, secondary: Colors.white, onSecondary: Colors.black),
             chipTheme: const ChipThemeData(showCheckmark: false),
+            pageTransitionsTheme: statusBarInsetPageTransitions,
           ),
           darkTheme: ThemeData(
             useMaterial3: true,
@@ -169,18 +171,18 @@ class MyApp extends StatelessWidget {
             colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF53B175), brightness: Brightness.dark)
                 .copyWith(primary: const Color(0xFF53B175), onPrimary: Colors.white, surface: Colors.grey[900]!, onSurface: Colors.white),
             chipTheme: const ChipThemeData(showCheckmark: false),
+            pageTransitionsTheme: statusBarInsetPageTransitions,
           ),
           themeMode: themeController.themeMode,
+          // No app-wide SafeArea: each page keeps itself below the status bar
+          // (StatusBarInset via pageTransitionsTheme), so the home route can
+          // draw behind it. See theme/status_bar.dart.
           builder: (context, child) {
-            final brightness = Theme.of(context).brightness;
             return AnnotatedRegion<SystemUiOverlayStyle>(
-              value: SystemUiOverlayStyle(
-                statusBarColor: Colors.transparent,
-                statusBarIconBrightness: brightness == Brightness.light ? Brightness.dark : Brightness.light,
-              ),
+              value: themeStatusBarStyle(Theme.of(context).brightness),
               child: ColoredBox(
                 color: Theme.of(context).colorScheme.surface,
-                child: SafeArea(top: true, bottom: false, child: child!),
+                child: child!,
               ),
             );
           },

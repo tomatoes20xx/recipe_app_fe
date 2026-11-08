@@ -9,6 +9,9 @@ import "package:flutter/material.dart";
 /// Each sheet widget is responsible for wrapping its content in
 /// `SafeArea(top: false)` inside its own Container decoration, ensuring
 /// the bottom system navigation bar doesn't overlap content.
+///
+/// `useSafeArea` keeps tall sheets (0.9–0.95 of the height) below the status
+/// bar, as they were when the whole app sat inside one SafeArea.
 Future<T?> showAppBottomSheet<T>({
   required BuildContext context,
   required Widget Function(BuildContext) builder,
@@ -17,6 +20,7 @@ Future<T?> showAppBottomSheet<T>({
   return showModalBottomSheet<T>(
     context: context,
     isScrollControlled: isScrollControlled,
+    useSafeArea: true,
     backgroundColor: Colors.transparent,
     builder: builder,
   );

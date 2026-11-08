@@ -2,6 +2,8 @@ import "dart:io";
 import "dart:math" as math;
 
 import "package:flutter/material.dart";
+import "package:flutter/rendering.dart" show OverScrollHeaderStretchConfiguration;
+import "package:flutter/services.dart";
 import "package:image_picker/image_picker.dart";
 import "package:intl/intl.dart";
 
@@ -16,6 +18,7 @@ import "../localization/language_controller.dart";
 import "../recipes/recipe_detail_screen.dart";
 import "../shopping/shopping_list_controller.dart";
 import "../theme/app_tokens.dart";
+import "../theme/status_bar.dart";
 import "../theme/theme_controller.dart";
 import "../users/streak_controller.dart";
 import "../users/user_api.dart";
@@ -534,18 +537,45 @@ class _ProfileTabScreenState extends State<ProfileTabScreen> {
   // BUILD
   // ─────────────────────────────────────────────────────────────
 
+  static const _gap = SizedBox(height: 24);
+
+  /// Expanded cover height, status bar included.
+  static const _coverHeight = 300.0;
+
+  /// The collapsed header: name + gear, below the status bar.
+  static const _toolbarHeight = 56.0;
+
+  /// Cover without a photo, in light and dark (white text on it is ~7:1).
+  static const _noCoverColor = Color(0xFF2C5E40);
+
+  /// Avatar on the cover, its 3px white border included.
+  static const _avatarSize = 76.0;
+
+  /// The identity row sits this far above the cover's bottom edge.
+  static const _identityBottom = 18.0;
+
+  static const _whiteSpinner = SizedBox(
+    width: 16,
+    height: 16,
+    child: CircularProgressIndicator(
+      strokeWidth: 2,
+      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+    ),
+  );
+
   @override
   Widget build(BuildContext context) {
     final t = AppTokens.of(context);
     final l = AppLocalizations.of(context);
-    final signedIn = widget.auth.isLoggedIn;
-    final banBanner = signedIn ? _buildBanBanner(context) : null;
-    const gap = SizedBox(height: 24);
+    return widget.auth.isLoggedIn ? _buildSignedIn(t, l) : _buildGuest(t, l);
+  }
 
-    return Material(
-      color: t.bg,
-      child: SafeArea(
-        bottom: false,
+  /// Guests keep the plain layout: app bar (title + gear) and the sign-up
+  /// card, below the status bar like the other tabs.
+  Widget _buildGuest(AppTokens t, AppLocalizations? l) {
+    return StatusBarInset(
+      child: Material(
+        color: t.bg,
         child: Column(
           children: [
             _buildAppBar(t, l),
@@ -557,35 +587,9 @@ class _ProfileTabScreenState extends State<ProfileTabScreen> {
                   physics: const AlwaysScrollableScrollPhysics(),
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                   children: [
-                    if (signedIn) ...[
-                      if (banBanner != null) ...[
-                        banBanner,
-                        const SizedBox(height: 16),
-                      ],
-                      _buildHeader(t, l),
-                      gap,
-                      _buildStatsCard(l),
-                      gap,
-                      _buildEditProfileButton(t, l),
-                      gap,
-                      ListenableBuilder(
-                        listenable: widget.streakController,
-                        builder: (context, _) => widget.streakController.loaded
-                            ? Padding(
-                                padding: const EdgeInsets.only(bottom: 24),
-                                child: _buildStreakCard(t, l),
-                              )
-                            : const SizedBox.shrink(),
-                      ),
-                    ] else ...[
-                      _buildGuestCard(t, l),
-                      gap,
-                    ],
-                    _buildLibrary(t, l, signedIn),
-                    if (signedIn) ...[
-                      gap,
-                      _buildMyRecipes(t, l),
-                    ],
+                    _buildGuestCard(t, l),
+                    _gap,
+                    _buildLibrary(t, l, false),
                   ],
                 ),
               ),
@@ -596,6 +600,68 @@ class _ProfileTabScreenState extends State<ProfileTabScreen> {
     );
   }
 
+  /// The cover is a pinned header that starts behind the status bar (the
+  /// shell doesn't inset this tab) and collapses to a `bg` toolbar with the
+  /// name and the gear.
+  Widget _buildSignedIn(AppTokens t, AppLocalizations? l) {
+    final banBanner = _buildBanBanner(context);
+    final safeTop = MediaQuery.paddingOf(context).top;
+    final collapsedHeight = safeTop + _toolbarHeight;
+
+    return Material(
+      color: t.bg,
+      child: RefreshIndicator(
+        color: t.brandInk,
+        // Keeps the spinner below the status bar.
+        edgeOffset: safeTop,
+        onRefresh: () => _load(force: true),
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            SliverPersistentHeader(
+              pinned: true,
+              delegate: _CoverHeaderDelegate(
+                minExtent: collapsedHeight,
+                maxExtent: math.max(_coverHeight, collapsedHeight),
+                builder: (context, collapse) => _buildCoverHeader(context, t, l, collapse, safeTop),
+              ),
+            ),
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+              sliver: SliverList.list(
+                children: [
+                  if (banBanner != null) ...[
+                    // The banner has an 8px top margin of its own: 16 in all.
+                    const SizedBox(height: 8),
+                    banBanner,
+                  ],
+                  const SizedBox(height: 16),
+                  _buildStatsCard(l),
+                  _gap,
+                  _buildEditProfileButton(t, l),
+                  _gap,
+                  ListenableBuilder(
+                    listenable: widget.streakController,
+                    builder: (context, _) => widget.streakController.loaded
+                        ? Padding(
+                            padding: const EdgeInsets.only(bottom: 24),
+                            child: _buildStreakCard(t, l),
+                          )
+                        : const SizedBox.shrink(),
+                  ),
+                  _buildLibrary(t, l, true),
+                  _gap,
+                  _buildMyRecipes(t, l),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Guest app bar.
   Widget _buildAppBar(AppTokens t, AppLocalizations? l) {
     return ConstrainedBox(
       constraints: const BoxConstraints(minHeight: 44),
@@ -625,97 +691,317 @@ class _ProfileTabScreenState extends State<ProfileTabScreen> {
     );
   }
 
-  /// Cover photo with the avatar overlapping its bottom edge and the name
-  /// beside the avatar, below the cover. Both photos are editable here.
-  Widget _buildHeader(AppTokens t, AppLocalizations? l) {
+  /// The cover with its scrims, the floating camera + gear, and the avatar
+  /// and name on it. [collapse] runs from 0 (expanded) to 1 (down to the
+  /// toolbar): the cover's controls fade out over the first half and the
+  /// toolbar fades in over the last 40%, so they never overlap.
+  Widget _buildCoverHeader(
+    BuildContext context,
+    AppTokens t,
+    AppLocalizations? l,
+    double collapse,
+    double safeTop,
+  ) {
+    final coverUrl = _profile?.coverPhotoUrl;
+    final coverOpacity = 1 - (collapse / 0.5).clamp(0.0, 1.0);
+    final toolbarOpacity = ((collapse - 0.6) / 0.4).clamp(0.0, 1.0);
+    final expandedHeight = math.max(_coverHeight, safeTop + _toolbarHeight);
+    final screen = MediaQuery.sizeOf(context);
+    final decodeWidth = (screen.width * MediaQuery.devicePixelRatioOf(context)).round();
     final me = widget.auth.me;
     final username = me?["username"]?.toString() ?? "";
     final displayName = me?["display_name"]?.toString();
     final name = (displayName == null || displayName.isEmpty) ? username : displayName;
-    final avatarUrl = me?["avatar_url"]?.toString();
-    final hasAvatar = avatarUrl != null && avatarUrl.isNotEmpty && avatarUrl != "null";
-    final coverUrl = _profile?.coverPhotoUrl;
-    final avatarBusy = _isUploading || _isDeleting;
 
-    const coverHeight = 132.0;
-    const avatarSize = 80.0;
-    const avatarBox = avatarSize + 2 * (3 + 2); // 3px gap + 2px ring each side
-    const avatarTop = coverHeight - 40;
-    const nameLeft = 16 + avatarBox + 12;
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      // Light icons on the cover, the theme's once the toolbar takes over.
+      // Only the visible tab paints, so this never reaches the other tabs.
+      value: toolbarOpacity >= 0.5
+          ? themeStatusBarStyle(Theme.of(context).brightness)
+          : lightStatusBarStyle,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final height = constraints.maxHeight;
+          // How far the bottom edge has moved from the expanded layout: up
+          // while collapsing, down while stretched by an overscroll.
+          final shift = height - expandedHeight;
+          final identityTop = expandedHeight - _identityBottom - _avatarSize;
 
-    const spinner = SizedBox(
-      width: 16,
-      height: 16,
-      child: CircularProgressIndicator(
-        strokeWidth: 2,
-        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-      ),
-    );
-
-    return Stack(
-      children: [
-        // Sizes the header to include the avatar's overhang.
-        const SizedBox(width: double.infinity, height: avatarTop + avatarBox),
-        Positioned(
-          top: 0,
-          left: 0,
-          right: 0,
-          height: coverHeight,
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                if (coverUrl != null)
-                  RecipeImageWidget(
-                    imageUrl: coverUrl,
-                    width: double.infinity,
-                    height: coverHeight,
-                    fit: BoxFit.cover,
-                    cacheHeight: 360,
-                  )
-                else
-                  ColoredBox(color: t.soft),
-                // 36px button at a 12px inset; the 4px padding around it
-                // makes the tap target 44px.
+          return Stack(
+            clipBehavior: Clip.hardEdge,
+            children: [
+              // The photo moves up at half the scroll speed and fills the
+              // header when it stretches.
+              Positioned(
+                top: math.min(0.0, shift / 2),
+                left: 0,
+                right: 0,
+                height: math.max(height, expandedHeight),
+                child: ColoredBox(
+                  color: _noCoverColor,
+                  child: coverUrl == null
+                      ? null
+                      : RecipeImageWidget(
+                          imageUrl: coverUrl,
+                          width: double.infinity,
+                          height: double.infinity,
+                          fit: BoxFit.cover,
+                          cacheWidth: decodeWidth,
+                        ),
+                ),
+              ),
+              // Scrims: status bar and buttons on top, the name at the bottom.
+              const Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                height: 100,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [Color(0x61000000), Color(0x00000000)], // 38% → 0
+                    ),
+                  ),
+                ),
+              ),
+              const Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                height: 150,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.bottomCenter,
+                      end: Alignment.topCenter,
+                      colors: [Color(0xAD000000), Color(0x00000000)], // 68% → 0
+                    ),
+                  ),
+                ),
+              ),
+              // No photo yet: "add cover" in the middle of the space between
+              // the status bar and the avatar row. Waits for the profile, so
+              // it doesn't flash before an existing cover loads.
+              if (_profile != null && coverUrl == null)
                 Positioned(
-                  right: 8,
-                  bottom: 8,
-                  child: Semantics(
-                    button: true,
-                    enabled: !_isSettingCover,
-                    label: coverUrl != null
-                        ? (l?.changeCoverPhoto ?? "Change cover photo")
-                        : (l?.addCoverPhoto ?? "Add cover photo"),
-                    excludeSemantics: true,
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: _isSettingCover ? null : _showCoverPhotoMenu,
+                  top: (safeTop + identityTop) / 2 - 24 + shift,
+                  left: 16,
+                  right: 16,
+                  child: Center(
+                    child: _fadeWithCollapse(coverOpacity, _buildAddCoverPill(l)),
+                  ),
+                ),
+              Positioned(
+                left: 16,
+                right: 16,
+                bottom: _identityBottom,
+                child: _fadeWithCollapse(coverOpacity, _buildCoverIdentity(l, name, username)),
+              ),
+              // 40px circles at safeTop + 12 and right 12; each IconButton
+              // lays out at 48 (its tap target), hence the 4px offsets.
+              Positioned(
+                top: safeTop + 8,
+                right: 8,
+                child: _fadeWithCollapse(
+                  coverOpacity,
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _coverButton(
+                        tooltip: coverUrl != null
+                            ? (l?.changeCoverPhoto ?? "Change cover photo")
+                            : (l?.addCoverPhoto ?? "Add cover photo"),
+                        onPressed: _isSettingCover ? null : _showCoverPhotoMenu,
+                        icon: _isSettingCover
+                            ? _whiteSpinner
+                            : const Icon(Icons.photo_camera_outlined, size: 19),
+                      ),
+                      _coverButton(
+                        tooltip: l?.settings ?? "Settings",
+                        onPressed: _openSettings,
+                        icon: const Icon(Icons.settings_outlined, size: 20),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              // Collapsed: the whole header fades to `bg` with the name and gear.
+              Positioned.fill(
+                child: _fadeWithCollapse(
+                  toolbarOpacity,
+                  ColoredBox(
+                    color: t.bg,
+                    child: Align(
+                      alignment: Alignment.topCenter,
                       child: Padding(
-                        padding: const EdgeInsets.all(4),
-                        child: Container(
-                          width: 36,
-                          height: 36,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.45),
-                            shape: BoxShape.circle,
+                        padding: EdgeInsets.only(top: safeTop, left: 16, right: 4),
+                        child: SizedBox(
+                          height: _toolbarHeight,
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  name,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                    color: t.ink,
+                                  ),
+                                ),
+                              ),
+                              IconButton(
+                                onPressed: _openSettings,
+                                tooltip: l?.settings ?? "Settings",
+                                icon: Icon(Icons.settings_outlined, color: t.ink),
+                              ),
+                            ],
                           ),
-                          child: _isSettingCover
-                              ? spinner
-                              : const Icon(Icons.photo_camera, size: 18, color: Colors.white),
                         ),
                       ),
                     ),
                   ),
                 ),
-              ],
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  /// Fades a part of the cover header. Once mostly faded it takes no taps
+  /// and is left out of semantics, so the cover's gear and the toolbar's
+  /// gear are never both reachable.
+  Widget _fadeWithCollapse(double opacity, Widget child) {
+    final hidden = opacity < 0.5;
+    return IgnorePointer(
+      ignoring: hidden,
+      child: ExcludeSemantics(
+        excluding: hidden,
+        child: Opacity(opacity: opacity, child: child),
+      ),
+    );
+  }
+
+  /// A 40px dark translucent circle with a white icon, on the cover.
+  Widget _coverButton({
+    required String tooltip,
+    required VoidCallback? onPressed,
+    required Widget icon,
+  }) {
+    final background = Colors.black.withValues(alpha: 0.35);
+    return IconButton(
+      onPressed: onPressed,
+      tooltip: tooltip,
+      icon: icon,
+      style: IconButton.styleFrom(
+        fixedSize: const Size.square(40),
+        minimumSize: const Size.square(40),
+        padding: EdgeInsets.zero,
+        tapTargetSize: MaterialTapTargetSize.padded,
+        backgroundColor: background,
+        disabledBackgroundColor: background,
+        foregroundColor: Colors.white,
+        disabledForegroundColor: Colors.white,
+      ),
+    );
+  }
+
+  Widget _buildAddCoverPill(AppLocalizations? l) {
+    final disabled = Colors.white.withValues(alpha: 0.5);
+    return OutlinedButton.icon(
+      onPressed: _isSettingCover ? null : _showCoverPhotoMenu,
+      icon: const Icon(Icons.photo_camera_outlined, size: 18),
+      label: Text(
+        l?.addCoverPhoto ?? "Add cover photo",
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
+      style: OutlinedButton.styleFrom(
+        minimumSize: const Size(0, 40),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        shape: const StadiumBorder(),
+        side: BorderSide(color: Colors.white.withValues(alpha: 0.7)),
+        foregroundColor: Colors.white,
+        iconColor: Colors.white,
+        disabledForegroundColor: disabled,
+        disabledIconColor: disabled,
+        textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+      ),
+    );
+  }
+
+  /// Avatar (tap → avatar menu) with the name and handle beside it, white
+  /// on the cover's bottom scrim. The name is not tappable.
+  Widget _buildCoverIdentity(AppLocalizations? l, String name, String username) {
+    final avatarUrl = widget.auth.me?["avatar_url"]?.toString();
+    final hasAvatar = avatarUrl != null && avatarUrl.isNotEmpty && avatarUrl != "null";
+    final avatarBusy = _isUploading || _isDeleting;
+    const photoSize = _avatarSize - 2 * 3; // inside the 3px border
+
+    return Row(
+      children: [
+        Semantics(
+          button: true,
+          enabled: !avatarBusy,
+          label: hasAvatar ? (l?.updateAvatar ?? "Update Avatar") : (l?.addAvatar ?? "Add Avatar"),
+          excludeSemantics: true,
+          child: GestureDetector(
+            onTap: avatarBusy ? null : () => _showAvatarMenu(hasAvatar ? avatarUrl : null),
+            child: SizedBox(
+              width: _avatarSize,
+              height: _avatarSize,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Container(
+                    width: _avatarSize,
+                    height: _avatarSize,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 3),
+                    ),
+                    child: Stack(
+                      children: [
+                        ProfileAvatar(avatarUrl: avatarUrl, name: username, size: photoSize),
+                        if (avatarBusy)
+                          ClipOval(
+                            child: Container(
+                              width: photoSize,
+                              height: photoSize,
+                              color: Colors.black.withValues(alpha: 0.5),
+                              alignment: Alignment.center,
+                              child: _whiteSpinner,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  Positioned(
+                    right: -2,
+                    bottom: 0,
+                    child: Container(
+                      width: 28,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        color: AppTokens.of(context).fill,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 2),
+                      ),
+                      child: const Icon(Icons.photo_camera, size: 13, color: Colors.white),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
-        // Name + handle: beside the avatar, 8px below the cover.
-        Padding(
-          padding: const EdgeInsets.only(top: coverHeight + 8, left: nameLeft),
+        const SizedBox(width: 14),
+        Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
@@ -724,75 +1010,16 @@ class _ProfileTabScreenState extends State<ProfileTabScreen> {
                 name,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: t.ink),
+                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: Colors.white),
               ),
               const SizedBox(height: 2),
               Text(
                 "@$username",
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(fontSize: 14, color: t.ink2),
+                style: TextStyle(fontSize: 14, color: Colors.white.withValues(alpha: 0.88)),
               ),
             ],
-          ),
-        ),
-        Positioned(
-          top: avatarTop,
-          left: 16,
-          child: Semantics(
-            button: true,
-            enabled: !avatarBusy,
-            label: hasAvatar ? (l?.updateAvatar ?? "Update Avatar") : (l?.addAvatar ?? "Add Avatar"),
-            excludeSemantics: true,
-            child: GestureDetector(
-              onTap: avatarBusy ? null : () => _showAvatarMenu(hasAvatar ? avatarUrl : null),
-              child: SizedBox(
-                width: avatarBox,
-                height: avatarBox,
-                child: Stack(
-                  children: [
-                    // 3px gap in the screen color, then a 2px brand ring.
-                    Container(
-                      padding: const EdgeInsets.all(3),
-                      decoration: BoxDecoration(
-                        color: t.bg,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: t.brand, width: 2),
-                      ),
-                      child: Stack(
-                        children: [
-                          ProfileAvatar(avatarUrl: avatarUrl, name: username, size: avatarSize),
-                          if (avatarBusy)
-                            ClipOval(
-                              child: Container(
-                                width: avatarSize,
-                                height: avatarSize,
-                                color: Colors.black.withValues(alpha: 0.5),
-                                alignment: Alignment.center,
-                                child: spinner,
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                    Positioned(
-                      right: 0,
-                      bottom: 0,
-                      child: Container(
-                        width: 28,
-                        height: 28,
-                        decoration: BoxDecoration(
-                          color: t.fill,
-                          shape: BoxShape.circle,
-                          border: Border.all(color: t.bg, width: 2),
-                        ),
-                        child: const Icon(Icons.photo_camera, size: 15, color: Colors.white),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
           ),
         ),
       ],
@@ -1203,6 +1430,45 @@ class _ProfileTabScreenState extends State<ProfileTabScreen> {
 // ─────────────────────────────────────────────────────────────────────────────
 // Helper widgets
 // ─────────────────────────────────────────────────────────────────────────────
+
+/// The pinned cover header. A hand-rolled delegate rather than SliverAppBar:
+/// the design swaps the whole header (floating buttons and name on a photo
+/// vs. a plain `bg` toolbar), which would mean switching off SliverAppBar's
+/// own toolbar, its scrolled-under tint and its status-bar style. One
+/// collapse value drives all of it here. [builder] gets that value: 0 =
+/// expanded, 1 = down to [minExtent].
+class _CoverHeaderDelegate extends SliverPersistentHeaderDelegate {
+  _CoverHeaderDelegate({
+    required this.minExtent,
+    required this.maxExtent,
+    required this.builder,
+  });
+
+  @override
+  final double minExtent;
+
+  @override
+  final double maxExtent;
+
+  final Widget Function(BuildContext context, double collapse) builder;
+
+  /// iOS overscroll stretches the cover instead of opening a gap above it.
+  @override
+  final OverScrollHeaderStretchConfiguration stretchConfiguration =
+      OverScrollHeaderStretchConfiguration();
+
+  @override
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+    final range = maxExtent - minExtent;
+    final collapse = range <= 0 ? 1.0 : (shrinkOffset / range).clamp(0.0, 1.0);
+    return builder(context, collapse);
+  }
+
+  // The builder reads the screen's state (cover, spinners, name), which
+  // changes without the extents changing.
+  @override
+  bool shouldRebuild(_CoverHeaderDelegate oldDelegate) => true;
+}
 
 class _StreakDay extends StatelessWidget {
   const _StreakDay({required this.label, required this.isToday, required this.isDone});
