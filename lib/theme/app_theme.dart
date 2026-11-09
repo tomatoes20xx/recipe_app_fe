@@ -68,6 +68,16 @@ ThemeData buildAppTheme(Brightness brightness) {
         textStyle: _nunito(textTheme.labelLarge, fontSize: 14, fontWeight: FontWeight.w700),
       ),
     ),
+    // Cards like the redesign's: `card` with a 1px `line` border, no shadow.
+    cardTheme: CardThemeData(
+      color: t.card,
+      surfaceTintColor: Colors.transparent,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: t.line),
+      ),
+    ),
     floatingActionButtonTheme: FloatingActionButtonThemeData(
       backgroundColor: t.fill,
       foregroundColor: Colors.white,

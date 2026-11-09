@@ -719,7 +719,10 @@ class _SortBar extends StatelessWidget {
     final t = AppTokens.of(context);
     final loc = AppLocalizations.of(context);
 
-    return Padding(
+    // The count, then the sort chips; the row scrolls when the chips don't
+    // fit (Georgian labels are long).
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
       padding: const EdgeInsets.fromLTRB(16, 6, 16, 2),
       child: Row(
         children: [
@@ -727,13 +730,8 @@ class _SortBar extends StatelessWidget {
             loc?.nSaved(count) ?? '$count saved',
             style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: t.ink2),
           ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              reverse: true,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
+          const SizedBox(width: 12),
+          Row(
                 children: [
                   TokenChip(
                     label: loc?.recent ?? 'Recent',
@@ -753,8 +751,6 @@ class _SortBar extends StatelessWidget {
                     onTap: () => onChanged(_SortMode.az),
                   ),
                 ],
-              ),
-            ),
           ),
         ],
       ),

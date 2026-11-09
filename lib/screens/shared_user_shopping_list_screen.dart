@@ -11,6 +11,8 @@ import "../shopping/shopping_list_controller.dart";
 import "../shopping/shopping_list_models.dart";
 import "../utils/error_utils.dart";
 import "../utils/ui_utils.dart";
+import "../theme/app_tokens.dart";
+import "../widgets/common/recipe_grid_tile.dart";
 import "../widgets/empty_state_widget.dart";
 
 class SharedUserShoppingListScreen extends StatefulWidget {
@@ -286,8 +288,15 @@ class _SharedUserShoppingListScreenState extends State<SharedUserShoppingListScr
                   final recipeName = firstItem.recipeName;
                   final shareId = itemEntries.first.key;
 
-                  return Card(
-                    margin: const EdgeInsets.only(bottom: 12),
+                  final t = AppTokens.of(context);
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 16),
+                    clipBehavior: Clip.antiAlias,
+                    decoration: BoxDecoration(
+                      color: t.card,
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(color: t.line),
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -295,12 +304,7 @@ class _SharedUserShoppingListScreenState extends State<SharedUserShoppingListScr
                         if (recipeId != "__no_recipe__")
                           Container(
                             padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: theme.colorScheme.surfaceContainerHighest,
-                              borderRadius: const BorderRadius.vertical(
-                                top: Radius.circular(12),
-                              ),
-                            ),
+                            decoration: BoxDecoration(border: Border(bottom: BorderSide(color: t.line))),
                             child: Row(
                               children: [
                                 InkWell(
@@ -318,22 +322,11 @@ class _SharedUserShoppingListScreenState extends State<SharedUserShoppingListScr
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      if (firstItem.recipeImage != null)
-                                        ClipRRect(
-                                          borderRadius: BorderRadius.circular(8),
-                                          child: Image.network(
-                                            buildImageUrl(firstItem.recipeImage!),
-                                            width: 32,
-                                            height: 32,
-                                            fit: BoxFit.cover,
-                                          ),
-                                        ),
-                                      if (firstItem.recipeImage != null) const SizedBox(width: 12),
+                                      RecipeThumb(imageUrl: firstItem.recipeImage, size: 48),
+                                      const SizedBox(width: 12),
                                       Text(
                                         recipeName ?? "Recipe",
-                                        style: theme.textTheme.titleSmall?.copyWith(
-                                          fontWeight: FontWeight.w600,
-                                        ),
+                                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: t.ink),
                                       ),
                                     ],
                                   ),
@@ -383,7 +376,7 @@ class _SharedUserShoppingListScreenState extends State<SharedUserShoppingListScr
                                       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                       visualDensity: VisualDensity.compact,
                                       shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(4),
+                                        borderRadius: BorderRadius.circular(6),
                                       ),
                                     ),
                                   ),
@@ -403,7 +396,7 @@ class _SharedUserShoppingListScreenState extends State<SharedUserShoppingListScr
                                   if (item.quantity != null || item.unit != null)
                                     Text(
                                       [
-                                        if (item.quantity != null) '${item.quantity}',
+                                        if (item.quantity != null) formatQuantity(item.quantity!),
                                         if (item.unit != null) item.unit!,
                                       ].join(' '),
                                       style: theme.textTheme.bodyMedium?.copyWith(

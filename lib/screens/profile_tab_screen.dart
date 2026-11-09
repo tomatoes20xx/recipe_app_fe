@@ -508,7 +508,7 @@ class _ProfileTabScreenState extends State<ProfileTabScreen> {
       return _BanBanner(
         message: localizations?.violationWarning2 ??
             "Warning: 1 more violation will result in a 7-day suspension",
-        color: Colors.orange,
+        color: AppTokens.of(context).warning,
       );
     }
     if (widget.auth.violationCount == 5) {

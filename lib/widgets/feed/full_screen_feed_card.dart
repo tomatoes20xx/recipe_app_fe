@@ -509,7 +509,7 @@ class _FireBadge extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text("🔥", style: TextStyle(fontSize: 14)),
+            const Icon(Icons.local_fire_department_rounded, size: 15, color: Colors.white),
             const SizedBox(width: 4),
             Text(
               "$likesWindow",

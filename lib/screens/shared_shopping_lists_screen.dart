@@ -3,6 +3,7 @@ import "package:flutter/material.dart";
 import "../api/api_client.dart";
 import "../auth/auth_controller.dart";
 import "../localization/app_localizations.dart";
+import "../theme/app_tokens.dart";
 import "../shopping/shared_shopping_lists_controller.dart";
 import "../shopping/shopping_list_api.dart";
 import "../shopping/shopping_list_controller.dart";
@@ -167,16 +168,22 @@ class _SharedShoppingListsScreenState extends State<SharedShoppingListsScreen> {
                     padding: const EdgeInsets.only(right: 20),
                     margin: const EdgeInsets.only(bottom: 12),
                     decoration: BoxDecoration(
-                      color: theme.colorScheme.error,
-                      borderRadius: BorderRadius.circular(12),
+                      color: AppTokens.of(context).danger,
+                      borderRadius: BorderRadius.circular(18),
                     ),
-                    child: Icon(
-                      Icons.delete,
-                      color: theme.colorScheme.onError,
+                    child: const Icon(
+                      Icons.delete_outline_rounded,
+                      color: Colors.white,
                     ),
                   ),
                   child: Card(
                     margin: const EdgeInsets.only(bottom: 12),
+                    elevation: 0,
+                    color: AppTokens.of(context).card,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(18),
+                      side: BorderSide(color: AppTokens.of(context).line),
+                    ),
                     clipBehavior: Clip.antiAlias,
                     child: InkWell(
                     onTap: () {

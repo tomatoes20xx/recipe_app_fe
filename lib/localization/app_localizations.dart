@@ -599,8 +599,7 @@ class AppLocalizations {
   String get manageYourShoppingList => _localizedValues[locale.languageCode]?["manageYourShoppingList"] ?? "Manage your shopping list";
   String get emptyShoppingList => _localizedValues[locale.languageCode]?["emptyShoppingList"] ?? "Shopping list is empty";
   String get emptyShoppingListMessage => _localizedValues[locale.languageCode]?["emptyShoppingListMessage"] ?? "Add ingredients from recipes to create your shopping list";
-  String get statusSummary => _localizedValues[locale.languageCode]?["statusSummary"] ?? "STATUS SUMMARY";
-  String get totalItems => _localizedValues[locale.languageCode]?["totalItems"] ?? "TOTAL ITEMS";
+  String get totalItems => _localizedValues[locale.languageCode]?["totalItems"] ?? "Total items";
   String get checked => _localizedValues[locale.languageCode]?["checked"] ?? "Checked";
   String get remaining => _localizedValues[locale.languageCode]?["remaining"] ?? "Remaining";
   String get clearChecked => _localizedValues[locale.languageCode]?["clearChecked"] ?? "Clear";
@@ -1513,8 +1512,7 @@ class AppLocalizations {
       "manageYourShoppingList": "Manage your shopping list",
       "emptyShoppingList": "Shopping list is empty",
       "emptyShoppingListMessage": "Add ingredients from recipes to create your shopping list",
-      "statusSummary": "STATUS SUMMARY",
-      "totalItems": "TOTAL ITEMS",
+      "totalItems": "Total items",
       "checked": "Checked",
       "remaining": "Remaining",
       "clearChecked": "Clear",
@@ -2442,7 +2440,6 @@ class AppLocalizations {
       "manageYourShoppingList": "მართეთ თქვენი საყიდლების სია",
       "emptyShoppingList": "საყიდლების სია ცარიელია",
       "emptyShoppingListMessage": "დაამატეთ ინგრედიენტები რეცეპტებიდან საყიდლების სიის შესაქმნელად",
-      "statusSummary": "სტატუსის შეჯამება",
       "totalItems": "სულ ელემენტი",
       "checked": "მონიშნული",
       "remaining": "დარჩენილი",

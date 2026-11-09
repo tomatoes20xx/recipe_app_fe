@@ -201,32 +201,23 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         body: Form(
           key: _formKey,
           child: ListView(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(16),
             children: [
-              // Info card
+              // Info card, on `soft` like the app's other notes
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.primary.withValues(alpha: 0.08),
+                  color: AppTokens.of(context).soft,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: theme.colorScheme.primary.withValues(alpha: 0.2),
-                  ),
                 ),
                 child: Row(
                   children: [
-                    Icon(
-                      Icons.info_outline,
-                      size: 20,
-                      color: theme.colorScheme.primary,
-                    ),
+                    Icon(Icons.info_outline_rounded, size: 20, color: AppTokens.of(context).brandInk),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
                         localizations?.profileUpdateInfo ?? "Update your profile information. Changes will be visible to other users.",
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                        ),
+                        style: TextStyle(fontSize: 13, color: AppTokens.of(context).ink),
                       ),
                     ),
                   ],

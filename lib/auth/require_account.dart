@@ -155,7 +155,7 @@ Future<bool> _showVerifySheet(BuildContext context, AuthController auth) async {
             children: [
               const SheetHandle(),
               const SizedBox(height: 20),
-              const Text("📧", style: TextStyle(fontSize: 40)),
+              Icon(Icons.mark_email_unread_outlined, size: 40, color: Theme.of(ctx).colorScheme.primary),
               const SizedBox(height: 12),
               Text(
                 l?.emailGateTitle ?? "Verify your email first",

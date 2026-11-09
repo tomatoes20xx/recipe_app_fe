@@ -33,7 +33,7 @@ class _PushPermissionPromptSheet extends StatelessWidget {
           children: [
             const SheetHandle(),
             const SizedBox(height: 20),
-            const Text('🔔', style: TextStyle(fontSize: 40)),
+            Icon(Icons.notifications_active_outlined, size: 40, color: Theme.of(context).colorScheme.primary),
             const SizedBox(height: 12),
             Text(
               l?.pushPromptTitle ?? 'New Georgian Recipes',

@@ -218,12 +218,12 @@ class _UsernameSelectionScreenState extends State<UsernameSelectionScreen> {
                             : (widget.avatarUrl != null
                                 ? NetworkImage(widget.avatarUrl!) as ImageProvider
                                 : null),
-                        backgroundColor: theme.colorScheme.surfaceContainerLow,
+                        backgroundColor: AppTokens.of(context).soft,
                         child: _selectedAvatarFile == null && widget.avatarUrl == null
                             ? Icon(
-                                Icons.person,
+                                Icons.person_rounded,
                                 size: 50,
-                                color: theme.colorScheme.onSurfaceVariant,
+                                color: AppTokens.of(context).brandInk,
                               )
                             : null,
                       ),
@@ -233,21 +233,16 @@ class _UsernameSelectionScreenState extends State<UsernameSelectionScreen> {
                       right: 0,
                       child: GestureDetector(
                         onTap: _isLoading ? null : _pickAvatar,
+                        // The Profile tab's camera badge.
                         child: Container(
-                          padding: const EdgeInsets.all(8),
+                          width: 32,
+                          height: 32,
                           decoration: BoxDecoration(
-                            color: theme.colorScheme.primary,
+                            color: AppTokens.of(context).fill,
                             shape: BoxShape.circle,
-                            border: Border.all(
-                              color: theme.colorScheme.surface,
-                              width: 2,
-                            ),
+                            border: Border.all(color: AppTokens.of(context).bg, width: 2),
                           ),
-                          child: Icon(
-                            Icons.edit_outlined,
-                            size: 16,
-                            color: theme.colorScheme.onPrimary,
-                          ),
+                          child: const Icon(Icons.photo_camera, size: 15, color: Colors.white),
                         ),
                       ),
                     ),

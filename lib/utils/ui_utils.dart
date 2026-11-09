@@ -5,6 +5,12 @@ import "../config.dart";
 import "../localization/app_localizations.dart";
 import "../widgets/common/profile_avatar.dart";
 
+/// A quantity as every screen shows it: "2", "1.5", never "2.0".
+String formatQuantity(double value) {
+  if (value == value.roundToDouble()) return value.toInt().toString();
+  return value.toStringAsFixed(1).replaceAll(RegExp(r'\.?0+$'), '');
+}
+
 /// Cooking time as every screen shows it: "25 min", or "10–20 min" for a
 /// range. Null when the recipe has no time.
 String? formatCookingTime(AppLocalizations? l, int? min, int? max) {

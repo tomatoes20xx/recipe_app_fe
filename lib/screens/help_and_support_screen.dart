@@ -2,6 +2,7 @@ import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:url_launcher/url_launcher.dart";
 import "../localization/app_localizations.dart";
+import "../theme/app_tokens.dart";
 import "../utils/error_utils.dart";
 import "../widgets/section_title_widget.dart";
 import "package:package_info_plus/package_info_plus.dart";
@@ -48,15 +49,8 @@ class _HelpAndSupportScreenState extends State<HelpAndSupportScreen> {
         children: [
           // Welcome Message
           Card(
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-              side: BorderSide(
-                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
-                width: 1,
-              ),
-            ),
-            color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.3),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            color: AppTokens.of(context).soft,
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -186,14 +180,6 @@ class _HelpAndSupportScreenState extends State<HelpAndSupportScreen> {
 
   Widget _buildExpandableFAQ(BuildContext context, String question, String answer) {
     return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
-          width: 1,
-        ),
-      ),
       child: ExpansionTile(
         tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -224,14 +210,6 @@ class _HelpAndSupportScreenState extends State<HelpAndSupportScreen> {
     final localizations = AppLocalizations.of(context);
     
     return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
-          width: 1,
-        ),
-      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -314,14 +292,6 @@ class _HelpAndSupportScreenState extends State<HelpAndSupportScreen> {
     const subject = "Yummy Support Request";
     
     return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
-          width: 1,
-        ),
-      ),
       child: Column(
         children: [
           ListTile(
@@ -406,14 +376,6 @@ class _HelpAndSupportScreenState extends State<HelpAndSupportScreen> {
     final localizations = AppLocalizations.of(context);
     
     return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
-          width: 1,
-        ),
-      ),
       child: Column(
         children: [
           FutureBuilder<String>(

@@ -653,13 +653,7 @@ class RecipeIngredientLine {
     if (ingredient.quantity == null) {
       return RecipeIngredientLine(id: ingredient.id, name: ingredient.displayName, amount: unit.trim());
     }
-    final scaled = ingredient.quantity! * scaleFactor;
-    final String qtyStr;
-    if (scaled == scaled.roundToDouble()) {
-      qtyStr = scaled.toInt().toString();
-    } else {
-      qtyStr = scaled.toStringAsFixed(1).replaceAll(RegExp(r'\.?0+$'), '');
-    }
+    final qtyStr = formatQuantity(ingredient.quantity! * scaleFactor);
     return RecipeIngredientLine(id: ingredient.id, name: ingredient.displayName, amount: "$qtyStr$unit".trim());
   }
 }

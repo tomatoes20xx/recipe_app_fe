@@ -4,12 +4,16 @@ import "../api/api_client.dart";
 import "../auth/auth_controller.dart";
 import "../auth/require_account.dart";
 import "../localization/app_localizations.dart";
+import "../recipes/recipe_detail_screen.dart";
 import "../sharing/sharing_models.dart";
 import "../shopping/shopping_list_api.dart";
 import "../shopping/shopping_list_controller.dart";
 import "../shopping/shopping_list_models.dart";
 import "../utils/error_utils.dart";
 import "../utils/ui_utils.dart";
+import "../theme/app_tokens.dart";
+import "../widgets/common/profile_stats_card.dart";
+import "../widgets/common/recipe_grid_tile.dart";
 import "../widgets/empty_state_widget.dart";
 import "../widgets/sharing/follower_selection_bottom_sheet.dart";
 import "../widgets/sharing/recipe_selection_bottom_sheet.dart";
@@ -197,55 +201,19 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
 
   Widget _buildShoppingList() {
     final localizations = AppLocalizations.of(context);
-    final theme = Theme.of(context);
     final groups = widget.controller.groupedItems;
 
     return CustomScrollView(
       slivers: [
-        // Stats header
+        // Stats: the same card as the profiles' stats
         SliverToBoxAdapter(
-          child: Container(
-            margin: const EdgeInsets.all(16),
+          child: Padding(
             padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerLow,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  localizations?.statusSummary ?? 'STATUS SUMMARY',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 1.0,
-                    color: theme.colorScheme.primary,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    _buildStat(
-                      label: localizations?.totalItems ?? 'TOTAL ITEMS',
-                      value: '${widget.controller.totalCount}',
-                      color: theme.colorScheme.primary,
-                    ),
-                    const SizedBox(width: 28),
-                    _buildStat(
-                      label: (localizations?.checked ?? 'Checked').toUpperCase(),
-                      value: '${widget.controller.checkedCount}',
-                      color: const Color(0xFF8B1A4A),
-                    ),
-                    const SizedBox(width: 28),
-                    _buildStat(
-                      label: (localizations?.remaining ?? 'Remaining').toUpperCase(),
-                      value: '${widget.controller.uncheckedCount}',
-                      color: theme.colorScheme.onSurface,
-                    ),
-                  ],
-                ),
+            child: ProfileStatsCard(
+              stats: [
+                ProfileStat(value: widget.controller.totalCount, label: localizations?.totalItems ?? 'Total items'),
+                ProfileStat(value: widget.controller.checkedCount, label: localizations?.checked ?? 'Checked'),
+                ProfileStat(value: widget.controller.uncheckedCount, label: localizations?.remaining ?? 'Remaining'),
               ],
             ),
           ),
@@ -262,42 +230,12 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
                   group: group,
                   controller: widget.controller,
                   apiClient: widget.apiClient,
+                  auth: widget.auth,
                   onRemoveRecipe: () => _showRemoveRecipeDialog(group),
                 );
               },
               childCount: groups.length,
             ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStat({
-    required String label,
-    required String value,
-    required Color color,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.w800,
-            color: color,
-            height: 1.0,
-          ),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 10,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0.5,
-            color: color.withValues(alpha: 0.7),
           ),
         ),
       ],
@@ -480,12 +418,14 @@ class _RecipeGroupCard extends StatefulWidget {
     required this.controller,
     required this.onRemoveRecipe,
     required this.apiClient,
+    this.auth,
   });
 
   final GroupedShoppingItems group;
   final ShoppingListController controller;
   final VoidCallback onRemoveRecipe;
   final ApiClient apiClient;
+  final AuthController? auth;
 
   @override
   State<_RecipeGroupCard> createState() => _RecipeGroupCardState();
@@ -576,68 +516,38 @@ class _RecipeGroupCardState extends State<_RecipeGroupCard> {
     final localizations = AppLocalizations.of(context);
     final sharedCount = _getSharedUsers().length;
 
-    return Card(
+    final t = AppTokens.of(context);
+    return Container(
       margin: const EdgeInsets.only(bottom: 16),
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(
-          color: theme.colorScheme.outlineVariant,
-          width: 1,
-        ),
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: t.card,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: t.line),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Recipe header
           InkWell(
-            onTap: () {
-              // Could navigate to recipe detail
-            },
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHighest,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-              ),
-              child: Row(
-                children: [
-                  if (widget.group.recipeImage != null)
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.network(
-                        buildImageUrl(widget.group.recipeImage!),
-                        width: 48,
-                        height: 48,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Container(
-                          width: 48,
-                          height: 48,
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.primaryContainer,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Icon(
-                            Icons.restaurant,
-                            color: theme.colorScheme.onPrimaryContainer,
-                          ),
+            onTap: widget.group.recipeId.isEmpty
+                ? null
+                : () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => RecipeDetailScreen(
+                          recipeId: widget.group.recipeId,
+                          apiClient: widget.apiClient,
+                          auth: widget.auth,
+                          shoppingListController: widget.controller,
                         ),
                       ),
-                    )
-                  else
-                    Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.primaryContainer,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Icon(
-                        Icons.restaurant,
-                        color: theme.colorScheme.onPrimaryContainer,
-                      ),
                     ),
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(border: Border(bottom: BorderSide(color: t.line))),
+              child: Row(
+                children: [
+                  RecipeThumb(imageUrl: widget.group.recipeImage, size: 48),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
@@ -645,9 +555,7 @@ class _RecipeGroupCardState extends State<_RecipeGroupCard> {
                       children: [
                         Text(
                           widget.group.recipeName,
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
+                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: t.ink),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -773,7 +681,7 @@ class _RecipeGroupCardState extends State<_RecipeGroupCard> {
             physics: const NeverScrollableScrollPhysics(),
             padding: const EdgeInsets.all(12),
             itemCount: widget.group.items.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 4),
+            separatorBuilder: (_, _) => const SizedBox(height: 4),
             itemBuilder: (context, index) {
               final item = widget.group.items[index];
               return _ShoppingListItemTile(
@@ -862,7 +770,7 @@ class _ShoppingListItemTile extends StatelessWidget {
               if (item.quantity != null || item.unit != null)
                 Text(
                   [
-                    if (item.quantity != null) '${item.quantity}',
+                    if (item.quantity != null) formatQuantity(item.quantity!),
                     if (item.unit != null) item.unit!,
                   ].join(' '),
                   style: theme.textTheme.bodyMedium?.copyWith(

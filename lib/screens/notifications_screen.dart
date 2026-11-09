@@ -3,7 +3,6 @@ import "../api/api_client.dart";
 import "../auth/auth_controller.dart";
 import "../auth/require_account.dart";
 import "../localization/app_localizations.dart";
-import "../notifications/notification_api.dart";
 import "../notifications/notification_controller.dart";
 import "../notifications/notification_models.dart" as notification_models;
 import "../recipes/recipe_detail_screen.dart";
@@ -12,6 +11,9 @@ import "../screens/shared_shopping_lists_screen.dart";
 import "../shopping/shopping_list_controller.dart";
 import "../utils/error_utils.dart";
 import "../utils/ui_utils.dart";
+import "../theme/app_tokens.dart";
+import "../widgets/common/profile_avatar.dart";
+import "../widgets/common/skeletons.dart";
 import "../widgets/empty_state_widget.dart";
 
 class NotificationsScreen extends StatefulWidget {
@@ -92,43 +94,27 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   IconData _getNotificationIcon(notification_models.NotificationType type) {
     switch (type) {
       case notification_models.NotificationType.follow:
-        return Icons.person_add;
+        return Icons.person_add_alt_1_rounded;
       case notification_models.NotificationType.like:
-        return Icons.favorite;
+        return Icons.favorite_rounded;
       case notification_models.NotificationType.comment:
-        return Icons.comment;
+        return Icons.chat_bubble_rounded;
       case notification_models.NotificationType.bookmark:
-        return Icons.bookmark;
+        return Icons.bookmark_rounded;
       case notification_models.NotificationType.recipe:
-        return Icons.restaurant_menu;
+        return Icons.restaurant_menu_rounded;
       case notification_models.NotificationType.recipeShare:
-        return Icons.share;
+        return Icons.share_rounded;
       case notification_models.NotificationType.shoppingListShare:
-        return Icons.shopping_basket;
+        return Icons.shopping_basket_rounded;
       case notification_models.NotificationType.unknown:
-        return Icons.notifications;
+        return Icons.notifications_rounded;
     }
   }
 
-  Color _getNotificationColor(notification_models.NotificationType type, BuildContext context) {
-    switch (type) {
-      case notification_models.NotificationType.follow:
-        return Colors.blue;
-      case notification_models.NotificationType.like:
-        return Colors.red;
-      case notification_models.NotificationType.comment:
-        return Colors.orange;
-      case notification_models.NotificationType.bookmark:
-        return Colors.purple;
-      case notification_models.NotificationType.recipe:
-        return Colors.green;
-      case notification_models.NotificationType.recipeShare:
-        return Colors.teal;
-      case notification_models.NotificationType.shoppingListShare:
-        return Colors.indigo;
-      case notification_models.NotificationType.unknown:
-        return Theme.of(context).colorScheme.primary;
-    }
+  /// Type icons are `brandInk`; a like is red, as on the feed card.
+  Color _getNotificationColor(notification_models.NotificationType type, AppTokens t) {
+    return type == notification_models.NotificationType.like ? const Color(0xFFE53935) : t.brandInk;
   }
 
   String _getNotificationTitle(notification_models.Notification notification, BuildContext context) {
@@ -291,21 +277,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       ),
     );
     return result ?? false;
-  }
-
-  Future<void> _handleDeleteNotification(notification_models.Notification notification) async {
-    final confirmed = await _confirmDeleteNotification();
-    if (!confirmed) return;
-
-    try {
-      await widget.notificationController.deleteNotification(notification.id);
-      if (!mounted) return;
-      final localizations = AppLocalizations.of(context);
-      ErrorUtils.showSuccess(context, localizations?.notificationDeleted ?? "Notification deleted");
-    } catch (e) {
-      if (!mounted) return;
-      ErrorUtils.showError(context, e);
-    }
   }
 
   Future<bool> _confirmClearAllNotifications() async {
@@ -476,7 +447,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   Widget _buildContent() {
     if (widget.notificationController.isLoading && widget.notificationController.items.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
+      return const SingleChildScrollView(child: ListRowSkeleton(leadingSize: 44, count: 8));
     }
 
     if (widget.notificationController.error != null && widget.notificationController.items.isEmpty) {
@@ -495,12 +466,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         description: _showUnreadOnly
             ? (AppLocalizations.of(context)?.allCaughtUp ?? "You're all caught up!")
             : (AppLocalizations.of(context)?.notificationsEmptyDescription ?? "You'll see notifications here when someone interacts with your content"),
-        titleStyle: Theme.of(context).textTheme.titleLarge?.copyWith(
-          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
-        ),
-        descriptionStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
-          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
-        ),
       );
     }
 
@@ -522,12 +487,56 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     );
   }
 
+  /// The actor's avatar (or, for notifications without one, a `soft` icon
+  /// circle) with a small badge for the type. Unread rows sit on a light
+  /// `soft` tint with a `brand` dot, like the nav's active dot.
   Widget _buildNotificationItem(notification_models.Notification notification) {
-    final iconColor = _getNotificationColor(notification.type, context);
+    final t = AppTokens.of(context);
     final icon = _getNotificationIcon(notification.type);
+    final iconColor = _getNotificationColor(notification.type, t);
     final title = _getNotificationTitle(notification, context);
     final message = _getNotificationMessage(notification);
     final date = formatRelativeTime(context, notification.createdAt);
+    final actor = notification.actorUsername;
+
+    final Widget leading;
+    if (actor != null && actor.isNotEmpty) {
+      leading = SizedBox(
+        width: 48,
+        height: 48,
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            ProfileAvatar(
+              avatarUrl: notification.actorAvatarUrl,
+              name: notification.actorDisplayName ?? actor,
+              size: 44,
+            ),
+            Positioned(
+              right: -2,
+              bottom: -2,
+              child: Container(
+                width: 22,
+                height: 22,
+                decoration: BoxDecoration(
+                  color: t.card,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: t.line),
+                ),
+                child: Icon(icon, size: 13, color: iconColor),
+              ),
+            ),
+          ],
+        ),
+      );
+    } else {
+      leading = Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(color: t.soft, shape: BoxShape.circle),
+        child: Icon(icon, size: 22, color: iconColor),
+      );
+    }
 
     return Dismissible(
       key: Key(notification.id),
@@ -551,56 +560,19 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       background: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 20),
-        color: Theme.of(context).colorScheme.error,
-        child: const Icon(
-          Icons.delete,
-          color: Colors.white,
-        ),
+        color: t.danger,
+        child: const Icon(Icons.delete_outline_rounded, color: Colors.white),
       ),
       child: InkWell(
         onTap: () => _handleNotificationTap(notification),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            color: notification.isRead
-                ? Theme.of(context).colorScheme.surface
-                : Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.15),
-            border: Border(
-              left: BorderSide(
-                color: notification.isRead
-                    ? Colors.transparent
-                    : iconColor,
-                width: 3,
-              ),
-            ),
-          ),
+          color: notification.isRead ? null : t.soft.withValues(alpha: 0.6),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Avatar or icon
-              if (notification.actorAvatarUrl != null)
-                buildUserAvatar(
-                  context,
-                  notification.actorAvatarUrl,
-                  notification.actorUsername ?? "",
-                  radius: 24,
-                )
-              else
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: iconColor.withValues(alpha: 0.2),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    icon,
-                    color: iconColor,
-                    size: 24,
-                  ),
-                ),
+              leading,
               const SizedBox(width: 12),
-              // Content
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -608,42 +580,31 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     Text(
                       title,
                       style: TextStyle(
-                        fontWeight: notification.isRead ? FontWeight.normal : FontWeight.w600,
                         fontSize: 14,
+                        fontWeight: notification.isRead ? FontWeight.w500 : FontWeight.w700,
+                        color: t.ink,
                       ),
                     ),
                     if (message != null) ...[
                       const SizedBox(height: 4),
                       Text(
                         message,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
-                            ),
+                        style: TextStyle(fontSize: 13, color: t.ink2),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ],
                     const SizedBox(height: 4),
-                    Text(
-                      date,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
-                            fontSize: 11,
-                          ),
-                    ),
+                    Text(date, style: TextStyle(fontSize: 12, color: t.ink2)),
                   ],
                 ),
               ),
-              // Unread indicator
               if (!notification.isRead)
                 Container(
                   width: 8,
                   height: 8,
-                  margin: const EdgeInsets.only(left: 8),
-                  decoration: BoxDecoration(
-                    color: iconColor,
-                    shape: BoxShape.circle,
-                  ),
+                  margin: const EdgeInsets.only(left: 8, top: 6),
+                  decoration: BoxDecoration(color: t.brand, shape: BoxShape.circle),
                 ),
             ],
           ),
