@@ -4,6 +4,15 @@ import "package:cached_network_image/cached_network_image.dart";
 import "../config.dart";
 import "../localization/app_localizations.dart";
 
+/// Cooking time as every screen shows it: "25 min", or "10–20 min" for a
+/// range. Null when the recipe has no time.
+String? formatCookingTime(AppLocalizations? l, int? min, int? max) {
+  if (min == null && max == null) return null;
+  final unit = l?.minuteAbbreviation ?? "min";
+  if (min != null && max != null && min != max) return "$min–$max $unit";
+  return "${min ?? max} $unit";
+}
+
 /// Normalizes an avatar URL — returns null for null, empty, or the literal string "null"
 String? normalizeAvatarUrl(dynamic avatarUrl) {
   if (avatarUrl == null || avatarUrl == 'null') return null;

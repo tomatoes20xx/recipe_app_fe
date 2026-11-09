@@ -1,6 +1,8 @@
 import "package:flutter/material.dart";
 import "../auth/auth_controller.dart";
 import "../localization/app_localizations.dart";
+import "../theme/app_tokens.dart";
+import "../theme/token_input.dart";
 import "../utils/error_utils.dart";
 import "reset_password_screen.dart";
 
@@ -116,11 +118,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
                 autofocus: true,
-                decoration: InputDecoration(
+                decoration: tokenInputDecoration(AppTokens.of(context), onPage: true).copyWith(
                   labelText: localizations?.email ?? "Email",
                   hintText: localizations?.enterEmail ?? "Enter your email",
                   prefixIcon: const Icon(Icons.email_outlined),
-                  border: const OutlineInputBorder(),
                 ),
                 onSubmitted: (_) => _sendResetCode(),
               ),

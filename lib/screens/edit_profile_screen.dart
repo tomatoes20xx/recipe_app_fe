@@ -3,6 +3,8 @@ import "package:flutter/material.dart";
 import "../api/api_client.dart";
 import "../auth/auth_controller.dart";
 import "../localization/app_localizations.dart";
+import "../theme/app_tokens.dart";
+import "../theme/token_input.dart";
 import "../users/user_api.dart";
 import "../utils/error_utils.dart";
 
@@ -127,9 +129,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       builder: (context) {
         final localizations = AppLocalizations.of(context);
         return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
           title: Text(localizations?.discardChanges ?? "Discard changes?"),
           content: Text(
             localizations?.unsavedChangesMessage ?? "You have unsaved changes. Are you sure you want to discard them?",
@@ -171,15 +170,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       child: Scaffold(
         backgroundColor: theme.colorScheme.surface,
         appBar: AppBar(
-          elevation: 0,
-          scrolledUnderElevation: 0.5,
-          backgroundColor: theme.colorScheme.surface,
-          title: Text(
-            localizations?.editProfile ?? "Edit Profile",
-            style: theme.textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
-          ),
+          title: Text(localizations?.editProfile ?? "Edit Profile"),
           actions: [
             TextButton(
               onPressed: _isLoading || !_hasChanges ? null : _saveProfile,
@@ -254,33 +245,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               TextFormField(
                 controller: _displayNameController,
                 enabled: !_isLoading,
-                decoration: InputDecoration(
+                decoration: tokenInputDecoration(AppTokens.of(context), onPage: true).copyWith(
                   hintText: localizations?.enterDisplayName ?? "Enter display name",
                   prefixIcon: const Icon(Icons.person_outline_rounded),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: theme.colorScheme.outline.withValues(alpha: 0.3),
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: theme.colorScheme.primary,
-                      width: 2,
-                    ),
-                  ),
-                  errorBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: theme.colorScheme.error,
-                    ),
-                  ),
-                  filled: true,
-                  fillColor: theme.colorScheme.surfaceContainerLow,
                 ),
                 validator: (value) {
                   if (value != null && value.trim().isNotEmpty) {
@@ -306,32 +273,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 enabled: !_isLoading,
                 maxLines: 4,
                 maxLength: 500,
-                decoration: InputDecoration(
+                decoration: tokenInputDecoration(AppTokens.of(context), onPage: true).copyWith(
                   hintText: localizations?.enterBio ?? "Tell us about yourself",
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: theme.colorScheme.outline.withValues(alpha: 0.3),
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: theme.colorScheme.primary,
-                      width: 2,
-                    ),
-                  ),
-                  errorBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: theme.colorScheme.error,
-                    ),
-                  ),
-                  filled: true,
-                  fillColor: theme.colorScheme.surfaceContainerLow,
                 ),
                 validator: (value) {
                   if (value != null && value.length > 500) {
@@ -368,15 +311,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     ),
                   ),
                   style: FilledButton.styleFrom(
-                    backgroundColor: _hasChanges
-                        ? theme.colorScheme.primary
-                        : theme.colorScheme.surfaceContainerHighest,
-                    foregroundColor: _hasChanges
-                        ? theme.colorScheme.onPrimary
-                        : theme.colorScheme.onSurface.withValues(alpha: 0.3),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+                    backgroundColor: _hasChanges ? null : theme.colorScheme.surfaceContainerHighest,
+                    foregroundColor: _hasChanges ? null : theme.colorScheme.onSurface.withValues(alpha: 0.3),
                     elevation: 0,
                   ),
                 ),

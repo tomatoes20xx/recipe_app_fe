@@ -234,7 +234,6 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(localizations?.deleteCommentTitle ?? "Delete comment?"),
         content: Text(localizations?.deleteCommentMessage ?? "This will also delete all replies to this comment."),
         actions: [
@@ -242,11 +241,10 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
             onPressed: () => Navigator.of(context).pop(false),
             child: Text(localizations?.cancel ?? "Cancel"),
           ),
-          FilledButton(
+          TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.error,
-              foregroundColor: Theme.of(context).colorScheme.onError,
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.error,
             ),
             child: Text(localizations?.delete ?? "Delete"),
           ),
@@ -364,23 +362,15 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
       padding: EdgeInsets.only(bottom: keyboardHeight),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHigh,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: sheetTopRadius,
       ),
       child: SafeArea(
         top: false,
         child: Column(
           children: [
-            // Handle bar
-            Center(
-              child: Container(
-                margin: const EdgeInsets.only(top: 10, bottom: 4),
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: colorScheme.onSurface.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
+            const Padding(
+              padding: EdgeInsets.only(top: 10, bottom: 4),
+              child: SheetHandle(),
             ),
             // Header
             Padding(

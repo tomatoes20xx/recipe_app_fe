@@ -205,12 +205,8 @@ class _RecipePreviewScreenState extends State<RecipePreviewScreen> {
   List<Widget> _meta(AppTokens t, AppLocalizations? l) {
     final d = widget.data;
     final chips = <Widget>[];
-    final min = d.cookingTimeMin;
-    final max = d.cookingTimeMax;
-    if (min != null || max != null) {
-      final range = min != null && max != null && min != max ? "$min–$max" : "${min ?? max}";
-      chips.add(_metaChip(t, Icons.schedule_rounded, "$range ${l?.minuteAbbreviation ?? "min"}"));
-    }
+    final time = formatCookingTime(l, d.cookingTimeMin, d.cookingTimeMax);
+    if (time != null) chips.add(_metaChip(t, Icons.schedule_rounded, time));
     if (d.servings != null) {
       chips.add(_metaChip(t, Icons.people_outline_rounded, "${d.servings} ${l?.servingsAbbreviation ?? "serv."}"));
     }

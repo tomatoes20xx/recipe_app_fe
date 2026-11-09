@@ -89,31 +89,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     super.dispose();
   }
 
-  String _formatDate(DateTime date, BuildContext context) {
-    final localizations = AppLocalizations.of(context);
-    final now = DateTime.now();
-    final difference = now.difference(date);
-
-    if (difference.inDays == 0) {
-      if (difference.inHours == 0) {
-        if (difference.inMinutes == 0) {
-          return localizations?.justNow ?? "Just now";
-        }
-        final minutesAgo = localizations?.minutesAgo ?? "m ago";
-        return "${difference.inMinutes}$minutesAgo";
-      }
-      final hoursAgo = localizations?.hoursAgo ?? "h ago";
-      return "${difference.inHours}$hoursAgo";
-    } else if (difference.inDays == 1) {
-      return localizations?.yesterday ?? "Yesterday";
-    } else if (difference.inDays < 7) {
-      final daysAgo = localizations?.daysAgo ?? "d ago";
-      return "${difference.inDays}$daysAgo";
-    } else {
-      return "${date.day}/${date.month}/${date.year}";
-    }
-  }
-
   IconData _getNotificationIcon(notification_models.NotificationType type) {
     switch (type) {
       case notification_models.NotificationType.follow:
@@ -377,7 +352,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   Widget _buildGuestState(BuildContext context) {
     final localizations = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: Text(localizations?.notifications ?? "Notifications")),
+      appBar: AppBar(
+        titleTextStyle: Theme.of(context).appBarTheme.titleTextStyle?.copyWith(fontSize: 20),
+        title: Text(localizations?.notifications ?? "Notifications"),
+      ),
       body: EmptyStateWidget(
         icon: Icons.notifications_none,
         title: localizations?.guestNotificationsTitle ?? "Stay in the loop",
@@ -395,6 +373,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     if (!widget.auth.isLoggedIn) return _buildGuestState(context);
     return Scaffold(
       appBar: AppBar(
+        // Bottom-nav tab root: 20px title, like the Profile tab.
+        titleTextStyle: Theme.of(context).appBarTheme.titleTextStyle?.copyWith(fontSize: 20),
         title: Builder(
           builder: (context) {
             final localizations = AppLocalizations.of(context);
@@ -547,7 +527,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     final icon = _getNotificationIcon(notification.type);
     final title = _getNotificationTitle(notification, context);
     final message = _getNotificationMessage(notification);
-    final date = _formatDate(notification.createdAt, context);
+    final date = formatRelativeTime(context, notification.createdAt);
 
     return Dismissible(
       key: Key(notification.id),

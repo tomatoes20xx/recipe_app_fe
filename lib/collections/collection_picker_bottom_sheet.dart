@@ -128,7 +128,7 @@ class _CollectionPickerSheetState extends State<_CollectionPickerSheet> {
     return Container(
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerHigh,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: sheetTopRadius,
       ),
       constraints: BoxConstraints(
         maxHeight: MediaQuery.of(context).size.height * 0.55,
@@ -138,17 +138,9 @@ class _CollectionPickerSheetState extends State<_CollectionPickerSheet> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Drag handle
-            Padding(
-              padding: const EdgeInsets.only(top: 12, bottom: 8),
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
+            const Padding(
+              padding: EdgeInsets.only(top: 12, bottom: 8),
+              child: SheetHandle(),
             ),
             // Title
             Padding(

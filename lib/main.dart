@@ -4,7 +4,6 @@ import "package:flutter/foundation.dart" show kIsWeb;
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:flutter_localizations/flutter_localizations.dart";
-import "package:google_fonts/google_fonts.dart";
 import "package:google_mobile_ads/google_mobile_ads.dart";
 import "package:google_sign_in/google_sign_in.dart";
 import "package:sqflite_common_ffi/sqflite_ffi.dart";
@@ -26,7 +25,7 @@ import "localization/language_controller.dart";
 import "screens/auth_gate.dart";
 import "shopping/shopping_list_api.dart";
 import "shopping/shopping_list_controller.dart";
-import "theme/app_tokens.dart";
+import "theme/app_theme.dart";
 import "theme/status_bar.dart";
 import "theme/theme_controller.dart";
 
@@ -155,29 +154,8 @@ class MyApp extends StatelessWidget {
             GlobalWidgetsLocalizations.delegate,
             GlobalCupertinoLocalizations.delegate,
           ],
-          theme: ThemeData(
-            useMaterial3: true,
-            textTheme: GoogleFonts.nunitoTextTheme(),
-            fontFamilyFallback: const ["Noto Sans Georgian", "Noto Sans"],
-            colorScheme: AppTokens.light.surfaces(
-              ColorScheme.fromSeed(seedColor: const Color(0xFF53B175), brightness: Brightness.light)
-                  .copyWith(primary: const Color(0xFF53B175), onPrimary: Colors.white, secondary: Colors.white, onSecondary: Colors.black),
-            ),
-            chipTheme: const ChipThemeData(showCheckmark: false),
-            pageTransitionsTheme: statusBarInsetPageTransitions,
-          ),
-          darkTheme: ThemeData(
-            useMaterial3: true,
-            brightness: Brightness.dark,
-            textTheme: GoogleFonts.nunitoTextTheme(ThemeData(brightness: Brightness.dark).textTheme),
-            fontFamilyFallback: const ["Noto Sans Georgian", "Noto Sans"],
-            colorScheme: AppTokens.dark.surfaces(
-              ColorScheme.fromSeed(seedColor: const Color(0xFF53B175), brightness: Brightness.dark)
-                  .copyWith(primary: const Color(0xFF53B175), onPrimary: Colors.white, onSurface: Colors.white),
-            ),
-            chipTheme: const ChipThemeData(showCheckmark: false),
-            pageTransitionsTheme: statusBarInsetPageTransitions,
-          ),
+          theme: buildAppTheme(Brightness.light),
+          darkTheme: buildAppTheme(Brightness.dark),
           themeMode: themeController.themeMode,
           // No app-wide SafeArea: each page keeps itself below the status bar
           // (StatusBarInset via pageTransitionsTheme), so the home route can

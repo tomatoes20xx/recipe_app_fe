@@ -241,14 +241,8 @@ class _ProfileTabScreenState extends State<ProfileTabScreen> {
   /// Avatar and cover menus: a `sheet` bottom sheet with the sort sheet's
   /// drag handle.
   void _showMenuSheet(List<Widget> Function(BuildContext sheetContext) items) {
-    final t = AppTokens.of(context);
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: t.sheet,
-      barrierColor: t.scrim,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
       builder: (sheetContext) => SafeArea(
         top: false,
         child: Padding(
@@ -256,11 +250,7 @@ class _ProfileTabScreenState extends State<ProfileTabScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(color: t.line, borderRadius: BorderRadius.circular(2)),
-              ),
+              const SheetHandle(),
               const SizedBox(height: 14),
               ...items(sheetContext),
             ],
@@ -1187,7 +1177,8 @@ class _ProfileTabScreenState extends State<ProfileTabScreen> {
             onPressed: () => requireAccount(context, widget.auth, AccountReason.account),
             style: FilledButton.styleFrom(
               minimumSize: const Size.fromHeight(44),
-              backgroundColor: t.fill,
+              // White text needs `primary` (fill is too light for it).
+              backgroundColor: t.primary,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
@@ -1743,12 +1734,16 @@ class _CoverPhotoGridState extends State<_CoverPhotoGrid> {
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surfaceContainerHigh,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: sheetTopRadius,
       ),
       child: Column(
         children: [
+          const Padding(
+            padding: EdgeInsets.only(top: 8),
+            child: SheetHandle(),
+          ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+            padding: const EdgeInsets.fromLTRB(20, 14, 20, 8),
             child: Text(
               widget.title,
               style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),

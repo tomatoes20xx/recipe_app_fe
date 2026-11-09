@@ -2,6 +2,8 @@ import "package:flutter/material.dart";
 import "../api/api_client.dart";
 import "../auth/auth_controller.dart";
 import "../localization/app_localizations.dart";
+import "../theme/app_tokens.dart";
+import "../theme/token_input.dart";
 import "../utils/error_utils.dart";
 
 class EmailVerificationScreen extends StatefulWidget {
@@ -98,12 +100,9 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
     try {
       await widget.auth.resendVerificationEmail();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              AppLocalizations.of(context)?.newVerificationCodeSent(_email) ?? "New code sent to $_email",
-            ),
-          ),
+        ErrorUtils.showSuccess(
+          context,
+          AppLocalizations.of(context)?.newVerificationCodeSent(_email) ?? "New code sent to $_email",
         );
       }
     } catch (e) {
@@ -290,10 +289,9 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
         const SizedBox(height: 32),
         TextField(
           controller: _codeController,
-          decoration: InputDecoration(
+          decoration: tokenInputDecoration(AppTokens.of(context), onPage: true).copyWith(
             labelText: localizations?.verificationCode ?? "Verification Code",
             hintText: localizations?.enterVerificationCode ?? "Enter the 6-digit code",
-            border: const OutlineInputBorder(),
           ),
           textAlign: TextAlign.center,
           style: const TextStyle(fontSize: 28, letterSpacing: 6, fontWeight: FontWeight.bold),

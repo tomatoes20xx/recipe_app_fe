@@ -15,16 +15,7 @@ class FeedViewScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
-        elevation: 0,
-        scrolledUnderElevation: 1,
-        title: Text(
-          localizations?.feedViewType ?? 'Feed View',
-          style: const TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.w700,
-            letterSpacing: -0.5,
-          ),
-        ),
+        title: Text(localizations?.feedViewType ?? 'Feed View'),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),

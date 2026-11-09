@@ -4,6 +4,9 @@ import "../analytics/analytics_api.dart";
 import "../api/api_client.dart";
 import "../auth/auth_controller.dart";
 import "../localization/app_localizations.dart";
+import "../theme/app_tokens.dart";
+import "../theme/token_input.dart";
+import "../utils/ui_utils.dart";
 import "../recipes/recipe_detail_screen.dart";
 import "../search/search_api.dart";
 import "../search/search_models.dart";
@@ -365,13 +368,9 @@ class _IngredientInputSection extends StatelessWidget {
                 child: TextField(
                   controller: controller,
                   focusNode: focusNode,
-                  decoration: InputDecoration(
+                  decoration: tokenInputDecoration(AppTokens.of(context), onPage: true).copyWith(
                     hintText: localizations?.enterIngredient ?? "Enter an ingredient...",
                     prefixIcon: const Icon(Icons.add),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   ),
                   textInputAction: TextInputAction.done,
                   onSubmitted: (value) {
@@ -587,7 +586,7 @@ class _RecipeMatchCard extends StatelessWidget {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        _formatCookingTime(recipe, localizations),
+                        formatCookingTime(localizations, recipe.cookingTimeMin, recipe.cookingTimeMax)!,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                             ),
@@ -610,17 +609,6 @@ class _RecipeMatchCard extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  String _formatCookingTime(SearchResult recipe, AppLocalizations? l10n) {
-    final min = l10n?.minuteAbbreviation ?? 'min';
-    if (recipe.cookingTimeMin != null && recipe.cookingTimeMax != null) {
-      return '${recipe.cookingTimeMin}-${recipe.cookingTimeMax} $min';
-    } else if (recipe.cookingTimeMin != null) {
-      return '${recipe.cookingTimeMin}+ $min';
-    } else {
-      return '${l10n?.upTo ?? 'Up to'} ${recipe.cookingTimeMax} $min';
-    }
   }
 
   String _localizedDifficulty(String difficulty, AppLocalizations? l10n) {

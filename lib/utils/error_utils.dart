@@ -2,6 +2,7 @@ import "dart:async";
 import "package:flutter/material.dart";
 import "../api/api_client.dart";
 import "../localization/app_localizations.dart";
+import "../theme/app_tokens.dart";
 
 /// Utility class for handling and formatting errors in a user-friendly way
 class ErrorUtils {
@@ -166,7 +167,7 @@ class ErrorUtils {
             Expanded(child: Text(message)),
           ],
         ),
-        backgroundColor: Colors.green,
+        backgroundColor: AppTokens.of(context).primary,
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 3),
         action: SnackBarAction(
@@ -199,7 +200,7 @@ class ErrorUtils {
             Expanded(child: Text(getUserFriendlyMessage(error, context))),
           ],
         ),
-        backgroundColor: Theme.of(context).colorScheme.error,
+        backgroundColor: AppTokens.of(context).danger,
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 3),
         action: SnackBarAction(

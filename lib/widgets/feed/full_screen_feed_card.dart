@@ -457,7 +457,9 @@ class _EngagementOverlay extends StatelessWidget {
                   icon: item.viewerHasBookmarked ? Icons.bookmark : Icons.bookmark_border,
                   value: item.bookmarks,
                   active: item.viewerHasBookmarked,
-                  activeColor: const Color(0xFFE53935),
+                  // Saved = filled icon in the neutral color, as on the
+                  // list card; only likes are red.
+                  activeColor: Colors.white,
                   size: EngagementStatSize.large,
                   style: EngagementStatStyle.fullScreen,
                   vertical: true,

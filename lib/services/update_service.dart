@@ -7,6 +7,8 @@ import 'package:in_app_update/in_app_update.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../localization/app_localizations.dart';
+
 class UpdateService {
   /// Checks for an available update and prompts the user.
   ///
@@ -69,18 +71,21 @@ class UpdateService {
       await showDialog<void>(
         context: context,
         barrierDismissible: false,
-        builder: (ctx) => AlertDialog(
-          title: const Text('Update Available'),
-          content: Text(
-              'Version $storeVersion is available. Please update the app to continue.'),
-          actions: [
-            TextButton(
-              onPressed: () =>
-                  launchUrl(Uri.parse(storeUrl), mode: LaunchMode.externalApplication),
-              child: const Text('Update'),
-            ),
-          ],
-        ),
+        builder: (ctx) {
+          final l = AppLocalizations.of(ctx);
+          return AlertDialog(
+            title: Text(l?.updateAvailableTitle ?? 'Update available'),
+            content: Text(l?.updateAvailableMessage(storeVersion) ??
+                'Version $storeVersion is available. Please update the app to continue.'),
+            actions: [
+              TextButton(
+                onPressed: () =>
+                    launchUrl(Uri.parse(storeUrl), mode: LaunchMode.externalApplication),
+                child: Text(l?.updateNow ?? 'Update'),
+              ),
+            ],
+          );
+        },
       );
     } catch (_) {}
   }

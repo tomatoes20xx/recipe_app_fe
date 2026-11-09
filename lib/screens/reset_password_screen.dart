@@ -1,6 +1,8 @@
 import "package:flutter/material.dart";
 import "../auth/auth_controller.dart";
 import "../localization/app_localizations.dart";
+import "../theme/app_tokens.dart";
+import "../theme/token_input.dart";
 import "../utils/error_utils.dart";
 import "login_screen.dart";
 
@@ -185,11 +187,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
               const SizedBox(height: 32),
               TextField(
                 controller: _codeController,
-                decoration: InputDecoration(
+                decoration: tokenInputDecoration(AppTokens.of(context), onPage: true).copyWith(
                   labelText: localizations?.resetCode ?? "Reset Code",
                   hintText: localizations?.enterResetCode ?? "Enter 6-digit code",
                   prefixIcon: const Icon(Icons.pin_outlined),
-                  border: const OutlineInputBorder(),
                 ),
                 textAlign: TextAlign.center,
                 style: const TextStyle(
@@ -207,7 +208,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 onChanged: (_) {
                   if (_passwordError != null) setState(() => _passwordError = null);
                 },
-                decoration: InputDecoration(
+                decoration: tokenInputDecoration(AppTokens.of(context), onPage: true).copyWith(
                   labelText: localizations?.newPassword ?? "New Password",
                   hintText: localizations?.enterNewPassword ?? "Enter new password",
                   prefixIcon: const Icon(Icons.lock_outlined),
@@ -219,7 +220,6 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       setState(() => _obscurePassword = !_obscurePassword);
                     },
                   ),
-                  border: const OutlineInputBorder(),
                   errorText: _passwordError,
                 ),
               ),
@@ -230,7 +230,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 onChanged: (_) {
                   if (_confirmPasswordError != null) setState(() => _confirmPasswordError = null);
                 },
-                decoration: InputDecoration(
+                decoration: tokenInputDecoration(AppTokens.of(context), onPage: true).copyWith(
                   labelText: localizations?.confirmPassword ?? "Confirm Password",
                   hintText: localizations?.enterPasswordAgain ?? "Enter password again",
                   prefixIcon: const Icon(Icons.lock_outlined),
@@ -245,7 +245,6 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                           _obscureConfirmPassword = !_obscureConfirmPassword);
                     },
                   ),
-                  border: const OutlineInputBorder(),
                   errorText: _confirmPasswordError,
                 ),
                 onSubmitted: (_) => _resetPassword(),

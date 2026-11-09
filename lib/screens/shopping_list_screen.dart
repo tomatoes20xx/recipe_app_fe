@@ -75,7 +75,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
               Text(localizations?.shoppingList ?? "Shopping List"),
               if (widget.controller.isSyncing)
                 Text(
-                  "Syncing...",
+                  localizations?.syncing ?? "Syncing…",
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.primary,
                   ),
@@ -395,8 +395,11 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
             onPressed: () => Navigator.of(context).pop(false),
             child: Text(localizations?.cancel ?? "Cancel"),
           ),
-          FilledButton(
+          TextButton(
             onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.error,
+            ),
             child: Text(localizations?.clear ?? "Clear"),
           ),
         ],
@@ -423,10 +426,10 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
             onPressed: () => Navigator.of(context).pop(false),
             child: Text(localizations?.cancel ?? "Cancel"),
           ),
-          FilledButton(
+          TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.error,
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.error,
             ),
             child: Text(localizations?.clearAll ?? "Clear All"),
           ),
@@ -454,10 +457,10 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
             onPressed: () => Navigator.of(context).pop(false),
             child: Text(localizations?.cancel ?? "Cancel"),
           ),
-          FilledButton(
+          TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.error,
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.error,
             ),
             child: Text(localizations?.remove ?? "Remove"),
           ),

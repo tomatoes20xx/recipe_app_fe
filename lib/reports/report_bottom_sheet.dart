@@ -98,13 +98,9 @@ class _ReportBottomSheetState extends State<_ReportBottomSheet> {
       if (!mounted) return;
 
       // Show success message
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            localizations?.reportSuccess ?? "Report submitted successfully",
-          ),
-          backgroundColor: Theme.of(context).colorScheme.primary,
-        ),
+      ErrorUtils.showSuccess(
+        context,
+        localizations?.reportSuccess ?? "Report submitted successfully",
       );
 
       // Close the bottom sheet with success
@@ -146,7 +142,7 @@ class _ReportBottomSheetState extends State<_ReportBottomSheet> {
     return Container(
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHigh,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: sheetTopRadius,
       ),
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
@@ -160,17 +156,9 @@ class _ReportBottomSheetState extends State<_ReportBottomSheet> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Handle bar
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    margin: const EdgeInsets.only(bottom: 20),
-                    decoration: BoxDecoration(
-                      color: colorScheme.onSurface.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
+                const Padding(
+                  padding: EdgeInsets.only(bottom: 20),
+                  child: SheetHandle(),
                 ),
 
                 // Title
@@ -243,15 +231,10 @@ class _ReportBottomSheetState extends State<_ReportBottomSheet> {
                 FilledButton(
                   onPressed: _isSubmitting ? null : _submitReport,
                   child: _isSubmitting
-                      ? SizedBox(
+                      ? const SizedBox(
                           height: 20,
                           width: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              colorScheme.onPrimary,
-                            ),
-                          ),
+                          child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : Text(
                           localizations?.reportSubmit ?? "Submit Report",

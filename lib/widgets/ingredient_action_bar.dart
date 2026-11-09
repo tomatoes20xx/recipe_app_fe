@@ -9,6 +9,7 @@ import "../recipes/recipe_detail_models.dart";
 import "../screens/shopping_list_screen.dart";
 import "../shopping/shopping_list_controller.dart";
 import "../shopping/shopping_list_models.dart";
+import "../theme/app_tokens.dart";
 import "../utils/error_utils.dart";
 
 class IngredientActionBar extends StatefulWidget {
@@ -131,10 +132,6 @@ class _IngredientActionBarState extends State<IngredientActionBar> {
                       label: Text(localizations?.addToShoppingList ?? "Add to List"),
                       style: FilledButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        elevation: 0,
                       ),
                     ),
                   ),
@@ -152,6 +149,7 @@ class _IngredientActionBarState extends State<IngredientActionBar> {
     if (auth == null || !await requireAccount(context, auth, AccountReason.shoppingList)) return;
     if (!context.mounted) return;
     final localizations = AppLocalizations.of(context);
+    final successColor = AppTokens.of(context).primary;
     const uuid = Uuid();
 
     setState(() => _isLoading = true);
@@ -185,7 +183,7 @@ class _IngredientActionBarState extends State<IngredientActionBar> {
       (localizations?.nItemsAddedToList ?? "{n} items added to shopping list")
           .replaceAll("{n}", "$count"),
       icon: Icons.check_circle,
-      backgroundColor: Colors.green,
+      backgroundColor: successColor,
       duration: const Duration(seconds: 4),
       actionLabel: localizations?.view ?? "View",
       onActionPressed: () {

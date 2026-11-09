@@ -7,6 +7,8 @@ import "../api/api_client.dart";
 import "../auth/auth_api.dart";
 import "../auth/auth_controller.dart";
 import "../localization/app_localizations.dart";
+import "../theme/app_tokens.dart";
+import "../theme/token_input.dart";
 import "../utils/error_utils.dart";
 import "../utils/image_utils.dart";
 import "image_crop_screen.dart";
@@ -192,8 +194,6 @@ class _UsernameSelectionScreenState extends State<UsernameSelectionScreen> {
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
       appBar: AppBar(
-        elevation: 0,
-        backgroundColor: theme.colorScheme.surface,
         leading: IconButton(
           icon: const Icon(Icons.close),
           onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
@@ -328,34 +328,10 @@ class _UsernameSelectionScreenState extends State<UsernameSelectionScreen> {
                 controller: _usernameController,
                 enabled: !_isLoading,
                 autofocus: true,
-                decoration: InputDecoration(
+                decoration: tokenInputDecoration(AppTokens.of(context), onPage: true).copyWith(
                   hintText: localizations?.enterUsername ?? "Enter username",
                   prefixText: "@",
                   prefixIcon: const Icon(Icons.alternate_email),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: theme.colorScheme.outline.withValues(alpha: 0.3),
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: theme.colorScheme.primary,
-                      width: 2,
-                    ),
-                  ),
-                  errorBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: theme.colorScheme.error,
-                    ),
-                  ),
-                  filled: true,
-                  fillColor: theme.colorScheme.surfaceContainerLow,
                   helperText: localizations?.usernameHelper ?? "3-30 characters, letters, numbers, and underscores only",
                   helperMaxLines: 2,
                 ),
@@ -375,27 +351,9 @@ class _UsernameSelectionScreenState extends State<UsernameSelectionScreen> {
               TextFormField(
                 controller: _displayNameController,
                 enabled: !_isLoading,
-                decoration: InputDecoration(
+                decoration: tokenInputDecoration(AppTokens.of(context), onPage: true).copyWith(
                   hintText: localizations?.enterDisplayName ?? "Enter display name (optional)",
                   prefixIcon: const Icon(Icons.person),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: theme.colorScheme.outline.withValues(alpha: 0.3),
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: theme.colorScheme.primary,
-                      width: 2,
-                    ),
-                  ),
-                  filled: true,
-                  fillColor: theme.colorScheme.surfaceContainerLow,
                 ),
                 textInputAction: TextInputAction.next,
               ),
@@ -414,30 +372,12 @@ class _UsernameSelectionScreenState extends State<UsernameSelectionScreen> {
                 enabled: !_isLoading,
                 maxLines: 3,
                 maxLength: 160,
-                decoration: InputDecoration(
+                decoration: tokenInputDecoration(AppTokens.of(context), onPage: true).copyWith(
                   hintText: localizations?.enterBio ?? "Tell us about yourself (optional)",
                   prefixIcon: const Padding(
                     padding: EdgeInsets.only(bottom: 50),
                     child: Icon(Icons.edit_note),
                   ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: theme.colorScheme.outline.withValues(alpha: 0.3),
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: theme.colorScheme.primary,
-                      width: 2,
-                    ),
-                  ),
-                  filled: true,
-                  fillColor: theme.colorScheme.surfaceContainerLow,
                 ),
                 textInputAction: TextInputAction.done,
                 onFieldSubmitted: (_) => _completeSignup(),
@@ -539,13 +479,6 @@ class _UsernameSelectionScreenState extends State<UsernameSelectionScreen> {
                 height: 52,
                 child: FilledButton(
                   onPressed: _isLoading || !_termsAccepted ? null : _completeSignup,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: theme.colorScheme.primary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 0,
-                  ),
                   child: _isLoading
                       ? const SizedBox(
                           width: 20,

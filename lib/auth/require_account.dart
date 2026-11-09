@@ -7,6 +7,7 @@ import "../screens/email_verification_screen.dart";
 import "../screens/login_screen.dart";
 import "../widgets/auth/auth_prompt_sheet.dart";
 import "account_reason.dart";
+import "../widgets/common/app_bottom_sheet.dart";
 import "auth_controller.dart";
 import "google_sign_in_flow.dart";
 
@@ -143,9 +144,6 @@ Future<bool> _showVerifySheet(BuildContext context, AuthController auth) async {
   final email = auth.me?["email"]?.toString() ?? "";
   final result = await showModalBottomSheet<bool>(
     context: context,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-    ),
     builder: (ctx) {
       final l = AppLocalizations.of(ctx);
       return SafeArea(
@@ -155,14 +153,7 @@ Future<bool> _showVerifySheet(BuildContext context, AuthController auth) async {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
+              const SheetHandle(),
               const SizedBox(height: 20),
               const Text("📧", style: TextStyle(fontSize: 40)),
               const SizedBox(height: 12),
@@ -174,12 +165,12 @@ Future<bool> _showVerifySheet(BuildContext context, AuthController auth) async {
               Text(
                 l?.emailGateMessage(email) ?? "To continue, please verify your email address ($email).",
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                style: TextStyle(fontSize: 14, color: Theme.of(ctx).colorScheme.onSurfaceVariant),
               ),
               const SizedBox(height: 20),
               SizedBox(
                 width: double.infinity,
-                child: ElevatedButton(
+                child: FilledButton(
                   onPressed: () => Navigator.of(ctx).pop(true),
                   child: Text(l?.emailGateButton ?? "Verify email"),
                 ),

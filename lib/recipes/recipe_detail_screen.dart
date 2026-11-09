@@ -26,6 +26,8 @@ import "comments_bottom_sheet.dart";
 import "liked_by_bottom_sheet.dart";
 import "recipe_api.dart";
 import "recipe_detail_controller.dart";
+import "../theme/app_tokens.dart";
+import "../widgets/common/app_bottom_sheet.dart";
 import "recipe_detail_models.dart";
 import "recipe_sharing_controller.dart";
 
@@ -954,17 +956,6 @@ class _QuickInfoBar extends StatelessWidget {
   final int? selectedServings;
   final ValueChanged<int>? onServingsChanged;
 
-  String _formatCookingTime(AppLocalizations? l) {
-    final unit = l?.minuteAbbreviation ?? "min";
-    if (cookingTimeMin != null && cookingTimeMax != null) {
-      return "$cookingTimeMin $unit - $cookingTimeMax $unit";
-    } else if (cookingTimeMin != null) {
-      return "$cookingTimeMin+ $unit";
-    } else {
-      return "$cookingTimeMax $unit";
-    }
-  }
-
   String _getLocalizedDifficulty(AppLocalizations? l) {
     switch (difficulty?.toLowerCase()) {
       case "easy":
@@ -1021,7 +1012,7 @@ class _QuickInfoBar extends StatelessWidget {
                 icon: Icons.schedule,
                 iconColor: primary,
                 label: localizations?.prepTime ?? "PREP TIME",
-                value: _formatCookingTime(localizations),
+                value: formatCookingTime(localizations, cookingTimeMin, cookingTimeMax)!,
               ),
             ),
           if (hasTime && hasDifficulty) divider,
@@ -1253,7 +1244,9 @@ class _VerticalEngagementBar extends StatelessWidget {
             isLoading: isBookmarking,
             onTap: onBookmarkTap,
             onLongPress: onBookmarkLongPress,
-            activeColor: const Color(0xFFE53935),
+            // Saved = filled icon in the text color, as on the feed card;
+            // only likes are red.
+            activeColor: Theme.of(context).colorScheme.onSurface,
           ),
           _EngagementButton(
             icon: Icons.share,
@@ -1329,7 +1322,9 @@ class _EngagementBar extends StatelessWidget {
             isLoading: isBookmarking,
             onTap: onBookmarkTap,
             onLongPress: onBookmarkLongPress,
-            activeColor: const Color(0xFFE53935),
+            // Saved = filled icon in the text color, as on the feed card;
+            // only likes are red.
+            activeColor: Theme.of(context).colorScheme.onSurface,
           ),
         ),
         Expanded(
@@ -1902,7 +1897,9 @@ class _AppBarIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final primary = Theme.of(context).colorScheme.primary;
+    // The circle is white in both themes, so the icon keeps the light
+    // theme's green.
+    final primary = AppTokens.light.brandInk;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
       child: Material(
@@ -1944,15 +1941,11 @@ class _MadeItButton extends StatelessWidget {
       child: FilledButton.icon(
         onPressed: (isCooking || isDone) ? null : onTap,
         icon: isCooking
-            ? SizedBox(
+            // The button is disabled meanwhile: default (primary) spinner.
+            ? const SizedBox(
                 width: 18,
                 height: 18,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    theme.colorScheme.onPrimary,
-                  ),
-                ),
+                child: CircularProgressIndicator(strokeWidth: 2),
               )
             : Icon(isDone ? Icons.check_circle_outline : Icons.local_fire_department_rounded),
         label: Text(
@@ -1960,17 +1953,13 @@ class _MadeItButton extends StatelessWidget {
               ? (l?.alreadyCookedToday ?? "Cooked today ✓")
               : (l?.madeIt ?? "გავაკეთე! 🔥"),
         ),
-        style: FilledButton.styleFrom(
-          backgroundColor: isDone
-              ? theme.colorScheme.surfaceContainerLow
-              : theme.colorScheme.primary,
-          foregroundColor: isDone
-              ? theme.colorScheme.onSurface.withValues(alpha: 0.6)
-              : theme.colorScheme.onPrimary,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
-        ),
+        // Not cooked yet: the theme's primary button.
+        style: isDone
+            ? FilledButton.styleFrom(
+                backgroundColor: theme.colorScheme.surfaceContainerLow,
+                foregroundColor: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+              )
+            : null,
       ),
     );
   }
@@ -2254,7 +2243,7 @@ class _NutritionBottomSheet extends StatelessWidget {
         return Container(
           decoration: BoxDecoration(
             color: theme.colorScheme.surfaceContainerHigh,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            borderRadius: sheetTopRadius,
           ),
           child: CustomScrollView(
             controller: scrollController,
@@ -2263,19 +2252,9 @@ class _NutritionBottomSheet extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Drag handle
-                    Padding(
-                      padding: const EdgeInsets.only(top: 12, bottom: 4),
-                      child: Center(
-                        child: Container(
-                          width: 40,
-                          height: 4,
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.onSurface.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                        ),
-                      ),
+                    const Padding(
+                      padding: EdgeInsets.only(top: 12, bottom: 4),
+                      child: SheetHandle(),
                     ),
                     // Header with totals
                     Padding(

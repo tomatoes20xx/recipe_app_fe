@@ -14,6 +14,7 @@ import "../users/user_models.dart";
 import "../users/user_recipes_controller.dart";
 import "../utils/error_utils.dart";
 import "../utils/ui_utils.dart";
+import "../theme/app_tokens.dart";
 import "../widgets/common/common_widgets.dart";
 import "../widgets/empty_state_widget.dart";
 import "followers_screen.dart";
@@ -201,10 +202,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Text(localizations?.blockUser ?? "Block User",
-              style: const TextStyle(fontWeight: FontWeight.w600)),
+          title: Text(localizations?.blockUser ?? "Block User"),
           content: Text(
             localizations?.blockUserConfirm(profile.username) ??
                 "Are you sure you want to block @${profile.username}?",
@@ -297,7 +295,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
-              ElevatedButton(
+              FilledButton(
                 onPressed: _loadUserProfile,
                 child: Text(AppLocalizations.of(context)?.retry ?? "Retry"),
               ),
@@ -566,6 +564,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            const Padding(
+              padding: EdgeInsets.only(top: 8, bottom: 14),
+              child: SheetHandle(),
+            ),
             ListTile(
               leading: Icon(Icons.flag_outlined,
                   color: Theme.of(context).colorScheme.error),
@@ -745,7 +747,8 @@ class _TopBarButton extends StatelessWidget {
             ),
           ],
         ),
-        child: Icon(icon, size: 22, color: Theme.of(context).colorScheme.primary),
+        // White circle in both themes: keep the light theme's green.
+        child: Icon(icon, size: 22, color: AppTokens.light.brandInk),
       ),
     );
   }

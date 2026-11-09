@@ -58,15 +58,7 @@ class _LikedRecipesScreenState extends State<LikedRecipesScreen> {
     return Scaffold(
       backgroundColor: t.bg,
       appBar: AppBar(
-        backgroundColor: t.bg,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        iconTheme: IconThemeData(color: t.ink),
-        title: Text(
-          l?.likedRecipes ?? "Liked recipes",
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: t.ink),
-        ),
+        title: Text(l?.likedRecipes ?? "Liked recipes"),
       ),
       body: PaginatedRecipeGrid(
         controller: _liked,

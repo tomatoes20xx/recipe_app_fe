@@ -162,12 +162,8 @@ class AppLocalizations {
   String get noEventsAvailable => _localizedValues[locale.languageCode]?["noEventsAvailable"] ?? "No events available";
   String get trySelectingDifferentFilter => _localizedValues[locale.languageCode]?["trySelectingDifferentFilter"] ?? "Try selecting a different filter";
   String get errorLoadingEvents => _localizedValues[locale.languageCode]?["errorLoadingEvents"] ?? "Error loading events";
-  String get justNow => _localizedValues[locale.languageCode]?["justNow"] ?? "Just now";
-  String get minutesAgo => _localizedValues[locale.languageCode]?["minutesAgo"] ?? "m ago";
-  String get hoursAgo => _localizedValues[locale.languageCode]?["hoursAgo"] ?? "h ago";
   String get today => _localizedValues[locale.languageCode]?["today"] ?? "Today";
   String get yesterday => _localizedValues[locale.languageCode]?["yesterday"] ?? "Yesterday";
-  String get daysAgo => _localizedValues[locale.languageCode]?["daysAgo"] ?? "d ago";
   String get error => _localizedValues[locale.languageCode]?["error"] ?? "Error";
   String get dismiss => _localizedValues[locale.languageCode]?["dismiss"] ?? "Dismiss";
   String get skip => _localizedValues[locale.languageCode]?["skip"] ?? "Skip";
@@ -252,7 +248,6 @@ class AppLocalizations {
   String get items => _localizedValues[locale.languageCode]?["items"] ?? "items";
   String get cookingTimeMinutes => _localizedValues[locale.languageCode]?["cookingTimeMinutes"] ?? "Cooking Time (minutes)";
   String get minuteAbbreviation => _localizedValues[locale.languageCode]?["minuteAbbreviation"] ?? "min";
-  String get upTo => _localizedValues[locale.languageCode]?["upTo"] ?? "Up to";
   String get servingSize => _localizedValues[locale.languageCode]?["servingSize"] ?? "Servings";
   String get servingsAbbreviation => _localizedValues[locale.languageCode]?["servingsAbbreviation"] ?? "serv.";
   String get perServing => _localizedValues[locale.languageCode]?["perServing"] ?? "per serving";
@@ -598,6 +593,10 @@ class AppLocalizations {
 
   // Shopping List
   String get shoppingList => _localizedValues[locale.languageCode]?["shoppingList"] ?? "Shopping List";
+  String get syncing => _localizedValues[locale.languageCode]?["syncing"] ?? "Syncing…";
+  String get updateAvailableTitle => _localizedValues[locale.languageCode]?["updateAvailableTitle"] ?? "Update available";
+  String updateAvailableMessage(String version) => (_localizedValues[locale.languageCode]?["updateAvailableMessage"] ?? "Version {version} is available. Please update the app to continue.").replaceAll("{version}", version);
+  String get updateNow => _localizedValues[locale.languageCode]?["updateNow"] ?? "Update";
   String get manageYourShoppingList => _localizedValues[locale.languageCode]?["manageYourShoppingList"] ?? "Manage your shopping list";
   String get emptyShoppingList => _localizedValues[locale.languageCode]?["emptyShoppingList"] ?? "Shopping list is empty";
   String get emptyShoppingListMessage => _localizedValues[locale.languageCode]?["emptyShoppingListMessage"] ?? "Add ingredients from recipes to create your shopping list";
@@ -1188,12 +1187,8 @@ class AppLocalizations {
       "noEventsAvailable": "No events available",
       "trySelectingDifferentFilter": "Try selecting a different filter",
       "errorLoadingEvents": "Error loading events",
-      "justNow": "Just now",
-      "minutesAgo": "m ago",
-      "hoursAgo": "h ago",
       "today": "Today",
       "yesterday": "Yesterday",
-      "daysAgo": "d ago",
       "error": "Error",
       "addAvatar": "Add Avatar",
       "updateAvatar": "Update Avatar",
@@ -1245,7 +1240,6 @@ class AppLocalizations {
       "items": "items",
       "cookingTimeMinutes": "Cooking Time (minutes)",
       "minuteAbbreviation": "min",
-      "upTo": "Up to",
       "servingSize": "Servings",
       "servingsAbbreviation": "serv.",
       "perServing": "per serving",
@@ -1512,6 +1506,10 @@ class AppLocalizations {
       "completeYourProfile": "Complete your profile to get started",
       "profileSetupInfo": "Your username is permanent and cannot be changed. Display name and bio can be updated anytime from your profile.",
       "shoppingList": "Shopping List",
+      "syncing": "Syncing…",
+      "updateAvailableTitle": "Update available",
+      "updateAvailableMessage": "Version {version} is available. Please update the app to continue.",
+      "updateNow": "Update",
       "manageYourShoppingList": "Manage your shopping list",
       "emptyShoppingList": "Shopping list is empty",
       "emptyShoppingListMessage": "Add ingredients from recipes to create your shopping list",
@@ -2117,12 +2115,8 @@ class AppLocalizations {
       "noEventsAvailable": "მოვლენები მიუწვდომელია",
       "trySelectingDifferentFilter": "სცადეთ სხვა ფილტრის არჩევა",
       "errorLoadingEvents": "მოვლენების ჩატვირთვის შეცდომა",
-      "justNow": "ახლა",
-      "minutesAgo": "წუთის წინ",
-      "hoursAgo": "საათის წინ",
       "today": "დღეს",
       "yesterday": "გუშინ",
-      "daysAgo": "დღის წინ",
       "error": "შეცდომა",
       "addAvatar": "ავატარის დამატება",
       "updateAvatar": "ავატარის განახლება",
@@ -2174,7 +2168,6 @@ class AppLocalizations {
       "items": "პროდუქტი",
       "cookingTimeMinutes": "მომზადების დრო (წუთები)",
       "minuteAbbreviation": "წთ",
-      "upTo": "მაქსიმუმ",
       "servingSize": "პორცია",
       "servingsAbbreviation": "პორც.",
       "perServing": "1 პორციაზე",
@@ -2441,6 +2434,10 @@ class AppLocalizations {
       "completeYourProfile": "შეავსეთ თქვენი პროფილი დასაწყებად",
       "profileSetupInfo": "თქვენი მომხმარებლის სახელი მუდმივია და ვერ შეიცვლება. საჩვენებელი სახელი და ბიოგრაფია შეგიძლიათ ნებისმიერ დროს განაახლოთ პროფილიდან.",
       "shoppingList": "საყიდლების სია",
+      "syncing": "სინქრონიზაცია…",
+      "updateAvailableTitle": "ხელმისაწვდომია განახლება",
+      "updateAvailableMessage": "ხელმისაწვდომია ვერსია {version}. გასაგრძელებლად განაახლე აპი.",
+      "updateNow": "განახლება",
       "manageYourShoppingList": "მართეთ თქვენი საყიდლების სია",
       "emptyShoppingList": "საყიდლების სია ცარიელია",
       "emptyShoppingListMessage": "დაამატეთ ინგრედიენტები რეცეპტებიდან საყიდლების სიის შესაქმნელად",

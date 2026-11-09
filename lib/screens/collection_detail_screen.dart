@@ -157,9 +157,9 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
             onPressed: () => Navigator.of(context).pop(false),
             child: Text(localizations?.cancel ?? "Cancel"),
           ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.error,
+          TextButton(
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.error,
             ),
             onPressed: () => Navigator.of(context).pop(true),
             child: Text(localizations?.delete ?? "Delete"),
@@ -304,9 +304,9 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
             onPressed: () => Navigator.of(context).pop(false),
             child: Text(localizations?.cancel ?? "Cancel"),
           ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.error,
+          TextButton(
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.error,
             ),
             onPressed: () => Navigator.of(context).pop(true),
             child: Text(localizations?.delete ?? "Delete"),

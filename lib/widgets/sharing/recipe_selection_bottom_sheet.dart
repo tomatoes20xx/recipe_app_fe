@@ -101,21 +101,15 @@ class _RecipeSelectionBottomSheetState extends State<_RecipeSelectionBottomSheet
         return Container(
           decoration: BoxDecoration(
             color: theme.colorScheme.surfaceContainerHigh,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+            borderRadius: sheetTopRadius,
           ),
           child: SafeArea(
             top: false,
             child: Column(
               children: [
-                // Drag handle
-                Container(
-                margin: const EdgeInsets.symmetric(vertical: 12),
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(2),
-                ),
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 12),
+                child: SheetHandle(),
               ),
 
               // Header

@@ -139,9 +139,9 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen>
             onPressed: () => Navigator.of(context).pop(false),
             child: Text(localizations?.cancel ?? 'Cancel'),
           ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.error,
+          TextButton(
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.error,
             ),
             onPressed: () => Navigator.of(context).pop(true),
             child: Text(localizations?.delete ?? 'Delete'),
@@ -281,7 +281,6 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen>
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context);
-    final theme = Theme.of(context);
 
     return PopScope(
       canPop: !_isSelectionMode,
@@ -388,11 +387,6 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen>
                   if (_tabController.index != 1) return const SizedBox.shrink();
                   return FloatingActionButton(
                     onPressed: _showCreateCollectionDialog,
-                    backgroundColor: theme.colorScheme.primary,
-                    foregroundColor: theme.colorScheme.onPrimary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
                     child: const Icon(Icons.add),
                   );
                 },
@@ -907,22 +901,12 @@ class _SavedRecipeCard extends StatelessWidget {
   final VoidCallback onTap;
   final VoidCallback onCheckboxTap;
 
-  String _formatCookTime(int? min, int? max) {
-    if (min == null && max == null) return '';
-    final t = min ?? max!;
-    if (t >= 60) {
-      final h = t ~/ 60;
-      final m = t % 60;
-      return m == 0 ? '${h}h' : '${h}h ${m}m';
-    }
-    return '${t}m';
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final firstImage = recipe.images.isNotEmpty ? recipe.images.first : null;
-    final cookTime = _formatCookTime(recipe.cookingTimeMin, recipe.cookingTimeMax);
+    final cookTime =
+        formatCookingTime(AppLocalizations.of(context), recipe.cookingTimeMin, recipe.cookingTimeMax) ?? '';
 
     return GestureDetector(
       onTap: onTap,

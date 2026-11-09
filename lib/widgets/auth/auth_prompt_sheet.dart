@@ -2,6 +2,7 @@ import "package:flutter/material.dart";
 
 import "../../auth/account_reason.dart";
 import "../../localization/app_localizations.dart";
+import "../common/app_bottom_sheet.dart";
 
 /// What the user picked in the account prompt sheet.
 enum AuthPromptChoice { google, emailSignUp, logIn }
@@ -16,9 +17,6 @@ Future<AuthPromptChoice?> showAuthPromptSheet(
   return showModalBottomSheet<AuthPromptChoice>(
     context: context,
     isScrollControlled: true,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-    ),
     builder: (_) => _AuthPromptSheet(reason: reason, needsVerification: needsVerification),
   );
 }
@@ -110,14 +108,7 @@ class _AuthPromptSheet extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
+            const SheetHandle(),
             const SizedBox(height: 20),
             Icon(_icon, size: 40, color: theme.colorScheme.primary),
             const SizedBox(height: 12),
@@ -158,8 +149,7 @@ class _AuthPromptSheet extends StatelessWidget {
                 style: FilledButton.styleFrom(
                   backgroundColor: Colors.white,
                   foregroundColor: Colors.black87,
-                  side: BorderSide(color: Colors.grey.shade300),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                  side: const BorderSide(color: Color(0xFFDADCE0)),
                 ),
               ),
             ),
@@ -170,9 +160,6 @@ class _AuthPromptSheet extends StatelessWidget {
                 height: 48,
                 child: FilledButton(
                   onPressed: () => Navigator.of(context).pop(AuthPromptChoice.emailSignUp),
-                  style: FilledButton.styleFrom(
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                  ),
                   child: Text(l?.authPromptSignUpEmail ?? "Sign up with email"),
                 ),
               ),

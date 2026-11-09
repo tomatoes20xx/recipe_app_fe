@@ -26,21 +26,14 @@ class _AttPermissionSheet extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerHigh,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: sheetTopRadius,
       ),
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 40),
       child: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
+            const SheetHandle(),
             const SizedBox(height: 24),
             Text(
               l?.attPermissionTitle ?? "Personalized Experience",

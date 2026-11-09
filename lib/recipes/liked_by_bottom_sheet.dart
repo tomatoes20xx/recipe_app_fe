@@ -42,23 +42,15 @@ class _LikedByBottomSheet extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerHigh,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: sheetTopRadius,
       ),
       child: SafeArea(
         top: false,
         child: Column(
           children: [
-          // Drag handle
-          Padding(
-            padding: const EdgeInsets.only(top: 12, bottom: 8),
-            child: Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
+          const Padding(
+            padding: EdgeInsets.only(top: 12, bottom: 8),
+            child: SheetHandle(),
           ),
 
           // Header

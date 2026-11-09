@@ -144,15 +144,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           // App Bar
           SliverAppBar(
             pinned: true,
-            elevation: 0,
-            scrolledUnderElevation: 0.5,
-            backgroundColor: theme.colorScheme.surface,
-            title: Text(
-              localizations?.settings ?? "Settings",
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+            title: Text(localizations?.settings ?? "Settings"),
           ),
 
           // User Header (if logged in)
@@ -310,8 +302,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       _buildSettingsTile(
                         context,
                         icon: Icons.logout_rounded,
-                        iconColor: Colors.red.shade400,
-                        titleColor: Colors.red.shade400,
+                        iconColor: theme.colorScheme.error,
+                        titleColor: theme.colorScheme.error,
                         title: localizations?.signOut ?? "Sign out",
                         onTap: () => _confirmSignOut(context, localizations),
                       ),
@@ -590,7 +582,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 16),
           decoration: BoxDecoration(
-            border: Border.all(color: Colors.red.shade300.withValues(alpha: 0.5)),
+            border: Border.all(color: theme.colorScheme.error.withValues(alpha: 0.4)),
             borderRadius: BorderRadius.circular(16),
           ),
           child: Row(
@@ -599,13 +591,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
               Icon(
                 Icons.delete_forever_outlined,
                 size: 20,
-                color: Colors.red.shade400,
+                color: theme.colorScheme.error,
               ),
               const SizedBox(width: 10),
               Text(
                 localizations?.deleteAccount ?? "Delete Account",
                 style: theme.textTheme.bodyLarge?.copyWith(
-                  color: Colors.red.shade400,
+                  color: theme.colorScheme.error,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -623,11 +615,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(
-          localizations?.deleteAccount ?? "Delete Account",
-          style: const TextStyle(fontWeight: FontWeight.w600),
-        ),
+        title: Text(localizations?.deleteAccount ?? "Delete Account"),
         content: Text(
           localizations?.deleteAccountWarning ??
               "This will permanently delete your account and all your data. This action cannot be undone.",
@@ -637,7 +625,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onPressed: () => Navigator.of(context).pop(),
             child: Text(
               localizations?.cancel ?? "Cancel",
-              style: TextStyle(color: theme.colorScheme.onSurface.withValues(alpha: 0.7)),
             ),
           ),
           TextButton(
@@ -645,10 +632,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               Navigator.of(context).pop();
               _showDeleteAccountConfirmDialog(context);
             },
-            child: Text(
-              localizations?.continueButton ?? "Continue",
-              style: TextStyle(color: Colors.red.shade500, fontWeight: FontWeight.w600),
-            ),
+            style: TextButton.styleFrom(foregroundColor: theme.colorScheme.error),
+            child: Text(localizations?.continueButton ?? "Continue"),
           ),
         ],
       ),
@@ -665,11 +650,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Text(
-            localizations?.deleteAccountConfirmTitle ?? "Are you sure?",
-            style: const TextStyle(fontWeight: FontWeight.w600),
-          ),
+          title: Text(localizations?.deleteAccountConfirmTitle ?? "Are you sure?"),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -696,7 +677,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
               onPressed: () => Navigator.of(dialogContext).pop(),
               child: Text(
                 localizations?.cancel ?? "Cancel",
-                style: TextStyle(color: theme.colorScheme.onSurface.withValues(alpha: 0.7)),
               ),
             ),
             TextButton(
@@ -706,13 +686,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       await _deleteAccount();
                     }
                   : null,
-              child: Text(
-                localizations?.deleteAccount ?? "Delete Account",
-                style: TextStyle(
-                  color: isConfirmed ? Colors.red.shade600 : theme.colorScheme.onSurface.withValues(alpha: 0.3),
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+              style: TextButton.styleFrom(foregroundColor: theme.colorScheme.error),
+              child: Text(localizations?.deleteAccount ?? "Delete Account"),
             ),
           ],
         ),
@@ -731,10 +706,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         widget.auth!.logout();
         Navigator.of(context).popUntil((route) => route.isFirst);
         final localizations = AppLocalizations.of(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(localizations?.accountDeletedSuccessfully ?? "Account deleted successfully"),
-          ),
+        ErrorUtils.showSuccess(
+          context,
+          localizations?.accountDeletedSuccessfully ?? "Account deleted successfully",
         );
       }
     } catch (e) {

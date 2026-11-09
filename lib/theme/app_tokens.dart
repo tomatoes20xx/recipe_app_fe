@@ -2,8 +2,9 @@ import "package:flutter/material.dart";
 
 /// Colors for the bottom nav, Home feed header, sort sheet and Profile tab
 /// (see docs/navigation-redesign.md), and the create/edit recipe screen
-/// (docs/create-recipe-redesign.md). The global [ThemeData] maps its surface
-/// roles onto these too (see [surfaces]).
+/// (docs/create-recipe-redesign.md). The global [ThemeData] maps its color
+/// roles and component themes onto these too (see [roles] and
+/// app_theme.dart).
 ///
 /// Layering rule for every screen: the page is [bg], a section or card on it
 /// is [card] (white in light mode), and anything inside a section (inputs,
@@ -55,6 +56,11 @@ class AppTokens {
   /// Notification count (white text on it).
   Color get badge => const Color(0xFFC93C3C);
 
+  /// Background of error snackbars and other destructive fills with white
+  /// content (the same red as [badge]). Destructive text uses the theme's
+  /// `colorScheme.error` instead.
+  Color get danger => const Color(0xFFC93C3C);
+
   static const light = AppTokens._(
     bg: Color(0xFFF6F7F5),
     card: Color(0xFFFFFFFF),
@@ -86,8 +92,8 @@ class AppTokens {
   static AppTokens of(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark ? dark : light;
 
-  /// Points Material's surface roles at these tokens, so screens that use
-  /// [ColorScheme] follow the layering rule above:
+  /// Points Material's color roles at these tokens, so screens that use
+  /// [ColorScheme] (and Material's own defaults) follow them:
   ///
   /// * `surface`: page background ([bg]). Scaffold and AppBar default to it.
   /// * `surfaceContainerLowest` / `surfaceContainerLow`: a section or card on
@@ -96,7 +102,17 @@ class AppTokens {
   ///   and menus ([sheet]).
   /// * `surfaceContainerHighest`: anything inside a section or sheet
   ///   ([field]). Filled text fields default to it.
-  ColorScheme surfaces(ColorScheme scheme) => scheme.copyWith(
+  /// * `primary`: [brandInk], because most `colorScheme.primary` uses are
+  ///   green text and icons, which [brand] is too light for. Filled buttons
+  ///   don't use it: the theme gives them [primary] (see app_theme.dart).
+  /// * `onSurface` / `onSurfaceVariant`: [ink] / [ink2]. `outlineVariant`
+  ///   (dividers): [line].
+  ColorScheme roles(ColorScheme scheme) => scheme.copyWith(
+        primary: brandInk,
+        onPrimary: scheme.brightness == Brightness.light ? Colors.white : bg,
+        onSurface: ink,
+        onSurfaceVariant: ink2,
+        outlineVariant: line,
         surface: bg,
         surfaceDim: bg,
         surfaceBright: card,

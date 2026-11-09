@@ -364,15 +364,6 @@ class _MetaRow extends StatelessWidget {
 
   final FeedItem item;
 
-  String? _cookingTime(AppLocalizations? l) {
-    final min = item.cookingTimeMin;
-    final max = item.cookingTimeMax;
-    if (min == null && max == null) return null;
-    final unit = l?.minuteAbbreviation ?? "min";
-    if (min != null && max != null && min != max) return "$min–$max $unit";
-    return "${min ?? max} $unit";
-  }
-
   /// Label of the first tag that is one of the predefined categories.
   String? _category(AppLocalizations? l) {
     for (final tag in item.tags) {
@@ -386,7 +377,7 @@ class _MetaRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = AppTokens.of(context);
     final l = AppLocalizations.of(context);
-    final time = _cookingTime(l);
+    final time = formatCookingTime(l, item.cookingTimeMin, item.cookingTimeMax);
     final servings = item.servingSize != null && item.servingSize! > 0 ? item.servingSize : null;
     final category = _category(l);
 

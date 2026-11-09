@@ -5,6 +5,8 @@ import "../api/api_client.dart";
 import "../auth/auth_controller.dart";
 import "../auth/google_sign_in_flow.dart";
 import "../localization/app_localizations.dart";
+import "../theme/app_tokens.dart";
+import "../theme/token_input.dart";
 import "../utils/error_utils.dart";
 import "forgot_password_screen.dart";
 import "terms_and_privacy_screen.dart";
@@ -426,9 +428,6 @@ class _LoginScreenState extends State<LoginScreen>
         style: FilledButton.styleFrom(
           backgroundColor: Colors.white,
           foregroundColor: Colors.black87,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
-          ),
           elevation: 1,
           shadowColor: Colors.black26,
         ),
@@ -472,27 +471,9 @@ class _LoginScreenState extends State<LoginScreen>
     String? hint,
     Widget? suffixIcon,
   }) {
-    return InputDecoration(
+    return tokenInputDecoration(AppTokens.of(context), hint: hint, onPage: true).copyWith(
       labelText: label,
-      hintText: hint,
-      filled: true,
-      fillColor: theme.colorScheme.surfaceContainerLow,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
-        borderSide: BorderSide.none,
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
-        borderSide: BorderSide(
-          color: theme.colorScheme.primary,
-          width: 2,
-        ),
-      ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      prefixIcon: Icon(
-        icon,
-        color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-      ),
+      prefixIcon: Icon(icon),
       suffixIcon: suffixIcon,
     );
   }
@@ -705,11 +686,6 @@ class _LoginScreenState extends State<LoginScreen>
       height: 52,
       child: FilledButton(
         onPressed: onPressed,
-        style: FilledButton.styleFrom(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-        ),
         child: loading
             ? const SizedBox(
                 width: 24,

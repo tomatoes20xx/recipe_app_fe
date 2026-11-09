@@ -2,6 +2,8 @@ import "package:flutter/material.dart";
 
 import "../../theme/app_tokens.dart";
 
+export "../../theme/token_input.dart";
+
 // Building blocks shared by the create/edit recipe screen's sections
 // (docs/create-recipe-redesign.md). Colors come from [AppTokens] only.
 
@@ -141,35 +143,6 @@ class FormFieldLabel extends StatelessWidget {
     );
   }
 }
-
-/// The screen's text-field look: `field` fill, no outline; focused = 1.5px
-/// `brand` border on `card`. 14px horizontal padding.
-InputDecoration tokenInputDecoration(
-  AppTokens t, {
-  String? hint,
-  EdgeInsetsGeometry? contentPadding,
-  double radius = 12,
-}) {
-  final shape = OutlineInputBorder(borderRadius: BorderRadius.circular(radius), borderSide: BorderSide.none);
-  return InputDecoration(
-    hintText: hint,
-    hintStyle: TextStyle(color: t.ink2, fontSize: 15, fontWeight: FontWeight.w400),
-    filled: true,
-    fillColor: WidgetStateColor.resolveWith((states) => states.contains(WidgetState.focused) ? t.card : t.field),
-    isDense: true,
-    contentPadding: contentPadding ?? const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-    border: shape,
-    enabledBorder: shape,
-    disabledBorder: shape,
-    focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(radius),
-      borderSide: BorderSide(color: t.brand, width: 1.5),
-    ),
-  );
-}
-
-/// Text style of the screen's fields.
-TextStyle tokenFieldStyle(AppTokens t) => TextStyle(fontSize: 15, color: t.ink, height: 1.3);
 
 /// Paints a dashed rounded-rectangle border.
 class DashedBorderPainter extends CustomPainter {

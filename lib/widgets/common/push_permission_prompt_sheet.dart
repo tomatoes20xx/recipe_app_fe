@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../localization/app_localizations.dart';
 import '../../notifications/notification_api.dart';
 import '../../services/notification_service.dart';
+import 'app_bottom_sheet.dart';
 
 Future<void> showPushPermissionPromptSheet(
   BuildContext context,
@@ -11,9 +12,6 @@ Future<void> showPushPermissionPromptSheet(
   if (!context.mounted) return;
   await showModalBottomSheet<void>(
     context: context,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-    ),
     builder: (ctx) => _PushPermissionPromptSheet(notificationApi: notificationApi),
   );
 }
@@ -33,14 +31,7 @@ class _PushPermissionPromptSheet extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
+            const SheetHandle(),
             const SizedBox(height: 20),
             const Text('🔔', style: TextStyle(fontSize: 40)),
             const SizedBox(height: 12),
@@ -53,12 +44,12 @@ class _PushPermissionPromptSheet extends StatelessWidget {
             Text(
               l?.pushPromptDescription ?? 'Enable notifications and never miss new Georgian dishes.',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+              style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
             ),
             const SizedBox(height: 20),
             SizedBox(
               width: double.infinity,
-              child: ElevatedButton(
+              child: FilledButton(
                 onPressed: () async {
                   Navigator.of(context).pop();
                   await NotificationService().requestPermission();

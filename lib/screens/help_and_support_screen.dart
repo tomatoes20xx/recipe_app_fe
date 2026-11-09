@@ -34,18 +34,11 @@ class _HelpAndSupportScreenState extends State<HelpAndSupportScreen> {
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
-        elevation: 0,
-        scrolledUnderElevation: 1,
         title: Builder(
           builder: (context) {
             final localizations = AppLocalizations.of(context);
             return Text(
               localizations?.helpAndSupport ?? "Help & Support",
-              style: const TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.w700,
-                letterSpacing: -0.5,
-              ),
             );
           },
         ),

@@ -9,6 +9,8 @@ import "../constants/dietary_preferences.dart";
 import "../constants/enums.dart";
 import "../constants/recipe_categories.dart";
 import "../localization/app_localizations.dart";
+import "../theme/app_tokens.dart";
+import "../theme/token_input.dart";
 import "../recipes/recipe_detail_screen.dart";
 import "../search/search_api.dart";
 import "../search/search_filters.dart";
@@ -191,6 +193,8 @@ class _SearchScreenState extends State<SearchScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        // Bottom-nav tab root: 20px title, like the Profile tab.
+        titleTextStyle: Theme.of(context).appBarTheme.titleTextStyle?.copyWith(fontSize: 20),
         title: Row(
           children: [
             Text(localizations?.search ?? "Search"),
@@ -892,23 +896,15 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
         return Container(
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surfaceContainerHigh,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+            borderRadius: sheetTopRadius,
           ),
           child: SafeArea(
             top: false,
             child: Column(
               children: [
-            Container(
-              margin: const EdgeInsets.only(top: 12),
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Theme.of(context)
-                    .colorScheme
-                    .onSurface
-                    .withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(2),
-              ),
+            const Padding(
+              padding: EdgeInsets.only(top: 12),
+              child: SheetHandle(),
             ),
             Padding(
               padding: const EdgeInsets.all(16),
@@ -955,12 +951,9 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                           children: [
                             TextField(
                               controller: _cuisineController,
-                              decoration: InputDecoration(
+                              decoration: tokenInputDecoration(AppTokens.of(context)).copyWith(
                                 hintText: localizations?.cuisineExample ??
                                     "e.g., Italian, Mexican, Asian",
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
                                 prefixIcon: const Icon(Icons.restaurant),
                               ),
                             ),
@@ -1109,12 +1102,9 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                                 Expanded(
                                   child: TextField(
                                     controller: _tagController,
-                                    decoration: InputDecoration(
+                                    decoration: tokenInputDecoration(AppTokens.of(context)).copyWith(
                                       hintText:
                                           localizations?.addTag ?? "Add a tag",
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
                                       prefixIcon:
                                           const Icon(Icons.label_outline),
                                     ),
@@ -1176,13 +1166,10 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                                 Expanded(
                                   child: TextField(
                                     controller: _ingredientController,
-                                    decoration: InputDecoration(
+                                    decoration: tokenInputDecoration(AppTokens.of(context)).copyWith(
                                       hintText: localizations?.addTag
                                               .replaceAll("tag", "ingredient") ??
                                           "Add ingredient",
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
                                       prefixIcon: const Icon(
                                           Icons.shopping_cart_outlined),
                                     ),
@@ -1241,12 +1228,9 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                                     inputFormatters: [
                                       FilteringTextInputFormatter.digitsOnly,
                                     ],
-                                    decoration: InputDecoration(
+                                    decoration: tokenInputDecoration(AppTokens.of(context)).copyWith(
                                       labelText: localizations?.min ?? "Min",
                                       hintText: "0",
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
                                       prefixIcon:
                                           const Icon(Icons.timer_outlined),
                                     ),
@@ -1267,12 +1251,9 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                                     inputFormatters: [
                                       FilteringTextInputFormatter.digitsOnly,
                                     ],
-                                    decoration: InputDecoration(
+                                    decoration: tokenInputDecoration(AppTokens.of(context)).copyWith(
                                       labelText: localizations?.max ?? "Max",
                                       hintText: "120",
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
                                       prefixIcon: const Icon(Icons.timer),
                                     ),
                                     onChanged: (value) {
