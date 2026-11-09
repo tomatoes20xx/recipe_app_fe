@@ -199,7 +199,7 @@ class _SearchScreenState extends State<SearchScreen> {
               child: Container(
                 height: 40,
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                  color: theme.colorScheme.surfaceContainerLow,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
                     color: theme.colorScheme.outline.withValues(alpha: 0.2),
@@ -891,7 +891,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
       builder: (context, scrollController) {
         return Container(
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
+            color: Theme.of(context).colorScheme.surfaceContainerHigh,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
           ),
           child: SafeArea(
@@ -989,8 +989,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                                         color: isSelected
                                             ? theme.colorScheme.primary
                                                 .withValues(alpha: 0.15)
-                                            : theme.colorScheme.surfaceContainerHighest
-                                                .withValues(alpha: 0.5),
+                                            : theme.colorScheme.surfaceContainerHighest,
                                         borderRadius: BorderRadius.circular(20),
                                         border: isSelected
                                             ? Border.all(

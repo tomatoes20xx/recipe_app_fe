@@ -674,7 +674,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               if (index >= controller.items.length) {
                 return Container(
                   color:
-                      Theme.of(context).colorScheme.surfaceContainerHighest,
+                      Theme.of(context).colorScheme.surfaceContainerLow,
                   child: const Center(child: CircularProgressIndicator()),
                 );
               }
@@ -777,7 +777,7 @@ class _StatsCard extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
+        color: theme.colorScheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: theme.colorScheme.onSurface.withValues(alpha: 0.15),
@@ -927,7 +927,7 @@ class _OtherActionRow extends StatelessWidget {
             : (AppLocalizations.of(context)?.follow ?? "Follow")),
         style: FilledButton.styleFrom(
           backgroundColor: isFollowing
-              ? theme.colorScheme.surfaceContainerHighest
+              ? theme.colorScheme.surfaceContainerLow
               : theme.colorScheme.onSurface,
           foregroundColor: isFollowing
               ? theme.colorScheme.onSurface

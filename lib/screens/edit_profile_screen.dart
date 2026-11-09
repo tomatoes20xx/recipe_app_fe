@@ -280,7 +280,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     ),
                   ),
                   filled: true,
-                  fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                  fillColor: theme.colorScheme.surfaceContainerLow,
                 ),
                 validator: (value) {
                   if (value != null && value.trim().isNotEmpty) {
@@ -331,7 +331,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     ),
                   ),
                   filled: true,
-                  fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                  fillColor: theme.colorScheme.surfaceContainerLow,
                 ),
                 validator: (value) {
                   if (value != null && value.length > 500) {

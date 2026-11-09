@@ -218,7 +218,7 @@ class _UsernameSelectionScreenState extends State<UsernameSelectionScreen> {
                             : (widget.avatarUrl != null
                                 ? NetworkImage(widget.avatarUrl!) as ImageProvider
                                 : null),
-                        backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                        backgroundColor: theme.colorScheme.surfaceContainerLow,
                         child: _selectedAvatarFile == null && widget.avatarUrl == null
                             ? Icon(
                                 Icons.person,
@@ -261,7 +261,7 @@ class _UsernameSelectionScreenState extends State<UsernameSelectionScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                    color: theme.colorScheme.surfaceContainerLow,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: theme.colorScheme.outline.withValues(alpha: 0.2),
@@ -355,7 +355,7 @@ class _UsernameSelectionScreenState extends State<UsernameSelectionScreen> {
                     ),
                   ),
                   filled: true,
-                  fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                  fillColor: theme.colorScheme.surfaceContainerLow,
                   helperText: localizations?.usernameHelper ?? "3-30 characters, letters, numbers, and underscores only",
                   helperMaxLines: 2,
                 ),
@@ -395,7 +395,7 @@ class _UsernameSelectionScreenState extends State<UsernameSelectionScreen> {
                     ),
                   ),
                   filled: true,
-                  fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                  fillColor: theme.colorScheme.surfaceContainerLow,
                 ),
                 textInputAction: TextInputAction.next,
               ),
@@ -437,7 +437,7 @@ class _UsernameSelectionScreenState extends State<UsernameSelectionScreen> {
                     ),
                   ),
                   filled: true,
-                  fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                  fillColor: theme.colorScheme.surfaceContainerLow,
                 ),
                 textInputAction: TextInputAction.done,
                 onFieldSubmitted: (_) => _completeSignup(),

@@ -96,7 +96,7 @@ class _SharedWithBottomSheetState extends State<_SharedWithBottomSheet> {
 
     return Container(
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
+        color: theme.colorScheme.surfaceContainerHigh,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: DraggableScrollableSheet(
@@ -186,6 +186,8 @@ class _SharedWithBottomSheetState extends State<_SharedWithBottomSheet> {
 
         return Card(
           margin: const EdgeInsets.only(bottom: 8),
+          elevation: 0,
+          color: theme.colorScheme.surfaceContainerHighest,
           child: ListTile(
             leading: buildUserAvatar(
               context,

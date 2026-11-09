@@ -100,7 +100,7 @@ class _RecipeSelectionBottomSheetState extends State<_RecipeSelectionBottomSheet
       builder: (context, scrollController) {
         return Container(
           decoration: BoxDecoration(
-            color: theme.scaffoldBackgroundColor,
+            color: theme.colorScheme.surfaceContainerHigh,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
           ),
           child: SafeArea(
@@ -162,6 +162,8 @@ class _RecipeSelectionBottomSheetState extends State<_RecipeSelectionBottomSheet
 
                           return Card(
                             margin: const EdgeInsets.only(bottom: 12),
+                            elevation: 0,
+                            color: theme.colorScheme.surfaceContainerHighest,
                             child: CheckboxListTile(
                               value: isSelected,
                               onChanged: (_) => _toggleRecipe(group.recipeId),
@@ -201,7 +203,7 @@ class _RecipeSelectionBottomSheetState extends State<_RecipeSelectionBottomSheet
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: theme.scaffoldBackgroundColor,
+                  color: theme.colorScheme.surfaceContainerHigh,
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withValues(alpha: 0.1),

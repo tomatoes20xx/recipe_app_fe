@@ -248,7 +248,7 @@ class _SharedUserShoppingListScreenState extends State<SharedUserShoppingListScr
                   decoration: BoxDecoration(
                     color: freshUserShares.isCollaborative
                         ? theme.colorScheme.primaryContainer
-                        : theme.colorScheme.surfaceContainerHighest,
+                        : theme.colorScheme.surfaceContainerLow,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
@@ -296,7 +296,7 @@ class _SharedUserShoppingListScreenState extends State<SharedUserShoppingListScr
                           Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: theme.colorScheme.surfaceContainerLow,
+                              color: theme.colorScheme.surfaceContainerHighest,
                               borderRadius: const BorderRadius.vertical(
                                 top: Radius.circular(12),
                               ),

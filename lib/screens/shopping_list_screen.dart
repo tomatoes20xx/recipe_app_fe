@@ -208,7 +208,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
             margin: const EdgeInsets.all(16),
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+              color: theme.colorScheme.surfaceContainerLow,
               borderRadius: BorderRadius.circular(16),
             ),
             child: Column(
@@ -595,7 +595,7 @@ class _RecipeGroupCardState extends State<_RecipeGroupCard> {
             child: Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                color: theme.colorScheme.surfaceContainerHighest,
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
               ),
               child: Row(
@@ -824,7 +824,7 @@ class _ShoppingListItemTile extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
             color: item.isChecked
-                ? theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3)
+                ? theme.colorScheme.surfaceContainerHighest
                 : null,
             borderRadius: BorderRadius.circular(12),
           ),

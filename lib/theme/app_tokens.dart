@@ -2,8 +2,12 @@ import "package:flutter/material.dart";
 
 /// Colors for the bottom nav, Home feed header, sort sheet and Profile tab
 /// (see docs/navigation-redesign.md), and the create/edit recipe screen
-/// (docs/create-recipe-redesign.md). The rest of the app still uses the
-/// global [ThemeData]; these do not feed into it.
+/// (docs/create-recipe-redesign.md). The global [ThemeData] maps its surface
+/// roles onto these too (see [surfaces]).
+///
+/// Layering rule for every screen: the page is [bg], a section or card on it
+/// is [card] (white in light mode), and anything inside a section (inputs,
+/// rows, chips, steppers) is [field], which reads as the page color again.
 ///
 /// [brand] is too light for text (about 2.6:1 on white): use [brandInk] for
 /// any green text or icon.
@@ -81,4 +85,26 @@ class AppTokens {
 
   static AppTokens of(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark ? dark : light;
+
+  /// Points Material's surface roles at these tokens, so screens that use
+  /// [ColorScheme] follow the layering rule above:
+  ///
+  /// * `surface`: page background ([bg]). Scaffold and AppBar default to it.
+  /// * `surfaceContainerLowest` / `surfaceContainerLow`: a section or card on
+  ///   the page ([card]). Card defaults to it.
+  /// * `surfaceContainer` / `surfaceContainerHigh`: bottom sheets, dialogs
+  ///   and menus ([sheet]).
+  /// * `surfaceContainerHighest`: anything inside a section or sheet
+  ///   ([field]). Filled text fields default to it.
+  ColorScheme surfaces(ColorScheme scheme) => scheme.copyWith(
+        surface: bg,
+        surfaceDim: bg,
+        surfaceBright: card,
+        surfaceContainerLowest: card,
+        surfaceContainerLow: card,
+        surfaceContainer: sheet,
+        surfaceContainerHigh: sheet,
+        surfaceContainerHighest: field,
+        surfaceTint: Colors.transparent,
+      );
 }

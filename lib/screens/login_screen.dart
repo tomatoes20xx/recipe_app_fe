@@ -476,7 +476,7 @@ class _LoginScreenState extends State<LoginScreen>
       labelText: label,
       hintText: hint,
       filled: true,
-      fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+      fillColor: theme.colorScheme.surfaceContainerLow,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
         borderSide: BorderSide.none,

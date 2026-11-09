@@ -60,7 +60,7 @@ class NativeAdManager {
       ),
       nativeTemplateStyle: NativeTemplateStyle(
         templateType: TemplateType.medium,
-        mainBackgroundColor: theme.colorScheme.surface,
+        mainBackgroundColor: theme.colorScheme.surfaceContainerLow,
         cornerRadius: 16,
         callToActionTextStyle: NativeTemplateTextStyle(
           textColor: Colors.white,

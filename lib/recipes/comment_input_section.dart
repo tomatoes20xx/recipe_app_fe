@@ -103,7 +103,7 @@ class CommentInputSection extends StatelessWidget {
         Divider(height: 1, color: colorScheme.outlineVariant.withValues(alpha: 0.3)),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(color: colorScheme.surface),
+          decoration: BoxDecoration(color: colorScheme.surfaceContainerHigh),
           child: SafeArea(
             bottom: false,
             child: Column(
@@ -205,7 +205,7 @@ class CommentInputSection extends StatelessWidget {
                           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                           counterText: "",
                           filled: true,
-                          fillColor: colorScheme.onSurface.withValues(alpha: 0.05),
+                          fillColor: colorScheme.surfaceContainerHighest,
                         ),
                       ),
                     ),

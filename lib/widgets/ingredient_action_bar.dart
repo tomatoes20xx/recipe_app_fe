@@ -50,7 +50,7 @@ class _IngredientActionBarState extends State<IngredientActionBar> {
 
     return Material(
       elevation: 8,
-      color: theme.colorScheme.surface,
+      color: theme.colorScheme.surfaceContainerLow,
       surfaceTintColor: theme.colorScheme.surfaceTint,
       shadowColor: Colors.black.withValues(alpha: 0.3),
       borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),

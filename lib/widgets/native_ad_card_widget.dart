@@ -112,7 +112,7 @@ class _NativeAdCardWidgetState extends State<NativeAdCardWidget> {
             height: 280,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
-              color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+              color: Theme.of(context).colorScheme.surfaceContainerLow,
             ),
             child: Center(
               child: SizedBox(
@@ -144,7 +144,7 @@ class _NativeAdCardWidgetState extends State<NativeAdCardWidget> {
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
-          color: Theme.of(context).colorScheme.surface,
+          color: Theme.of(context).colorScheme.surfaceContainerLow,
         ),
         child: SizedBox(
           height: 280,

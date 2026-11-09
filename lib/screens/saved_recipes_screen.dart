@@ -426,7 +426,7 @@ class _SelectionActionBar extends StatelessWidget {
       top: false,
       child: Container(
         decoration: BoxDecoration(
-          color: theme.colorScheme.surface,
+          color: theme.colorScheme.surfaceContainerLow,
           border: Border(
             top: BorderSide(
               color: theme.colorScheme.outlineVariant,
@@ -736,7 +736,7 @@ class _SearchBar extends StatelessWidget {
     return Container(
       height: 44,
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest,
+        color: theme.colorScheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(14),
       ),
       child: Row(
@@ -1248,7 +1248,7 @@ class _CollectionCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: theme.colorScheme.surface,
+          color: theme.colorScheme.surfaceContainerLow,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(color: theme.colorScheme.outlineVariant),
           boxShadow: [
@@ -1375,7 +1375,7 @@ class _SkeletonCardState extends State<_SkeletonCard>
 
   @override
   Widget build(BuildContext context) {
-    final color = Theme.of(context).colorScheme.surfaceContainerHighest;
+    final color = Theme.of(context).colorScheme.surfaceContainerLow;
     return FadeTransition(
       opacity: _anim,
       child: ClipRRect(

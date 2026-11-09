@@ -152,7 +152,7 @@ class _FollowerSelectionBottomSheetState extends State<_FollowerSelectionBottomS
 
     return Container(
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
+        color: theme.colorScheme.surfaceContainerHigh,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       padding: EdgeInsets.only(
@@ -266,7 +266,7 @@ class _FollowerSelectionBottomSheetState extends State<_FollowerSelectionBottomS
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.surfaceContainerLow,
+                  color: theme.colorScheme.surfaceContainerHigh,
                   border: Border(
                     top: BorderSide(
                       color: theme.colorScheme.outlineVariant,

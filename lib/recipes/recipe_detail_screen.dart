@@ -1962,7 +1962,7 @@ class _MadeItButton extends StatelessWidget {
         ),
         style: FilledButton.styleFrom(
           backgroundColor: isDone
-              ? theme.colorScheme.surfaceContainerHighest
+              ? theme.colorScheme.surfaceContainerLow
               : theme.colorScheme.primary,
           foregroundColor: isDone
               ? theme.colorScheme.onSurface.withValues(alpha: 0.6)
@@ -2253,7 +2253,7 @@ class _NutritionBottomSheet extends StatelessWidget {
       builder: (context, scrollController) {
         return Container(
           decoration: BoxDecoration(
-            color: theme.colorScheme.surface,
+            color: theme.colorScheme.surfaceContainerHigh,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           ),
           child: CustomScrollView(
@@ -2438,7 +2438,7 @@ class _NutritionIngredientRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
       decoration: BoxDecoration(
         color: found
-            ? theme.colorScheme.surfaceContainerLow
+            ? theme.colorScheme.surfaceContainerHighest
             : theme.colorScheme.errorContainer.withValues(alpha: 0.25),
         borderRadius: BorderRadius.circular(14),
       ),

@@ -363,7 +363,7 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
       height: sheetHeight,
       padding: EdgeInsets.only(bottom: keyboardHeight),
       decoration: BoxDecoration(
-        color: colorScheme.surface,
+        color: colorScheme.surfaceContainerHigh,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: SafeArea(

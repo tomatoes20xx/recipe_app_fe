@@ -26,6 +26,7 @@ import "localization/language_controller.dart";
 import "screens/auth_gate.dart";
 import "shopping/shopping_list_api.dart";
 import "shopping/shopping_list_controller.dart";
+import "theme/app_tokens.dart";
 import "theme/status_bar.dart";
 import "theme/theme_controller.dart";
 
@@ -158,8 +159,10 @@ class MyApp extends StatelessWidget {
             useMaterial3: true,
             textTheme: GoogleFonts.nunitoTextTheme(),
             fontFamilyFallback: const ["Noto Sans Georgian", "Noto Sans"],
-            colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF53B175), brightness: Brightness.light)
-                .copyWith(primary: const Color(0xFF53B175), onPrimary: Colors.white, secondary: Colors.white, onSecondary: Colors.black),
+            colorScheme: AppTokens.light.surfaces(
+              ColorScheme.fromSeed(seedColor: const Color(0xFF53B175), brightness: Brightness.light)
+                  .copyWith(primary: const Color(0xFF53B175), onPrimary: Colors.white, secondary: Colors.white, onSecondary: Colors.black),
+            ),
             chipTheme: const ChipThemeData(showCheckmark: false),
             pageTransitionsTheme: statusBarInsetPageTransitions,
           ),
@@ -168,8 +171,10 @@ class MyApp extends StatelessWidget {
             brightness: Brightness.dark,
             textTheme: GoogleFonts.nunitoTextTheme(ThemeData(brightness: Brightness.dark).textTheme),
             fontFamilyFallback: const ["Noto Sans Georgian", "Noto Sans"],
-            colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF53B175), brightness: Brightness.dark)
-                .copyWith(primary: const Color(0xFF53B175), onPrimary: Colors.white, surface: Colors.grey[900]!, onSurface: Colors.white),
+            colorScheme: AppTokens.dark.surfaces(
+              ColorScheme.fromSeed(seedColor: const Color(0xFF53B175), brightness: Brightness.dark)
+                  .copyWith(primary: const Color(0xFF53B175), onPrimary: Colors.white, onSurface: Colors.white),
+            ),
             chipTheme: const ChipThemeData(showCheckmark: false),
             pageTransitionsTheme: statusBarInsetPageTransitions,
           ),

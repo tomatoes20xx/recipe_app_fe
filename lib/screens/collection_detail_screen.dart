@@ -480,7 +480,7 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
                       decoration: BoxDecoration(
                         color: Theme.of(context)
                             .colorScheme
-                            .surfaceContainerHighest,
+                            .surfaceContainerLow,
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: const Center(
@@ -766,7 +766,7 @@ class _SelectionActionBar extends StatelessWidget {
       top: false,
       child: Container(
         decoration: BoxDecoration(
-          color: theme.colorScheme.surface,
+          color: theme.colorScheme.surfaceContainerLow,
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.1),
