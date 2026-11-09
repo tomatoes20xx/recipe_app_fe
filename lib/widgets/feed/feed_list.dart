@@ -86,7 +86,8 @@ class _FeedListState extends State<FeedList> {
             padding: EdgeInsets.only(
               left: 16,
               right: 16,
-              top: i == 0 ? 16 : 8,
+              top: i == 0 ? 16 : 7,
+              bottom: 7,
             ),
             child: const FeedCardSkeleton(),
           );
@@ -227,8 +228,8 @@ class _FeedListState extends State<FeedList> {
           padding: EdgeInsets.only(
             left: 16,
             right: 16,
-            top: i == 0 ? 16 : 8,
-            bottom: 0,
+            top: i == 0 ? 16 : 7,
+            bottom: 7,
           ),
           // RepaintBoundary prevents repaints from propagating to/from this widget,
           // improving scroll performance for complex cards with images
@@ -236,7 +237,7 @@ class _FeedListState extends State<FeedList> {
             child: Material(
               color: Colors.transparent,
               child: InkWell(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(20),
                 onTap: () async {
                   AnalyticsService().logFeedCardTap(item.id, position: recipeIndex);
                   final result = await Navigator.of(context).push(

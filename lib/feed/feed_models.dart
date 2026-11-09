@@ -31,6 +31,8 @@ class FeedItem {
   final int? cookingTimeMin;
   final int? cookingTimeMax;
   final String? difficulty; // 'easy', 'medium', 'hard'
+  final int? servingSize;
+  final List<String> tags;
   final DateTime createdAt;
   final String authorUsername;
   final String? authorDisplayName;
@@ -59,6 +61,8 @@ class FeedItem {
     this.cookingTimeMin,
     this.cookingTimeMax,
     this.difficulty,
+    this.servingSize,
+    this.tags = const [],
     required this.createdAt,
     required this.authorUsername,
     this.authorDisplayName,
@@ -88,6 +92,11 @@ class FeedItem {
       cookingTimeMin: json["cooking_time_min"] is int ? json["cooking_time_min"] as int : null,
       cookingTimeMax: json["cooking_time_max"] is int ? json["cooking_time_max"] as int : null,
       difficulty: json["difficulty"]?.toString(),
+      servingSize: json["serving_size"] is int ? json["serving_size"] as int : null,
+      tags: [
+        for (final t in (json["tags"] as List?) ?? const [])
+          if (t != null && t.toString().trim().isNotEmpty) t.toString(),
+      ],
       createdAt: DateTime.parse(json["created_at"].toString()),
       authorUsername: (json["author_username"] ?? "").toString(),
       authorDisplayName: json["author_display_name"]?.toString(),
@@ -122,6 +131,8 @@ class FeedItem {
       cookingTimeMin: cookingTimeMin,
       cookingTimeMax: cookingTimeMax,
       difficulty: difficulty,
+      servingSize: servingSize,
+      tags: tags,
       createdAt: createdAt,
       authorUsername: authorUsername,
       authorDisplayName: authorDisplayName,

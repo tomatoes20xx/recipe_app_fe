@@ -1,20 +1,34 @@
 import "package:flutter/material.dart";
 import "package:cached_network_image/cached_network_image.dart";
+import "package:google_fonts/google_fonts.dart";
 
 import "../../analytics/analytics_service.dart";
 import "../../api/api_client.dart";
 import "../../auth/auth_controller.dart";
+import "../../auth/require_account.dart";
 import "../../constants/enums.dart";
 import "../../feed/feed_controller.dart";
 import "../../feed/feed_models.dart";
+import "../../localization/app_localizations.dart";
 import "../../recipes/comments_bottom_sheet.dart";
+import "../../reports/report_bottom_sheet.dart";
+import "../../reports/report_models.dart";
 import "../../screens/profile_screen.dart";
+import "../../search/filter_terms.dart";
 import "../../shopping/shopping_list_controller.dart";
+import "../../theme/app_tokens.dart";
 import "../../utils/ui_utils.dart";
-import "expandable_description.dart";
 import "feed_actions.dart";
 
-/// Feed card widget for list view
+const _likeRed = Color(0xFFE53935);
+
+// The theme's Nunito (GoogleFonts.nunitoTextTheme) registers each weight as its
+// own font family, so a bare `fontWeight: w700` on Latin text stays regular.
+// Bold Latin text here goes through GoogleFonts.nunito to get the 700 file;
+// Georgian falls back to Noto Sans Georgian either way.
+
+/// Recipe card in the Home feed list: author header, full-width photo, title,
+/// time / servings / category, then like, comment and save.
 class FeedCard extends StatefulWidget {
   const FeedCard({
     super.key,
@@ -42,334 +56,104 @@ class FeedCard extends StatefulWidget {
 }
 
 class _FeedCardState extends State<FeedCard> {
-  bool _isDescriptionExpanded = false;
-
   @override
   void initState() {
     super.initState();
     AnalyticsService().logFeedCardImpression(widget.item.id, position: widget.position);
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final date = formatDate(context, widget.item.createdAt);
-    final firstImage = widget.item.images.isNotEmpty ? widget.item.images.first : null;
-    final hasDescription = widget.item.description != null && widget.item.description!.trim().isNotEmpty;
+  bool get _isOwnRecipe => widget.auth.me?["username"]?.toString() == widget.item.authorUsername;
 
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 16,
-            spreadRadius: 0,
-            offset: const Offset(0, 4),
-          ),
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 4,
-            spreadRadius: 0,
-            offset: const Offset(0, 1),
-          ),
-        ],
+  Future<void> _showMoreSheet() async {
+    final t = AppTokens.of(context);
+    final action = await showModalBottomSheet<_MoreAction>(
+      context: context,
+      backgroundColor: t.sheet,
+      barrierColor: t.scrim,
+      useSafeArea: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      child: Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(
-          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.15),
-          width: 1,
-        ),
-      ),
-      clipBehavior: Clip.antiAlias,
-      color: Theme.of(context).colorScheme.surface,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Image section at top
-          _ImageSection(
-            item: widget.item,
-            sort: widget.sort,
-            firstImage: firstImage,
-          ),
-          // Content section
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Author row
-                _AuthorRow(
-                  item: widget.item,
-                  date: date,
-                  auth: widget.auth,
-                  apiClient: widget.apiClient,
-                  shoppingListController: widget.shoppingListController,
-                ),
-                const SizedBox(height: 10),
-                // Recipe title
-                Text(
-                  widget.item.title,
-                  style: TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: -0.3,
-                    height: 1.3,
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                // Description
-                if (hasDescription) ...[
-                  const SizedBox(height: 6),
-                  ExpandableDescription(
-                    description: widget.item.description!,
-                    isExpanded: _isDescriptionExpanded,
-                    onTap: () {
-                      setState(() {
-                        _isDescriptionExpanded = !_isDescriptionExpanded;
-                      });
-                    },
-                  ),
-                ],
-                const SizedBox(height: 12),
-                // Engagement row
-                _EngagementRow(
-                  item: widget.item,
-                  feed: widget.feed,
-                  apiClient: widget.apiClient,
-                  auth: widget.auth,
-                  onActionCompleted: widget.onActionCompleted,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    ),
+      builder: (_) => _MoreSheet(showReport: !_isOwnRecipe),
     );
-  }
-}
+    if (!mounted || action == null) return;
 
-class _AuthorRow extends StatelessWidget {
-  const _AuthorRow({
-    required this.item,
-    required this.date,
-    required this.auth,
-    required this.apiClient,
-    required this.shoppingListController,
-  });
-
-  final FeedItem item;
-  final String date;
-  final AuthController auth;
-  final ApiClient apiClient;
-  final ShoppingListController shoppingListController;
-
-  @override
-  Widget build(BuildContext context) {
-    final displayName = item.authorDisplayName ?? item.authorUsername;
-
-    return GestureDetector(
-      onTap: () {
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => ProfileScreen(
-              auth: auth,
-              apiClient: apiClient,
-              shoppingListController: shoppingListController,
-              username: item.authorUsername,
-            ),
-          ),
+    switch (action) {
+      case _MoreAction.collections:
+        final changed = await openCollectionsFromFeed(
+          context,
+          feed: widget.feed,
+          recipeId: widget.item.id,
+          auth: widget.auth,
+          apiClient: widget.apiClient,
         );
-      },
-      child: Row(
-        children: [
-          // Avatar
-          item.authorAvatarUrl != null && item.authorAvatarUrl!.isNotEmpty
-              ? CircleAvatar(
-                  radius: 16,
-                  backgroundColor: Theme.of(context).colorScheme.primary,
-                  backgroundImage: CachedNetworkImageProvider(
-                    buildImageUrl(item.authorAvatarUrl!),
-                    cacheKey: item.authorAvatarUrl!,
-                    maxWidth: 64,
-                    maxHeight: 64,
-                  ),
-                  onBackgroundImageError: (exception, stackTrace) {},
-                  child: null,
-                )
-              : CircleAvatar(
-                  radius: 16,
-                  backgroundColor: Theme.of(context).colorScheme.primary,
-                  child: Text(
-                    item.authorUsername.isNotEmpty ? item.authorUsername[0].toUpperCase() : "?",
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.onPrimary,
-                    ),
-                  ),
-                ),
-          const SizedBox(width: 10),
-          // Name and date
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  displayName,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 1),
-                Text(
-                  "@${item.authorUsername} · $date",
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-        ],
+        if (changed) widget.onActionCompleted?.call();
+      case _MoreAction.report:
+        if (!await requireAccount(context, widget.auth, AccountReason.report) || !mounted) return;
+        // Signing in may reveal this is the viewer's own recipe.
+        if (_isOwnRecipe) return;
+        await showReportBottomSheet(
+          context: context,
+          targetType: ReportTargetType.recipe,
+          targetId: widget.item.id,
+          apiClient: widget.apiClient,
+        );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppTokens.of(context);
+    final radius = BorderRadius.circular(20);
+
+    return Container(
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(color: t.card, borderRadius: radius),
+      // Drawn on top so the full-width photo doesn't cover the side borders.
+      foregroundDecoration: BoxDecoration(
+        borderRadius: radius,
+        border: Border.all(color: t.line),
       ),
-    );
-  }
-}
-
-class _EngagementRow extends StatelessWidget {
-  const _EngagementRow({
-    required this.item,
-    required this.feed,
-    required this.apiClient,
-    required this.auth,
-    this.onActionCompleted,
-  });
-
-  final FeedItem item;
-  final FeedController feed;
-  final ApiClient apiClient;
-  final AuthController auth;
-  final VoidCallback? onActionCompleted;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        // Like button
-        _EngagementButton(
-          icon: item.viewerHasLiked ? Icons.favorite : Icons.favorite_border,
-          value: item.likes,
-          active: item.viewerHasLiked,
-          activeColor: const Color(0xFFE53935),
-          onTap: () async {
-            await likeFromFeed(context, feed: feed, recipeId: item.id, auth: auth, apiClient: apiClient);
-            onActionCompleted?.call();
-          },
-        ),
-        const SizedBox(width: 16),
-        // Comment button
-        _EngagementButton(
-          icon: Icons.chat_bubble_outline,
-          value: item.comments,
-          onTap: () {
-            showCommentsBottomSheet(
-              context: context,
-              recipeId: item.id,
-              apiClient: apiClient,
-              auth: auth,
-              onCommentPosted: () {
-                feed.updateCommentCount(item.id, item.comments + 1);
-                Future.delayed(const Duration(milliseconds: 500), () {
-                  onActionCompleted?.call();
-                });
-              },
-            );
-          },
-        ),
-        const SizedBox(width: 16),
-        // Bookmark button
-        _EngagementButton(
-          icon: item.viewerHasBookmarked ? Icons.bookmark : Icons.bookmark_border,
-          value: item.bookmarks,
-          active: item.viewerHasBookmarked,
-          activeColor: const Color(0xFFE53935),
-          onTap: () async {
-            await saveFromFeed(context, feed: feed, recipeId: item.id, auth: auth, apiClient: apiClient);
-            onActionCompleted?.call();
-          },
-          onLongPress: () async {
-            final changed = await openCollectionsFromFeed(
-              context,
-              feed: feed,
-              recipeId: item.id,
-              auth: auth,
-              apiClient: apiClient,
-            );
-            if (changed) onActionCompleted?.call();
-          },
-        ),
-      ],
-    );
-  }
-}
-
-class _EngagementButton extends StatelessWidget {
-  const _EngagementButton({
-    required this.icon,
-    required this.value,
-    this.active = false,
-    this.activeColor,
-    required this.onTap,
-    this.onLongPress,
-  });
-
-  final IconData icon;
-  final int value;
-  final bool active;
-  final Color? activeColor;
-  final VoidCallback onTap;
-  final VoidCallback? onLongPress;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = active
-        ? (activeColor ?? Theme.of(context).colorScheme.primary)
-        : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6);
-
-    return GestureDetector(
-      onTap: onTap,
-      onLongPress: onLongPress,
-      behavior: HitTestBehavior.opaque,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Row(
+      child: Material(
+        type: MaterialType.transparency,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              icon,
-              size: 20,
-              color: color,
+            _Header(
+              item: widget.item,
+              auth: widget.auth,
+              apiClient: widget.apiClient,
+              shoppingListController: widget.shoppingListController,
+              onMore: _showMoreSheet,
             ),
-            const SizedBox(width: 4),
-            Text(
-              value.toString(),
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-                color: color,
+            _Photo(item: widget.item, sort: widget.sort),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.item.title,
+                    style: GoogleFonts.nunito(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                      height: 1.3,
+                      color: t.ink,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  _MetaRow(item: widget.item),
+                ],
               ),
+            ),
+            _ActionsRow(
+              item: widget.item,
+              feed: widget.feed,
+              apiClient: widget.apiClient,
+              auth: widget.auth,
+              onActionCompleted: widget.onActionCompleted,
             ),
           ],
         ),
@@ -378,77 +162,173 @@ class _EngagementButton extends StatelessWidget {
   }
 }
 
-class _ImageSection extends StatelessWidget {
-  const _ImageSection({
+class _Header extends StatelessWidget {
+  const _Header({
     required this.item,
-    required this.sort,
-    required this.firstImage,
+    required this.auth,
+    required this.apiClient,
+    required this.shoppingListController,
+    required this.onMore,
   });
 
   final FeedItem item;
-  final FeedSort sort;
-  final RecipeImage? firstImage;
+  final AuthController auth;
+  final ApiClient apiClient;
+  final ShoppingListController shoppingListController;
+  final VoidCallback onMore;
+
+  void _openProfile(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ProfileScreen(
+          auth: auth,
+          apiClient: apiClient,
+          shoppingListController: shoppingListController,
+          username: item.authorUsername,
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    return AspectRatio(
-      aspectRatio: 16 / 10,
-      child: Stack(
-        fit: StackFit.expand,
+    final t = AppTokens.of(context);
+    final displayName = item.authorDisplayName?.trim().isNotEmpty == true
+        ? item.authorDisplayName!.trim()
+        : item.authorUsername;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 6, 12),
+      child: Row(
         children: [
-          if (firstImage != null)
-            RecipeImageWidget(
-              imageUrl: firstImage!.url,
-              width: double.infinity,
-              height: double.infinity,
-              fit: BoxFit.cover,
-            )
-          else
-            RecipeFallbackImage(
-              width: double.infinity,
-              height: double.infinity,
-              iconSize: 48,
-            ),
-          // Cooking time badge
-          if (item.cookingTimeMin != null || item.cookingTimeMax != null)
-            Positioned(
-              top: 8,
-              left: 8,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.92),
-                  borderRadius: BorderRadius.circular(8),
-                ),
+          Expanded(
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: GestureDetector(
+                onTap: () => _openProfile(context),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.schedule_rounded, size: 12, color: Color(0xFF333333)),
-                    const SizedBox(width: 4),
-                    Text(
-                      () {
-                        final min = item.cookingTimeMin;
-                        final max = item.cookingTimeMax;
-                        if (min != null && max != null && min != max) {
-                          return '$min–$max წთ';
-                        }
-                        return '${min ?? max} წთ';
-                      }(),
-                      style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF333333),
+                    _Avatar(url: item.authorAvatarUrl, name: displayName),
+                    const SizedBox(width: 12),
+                    Flexible(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            displayName,
+                            style: GoogleFonts.nunito(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: t.ink,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            formatRelativeTime(context, item.createdAt),
+                            style: TextStyle(fontSize: 12.5, color: t.ink2),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
               ),
             ),
-          // Trending badge for top sort
+          ),
+          IconButton(
+            onPressed: onMore,
+            icon: const Icon(Icons.more_horiz_rounded),
+            color: t.ink2,
+            tooltip: MaterialLocalizations.of(context).moreButtonTooltip,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Avatar extends StatelessWidget {
+  const _Avatar({required this.url, required this.name});
+
+  final String? url;
+  final String name;
+
+  /// First letter of [name]. Georgian stays as is: uppercasing it would give
+  /// Mtavruli, which isn't how Georgian names are written.
+  static String _initial(String name) {
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) return "?";
+    final first = trimmed.characters.first;
+    final code = first.runes.first;
+    if (code >= 0x10A0 && code <= 0x10FF) return first;
+    return first.toUpperCase();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppTokens.of(context);
+    final avatarUrl = normalizeAvatarUrl(url);
+
+    return CircleAvatar(
+      radius: 20,
+      backgroundColor: t.soft,
+      foregroundImage: avatarUrl != null
+          ? CachedNetworkImageProvider(
+              buildImageUrl(avatarUrl),
+              cacheKey: avatarUrl,
+              maxWidth: 120,
+              maxHeight: 120,
+            )
+          : null,
+      // A broken avatar falls back to the initial underneath.
+      onForegroundImageError: avatarUrl != null ? (_, _) {} : null,
+      child: Text(
+        _initial(name),
+        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: t.brandInk),
+      ),
+    );
+  }
+}
+
+class _Photo extends StatelessWidget {
+  const _Photo({required this.item, required this.sort});
+
+  final FeedItem item;
+  final FeedSort sort;
+
+  @override
+  Widget build(BuildContext context) {
+    final image = item.images.isNotEmpty ? item.images.first : null;
+
+    return AspectRatio(
+      aspectRatio: 5 / 3,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          if (image != null)
+            RecipeImageWidget(
+              imageUrl: image.url,
+              width: double.infinity,
+              height: double.infinity,
+              fit: BoxFit.cover,
+            )
+          else
+            const RecipeFallbackImage(
+              width: double.infinity,
+              height: double.infinity,
+              iconSize: 48,
+            ),
+          // Likes in the window, for the "top" sort
           if (sort == FeedSort.top && item.likesWindow != null)
             Positioned(
-              top: 8,
-              right: 8,
+              top: 10,
+              right: 10,
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
@@ -473,6 +353,287 @@ class _ImageSection extends StatelessWidget {
               ),
             ),
         ],
+      ),
+    );
+  }
+}
+
+/// Cooking time, servings and the recipe's category, each shown only when set.
+class _MetaRow extends StatelessWidget {
+  const _MetaRow({required this.item});
+
+  final FeedItem item;
+
+  String? _cookingTime(AppLocalizations? l) {
+    final min = item.cookingTimeMin;
+    final max = item.cookingTimeMax;
+    if (min == null && max == null) return null;
+    final unit = l?.minuteAbbreviation ?? "min";
+    if (min != null && max != null && min != max) return "$min–$max $unit";
+    return "${min ?? max} $unit";
+  }
+
+  /// Label of the first tag that is one of the predefined categories.
+  String? _category(AppLocalizations? l) {
+    for (final tag in item.tags) {
+      final category = findCategory(tag);
+      if (category != null) return category.getLabel(l);
+    }
+    return null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppTokens.of(context);
+    final l = AppLocalizations.of(context);
+    final time = _cookingTime(l);
+    final servings = item.servingSize != null && item.servingSize! > 0 ? item.servingSize : null;
+    final category = _category(l);
+
+    if (time == null && servings == null && category == null) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Wrap(
+        spacing: 14,
+        runSpacing: 6,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          if (time != null) _MetaItem(icon: Icons.schedule_rounded, label: time),
+          if (servings != null)
+            _MetaItem(
+              icon: Icons.person_outline_rounded,
+              label: l?.nServings(servings) ?? "$servings servings",
+            ),
+          if (category != null)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+              decoration: BoxDecoration(
+                color: t.soft,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                category,
+                style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: t.brandInk),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MetaItem extends StatelessWidget {
+  const _MetaItem({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppTokens.of(context);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 16, color: t.ink2),
+        const SizedBox(width: 4),
+        Text(label, style: TextStyle(fontSize: 13, color: t.ink2)),
+      ],
+    );
+  }
+}
+
+class _ActionsRow extends StatelessWidget {
+  const _ActionsRow({
+    required this.item,
+    required this.feed,
+    required this.apiClient,
+    required this.auth,
+    this.onActionCompleted,
+  });
+
+  final FeedItem item;
+  final FeedController feed;
+  final ApiClient apiClient;
+  final AuthController auth;
+  final VoidCallback? onActionCompleted;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppTokens.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(6, 6, 6, 6),
+      child: Row(
+        children: [
+          _ActionButton(
+            icon: item.viewerHasLiked ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+            color: item.viewerHasLiked ? _likeRed : t.ink,
+            count: item.likes,
+            onTap: () async {
+              await likeFromFeed(context, feed: feed, recipeId: item.id, auth: auth, apiClient: apiClient);
+              onActionCompleted?.call();
+            },
+          ),
+          _ActionButton(
+            icon: Icons.chat_bubble_outline_rounded,
+            color: t.ink,
+            count: item.comments,
+            onTap: () {
+              showCommentsBottomSheet(
+                context: context,
+                recipeId: item.id,
+                apiClient: apiClient,
+                auth: auth,
+                onCommentPosted: () {
+                  feed.updateCommentCount(item.id, item.comments + 1);
+                  Future.delayed(const Duration(milliseconds: 500), () {
+                    onActionCompleted?.call();
+                  });
+                },
+              );
+            },
+          ),
+          const Spacer(),
+          // Long-press opens collections (also in the ⋯ menu).
+          _ActionButton(
+            icon: item.viewerHasBookmarked ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
+            color: t.ink,
+            onTap: () async {
+              await saveFromFeed(context, feed: feed, recipeId: item.id, auth: auth, apiClient: apiClient);
+              onActionCompleted?.call();
+            },
+            onLongPress: () async {
+              final changed = await openCollectionsFromFeed(
+                context,
+                feed: feed,
+                recipeId: item.id,
+                auth: auth,
+                apiClient: apiClient,
+              );
+              if (changed) onActionCompleted?.call();
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ActionButton extends StatelessWidget {
+  const _ActionButton({
+    required this.icon,
+    required this.color,
+    required this.onTap,
+    this.count,
+    this.onLongPress,
+  });
+
+  final IconData icon;
+  final Color color;
+  final int? count;
+  final VoidCallback onTap;
+  final VoidCallback? onLongPress;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppTokens.of(context);
+
+    return InkWell(
+      onTap: onTap,
+      onLongPress: onLongPress,
+      customBorder: const StadiumBorder(),
+      child: Padding(
+        padding: const EdgeInsets.all(10),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 23, color: color),
+            if (count != null) ...[
+              const SizedBox(width: 6),
+              Text(
+                "$count",
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: t.ink),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+enum _MoreAction { collections, report }
+
+class _MoreSheet extends StatelessWidget {
+  const _MoreSheet({required this.showReport});
+
+  final bool showReport;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppTokens.of(context);
+    final l = AppLocalizations.of(context);
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(8, 8, 8, 16 + MediaQuery.paddingOf(context).bottom),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Center(
+            child: Container(
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(color: t.line, borderRadius: BorderRadius.circular(2)),
+            ),
+          ),
+          const SizedBox(height: 10),
+          _MoreSheetRow(
+            icon: Icons.bookmark_add_outlined,
+            label: l?.addToCollection ?? "Add to Collection",
+            onTap: () => Navigator.of(context).pop(_MoreAction.collections),
+          ),
+          if (showReport)
+            _MoreSheetRow(
+              icon: Icons.flag_outlined,
+              label: l?.reportRecipe ?? "Report Recipe",
+              onTap: () => Navigator.of(context).pop(_MoreAction.report),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MoreSheetRow extends StatelessWidget {
+  const _MoreSheetRow({required this.icon, required this.label, required this.onTap});
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppTokens.of(context);
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 52),
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        child: Row(
+          children: [
+            Icon(icon, size: 22, color: t.ink),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: t.ink),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

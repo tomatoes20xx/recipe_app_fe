@@ -286,6 +286,9 @@ class AppLocalizations {
   String nRecipes(int count) => count == 1
       ? (_localizedValues[locale.languageCode]?["nRecipesSingular"]?.replaceAll("{count}", count.toString()) ?? "$count recipe")
       : (_localizedValues[locale.languageCode]?["nRecipesPlural"]?.replaceAll("{count}", count.toString()) ?? "$count recipes");
+  String nServings(int count) => count == 1
+      ? (_localizedValues[locale.languageCode]?["nServingsSingular"]?.replaceAll("{count}", count.toString()) ?? "$count serving")
+      : (_localizedValues[locale.languageCode]?["nServingsPlural"]?.replaceAll("{count}", count.toString()) ?? "$count servings");
   String get createNew => _localizedValues[locale.languageCode]?["createNew"] ?? "Create new";
   String get create => _localizedValues[locale.languageCode]?["create"] ?? "Create";
   String get removeFromCollection => _localizedValues[locale.languageCode]?["removeFromCollection"] ?? "Remove from Collection";
@@ -1273,6 +1276,8 @@ class AppLocalizations {
       "addRecipesToCollection": "Add recipes to this collection by bookmarking them",
       "nRecipesSingular": "{count} recipe",
       "nRecipesPlural": "{count} recipes",
+      "nServingsSingular": "{count} serving",
+      "nServingsPlural": "{count} servings",
       "createNew": "Create new",
       "create": "Create",
       "removeFromCollection": "Remove from Collection",
@@ -2200,6 +2205,8 @@ class AppLocalizations {
       "addRecipesToCollection": "დაამატეთ რეცეპტები ამ კოლექციაში სანიშნის დაჭერით",
       "nRecipesSingular": "{count} რეცეპტი",
       "nRecipesPlural": "{count} რეცეპტი",
+      "nServingsSingular": "{count} პორცია",
+      "nServingsPlural": "{count} პორცია",
       "createNew": "ახლის შექმნა",
       "create": "შექმნა",
       "removeFromCollection": "კოლექციიდან წაშლა",

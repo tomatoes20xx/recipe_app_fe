@@ -1,26 +1,50 @@
 import "package:flutter/material.dart";
 
-/// Skeleton loading widget for feed cards
+import "../../theme/app_tokens.dart";
+
+/// Skeleton loading widget for feed cards. Mirrors [FeedCard]: author header,
+/// 5:3 photo, title, meta row, actions.
 class FeedCardSkeleton extends StatelessWidget {
   const FeedCardSkeleton({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+    final t = AppTokens.of(context);
+    final radius = BorderRadius.circular(20);
+
+    return Container(
       clipBehavior: Clip.antiAlias,
-      color: Theme.of(context).colorScheme.surface,
+      decoration: BoxDecoration(color: t.card, borderRadius: radius),
+      foregroundDecoration: BoxDecoration(
+        borderRadius: radius,
+        border: Border.all(color: t.line),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Image skeleton
+          // Author header
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 12, 16, 12),
+            child: Row(
+              children: [
+                SkeletonCircle(size: 40),
+                SizedBox(width: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SkeletonBox(width: 110, height: 14),
+                    SizedBox(height: 6),
+                    SkeletonBox(width: 70, height: 11),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          // Photo
           AspectRatio(
-            aspectRatio: 16 / 10,
-            child: Container(
+            aspectRatio: 5 / 3,
+            child: ColoredBox(
               color: Theme.of(context).colorScheme.surfaceContainerHighest,
               child: const SkeletonBox(
                 width: double.infinity,
@@ -28,46 +52,25 @@ class FeedCardSkeleton extends StatelessWidget {
               ),
             ),
           ),
-          // Content skeleton
-          Padding(
-            padding: const EdgeInsets.all(12),
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 14, 16, 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Author row skeleton
+                // Title
+                SkeletonBox(width: 220, height: 18),
+                SizedBox(height: 10),
+                // Time, servings, category
+                SkeletonBox(width: 180, height: 14),
+                SizedBox(height: 18),
+                // Like, comment, save
                 Row(
                   children: [
-                    const SkeletonCircle(size: 32),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const SkeletonBox(width: 100, height: 14),
-                          const SizedBox(height: 4),
-                          const SkeletonBox(width: 140, height: 12),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                // Title skeleton
-                const SkeletonBox(width: double.infinity, height: 18),
-                const SizedBox(height: 6),
-                // Description skeleton
-                const SkeletonBox(width: double.infinity, height: 14),
-                const SizedBox(height: 4),
-                const SkeletonBox(width: 200, height: 14),
-                const SizedBox(height: 12),
-                // Engagement row skeleton
-                Row(
-                  children: [
-                    const SkeletonBox(width: 50, height: 20),
-                    const SizedBox(width: 16),
-                    const SkeletonBox(width: 50, height: 20),
-                    const Spacer(),
-                    const SkeletonBox(width: 50, height: 20),
+                    SkeletonBox(width: 44, height: 22),
+                    SizedBox(width: 20),
+                    SkeletonBox(width: 44, height: 22),
+                    Spacer(),
+                    SkeletonBox(width: 22, height: 22),
                   ],
                 ),
               ],
