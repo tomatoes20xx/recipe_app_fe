@@ -1,18 +1,30 @@
+import "dart:async";
 import "dart:io";
+import "dart:isolate";
+import "dart:math" as math;
+import "dart:ui" show lerpDouble;
 
+import "package:flutter/foundation.dart" show listEquals;
 import "package:flutter/material.dart";
-import "package:flutter/services.dart";
 import "package:image_picker/image_picker.dart";
 
 import "../api/api_client.dart";
+import "../auth/auth_api.dart";
 import "../constants/cuisines.dart";
-import "../constants/dietary_preferences.dart";
 import "../constants/enums.dart";
-import "../constants/recipe_categories.dart";
 import "../localization/app_localizations.dart";
+import "../recipes/create/create_recipe_bottom_bar.dart";
+import "../recipes/create/form_widgets.dart";
+import "../recipes/create/ingredient_row.dart";
+import "../recipes/create/number_stepper.dart";
+import "../recipes/create/photos_section.dart";
+import "../recipes/create/recipe_preview_screen.dart";
+import "../recipes/create/step_card.dart";
+import "../recipes/create/tag_picker_sheet.dart";
 import "../recipes/recipe_api.dart";
 import "../recipes/recipe_detail_models.dart";
 import "../services/recipe_draft_service.dart";
+import "../theme/app_tokens.dart";
 import "../utils/error_utils.dart";
 import "../utils/image_utils.dart";
 import "../utils/ui_utils.dart";
@@ -34,9 +46,11 @@ class CreateRecipeScreen extends StatefulWidget {
   State<CreateRecipeScreen> createState() => _CreateRecipeScreenState();
 }
 
+/// The form's six sections, in page order.
+enum _Section { photos, basics, details, tags, ingredients, method }
+
 class _CreateRecipeScreenState extends State<CreateRecipeScreen>
     with WidgetsBindingObserver {
-  final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _cuisineController = TextEditingController();
@@ -45,14 +59,23 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen>
   final _cookingTimeMaxController = TextEditingController();
   final _servingSizeController = TextEditingController();
   final _scrollController = ScrollController();
+  final _titleFocus = FocusNode();
+  final _maxTimeFocus = FocusNode();
 
   final List<String> _tags = [];
   final List<_IngredientItem> _ingredients = [];
   final List<_StepItem> _steps = [];
-  final List<XFile> _selectedImages = [];
-  final List<RecipeImage> _existingImages = []; // Existing images from recipe
+  /// All photos in display order, uploaded and local mixed; index 0 is the
+  /// cover.
+  final List<_Photo> _photos = [];
   final Set<String> _removedImageIds = {}; // Track removed existing images
   final ImagePicker _imagePicker = ImagePicker();
+
+  /// Photos from the current pick still being compressed.
+  int _pendingPhotos = 0;
+
+  /// A photo is being dragged in the grid; the form must not scroll.
+  bool _photoDragActive = false;
 
   Difficulty? _selectedDifficulty;
   String? _cookingTimeError;
@@ -65,6 +88,28 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen>
 
   final _draftService = RecipeDraftService();
 
+  /// The backend accepts at most this many images per recipe
+  /// (routes/recipes.ts); the add tile hides at the limit.
+  static const _maxImages = 10;
+
+  /// Debounced draft save (create mode): runs ~2 s after the last edit.
+  Timer? _draftTimer;
+  bool _draftSaved = false;
+
+  /// True while a recipe or draft is being loaded into the controllers, so
+  /// their listeners don't count it as an edit.
+  bool _loadingData = false;
+
+  /// The one ingredient row that is expanded, if any.
+  _IngredientItem? _expandedIngredient;
+
+  /// Validation messages shown under section headers after a Publish tap.
+  Map<_Section, List<String>> _sectionErrors = {};
+  final Map<_Section, GlobalKey> _sectionKeys = {
+    for (final s in _Section.values) s: GlobalKey(),
+  };
+
+  Future<RecipePreviewAuthor?>? _previewAuthor;
 
   @override
   void initState() {
@@ -76,6 +121,16 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen>
     } else {
       WidgetsBinding.instance.addPostFrameCallback((_) => _checkForDraft());
     }
+    for (final c in [
+      _titleController,
+      _descriptionController,
+      _cuisineController,
+      _cookingTimeMinController,
+      _cookingTimeMaxController,
+      _servingSizeController,
+    ]) {
+      c.addListener(_onTextChanged);
+    }
   }
 
   void _loadRecipeData(RecipeDetail recipe) {
@@ -83,7 +138,7 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen>
     _descriptionController.text = recipe.description ?? "";
     _cuisineController.text = recipe.cuisine ?? "";
     _tags.addAll(recipe.tags);
-    _existingImages.addAll(recipe.images);
+    _photos.addAll(recipe.images.map(_ExistingPhoto.new));
     _cookingTimeMinController.text = recipe.cookingTimeMin?.toString() ?? "";
     _cookingTimeMaxController.text = recipe.cookingTimeMax?.toString() ?? "";
     _servingSizeController.text = recipe.servingSize?.toString() ?? "";
@@ -95,6 +150,7 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen>
       item.quantityController.text = ing.quantity?.toString() ?? "";
       item.unitController.text = ing.unit ?? "";
       item.nameController.text = ing.displayName;
+      _watchIngredient(item);
       _ingredients.add(item);
     }
 
@@ -102,6 +158,7 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen>
     for (final step in recipe.steps) {
       final item = _StepItem();
       item.instructionController.text = step.instruction;
+      _watchStep(item);
       _steps.add(item);
     }
   }
@@ -109,6 +166,7 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _draftTimer?.cancel();
     if (!_isEditMode && !_submitted && _hasMeaningfulData()) {
       _saveDraft();
     }
@@ -120,6 +178,8 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen>
     _cookingTimeMaxController.dispose();
     _servingSizeController.dispose();
     _scrollController.dispose();
+    _titleFocus.dispose();
+    _maxTimeFocus.dispose();
     for (var ing in _ingredients) {
       ing.quantityController.dispose();
       ing.unitController.dispose();
@@ -128,6 +188,7 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen>
     }
     for (var step in _steps) {
       step.instructionController.dispose();
+      step.focusNode.dispose();
     }
     super.dispose();
   }
@@ -149,11 +210,11 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen>
         _tags.isNotEmpty ||
         _ingredients.any((i) => i.nameController.text.trim().isNotEmpty) ||
         _steps.any((s) => s.instructionController.text.trim().isNotEmpty) ||
-        _selectedImages.isNotEmpty;
+        _photos.any((p) => p is _LocalPhoto);
   }
 
-  void _saveDraft() {
-    _draftService.saveDraft(
+  Future<void> _saveDraft() {
+    return _draftService.saveDraft(
       title: _titleController.text,
       description: _descriptionController.text,
       cuisine: _cuisineController.text,
@@ -170,7 +231,9 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen>
               })
           .toList(),
       steps: _steps.map((s) => s.instructionController.text).toList(),
-      imagePaths: _selectedImages.map((f) => f.path).toList(),
+      // Local photos in grid order. Only the processed file is kept, so a
+      // restored photo re-crops from that rather than from the original.
+      imagePaths: [for (final p in _photos) if (p is _LocalPhoto) p.path],
     );
   }
 
@@ -215,6 +278,7 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen>
     final draft = await _draftService.loadDraft();
     if (draft == null || !mounted) return;
 
+    _loadingData = true;
     setState(() {
       _titleController.text = (draft['title'] as String?) ?? '';
       _descriptionController.text = (draft['description'] as String?) ?? '';
@@ -238,6 +302,7 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen>
         item.quantityController.text = (map['quantity'] as String?) ?? '';
         item.unitController.text = (map['unit'] as String?) ?? '';
         item.nameController.text = (map['name'] as String?) ?? '';
+        _watchIngredient(item);
         _ingredients.add(item);
       }
 
@@ -245,6 +310,7 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen>
       for (final step in steps) {
         final item = _StepItem();
         item.instructionController.text = (step as String?) ?? '';
+        _watchStep(item);
         _steps.add(item);
       }
 
@@ -252,11 +318,62 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen>
       for (final path in imagePaths) {
         final p = path as String;
         if (File(p).existsSync()) {
-          _selectedImages.add(XFile(p));
+          _photos.add(_LocalPhoto(path: p, sourcePath: p));
         }
       }
     });
+    _loadingData = false;
   }
+
+  // ---------------------------------------------------------------------------
+  // Change tracking: rebuild (section checks, progress) and debounce the draft.
+
+  void _watchIngredient(_IngredientItem item) {
+    item.nameController.addListener(_onTextChanged);
+    item.quantityController.addListener(_onTextChanged);
+    item.unitController.addListener(_onTextChanged);
+  }
+
+  void _watchStep(_StepItem item) {
+    item.instructionController.addListener(_onTextChanged);
+  }
+
+  void _onTextChanged() {
+    if (_loadingData || !mounted) return;
+    setState(() {});
+    _markChanged();
+  }
+
+  /// Call after any edit that isn't a watched text change (tags, images,
+  /// difficulty, add/remove/reorder).
+  void _markChanged() {
+    if (_loadingData) return;
+    if (_sectionErrors.isNotEmpty) {
+      // Keep showing errors only for sections that still have them; don't
+      // add new ones until the next Publish tap.
+      final fresh = _groupErrors(_collectErrors());
+      setState(() {
+        _sectionErrors = {
+          for (final s in _sectionErrors.keys)
+            if (fresh[s] != null) s: fresh[s]!,
+        };
+      });
+    }
+    _scheduleDraftSave();
+  }
+
+  void _scheduleDraftSave() {
+    if (_isEditMode || _submitted) return;
+    _draftTimer?.cancel();
+    _draftTimer = Timer(const Duration(seconds: 2), () async {
+      if (!mounted || _submitted || _isSubmitting || !_hasMeaningfulData()) return;
+      await _saveDraft();
+      if (mounted && !_submitted) setState(() => _draftSaved = true);
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Tags
 
   void _addTag() {
     final tag = _tagController.text.trim();
@@ -265,6 +382,7 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen>
         _tags.add(tag);
         _tagController.clear();
       });
+      _markChanged();
     }
   }
 
@@ -272,182 +390,336 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen>
     setState(() {
       _tags.remove(tag);
     });
+    _markChanged();
   }
+
+  /// Category / diet chip: same toggle as the old horizontal chip rows.
+  void _toggleTag(String label) {
+    setState(() {
+      if (_tags.contains(label)) {
+        _tags.remove(label);
+      } else {
+        _tags.add(label);
+      }
+    });
+    _markChanged();
+  }
+
+  Future<void> _openTagSheet() async {
+    FocusScope.of(context).unfocus();
+    _tagController.clear();
+    await showTagPickerSheet(
+      context,
+      tags: _tags,
+      searchController: _tagController,
+      onToggle: _toggleTag,
+      onAddCustom: _addTag,
+      onRemove: _removeTag,
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Ingredients and steps
 
   void _addIngredient() {
     final newItem = _IngredientItem();
+    _watchIngredient(newItem);
     setState(() {
       _ingredients.add(newItem);
+      _expandedIngredient = newItem;
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       newItem.nameFocusNode.requestFocus();
     });
+    _markChanged();
   }
 
   void _removeIngredient(int index) {
     setState(() {
+      if (_expandedIngredient == _ingredients[index]) _expandedIngredient = null;
       _ingredients[index].quantityController.dispose();
       _ingredients[index].unitController.dispose();
       _ingredients[index].nameController.dispose();
       _ingredients[index].nameFocusNode.dispose();
       _ingredients.removeAt(index);
     });
+    _markChanged();
   }
 
+  /// [newIndex] is the final position (ReorderableListView.onReorderItem
+  /// already accounts for the removed item).
   void _reorderIngredients(int oldIndex, int newIndex) {
     setState(() {
-      if (newIndex > oldIndex) newIndex -= 1;
       final item = _ingredients.removeAt(oldIndex);
       _ingredients.insert(newIndex, item);
     });
+    _markChanged();
+  }
+
+  void _expandIngredient(_IngredientItem item) {
+    setState(() => _expandedIngredient = item);
+  }
+
+  void _collapseIngredient(_IngredientItem item) {
+    if (!mounted || _expandedIngredient != item) return;
+    setState(() => _expandedIngredient = null);
   }
 
   void _addStep() {
+    final newItem = _StepItem();
+    _watchStep(newItem);
     setState(() {
-      _steps.add(_StepItem());
+      _steps.add(newItem);
     });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      newItem.focusNode.requestFocus();
+    });
+    _markChanged();
   }
 
   void _removeStep(int index) {
     setState(() {
       _steps[index].instructionController.dispose();
+      _steps[index].focusNode.dispose();
       _steps.removeAt(index);
     });
+    _markChanged();
   }
 
+  /// [newIndex] is the final position, as for [_reorderIngredients].
   void _reorderSteps(int oldIndex, int newIndex) {
     setState(() {
-      if (newIndex > oldIndex) newIndex -= 1;
       final item = _steps.removeAt(oldIndex);
       _steps.insert(newIndex, item);
     });
+    _markChanged();
   }
 
-  Future<void> _pickImage() async {
+  // ---------------------------------------------------------------------------
+  // Photos (docs/recipe-photos-grid.md)
+
+  int get _imageCount => _photos.length;
+
+  /// Picks up to the remaining number of photos in one go and adds them in
+  /// pick order, without a crop step. Each one is compressed in turn while a
+  /// spinner holds its grid slot; failures are reported once at the end.
+  Future<void> _pickImages() async {
+    if (_pendingPhotos > 0 || _isSubmitting) return;
     final localizations = AppLocalizations.of(context);
+    final remaining = _maxImages - _photos.length;
+    if (remaining <= 0) return;
+
+    final List<XFile> picked;
     try {
-      final XFile? image = await _imagePicker.pickImage(
-        source: ImageSource.gallery,
-        imageQuality: 85,
-      );
-      if (image != null && mounted) {
-        // Let the user crop and position the image
-        final croppedFile = await ImageCropScreen.show(
-          context,
-          File(image.path),
-          aspectRatio: 4 / 3,
-        );
-        if (croppedFile == null || !mounted) return;
-
-        // Check original file size before processing
-        final originalSize = await croppedFile.length();
-        final originalSizeMB = originalSize / (1024 * 1024);
-
-        // Show processing indicator for large files
-        if (originalSizeMB > 2) {
-          setState(() {
-            _uploadStatus =
-                localizations?.processingImage ?? "Processing image...";
-          });
-        }
-
-        // Compress and resize the cropped image
-        final result = await ImageUtils.compressImage(croppedFile);
-
-        setState(() {
-          _uploadStatus = null;
-        });
-
-        if (result != null) {
-          final compressedSize = await result.length();
-
-          // Validate file size after compression
-          if (compressedSize > ImageUtils.maxFileSizeBytes) {
-            final sizeMB = (compressedSize / (1024 * 1024)).toStringAsFixed(1);
-            final maxMB = (ImageUtils.maxFileSizeBytes / (1024 * 1024)).toStringAsFixed(0);
-            if (mounted) {
-              ErrorUtils.showError(
-                context,
-                localizations?.imageTooLarge(sizeMB, maxMB) ??
-                    "Image is too large (${sizeMB}MB). Maximum size is ${maxMB}MB. Please choose a smaller image.",
-              );
-            }
-            return;
-          }
-
-          setState(() {
-            _selectedImages.add(XFile(result.path));
-          });
-        } else {
-          // If compression fails, check if cropped file is within size limit
-          if (originalSize <= ImageUtils.maxFileSizeBytes) {
-            setState(() {
-              _selectedImages.add(XFile(croppedFile.path));
-            });
-          } else {
-            if (mounted) {
-              final maxMB = (ImageUtils.maxFileSizeBytes / (1024 * 1024)).toStringAsFixed(0);
-              ErrorUtils.showError(
-                context,
-                localizations?.imageCompressionFailed(maxMB) ??
-                    "Could not process image. Please choose an image smaller than ${maxMB}MB.",
-              );
-            }
-          }
-        }
+      if (remaining >= 2) {
+        picked = await _imagePicker.pickMultiImage(imageQuality: 85, limit: remaining);
+      } else {
+        // pickMultiImage needs a limit of at least 2.
+        final image = await _imagePicker.pickImage(source: ImageSource.gallery, imageQuality: 85);
+        picked = image == null ? const [] : [image];
       }
     } catch (e) {
+      if (mounted) ErrorUtils.showError(context, e);
+      return;
+    }
+    if (!mounted || picked.isEmpty) return;
+
+    // Some Android pickers ignore the limit: keep the first ones that fit.
+    final batch = picked.take(math.max(0, _maxImages - _photos.length)).toList();
+    final skippedForLimit = picked.length - batch.length;
+
+    setState(() => _pendingPhotos = batch.length);
+    final failures = <String>[];
+    for (final file in batch) {
+      final result = await _processPhoto(File(file.path), localizations);
+      if (!mounted) return;
       setState(() {
-        _uploadStatus = null;
+        _pendingPhotos--;
+        if (result.path != null) {
+          _photos.add(_LocalPhoto(path: result.path!, sourcePath: file.path));
+        }
       });
-      if (mounted) {
-        ErrorUtils.showError(context, e);
+      if (result.error != null) failures.add(result.error!);
+    }
+    if (!mounted) return;
+
+    final messages = [
+      if (skippedForLimit > 0)
+        localizations?.photosSkippedLimit(skippedForLimit, _maxImages) ??
+            "$skippedForLimit photos weren't added — max $_maxImages",
+      if (failures.length == 1)
+        failures.single
+      else if (failures.length > 1)
+        localizations?.photosSkippedTooLarge(failures.length) ??
+            "${failures.length} photos were too large and were skipped",
+    ];
+    if (messages.isNotEmpty) ErrorUtils.showError(context, messages.join("\n"));
+    _markChanged();
+  }
+
+  /// Same rules as the single-photo flow before multi-pick: use the
+  /// compressed copy unless it is still over 5 MB; if compression fails,
+  /// keep the file as it is when it's under the limit. Returns the file to
+  /// use, or the message to show.
+  Future<({String? path, String? error})> _processPhoto(
+    File file,
+    AppLocalizations? localizations,
+  ) async {
+    final maxMB = (ImageUtils.maxFileSizeBytes / (1024 * 1024)).toStringAsFixed(0);
+    final failed = localizations?.imageCompressionFailed(maxMB) ??
+        "Could not process image. Please choose an image smaller than ${maxMB}MB.";
+    try {
+      final result = await _compressInBackground(file.path);
+      if (result != null) {
+        final compressedSize = await result.length();
+        if (compressedSize > ImageUtils.maxFileSizeBytes) {
+          final sizeMB = (compressedSize / (1024 * 1024)).toStringAsFixed(1);
+          return (
+            path: null,
+            error: localizations?.imageTooLarge(sizeMB, maxMB) ??
+                "Image is too large (${sizeMB}MB). Maximum size is ${maxMB}MB. Please choose a smaller image.",
+          );
+        }
+        return (path: result.path, error: null);
       }
+      if (await file.length() <= ImageUtils.maxFileSizeBytes) {
+        return (path: file.path, error: null);
+      }
+      return (path: null, error: failed);
+    } catch (_) {
+      return (path: null, error: failed);
     }
   }
 
-  void _removeImage(int index) {
-    setState(() {
-      _selectedImages.removeAt(index);
-    });
-  }
+  /// [ImageUtils.compressImage] on a background isolate, so the spinners keep
+  /// turning while a batch decodes. Static so the closure captures only the
+  /// path.
+  static Future<File?> _compressInBackground(String path) =>
+      Isolate.run(() => ImageUtils.compressImage(File(path)));
 
-  void _removeExistingImage(int index) {
-    setState(() {
-      final removedImage = _existingImages.removeAt(index);
-      _removedImageIds.add(removedImage.id);
-    });
-  }
-
-  Future<void> _submit() async {
+  /// Crops a local photo starting from its original pick, so cropping again
+  /// doesn't crop the crop, then compresses the result into the photo.
+  Future<void> _cropPhoto(int index) async {
+    if (_isSubmitting || index >= _photos.length) return;
+    final photo = _photos[index];
+    if (photo is! _LocalPhoto) return;
     final localizations = AppLocalizations.of(context);
-    final errors = <String>[];
+
+    final source = [photo.sourcePath, photo.path].map(File.new).where((f) => f.existsSync()).firstOrNull;
+    if (source == null) {
+      final maxMB = (ImageUtils.maxFileSizeBytes / (1024 * 1024)).toStringAsFixed(0);
+      ErrorUtils.showError(
+        context,
+        localizations?.imageCompressionFailed(maxMB) ??
+            "Could not process image. Please choose an image smaller than ${maxMB}MB.",
+      );
+      return;
+    }
+
+    final cropped = await ImageCropScreen.show(context, source, aspectRatio: 4 / 3);
+    if (cropped == null || !mounted) return;
+    final result = await _processPhoto(cropped, localizations);
+    if (!mounted) return;
+    if (result.path == null) {
+      ErrorUtils.showError(context, result.error);
+      return;
+    }
+    if (!_photos.contains(photo)) return; // removed while cropping
+    setState(() => photo.path = result.path!);
+    _markChanged();
+  }
+
+  /// Removes at once (uploaded photos are deleted on save) and offers Undo
+  /// for 4 seconds.
+  void _removePhoto(int index) {
+    if (_isSubmitting || index >= _photos.length) return;
+    final photo = _photos[index];
+    setState(() {
+      _photos.removeAt(index);
+      if (photo is _ExistingPhoto) _removedImageIds.add(photo.image.id);
+    });
+    _markChanged();
+
+    final localizations = AppLocalizations.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(localizations?.photoRemoved ?? "Photo removed"),
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 4),
+        // A snack bar with an action stays up by default.
+        persist: false,
+        action: SnackBarAction(
+          label: localizations?.undo ?? "Undo",
+          onPressed: () => _undoRemovePhoto(photo, index),
+        ),
+      ),
+    );
+  }
+
+  void _undoRemovePhoto(_Photo photo, int index) {
+    if (!mounted || _isSubmitting || _submitted || _photos.contains(photo)) return;
+    if (_photos.length + _pendingPhotos >= _maxImages) {
+      final localizations = AppLocalizations.of(context);
+      ErrorUtils.showError(
+        context,
+        localizations?.photosSkippedLimit(1, _maxImages) ?? "1 photos weren't added — max $_maxImages",
+      );
+      return;
+    }
+    setState(() {
+      _photos.insert(math.min(index, _photos.length), photo);
+      if (photo is _ExistingPhoto) _removedImageIds.remove(photo.image.id);
+    });
+    _markChanged();
+  }
+
+  /// Moves the photo at [from] to index [to]; index 0 is the cover.
+  void _reorderPhotos(int from, int to) {
+    if (_isSubmitting || from == to) return;
+    if (from < 0 || from >= _photos.length || to < 0 || to >= _photos.length) return;
+    setState(() {
+      final photo = _photos.removeAt(from);
+      _photos.insert(to, photo);
+    });
+    _markChanged();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Validation and submit
+
+  /// The submit validation rules, in order, each tagged with the section it
+  /// belongs to.
+  List<(_Section, String)> _collectErrors() {
+    final localizations = AppLocalizations.of(context);
+    final errors = <(_Section, String)>[];
 
     // Title is required
     if (_titleController.text.trim().isEmpty) {
-      errors.add(localizations?.recipeTitleRequired ?? "Recipe title is required");
+      errors.add((_Section.basics, localizations?.recipeTitleRequired ?? "Recipe title is required"));
     }
 
     // At least one ingredient
     if (_ingredients.isEmpty) {
-      errors.add(localizations?.pleaseAddAtLeastOneIngredient ?? "Please add at least one ingredient");
+      errors.add((_Section.ingredients, localizations?.pleaseAddAtLeastOneIngredient ?? "Please add at least one ingredient"));
     } else {
       // Validate ingredient names
       for (var i = 0; i < _ingredients.length; i++) {
         if (_ingredients[i].nameController.text.trim().isEmpty) {
-          errors.add(localizations?.ingredientNameRequired(i) ?? "Ingredient ${i + 1}: name is required");
+          errors.add((_Section.ingredients, localizations?.ingredientNameRequired(i) ?? "Ingredient ${i + 1}: name is required"));
         }
       }
     }
 
     // At least one step
     if (_steps.isEmpty) {
-      errors.add(localizations?.pleaseAddAtLeastOneStep ?? "Please add at least one step");
+      errors.add((_Section.method, localizations?.pleaseAddAtLeastOneStep ?? "Please add at least one step"));
     } else {
       // Validate step instructions
       for (var i = 0; i < _steps.length; i++) {
         if (_steps[i].instructionController.text.trim().isEmpty) {
-          errors.add(localizations?.stepInstructionRequired(i) ?? "Step ${i + 1}: instruction is required");
+          errors.add((_Section.method, localizations?.stepInstructionRequired(i) ?? "Step ${i + 1}: instruction is required"));
         }
       }
     }
@@ -457,37 +729,95 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen>
     final cookingTimeMaxText = _cookingTimeMaxController.text.trim();
 
     if (cookingTimeMinText.isNotEmpty && int.tryParse(cookingTimeMinText) == null) {
-      errors.add(localizations?.minCookingTimeMustBeValidNumber ?? "Minimum cooking time must be a valid number");
+      errors.add((_Section.details, localizations?.minCookingTimeMustBeValidNumber ?? "Minimum cooking time must be a valid number"));
     }
     if (cookingTimeMaxText.isNotEmpty && int.tryParse(cookingTimeMaxText) == null) {
-      errors.add(localizations?.maxCookingTimeMustBeValidNumber ?? "Maximum cooking time must be a valid number");
+      errors.add((_Section.details, localizations?.maxCookingTimeMustBeValidNumber ?? "Maximum cooking time must be a valid number"));
     }
 
     final cookingTimeMin = cookingTimeMinText.isEmpty ? null : int.tryParse(cookingTimeMinText);
     final cookingTimeMax = cookingTimeMaxText.isEmpty ? null : int.tryParse(cookingTimeMaxText);
 
     if (cookingTimeMin != null && cookingTimeMax != null && cookingTimeMin > cookingTimeMax) {
-      errors.add(localizations?.minCookingTimeCannotBeGreater ?? "Minimum cooking time cannot be greater than maximum time");
+      errors.add((_Section.details, localizations?.minCookingTimeCannotBeGreater ?? "Minimum cooking time cannot be greater than maximum time"));
     }
 
-    // Trigger inline form field validation for visual feedback
-    _formKey.currentState!.validate();
+    return errors;
+  }
 
-    // Show the first error via snackbar
-    if (errors.isNotEmpty) {
-      ErrorUtils.showSnackBar(
-        context,
-        errors.first,
-        icon: Icons.error_outline,
-        backgroundColor: Theme.of(context).colorScheme.error,
-        iconColor: Colors.white,
-      );
+  Map<_Section, List<String>> _groupErrors(List<(_Section, String)> errors) {
+    final grouped = <_Section, List<String>>{};
+    for (final (section, message) in errors) {
+      (grouped[section] ??= []).add(message);
+    }
+    return grouped;
+  }
+
+  /// Shows [errors] under their section headers, scrolls to the first such
+  /// section and focuses its field.
+  void _showErrors(List<(_Section, String)> errors) {
+    final grouped = _groupErrors(errors);
+    final first = _Section.values.firstWhere(grouped.containsKey);
+
+    FocusNode? focus;
+    _IngredientItem? expand;
+    switch (first) {
+      case _Section.basics:
+        focus = _titleFocus;
+      case _Section.details:
+        focus = _maxTimeFocus;
+      case _Section.ingredients:
+        expand = _ingredients.where((i) => i.nameController.text.trim().isEmpty).firstOrNull;
+        focus = expand?.nameFocusNode;
+      case _Section.method:
+        focus = _steps.where((s) => s.instructionController.text.trim().isEmpty).firstOrNull?.focusNode;
+      case _Section.photos:
+      case _Section.tags:
+        break;
+    }
+
+    FocusScope.of(context).unfocus();
+    setState(() {
+      _sectionErrors = grouped;
+      if (expand != null) _expandedIngredient = expand;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final ctx = _sectionKeys[first]?.currentContext;
+      if (ctx != null && ctx.mounted) {
+        await Scrollable.ensureVisible(
+          ctx,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
+      if (mounted) focus?.requestFocus();
+    });
+  }
+
+  Future<void> _submit() async {
+    if (_pendingPhotos > 0) {
+      // The photos still being processed would be left out.
+      final localizations = AppLocalizations.of(context);
+      ErrorUtils.showInfo(context, localizations?.processingPhotos ?? "Processing photos…");
       return;
     }
+
+    final errors = _collectErrors();
+    if (errors.isNotEmpty) {
+      _showErrors(errors);
+      return;
+    }
+
+    // A draft save finishing after the success path's clearDraft would bring
+    // the published recipe back as a "Draft found".
+    _draftTimer?.cancel();
+    FocusScope.of(context).unfocus();
 
     setState(() {
       _isSubmitting = true;
       _error = null;
+      _sectionErrors = {};
     });
 
     try {
@@ -519,9 +849,13 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen>
 
       final api = RecipeApi(widget.apiClient);
 
-      // Convert XFile to File for upload
-      final imageFiles =
-          _selectedImages.map((xfile) => File(xfile.path)).toList();
+      // Snapshot: the loops below await, and the grid stays interactive.
+      final photos = List<_Photo>.of(_photos);
+      final newPhotos = photos.whereType<_LocalPhoto>().toList();
+      // Files to upload, in grid order.
+      final imageFiles = [for (final p in newPhotos) File(p.path)];
+      // Edit mode: the first photo upload that failed, if any.
+      Object? uploadError;
 
       // Show upload status
       if (mounted && imageFiles.isNotEmpty) {
@@ -586,26 +920,40 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen>
           }
         }
 
-        // Add new images
-        for (int i = 0; i < imageFiles.length; i++) {
+        // Upload new photos in grid order. The server appends each one, so
+        // a new photo that sits before an old one needs the reorder below.
+        final uploadedIds = <_LocalPhoto, String>{};
+        for (int i = 0; i < newPhotos.length; i++) {
           try {
             if (mounted) {
               setState(() {
-                _uploadStatus = "Uploading image ${i + 1} of ${imageFiles.length}...";
+                _uploadStatus = "Uploading image ${i + 1} of ${newPhotos.length}...";
               });
             }
-            await api.addRecipeImage(widget.recipeId!, imageFiles[i]);
+            uploadedIds[newPhotos[i]] = await api.addRecipeImage(widget.recipeId!, imageFiles[i]);
           } catch (e) {
             // Continue even if one image upload fails
+            uploadError ??= e;
           }
         }
 
-        // Reorder images if needed (existing images are already in the correct order)
-        // The new images will be appended, so we only need to reorder if user changed order
-        final allImageIds = _existingImages.map((img) => img.id).toList();
-        if (allImageIds.isNotEmpty) {
+        // The grid order, minus any photo that failed to upload.
+        final finalOrder = <String>[
+          for (final p in photos)
+            if (p is _ExistingPhoto) p.image.id else if (uploadedIds[p] != null) uploadedIds[p]!,
+        ];
+        // The server's order now: kept photos in their old order, then the
+        // uploads as appended.
+        final keptIds = {for (final p in photos) if (p is _ExistingPhoto) p.image.id};
+        final serverOrder = [
+          for (final img in widget.recipe!.images)
+            if (keptIds.contains(img.id)) img.id,
+          for (final p in newPhotos)
+            if (uploadedIds[p] != null) uploadedIds[p]!,
+        ];
+        if (finalOrder.isNotEmpty && !listEquals(finalOrder, serverOrder)) {
           try {
-            await api.reorderRecipeImages(widget.recipeId!, allImageIds);
+            await api.reorderRecipeImages(widget.recipeId!, finalOrder);
           } catch (e) {
             // Ignore reorder errors
           }
@@ -652,14 +1000,21 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen>
           _isSubmitting = false;
         });
         final localizations = AppLocalizations.of(context);
-        ErrorUtils.showSuccess(
-          context,
-          _isEditMode
-              ? (localizations?.recipeUpdatedSuccessfully ??
-                  "Recipe updated successfully")
-              : (localizations?.recipeCreatedSuccessfully ??
-                  "Recipe created successfully"),
-        );
+        if (uploadError != null) {
+          // The recipe itself was saved, so leave anyway (staying would
+          // upload the photos that did go through a second time), but say
+          // why a photo is missing.
+          ErrorUtils.showError(context, uploadError);
+        } else {
+          ErrorUtils.showSuccess(
+            context,
+            _isEditMode
+                ? (localizations?.recipeUpdatedSuccessfully ??
+                    "Recipe updated successfully")
+                : (localizations?.recipeCreatedSuccessfully ??
+                    "Recipe created successfully"),
+          );
+        }
         Navigator.of(context).pop(true); // Return true to indicate success
       }
     } catch (e) {
@@ -671,838 +1026,6 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen>
         });
       }
     }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final localizations = AppLocalizations.of(context);
-
-    return Scaffold(
-      backgroundColor: theme.colorScheme.surface,
-      body: Form(
-        key: _formKey,
-        child: CustomScrollView(
-          controller: _scrollController,
-          slivers: [
-            // Modern App Bar with Hero Image
-            _buildSliverAppBar(context, theme, localizations),
-
-            // Main Content
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
-              sliver: SliverList(
-                delegate: SliverChildListDelegate([
-                  const SizedBox(height: 24),
-
-                  // Basic Info Section
-                  _buildBasicInfoSection(context, theme, localizations),
-
-                  const SizedBox(height: 24),
-
-                  // Cooking Details Section
-                  _buildCookingDetailsSection(context, theme, localizations),
-
-                  const SizedBox(height: 24),
-
-                  // Tags Section
-                  _buildTagsSection(context, theme, localizations),
-
-                  const SizedBox(height: 24),
-
-                  // Ingredients Section
-                  _buildIngredientsSection(context, theme, localizations),
-
-                  const SizedBox(height: 24),
-
-                  // Steps Section
-                  _buildStepsSection(context, theme, localizations),
-
-                  const SizedBox(height: 32),
-
-                  // Error message
-                  if (_error != null) _buildErrorMessage(context, theme),
-
-                  // Upload status message
-                  if (_uploadStatus != null) _buildUploadStatus(context, theme),
-
-                  // Submit button
-                  _buildSubmitButton(context, theme, localizations),
-
-                  const SizedBox(height: 32),
-                ]),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSliverAppBar(
-      BuildContext context, ThemeData theme, AppLocalizations? localizations) {
-    final hasImages = _existingImages.isNotEmpty || _selectedImages.isNotEmpty;
-
-    return SliverAppBar(
-      expandedHeight: hasImages ? 280 : 320,
-      pinned: true,
-      stretch: true,
-      backgroundColor: theme.colorScheme.surface,
-      surfaceTintColor: Colors.transparent,
-      flexibleSpace: FlexibleSpaceBar(
-        background: _buildHeroImageSection(context, theme, localizations),
-        collapseMode: CollapseMode.pin,
-      ),
-      title: Text(
-        _isEditMode
-            ? (localizations?.editRecipe ?? "Edit Recipe")
-            : (localizations?.createRecipeTitle ?? "Create Recipe"),
-        style: TextStyle(
-          fontSize: 20,
-          fontWeight: FontWeight.w600,
-          color: theme.colorScheme.onSurface,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHeroImageSection(
-      BuildContext context, ThemeData theme, AppLocalizations? localizations) {
-    final hasImages = _existingImages.isNotEmpty || _selectedImages.isNotEmpty;
-
-    return Container(
-      color: theme.colorScheme.surface,
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 60, 20, 20),
-          child: hasImages
-              ? _buildImageGallery(context, theme, localizations)
-              : _buildEmptyImageUpload(context, theme, localizations),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEmptyImageUpload(
-      BuildContext context, ThemeData theme, AppLocalizations? localizations) {
-    return GestureDetector(
-      onTap: _pickImage,
-      child: CustomPaint(
-        painter: _DashedBorderPainter(
-          color: theme.colorScheme.outline.withValues(alpha: 0.4),
-          borderRadius: 20,
-          dashWidth: 8,
-          dashSpace: 6,
-          strokeWidth: 1.5,
-        ),
-        child: Container(
-          height: 240,
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-                Container(
-                  width: 64,
-                  height: 64,
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.primary.withValues(alpha: 0.12),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.add_photo_alternate_rounded,
-                    size: 32,
-                    color: theme.colorScheme.primary,
-                  ),
-                ),
-                const SizedBox(height: 14),
-                Text(
-                  localizations?.addCoverPhoto ?? "Add cover photo",
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: theme.colorScheme.onSurface,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  localizations?.tapToUpload ?? "Tap to upload",
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildImageGallery(
-      BuildContext context, ThemeData theme, AppLocalizations? localizations) {
-    final allImages = <Widget>[];
-
-    // Add existing images
-    for (var i = 0; i < _existingImages.length; i++) {
-      allImages.add(_buildImageTile(
-        context,
-        theme,
-        child: RecipeImageWidget(
-          imageUrl: _existingImages[i].url,
-          width: double.infinity,
-          height: double.infinity,
-          fit: BoxFit.cover,
-          cacheWidth: 400,
-          cacheHeight: 400,
-          placeholderSize: 24,
-        ),
-        onRemove: () => _removeExistingImage(i),
-        isFirst: i == 0 && _selectedImages.isEmpty,
-      ));
-    }
-
-    // Add new images
-    for (var i = 0; i < _selectedImages.length; i++) {
-      allImages.add(_buildImageTile(
-        context,
-        theme,
-        child: Image.file(
-          File(_selectedImages[i].path),
-          fit: BoxFit.cover,
-        ),
-        onRemove: () => _removeImage(i),
-        isFirst: i == 0 && _existingImages.isEmpty,
-      ));
-    }
-
-    // Add "add more" button
-    allImages.add(_buildAddMoreImageTile(context, theme));
-
-    return SizedBox(
-      height: 140,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: allImages.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 12),
-        itemBuilder: (context, index) => allImages[index],
-      ),
-    );
-  }
-
-  Widget _buildImageTile(
-    BuildContext context,
-    ThemeData theme, {
-    required Widget child,
-    required VoidCallback onRemove,
-    required bool isFirst,
-  }) {
-    return Stack(
-      children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(16),
-          child: SizedBox(
-            width: isFirst ? 180 : 120,
-            height: 140,
-            child: child,
-          ),
-        ),
-        // Cover badge for first image
-        if (isFirst)
-          Positioned(
-            left: 8,
-            bottom: 8,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.black54,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                "Cover",
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ),
-        // Remove button
-        Positioned(
-          top: 8,
-          right: 8,
-          child: GestureDetector(
-            onTap: onRemove,
-            child: Container(
-              width: 28,
-              height: 28,
-              decoration: BoxDecoration(
-                color: Colors.black54,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.close_rounded,
-                size: 16,
-                color: Colors.white,
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildAddMoreImageTile(BuildContext context, ThemeData theme) {
-    return GestureDetector(
-      onTap: _pickImage,
-      child: Container(
-        width: 100,
-        height: 140,
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: theme.colorScheme.outline.withValues(alpha: 0.2),
-            width: 2,
-          ),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.add_rounded,
-              size: 32,
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              "Add",
-              style: theme.textTheme.labelMedium?.copyWith(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSectionCard({
-    required BuildContext context,
-    required ThemeData theme,
-    required String title,
-    required IconData icon,
-    required Color iconColor,
-    required Widget child,
-    Widget? action,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerLowest,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: theme.colorScheme.outline.withValues(alpha: 0.08),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: theme.colorScheme.shadow.withValues(alpha: 0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 18, 12, 12),
-            child: Row(
-              children: [
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: iconColor.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(icon, size: 20, color: iconColor),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    title,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                if (action != null) action,
-              ],
-            ),
-          ),
-          // Content
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-            child: child,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBasicInfoSection(
-      BuildContext context, ThemeData theme, AppLocalizations? localizations) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Title label
-        Text(
-          (localizations?.title ?? "Recipe Title").toUpperCase(),
-          style: theme.textTheme.labelSmall?.copyWith(
-            color: theme.colorScheme.primary,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 1.2,
-          ),
-        ),
-        const SizedBox(height: 8),
-        _buildLabeledTextField(
-          controller: _titleController,
-          hint: localizations?.enterRecipeTitle ?? "e.g. Grandma's Sicilian Caponata",
-          theme: theme,
-          validator: (value) {
-            if (value == null || value.trim().isEmpty) {
-              return localizations?.recipeTitleRequired ?? "Recipe title is required";
-            }
-            return null;
-          },
-        ),
-        const SizedBox(height: 20),
-
-        // Description label
-        Text(
-          (localizations?.description ?? "Description").toUpperCase(),
-          style: theme.textTheme.labelSmall?.copyWith(
-            color: theme.colorScheme.primary,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 1.2,
-          ),
-        ),
-        const SizedBox(height: 8),
-        _buildLabeledTextField(
-          controller: _descriptionController,
-          hint: localizations?.describeYourRecipe ?? "Share the story behind this dish...",
-          theme: theme,
-          maxLines: 4,
-        ),
-      ],
-      ),
-    );
-  }
-
-  Widget _buildLabeledTextField({
-    required TextEditingController controller,
-    required String hint,
-    required ThemeData theme,
-    int maxLines = 1,
-    String? Function(String?)? validator,
-    void Function(String)? onSubmitted,
-  }) {
-    return TextFormField(
-      controller: controller,
-      maxLines: maxLines,
-      validator: validator,
-      onFieldSubmitted: onSubmitted,
-      style: theme.textTheme.bodyLarge,
-      decoration: InputDecoration(
-        hintText: hint,
-        hintStyle: TextStyle(
-          color: theme.colorScheme.onSurface.withValues(alpha: 0.35),
-        ),
-        filled: true,
-        fillColor: theme.colorScheme.surface,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide.none,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide.none,
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(
-            color: theme.colorScheme.primary,
-            width: 2,
-          ),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(
-            color: theme.colorScheme.error,
-            width: 1,
-          ),
-        ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      ),
-    );
-  }
-
-  Widget _buildCookingDetailsSection(
-      BuildContext context, ThemeData theme, AppLocalizations? localizations) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Cuisine label
-        Text(
-          (localizations?.cuisine ?? "Cuisine").toUpperCase(),
-          style: theme.textTheme.labelSmall?.copyWith(
-            color: theme.colorScheme.primary,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 1.2,
-          ),
-        ),
-        const SizedBox(height: 10),
-
-        // Cuisine text input
-        _buildLabeledTextField(
-          controller: _cuisineController,
-          hint: localizations?.cuisineExample ?? 'e.g., Italian, Mexican',
-          theme: theme,
-        ),
-        const SizedBox(height: 10),
-
-        // Cuisine chips (scrollable)
-        SizedBox(
-          height: 36,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: cuisineOptions.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 8),
-            itemBuilder: (context, index) {
-              final option = cuisineOptions[index];
-              final label = option.getLabel(localizations);
-              final isSelected = _cuisineController.text == label;
-              return GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _cuisineController.text = isSelected ? '' : label;
-                  });
-                },
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 180),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
-                  decoration: BoxDecoration(
-                    color: isSelected ? theme.colorScheme.primary : theme.colorScheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(
-                      color: isSelected
-                          ? theme.colorScheme.primary
-                          : theme.colorScheme.outline.withValues(alpha: 0.3),
-                    ),
-                  ),
-                  child: Text(
-                    label,
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      color: isSelected
-                          ? Colors.white
-                          : theme.colorScheme.onSurface.withValues(alpha: 0.75),
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-
-        const SizedBox(height: 24),
-
-        // Prep time
-        Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    (localizations?.minTimeMinutes ?? "Prep Time (min)").toUpperCase(),
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: theme.colorScheme.primary,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1.1,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  TextFormField(
-                    controller: _cookingTimeMinController,
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                    textAlign: TextAlign.center,
-                    onChanged: (_) => _validateCookingTime(),
-                    style: theme.textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.w500,
-                    ),
-                    decoration: InputDecoration(
-                      hintText: '20',
-                      hintStyle: TextStyle(
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
-                      ),
-                      filled: true,
-                      fillColor: theme.colorScheme.surface,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(
-                          color: theme.colorScheme.primary,
-                          width: 2,
-                        ),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 14),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    (localizations?.maxTimeMinutes ?? "Max Time (min)").toUpperCase(),
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: theme.colorScheme.primary,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1.1,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  TextFormField(
-                    controller: _cookingTimeMaxController,
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                    textAlign: TextAlign.center,
-                    onChanged: (_) => _validateCookingTime(),
-                    style: theme.textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.w500,
-                    ),
-                    decoration: InputDecoration(
-                      hintText: '45',
-                      hintStyle: TextStyle(
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
-                      ),
-                      filled: true,
-                      fillColor: theme.colorScheme.surface,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(
-                          color: theme.colorScheme.primary,
-                          width: 2,
-                        ),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 14),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        if (_cookingTimeError != null) ...[
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Icon(Icons.error_outline_rounded,
-                  size: 16, color: theme.colorScheme.error),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  _cookingTimeError!,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.error,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-
-        const SizedBox(height: 24),
-
-        // Servings
-        Text(
-          (localizations?.servingSize ?? "Servings").toUpperCase(),
-          style: theme.textTheme.labelSmall?.copyWith(
-            color: theme.colorScheme.primary,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 1.1,
-          ),
-        ),
-        const SizedBox(height: 8),
-        SizedBox(
-          width: 100,
-          child: TextFormField(
-            controller: _servingSizeController,
-            keyboardType: TextInputType.number,
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            textAlign: TextAlign.center,
-            style: theme.textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.w500,
-            ),
-            decoration: InputDecoration(
-              hintText: '4',
-              hintStyle: TextStyle(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
-              ),
-              filled: true,
-              fillColor: theme.colorScheme.surface,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(
-                  color: theme.colorScheme.primary,
-                  width: 2,
-                ),
-              ),
-              contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 12, vertical: 14),
-            ),
-          ),
-        ),
-
-        const SizedBox(height: 24),
-
-        // Difficulty label
-        Text(
-          (localizations?.difficulty ?? "Difficulty Level").toUpperCase(),
-          style: theme.textTheme.labelSmall?.copyWith(
-            color: theme.colorScheme.primary,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 1.2,
-          ),
-        ),
-        const SizedBox(height: 10),
-        Row(
-          children: [
-            _buildDifficultyChip(
-              theme,
-              label: localizations?.easy ?? "Easy",
-              value: Difficulty.easy,
-              triangleCount: 1,
-            ),
-            const SizedBox(width: 10),
-            _buildDifficultyChip(
-              theme,
-              label: localizations?.medium ?? "Medium",
-              value: Difficulty.medium,
-              triangleCount: 2,
-            ),
-            const SizedBox(width: 10),
-            _buildDifficultyChip(
-              theme,
-              label: localizations?.hard ?? "Hard",
-              value: Difficulty.hard,
-              triangleCount: 3,
-            ),
-          ],
-        ),
-      ],
-      ),
-    );
-  }
-
-  Widget _buildDifficultyChip(
-    ThemeData theme, {
-    required String label,
-    required Difficulty value,
-    required int triangleCount,
-  }) {
-    final isSelected = _selectedDifficulty == value;
-    final iconColor = isSelected
-        ? Colors.white
-        : theme.colorScheme.onSurface.withValues(alpha: 0.4);
-
-    return Expanded(
-      child: GestureDetector(
-        onTap: () {
-          setState(() {
-            _selectedDifficulty = isSelected ? null : value;
-          });
-        },
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          decoration: BoxDecoration(
-            color: isSelected ? theme.colorScheme.primary : theme.colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(
-                  triangleCount,
-                  (_) => Icon(
-                    Icons.change_history_rounded,
-                    color: iconColor,
-                    size: 18,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                label.toUpperCase(),
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: isSelected
-                      ? Colors.white
-                      : theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.8,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
   }
 
   void _validateCookingTime() {
@@ -1524,643 +1047,695 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen>
     });
   }
 
-  Widget _buildTagsSection(
-      BuildContext context, ThemeData theme, AppLocalizations? localizations) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(20),
+  /// When the minimum time ends up above the maximum, raise the maximum.
+  void _onMinTimeCommitted() {
+    final min = int.tryParse(_cookingTimeMinController.text.trim());
+    final max = int.tryParse(_cookingTimeMaxController.text.trim());
+    if (min != null && max != null && min > max) {
+      _cookingTimeMaxController.text = "$min";
+      _validateCookingTime();
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Preview
+
+  String _primaryLabel(AppLocalizations? l) =>
+      _isEditMode ? (l?.saveChanges ?? "Save Changes") : (l?.publish ?? "Publish");
+
+  Future<RecipePreviewAuthor?> _loadPreviewAuthor() async {
+    final recipe = widget.recipe;
+    if (_isEditMode && recipe != null) {
+      return RecipePreviewAuthor(
+        name: recipe.authorDisplayName ?? recipe.authorUsername,
+        avatarUrl: recipe.authorAvatarUrl,
+      );
+    }
+    try {
+      final me = await AuthApi(widget.apiClient).me();
+      if (me == null) return null;
+      final display = me["display_name"]?.toString();
+      final username = me["username"]?.toString() ?? "";
+      return RecipePreviewAuthor(
+        name: display != null && display.isNotEmpty && display != "null" ? display : username,
+        avatarUrl: me["avatar_url"]?.toString(),
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
+  RecipePreviewData _previewData() {
+    return RecipePreviewData(
+      title: _titleController.text.trim(),
+      description: _descriptionController.text.trim(),
+      cuisine: _cuisineController.text.trim(),
+      tags: List.of(_tags),
+      cookingTimeMin: int.tryParse(_cookingTimeMinController.text.trim()),
+      cookingTimeMax: int.tryParse(_cookingTimeMaxController.text.trim()),
+      servings: int.tryParse(_servingSizeController.text.trim()),
+      difficulty: _selectedDifficulty,
+      ingredients: [
+        for (final i in _ingredients)
+          if (i.nameController.text.trim().isNotEmpty)
+            RecipePreviewIngredient(
+              amount: ingredientAmountLabel(i.quantityController.text, i.unitController.text),
+              name: i.nameController.text.trim(),
+            ),
+      ],
+      steps: [
+        for (final s in _steps)
+          if (s.instructionController.text.trim().isNotEmpty) s.instructionController.text.trim(),
+      ],
+      images: [
+        for (final photo in _photos)
+          switch (photo) {
+            _ExistingPhoto(:final image) => RecipePreviewImage.url(image.url),
+            _LocalPhoto(:final path) => RecipePreviewImage.file(path),
+          },
+      ],
+    );
+  }
+
+  Future<void> _openPreview() async {
+    FocusScope.of(context).unfocus();
+    final l = AppLocalizations.of(context);
+    _previewAuthor ??= _loadPreviewAuthor();
+    final publish = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => RecipePreviewScreen(
+          data: _previewData(),
+          primaryLabel: _primaryLabel(l),
+          author: _previewAuthor!,
+        ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    );
+    // The preview only asks; _submit pops this screen on success, so it has
+    // to run once the preview is gone.
+    if (publish == true && mounted && !_isSubmitting) await _submit();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Build
+
+  bool get _titleDone => _titleController.text.trim().isNotEmpty;
+
+  bool get _ingredientsDone =>
+      _ingredients.isNotEmpty && _ingredients.every((i) => i.nameController.text.trim().isNotEmpty);
+
+  bool get _stepsDone =>
+      _steps.isNotEmpty && _steps.every((s) => s.instructionController.text.trim().isNotEmpty);
+
+  bool get _detailsDone =>
+      _cookingTimeMinController.text.trim().isNotEmpty ||
+      _cookingTimeMaxController.text.trim().isNotEmpty ||
+      _servingSizeController.text.trim().isNotEmpty ||
+      _selectedDifficulty != null ||
+      _cuisineController.text.trim().isNotEmpty;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppTokens.of(context);
+    final l = AppLocalizations.of(context);
+    final keyboardOpen = MediaQuery.viewInsetsOf(context).bottom > 0;
+
+    return Scaffold(
+      backgroundColor: t.bg,
+      resizeToAvoidBottomInset: true,
+      body: Column(
         children: [
-          // Categories label
-          Text(
-            (localizations?.tags ?? "Tags").toUpperCase(),
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: theme.colorScheme.primary,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 1.2,
-            ),
-          ),
-          const SizedBox(height: 10),
-          SizedBox(
-            height: 36,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: recipeCategories.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 8),
-              itemBuilder: (context, index) {
-                final category = recipeCategories[index];
-                final label = category.getLabel(localizations);
-                final isSelected = _tags.contains(label);
-                return GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      if (isSelected) {
-                        _tags.remove(label);
-                      } else {
-                        _tags.add(label);
-                      }
-                    });
-                  },
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 180),
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-                    decoration: BoxDecoration(
-                      color: isSelected ? theme.colorScheme.primary : theme.colorScheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(
-                        color: isSelected
-                            ? theme.colorScheme.primary
-                            : theme.colorScheme.outline.withValues(alpha: 0.3),
-                      ),
-                    ),
-                    child: Text(
-                      label,
-                      style: theme.textTheme.labelMedium?.copyWith(
-                        color: isSelected
-                            ? Colors.white
-                            : theme.colorScheme.onSurface.withValues(alpha: 0.75),
-                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                );
+          _buildTopBar(t, l),
+          Expanded(
+            child: GestureDetector(
+              // A tap on empty space ends editing and collapses the open
+              // ingredient row; taps on fields and buttons don't reach here.
+              behavior: HitTestBehavior.translucent,
+              onTap: () {
+                FocusScope.of(context).unfocus();
+                if (_expandedIngredient != null) setState(() => _expandedIngredient = null);
               },
-            ),
-          ),
-
-          const SizedBox(height: 16),
-
-          // Dietary label
-          Text(
-            (localizations?.dietaryPreferences ?? "Dietary").toUpperCase(),
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: theme.colorScheme.primary,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 1.2,
-            ),
-          ),
-          const SizedBox(height: 10),
-          SizedBox(
-            height: 36,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: dietaryPreferences.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 8),
-              itemBuilder: (context, index) {
-                final pref = dietaryPreferences[index];
-                final label = pref.getLabel(localizations);
-                final isSelected = _tags.contains(label);
-                return GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      if (isSelected) {
-                        _tags.remove(label);
-                      } else {
-                        _tags.add(label);
-                      }
-                    });
-                  },
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 180),
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-                    decoration: BoxDecoration(
-                      color: isSelected ? theme.colorScheme.primary : theme.colorScheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(
-                        color: isSelected
-                            ? theme.colorScheme.primary
-                            : theme.colorScheme.outline.withValues(alpha: 0.3),
-                      ),
-                    ),
-                    child: Text(
-                      label,
-                      style: theme.textTheme.labelMedium?.copyWith(
-                        color: isSelected
-                            ? Colors.white
-                            : theme.colorScheme.onSurface.withValues(alpha: 0.75),
-                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-
-          const SizedBox(height: 16),
-
-          // Custom tag input
-          Row(
-            children: [
-              Expanded(
-                child: _buildLabeledTextField(
-                  controller: _tagController,
-                  hint: localizations?.addTag ?? "Add a tag...",
-                  theme: theme,
-                  onSubmitted: (_) => _addTag(),
+              child: SingleChildScrollView(
+                controller: _scrollController,
+                // Held still while a photo is dragged in the grid.
+                physics: _photoDragActive ? const NeverScrollableScrollPhysics() : null,
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _buildPhotosSection(l),
+                    const SizedBox(height: 24),
+                    _buildBasicsSection(t, l),
+                    const SizedBox(height: 24),
+                    _buildDetailsSection(t, l),
+                    const SizedBox(height: 24),
+                    _buildTagsSection(t, l),
+                    const SizedBox(height: 24),
+                    _buildIngredientsSection(t, l),
+                    const SizedBox(height: 24),
+                    _buildMethodSection(l),
+                  ],
                 ),
               ),
-              const SizedBox(width: 12),
-              GestureDetector(
-                onTap: _addTag,
-                child: Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.primary,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(Icons.add_rounded, color: theme.colorScheme.onPrimary),
-                ),
-              ),
-            ],
-          ),
-
-          // Custom tags
-          if (_tags.any((t) =>
-              !recipeCategories.any((c) => c.getLabel(localizations) == t) &&
-              !dietaryPreferences.any((d) => d.getLabel(localizations) == t))) ...[
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: _tags
-                  .where((t) =>
-                      !recipeCategories.any((c) => c.getLabel(localizations) == t) &&
-                      !dietaryPreferences.any((d) => d.getLabel(localizations) == t))
-                  .map((tag) {
-                return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.primary,
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        tag,
-                        style: theme.textTheme.labelMedium?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      GestureDetector(
-                        onTap: () => _removeTag(tag),
-                        child: const Icon(
-                          Icons.close_rounded,
-                          size: 16,
-                          color: Colors.white70,
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }).toList(),
             ),
-          ],
+          ),
+          CreateRecipeBottomBar(
+            requiredDone: [_titleDone, _ingredientsDone, _stepsDone],
+            primaryLabel: _primaryLabel(l),
+            onPrimary: _submit,
+            onPreview: _openPreview,
+            isSubmitting: _isSubmitting,
+            keyboardOpen: keyboardOpen,
+            uploadStatus: _uploadStatus,
+            error: _error,
+            onDismissError: () => setState(() => _error = null),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildIngredientsSection(
-      BuildContext context, ThemeData theme, AppLocalizations? localizations) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildTopBar(AppTokens t, AppLocalizations? l) {
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 56),
+      child: Row(
         children: [
-          // Header
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                (localizations?.ingredients ?? "Ingredients").toUpperCase(),
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: theme.colorScheme.primary,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1.2,
-                ),
-              ),
-              if (_ingredients.isNotEmpty)
-                Text(
-                  "${_ingredients.length} ${(localizations?.ingredientUnit ?? 'items').toUpperCase()}",
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: theme.colorScheme.primary,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 1.0,
-                  ),
-                ),
-            ],
+          const SizedBox(width: 6),
+          IconButton(
+            onPressed: () => Navigator.of(context).maybePop(),
+            tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
+            icon: Icon(Icons.close_rounded, color: t.ink),
+            constraints: const BoxConstraints.tightFor(width: 44, height: 44),
+            padding: EdgeInsets.zero,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              _isEditMode
+                  ? (l?.editRecipe ?? "Edit Recipe")
+                  : (l?.createRecipe ?? "Create Recipe"),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: t.ink),
+            ),
+          ),
+          if (!_isEditMode && _draftSaved)
+            Padding(
+              padding: const EdgeInsets.only(left: 8),
+              child: Text(
+                "✓ ${l?.draftSaved ?? "Draft saved"}",
+                style: TextStyle(fontSize: 12, color: t.ink2),
+              ),
+            ),
+          const SizedBox(width: 16),
+        ],
+      ),
+    );
+  }
 
-          // Ingredient tiles
-          if (_ingredients.isNotEmpty) ...[
-            ReorderableListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              buildDefaultDragHandles: false,
-              itemCount: _ingredients.length,
-              onReorder: _reorderIngredients,
-              proxyDecorator: (child, index, animation) {
-                return AnimatedBuilder(
-                  animation: animation,
-                  builder: (context, child) {
-                    final animValue =
-                        Curves.easeInOut.transform(animation.value);
-                    final elevation = lerpDouble(0, 6, animValue)!;
-                    return Material(
-                      elevation: elevation,
-                      borderRadius: BorderRadius.circular(16),
-                      child: child,
-                    );
-                  },
-                  child: child,
-                );
-              },
-              itemBuilder: (context, index) {
-                return _IngredientTile(
-                  key: ValueKey(_ingredients[index]),
-                  ingredient: _ingredients[index],
-                  index: index,
-                  onRemove: () => _removeIngredient(index),
-                  onAddNew: _addIngredient,
-                  theme: theme,
-                  localizations: localizations,
-                );
+  /// Header (+ any validation messages) above a section's body.
+  Widget _section({
+    required _Section section,
+    required String title,
+    required bool complete,
+    String? caption,
+    required Widget child,
+  }) {
+    final errors = _sectionErrors[section];
+    return Column(
+      key: _sectionKeys[section],
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        FormSectionHeader(
+          number: section.index + 1,
+          title: title,
+          complete: complete,
+          caption: caption,
+        ),
+        if (errors != null && errors.isNotEmpty) FormSectionErrors(messages: errors),
+        const SizedBox(height: 12),
+        child,
+      ],
+    );
+  }
+
+  Widget _buildPhotosSection(AppLocalizations? l) {
+    final count = _imageCount;
+    return _section(
+      section: _Section.photos,
+      title: l?.sectionPhotos ?? "Photos",
+      complete: count > 0,
+      caption: count > 0
+          ? (l?.photoCount(count, _maxImages) ?? "$count / $_maxImages")
+          : (l?.optional ?? "Optional"),
+      child: PhotosSection(
+        photos: [
+          for (final photo in _photos)
+            PhotoGridItem(
+              id: photo,
+              canCrop: photo is _LocalPhoto,
+              image: switch (photo) {
+                // Width only: setting both cache dimensions squashes
+                // non-square photos.
+                _ExistingPhoto(:final image) => RecipeImageWidget(
+                    key: ValueKey(image.id),
+                    imageUrl: image.url,
+                    width: double.infinity,
+                    height: double.infinity,
+                    fit: BoxFit.cover,
+                    cacheWidth: 600,
+                    placeholderSize: 24,
+                  ),
+                // Keyed by path, so a re-crop shows the new file.
+                _LocalPhoto(:final path) => Image.file(
+                    File(path),
+                    key: ValueKey(path),
+                    fit: BoxFit.cover,
+                    cacheWidth: 600,
+                  ),
               },
             ),
+        ],
+        pendingCount: _pendingPhotos,
+        // Hidden while a pick is still being processed.
+        canAdd: _pendingPhotos == 0 && count < _maxImages,
+        onAdd: _pickImages,
+        onRemove: _removePhoto,
+        onCrop: _cropPhoto,
+        onReorder: _reorderPhotos,
+        onDragActiveChanged: (active) => setState(() => _photoDragActive = active),
+      ),
+    );
+  }
+
+  Widget _buildBasicsSection(AppTokens t, AppLocalizations? l) {
+    return _section(
+      section: _Section.basics,
+      title: l?.sectionBasics ?? "Basics",
+      complete: _titleDone,
+      child: FormSectionCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            FormFieldLabel(l?.title ?? "Title", required: true),
             const SizedBox(height: 8),
+            TextField(
+              controller: _titleController,
+              focusNode: _titleFocus,
+              textInputAction: TextInputAction.next,
+              textCapitalization: TextCapitalization.sentences,
+              style: tokenFieldStyle(t),
+              decoration: tokenInputDecoration(t, hint: l?.titleHint ?? "e.g. Adjarian khachapuri"),
+            ),
+            const SizedBox(height: 16),
+            FormFieldLabel(l?.description ?? "Description"),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _descriptionController,
+              minLines: 3,
+              maxLines: null,
+              keyboardType: TextInputType.multiline,
+              textCapitalization: TextCapitalization.sentences,
+              style: tokenFieldStyle(t),
+              decoration: tokenInputDecoration(
+                t,
+                hint: l?.descriptionHint ?? "What makes this dish special?",
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 18),
+              ),
+            ),
           ],
-
-          // Empty state
-          if (_ingredients.isEmpty) ...[
-            _buildEmptyState(
-              theme,
-              icon: Icons.shopping_basket_outlined,
-              message: localizations?.noIngredientsYet ?? "No ingredients yet. Add your first ingredient!",
-              onTap: _addIngredient,
-              localizations: localizations,
-            ),
-            const SizedBox(height: 12),
-          ],
-
-          // Add ingredient button (dashed)
-          GestureDetector(
-            onTap: _addIngredient,
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: theme.colorScheme.primary.withValues(alpha: 0.5),
-                  width: 1.5,
-                  // Dashed border workaround via custom painter below
-                ),
-                color: Colors.transparent,
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.add_rounded,
-                      color: theme.colorScheme.primary, size: 20),
-                  const SizedBox(width: 8),
-                  Text(
-                    (localizations?.add ?? "Add Ingredient")
-                        .toUpperCase(),
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      color: theme.colorScheme.primary,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1.1,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildStepsSection(
-      BuildContext context, ThemeData theme, AppLocalizations? localizations) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header
-          Text(
-            (localizations?.instruction ?? "Cooking Steps").toUpperCase(),
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: theme.colorScheme.primary,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 1.2,
-            ),
-          ),
-          const SizedBox(height: 16),
+  Widget _buildDetailsSection(AppTokens t, AppLocalizations? l) {
+    final error = Theme.of(context).colorScheme.error;
+    final timeLabel = l?.cookingTime ?? "Cooking time";
+    final minLabel = l?.minHint ?? "min";
+    final maxLabel = l?.maxHint ?? "max";
+    final servingsLabel = l?.servingSize ?? "Servings";
+    final showTimeError = _cookingTimeError != null && _sectionErrors[_Section.details] == null;
 
-          // Step tiles
-          if (_steps.isNotEmpty)
-            ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: _steps.length,
-              itemBuilder: (context, index) {
-                return _StepTile(
-                  key: ValueKey(_steps[index]),
-                  step: _steps[index],
-                  stepNumber: index + 1,
-                  onRemove: () => _removeStep(index),
-                  onAddNew: _addStep,
-                  theme: theme,
-                  localizations: localizations,
-                  isLast: index == _steps.length - 1,
-                );
-              },
-            ),
-
-          // Empty state
-          if (_steps.isEmpty) ...[
-            _buildEmptyState(
-              theme,
-              icon: Icons.format_list_numbered_outlined,
-              message: localizations?.noStepsYet ?? "No steps yet. Add your first step!",
-              onTap: _addStep,
-              localizations: localizations,
-            ),
-            const SizedBox(height: 12),
-          ],
-
-          if (_steps.isNotEmpty) const SizedBox(height: 8),
-
-          // Add step button
-          GestureDetector(
-            onTap: _addStep,
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: theme.colorScheme.primary.withValues(alpha: 0.5),
-                  width: 1.5,
-                ),
-                color: Colors.transparent,
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.format_list_bulleted_add,
-                      color: theme.colorScheme.primary, size: 20),
-                  const SizedBox(width: 8),
-                  Text(
-                    (localizations?.add ?? "Add Next Step").toUpperCase(),
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      color: theme.colorScheme.primary,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1.1,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEmptyState(
-    ThemeData theme, {
-    required IconData icon,
-    required String message,
-    required VoidCallback onTap,
-    AppLocalizations? localizations,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          const SizedBox(width: double.infinity),
-          Container(
-            width: 60,
-            height: 60,
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerHighest,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              icon,
-              size: 28,
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            message,
-            textAlign: TextAlign.center,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildModernTextField({
-    required TextEditingController controller,
-    required String label,
-    required String hint,
-    required ThemeData theme,
-    int maxLines = 1,
-    TextInputType? keyboardType,
-    List<TextInputFormatter>? inputFormatters,
-    IconData? prefixIcon,
-    String? Function(String?)? validator,
-    void Function(String)? onChanged,
-    void Function(String)? onSubmitted,
-  }) {
-    return TextFormField(
-      controller: controller,
-      maxLines: maxLines,
-      keyboardType: keyboardType,
-      inputFormatters: inputFormatters,
-      validator: validator,
-      onChanged: onChanged,
-      onFieldSubmitted: onSubmitted,
-      style: theme.textTheme.bodyLarge,
-      decoration: InputDecoration(
-        labelText: label.isNotEmpty ? label : null,
-        hintText: hint,
-        hintStyle: TextStyle(
-          color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
-        ),
-        prefixIcon: prefixIcon != null
-            ? Icon(
-                prefixIcon,
-                size: 20,
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-              )
-            : null,
-        filled: true,
-        fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide.none,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide.none,
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(
-            color: theme.colorScheme.primary,
-            width: 2,
-          ),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(
-            color: theme.colorScheme.error,
-            width: 1,
-          ),
-        ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      ),
-    );
-  }
-
-  Widget _buildErrorMessage(BuildContext context, ThemeData theme) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.errorContainer,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            Icons.error_outline_rounded,
-            color: theme.colorScheme.onErrorContainer,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              _error!,
-              style: TextStyle(
-                color: theme.colorScheme.onErrorContainer,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildUploadStatus(BuildContext context, ThemeData theme) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.primaryContainer,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 20,
-            height: 20,
-            child: CircularProgressIndicator(
-              strokeWidth: 2.5,
-              valueColor: AlwaysStoppedAnimation<Color>(
-                theme.colorScheme.onPrimaryContainer,
-              ),
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Text(
-              _uploadStatus!,
-              style: TextStyle(
-                color: theme.colorScheme.onPrimaryContainer,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSubmitButton(
-      BuildContext context, ThemeData theme, AppLocalizations? localizations) {
-    return FilledButton(
-      onPressed: _isSubmitting ? null : _submit,
-      style: FilledButton.styleFrom(
-        padding: const EdgeInsets.symmetric(vertical: 18),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        backgroundColor: theme.colorScheme.primary,
-      ),
-      child: _isSubmitting
-          ? SizedBox(
-              height: 22,
-              width: 22,
-              child: CircularProgressIndicator(
-                strokeWidth: 2.5,
-                color: theme.colorScheme.onPrimary,
-              ),
-            )
-          : Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+    return _section(
+      section: _Section.details,
+      title: l?.sectionDetails ?? "Details",
+      complete: _detailsDone,
+      caption: l?.optional ?? "Optional",
+      child: FormSectionCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Time range
+            FormFieldLabel(timeLabel, caption: l?.minutesShort ?? "min"),
+            const SizedBox(height: 8),
+            Row(
               children: [
-                Icon(
-                  _isEditMode ? Icons.save_rounded : Icons.publish_rounded,
-                  size: 22,
+                Expanded(
+                  child: NumberStepper(
+                    controller: _cookingTimeMinController,
+                    step: 5,
+                    placeholder: minLabel,
+                    fieldName: "$timeLabel ($minLabel)",
+                    onChanged: _validateCookingTime,
+                    onCommit: _onMinTimeCommitted,
+                  ),
                 ),
-                const SizedBox(width: 10),
-                Text(
-                  _isEditMode
-                      ? (localizations?.saveChanges ?? "Save Changes")
-                      : (localizations?.publishRecipe ?? "Publish Recipe"),
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: Text("–", style: TextStyle(fontSize: 16, color: t.ink2)),
+                ),
+                Expanded(
+                  child: NumberStepper(
+                    controller: _cookingTimeMaxController,
+                    focusNode: _maxTimeFocus,
+                    step: 5,
+                    placeholder: maxLabel,
+                    fieldName: "$timeLabel ($maxLabel)",
+                    // Start from the minimum so + doesn't land below it.
+                    emptyStart: () => math.max(5, int.tryParse(_cookingTimeMinController.text.trim()) ?? 0),
+                    onChanged: _validateCookingTime,
                   ),
                 ),
               ],
             ),
+            if (showTimeError) ...[
+              const SizedBox(height: 6),
+              Text(_cookingTimeError!, style: TextStyle(fontSize: 13, color: error)),
+            ],
+            const SizedBox(height: 18),
+
+            // Servings
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    servingsLabel,
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: t.ink),
+                  ),
+                ),
+                SizedBox(
+                  width: 150,
+                  child: NumberStepper(
+                    controller: _servingSizeController,
+                    step: 1,
+                    placeholder: "–",
+                    fieldName: servingsLabel,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 18),
+
+            // Difficulty
+            FormFieldLabel(l?.difficulty ?? "Difficulty"),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                _difficultyButton(t, label: l?.easy ?? "Easy", value: Difficulty.easy, dots: 1),
+                const SizedBox(width: 8),
+                _difficultyButton(t, label: l?.medium ?? "Medium", value: Difficulty.medium, dots: 2),
+                const SizedBox(width: 8),
+                _difficultyButton(t, label: l?.hard ?? "Hard", value: Difficulty.hard, dots: 3),
+              ],
+            ),
+            const SizedBox(height: 18),
+
+            // Cuisine
+            FormFieldLabel(l?.cuisine ?? "Cuisine"),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _cuisineController,
+              textInputAction: TextInputAction.done,
+              textCapitalization: TextCapitalization.sentences,
+              style: tokenFieldStyle(t),
+              decoration: tokenInputDecoration(t, hint: l?.cuisineExample ?? "e.g., Italian, Mexican"),
+            ),
+            const SizedBox(height: 6),
+            Wrap(
+              spacing: 8,
+              children: [
+                for (final option in cuisineOptions)
+                  Builder(builder: (context) {
+                    final label = option.getLabel(l);
+                    final isSelected = _cuisineController.text == label;
+                    return TokenChip(
+                      label: label,
+                      selected: isSelected,
+                      height: 34,
+                      onTap: () => _cuisineController.text = isSelected ? '' : label,
+                    );
+                  }),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _difficultyButton(
+    AppTokens t, {
+    required String label,
+    required Difficulty value,
+    required int dots,
+  }) {
+    final isSelected = _selectedDifficulty == value;
+    final color = isSelected ? t.brandInk : t.ink2;
+    return Expanded(
+      child: Semantics(
+        button: true,
+        selected: isSelected,
+        label: label,
+        excludeSemantics: true,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () {
+            setState(() {
+              _selectedDifficulty = isSelected ? null : value;
+            });
+            _markChanged();
+          },
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            constraints: const BoxConstraints(minHeight: 52),
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+            decoration: BoxDecoration(
+              color: isSelected ? t.soft : t.card,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: isSelected ? t.brand : t.line,
+                width: isSelected ? 1.5 : 1,
+              ),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    for (var i = 0; i < 3; i++)
+                      Container(
+                        width: 9,
+                        height: 9,
+                        margin: const EdgeInsets.symmetric(horizontal: 1.5),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: i < dots ? color : Colors.transparent,
+                          border: Border.all(color: color, width: 1.2),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  label,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                    color: color,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTagsSection(AppTokens t, AppLocalizations? l) {
+    final addChip = Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: DashedBox(
+        onTap: _openTagSheet,
+        radius: 18,
+        semanticLabel: l?.addTag ?? "Add a tag",
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 36),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.add_rounded, size: 16, color: t.brandInk),
+              const SizedBox(width: 4),
+              Text(
+                l?.addTagChip ?? "Tag",
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: t.brandInk),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    return _section(
+      section: _Section.tags,
+      title: l?.tags ?? "Tags",
+      complete: _tags.isNotEmpty,
+      caption: l?.optional ?? "Optional",
+      child: FormSectionCard(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Wrap(
+          spacing: 8,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            for (final tag in _tags) RemovableTagChip(label: tag, onRemove: () => _removeTag(tag)),
+            addChip,
+            if (_tags.isEmpty)
+              Text(
+                l?.tagsHint ?? "Category, diet or your own",
+                style: TextStyle(fontSize: 13, color: t.ink2),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildIngredientsSection(AppTokens t, AppLocalizations? l) {
+    return _section(
+      section: _Section.ingredients,
+      title: l?.ingredients ?? "Ingredients",
+      complete: _ingredientsDone,
+      caption: _ingredients.isNotEmpty
+          ? (l?.nIngredients(_ingredients.length) ?? "${_ingredients.length} ingredients")
+          : null,
+      child: FormSectionCard(
+        padding: EdgeInsets.zero,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (_ingredients.isNotEmpty)
+              ReorderableListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                padding: EdgeInsets.zero,
+                buildDefaultDragHandles: false,
+                itemCount: _ingredients.length,
+                onReorderItem: _reorderIngredients,
+                proxyDecorator: (child, index, animation) => _dragProxy(t, child, animation),
+                itemBuilder: (context, index) {
+                  final item = _ingredients[index];
+                  return IngredientRow(
+                    key: ObjectKey(item),
+                    index: index,
+                    nameController: item.nameController,
+                    quantityController: item.quantityController,
+                    unitController: item.unitController,
+                    nameFocusNode: item.nameFocusNode,
+                    expanded: _expandedIngredient == item,
+                    showDivider: index < _ingredients.length - 1,
+                    onExpand: () => _expandIngredient(item),
+                    onCollapse: () => _collapseIngredient(item),
+                    onRemove: () => _removeIngredient(_ingredients.indexOf(item)),
+                  );
+                },
+              ),
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: DashedAddButton(
+                label: l?.addIngredient ?? "Add ingredient",
+                onTap: _addIngredient,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMethodSection(AppLocalizations? l) {
+    final t = AppTokens.of(context);
+    return _section(
+      section: _Section.method,
+      title: l?.sectionMethod ?? "Method",
+      complete: _stepsDone,
+      caption: _steps.isNotEmpty ? (l?.nSteps(_steps.length) ?? "${_steps.length} steps") : null,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (_steps.isNotEmpty)
+            ReorderableListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              padding: EdgeInsets.zero,
+              buildDefaultDragHandles: false,
+              itemCount: _steps.length,
+              onReorderItem: _reorderSteps,
+              proxyDecorator: (child, index, animation) => _dragProxy(t, child, animation),
+              itemBuilder: (context, index) {
+                final step = _steps[index];
+                return StepCard(
+                  key: ObjectKey(step),
+                  index: index,
+                  controller: step.instructionController,
+                  focusNode: step.focusNode,
+                  onRemove: () => _removeStep(_steps.indexOf(step)),
+                );
+              },
+            ),
+          DashedAddButton(label: l?.addStep ?? "Add step", onTap: _addStep),
+        ],
+      ),
+    );
+  }
+
+  Widget _dragProxy(AppTokens t, Widget child, Animation<double> animation) {
+    return AnimatedBuilder(
+      animation: animation,
+      builder: (context, child) {
+        final elevation = lerpDouble(0, 6, Curves.easeInOut.transform(animation.value))!;
+        return Material(
+          elevation: elevation,
+          color: t.card,
+          borderRadius: BorderRadius.circular(16),
+          child: child,
+        );
+      },
+      child: child,
     );
   }
 }
 
-// Helper function
-double? lerpDouble(double a, double b, double t) {
-  return a + (b - a) * t;
+/// One photo in the form's grid: uploaded (edit mode) or picked here.
+sealed class _Photo {}
+
+final class _ExistingPhoto extends _Photo {
+  _ExistingPhoto(this.image);
+
+  final RecipeImage image;
+}
+
+final class _LocalPhoto extends _Photo {
+  _LocalPhoto({required this.path, required this.sourcePath});
+
+  /// The file that gets uploaded: compressed, and cropped if the user did.
+  String path;
+
+  /// The original pick, so each crop starts from the full image.
+  final String sourcePath;
 }
 
 class _IngredientItem {
@@ -2170,423 +1745,7 @@ class _IngredientItem {
   final FocusNode nameFocusNode = FocusNode();
 }
 
-class _IngredientTile extends StatefulWidget {
-  const _IngredientTile({
-    super.key,
-    required this.ingredient,
-    required this.index,
-    required this.onRemove,
-    required this.onAddNew,
-    required this.theme,
-    this.localizations,
-  });
-
-  final _IngredientItem ingredient;
-  final int index;
-  final VoidCallback onRemove;
-  final VoidCallback onAddNew;
-  final ThemeData theme;
-  final AppLocalizations? localizations;
-
-  @override
-  State<_IngredientTile> createState() => _IngredientTileState();
-}
-
-class _IngredientTileState extends State<_IngredientTile> {
-  @override
-  Widget build(BuildContext context) {
-    final ingredient = widget.ingredient;
-    final theme = widget.theme;
-    final localizations = widget.localizations;
-    final index = widget.index;
-    final onRemove = widget.onRemove;
-    final onAddNew = widget.onAddNew;
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          // Drag handle — only this part initiates the reorder drag
-          Listener(
-            onPointerDown: (_) => FocusScope.of(context).unfocus(),
-            child: ReorderableDragStartListener(
-              index: index,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(0, 0, 8, 0),
-                child: Icon(
-                  Icons.drag_handle_rounded,
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
-                  size: 22,
-                ),
-              ),
-            ),
-          ),
-          // Name + qty/unit fields
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                TextFormField(
-                  controller: ingredient.nameController,
-                  focusNode: ingredient.nameFocusNode,
-                  textInputAction: TextInputAction.next,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                  decoration: InputDecoration(
-                    labelText: localizations?.ingredient ?? "Ingredient",
-                    labelStyle: TextStyle(
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-                      fontSize: 13,
-                    ),
-                    hintText: localizations?.ingredientExample ?? "e.g., flour",
-                    hintStyle: TextStyle(
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
-                      fontWeight: FontWeight.w400,
-                    ),
-                    isDense: true,
-                    filled: true,
-                    fillColor: theme.colorScheme.surface,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide.none,
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide.none,
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(
-                        color: theme.colorScheme.primary,
-                        width: 1.5,
-                      ),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: ingredient.quantityController,
-                        keyboardType:
-                            const TextInputType.numberWithOptions(decimal: true),
-                        inputFormatters: [_DecimalNumberFormatter()],
-                        textInputAction: TextInputAction.next,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w500,
-                        ),
-                        decoration: InputDecoration(
-                          labelText: localizations?.quantity ?? "Qty",
-                          labelStyle: TextStyle(
-                            color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-                            fontSize: 12,
-                          ),
-                          hintText: localizations?.quantityExample ?? "e.g., 2",
-                          hintStyle: TextStyle(
-                            color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
-                            fontSize: 12,
-                            fontStyle: FontStyle.italic,
-                          ),
-                          isDense: true,
-                          filled: true,
-                          fillColor: theme.colorScheme.surface,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(
-                              color: theme.colorScheme.primary,
-                              width: 1.5,
-                            ),
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: TextFormField(
-                        controller: ingredient.unitController,
-                        textInputAction: TextInputAction.done,
-                        onFieldSubmitted: (_) => onAddNew(),
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w500,
-                        ),
-                        decoration: InputDecoration(
-                          labelText: localizations?.unit ?? "Unit",
-                          labelStyle: TextStyle(
-                            color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-                            fontSize: 12,
-                          ),
-                          hintText: localizations != null
-                              ? "${localizations.quantityExample.replaceAll(RegExp(r'\d.*'), '')}${localizations.cupsHint}"
-                              : "e.g., cups",
-                          hintStyle: TextStyle(
-                            color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
-                            fontSize: 12,
-                            fontStyle: FontStyle.italic,
-                          ),
-                          isDense: true,
-                          filled: true,
-                          fillColor: theme.colorScheme.surface,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(
-                              color: theme.colorScheme.primary,
-                              width: 1.5,
-                            ),
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-
-          // Delete button
-          Transform.translate(
-            offset: const Offset(8, 0),
-            child: GestureDetector(
-              onTap: onRemove,
-              child: Padding(
-                padding: const EdgeInsets.all(8),
-                child: Icon(
-                  Icons.delete_outline_rounded,
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
-                  size: 20,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _StepItem {
   final TextEditingController instructionController = TextEditingController();
-}
-
-/// Custom formatter that allows only numeric input with optional decimal point
-class _DecimalNumberFormatter extends TextInputFormatter {
-  @override
-  TextEditingValue formatEditUpdate(
-    TextEditingValue oldValue,
-    TextEditingValue newValue,
-  ) {
-    // Allow empty string
-    if (newValue.text.isEmpty) {
-      return newValue;
-    }
-
-    // Check if the new value is a valid decimal number
-    // Allow: digits, single decimal point, but not multiple decimal points
-    final regex = RegExp(r'^\d+\.?\d*$');
-
-    if (regex.hasMatch(newValue.text)) {
-      return newValue;
-    }
-
-    // If not valid, return the old value (prevent invalid input)
-    return oldValue;
-  }
-}
-
-class _StepTile extends StatelessWidget {
-  const _StepTile({
-    super.key,
-    required this.step,
-    required this.stepNumber,
-    required this.onRemove,
-    required this.onAddNew,
-    required this.theme,
-    required this.isLast,
-    this.localizations,
-  });
-
-  final _StepItem step;
-  final int stepNumber;
-  final VoidCallback onRemove;
-  final VoidCallback onAddNew;
-  final ThemeData theme;
-  final bool isLast;
-  final AppLocalizations? localizations;
-
-  @override
-  Widget build(BuildContext context) {
-    return IntrinsicHeight(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Number + connecting line
-          SizedBox(
-            width: 44,
-            child: Column(
-              children: [
-                Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.primary,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Center(
-                    child: Text(
-                      "$stepNumber",
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
-                ),
-                if (!isLast)
-                  Expanded(
-                    child: Container(
-                      width: 2,
-                      margin: const EdgeInsets.symmetric(vertical: 4),
-                      color: theme.colorScheme.primary.withValues(alpha: 0.2),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-
-          // Text field + delete
-          Expanded(
-            child: Padding(
-              padding: EdgeInsets.only(bottom: isLast ? 0 : 16),
-              child: Stack(
-                children: [
-                  TextFormField(
-                    controller: step.instructionController,
-                    maxLines: null,
-                    minLines: 2,
-                    style: theme.textTheme.bodyMedium,
-                    textInputAction: TextInputAction.newline,
-                    onFieldSubmitted: (_) => onAddNew(),
-                    decoration: InputDecoration(
-                      hintText: localizations?.describeThisStep ??
-                          "Describe this step...",
-                      hintStyle: TextStyle(
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.35),
-                      ),
-                      filled: true,
-                      fillColor: theme.colorScheme.surface,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        borderSide: BorderSide.none,
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        borderSide: BorderSide.none,
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        borderSide: BorderSide(
-                          color: theme.colorScheme.primary,
-                          width: 2,
-                        ),
-                      ),
-                      contentPadding: const EdgeInsets.fromLTRB(14, 12, 36, 12),
-                    ),
-                  ),
-                  // Delete button top-right
-                  Positioned(
-                    top: 4,
-                    right: 4,
-                    child: GestureDetector(
-                      onTap: onRemove,
-                      child: Padding(
-                        padding: const EdgeInsets.all(6),
-                        child: Icon(
-                          Icons.delete_outline_rounded,
-                          size: 18,
-                          color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _DashedBorderPainter extends CustomPainter {
-  const _DashedBorderPainter({
-    required this.color,
-    required this.borderRadius,
-    required this.dashWidth,
-    required this.dashSpace,
-    required this.strokeWidth,
-  });
-
-  final Color color;
-  final double borderRadius;
-  final double dashWidth;
-  final double dashSpace;
-  final double strokeWidth;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = strokeWidth
-      ..style = PaintingStyle.stroke;
-
-    final rrect = RRect.fromRectAndRadius(
-      Rect.fromLTWH(strokeWidth / 2, strokeWidth / 2,
-          size.width - strokeWidth, size.height - strokeWidth),
-      Radius.circular(borderRadius),
-    );
-
-    final path = Path()..addRRect(rrect);
-    final metrics = path.computeMetrics();
-
-    for (final metric in metrics) {
-      double distance = 0;
-      while (distance < metric.length) {
-        final start = distance;
-        final end = (distance + dashWidth).clamp(0.0, metric.length);
-        canvas.drawPath(metric.extractPath(start, end), paint);
-        distance += dashWidth + dashSpace;
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(_DashedBorderPainter oldDelegate) =>
-      color != oldDelegate.color ||
-      borderRadius != oldDelegate.borderRadius ||
-      dashWidth != oldDelegate.dashWidth ||
-      dashSpace != oldDelegate.dashSpace ||
-      strokeWidth != oldDelegate.strokeWidth;
+  final FocusNode focusNode = FocusNode();
 }

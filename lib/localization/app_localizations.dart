@@ -923,6 +923,61 @@ class AppLocalizations {
   String get continueDraft => _localizedValues[locale.languageCode]?["continueDraft"] ?? "Continue Draft";
   String get startFresh => _localizedValues[locale.languageCode]?["startFresh"] ?? "Start Fresh";
 
+  // Create / edit recipe (docs/create-recipe-redesign.md)
+  String get optional => _localizedValues[locale.languageCode]?["optional"] ?? "Optional";
+  String get draftSaved => _localizedValues[locale.languageCode]?["draftSaved"] ?? "Draft saved";
+  String get sectionPhotos => _localizedValues[locale.languageCode]?["sectionPhotos"] ?? "Photos";
+  String get sectionBasics => _localizedValues[locale.languageCode]?["sectionBasics"] ?? "Basics";
+  String get sectionDetails => _localizedValues[locale.languageCode]?["sectionDetails"] ?? "Details";
+  String get sectionMethod => _localizedValues[locale.languageCode]?["sectionMethod"] ?? "Method";
+  String get addPhotos => _localizedValues[locale.languageCode]?["addPhotos"] ?? "Add photos";
+  String get coverPhotoHint => _localizedValues[locale.languageCode]?["coverPhotoHint"] ?? "The first photo will be the cover";
+  String get coverBadge => _localizedValues[locale.languageCode]?["coverBadge"] ?? "Cover";
+  String nPhotos(int n) => (_localizedValues[locale.languageCode]?["nPhotos"] ?? "{n} photos").replaceAll("{n}", "$n");
+  String get removePhoto => _localizedValues[locale.languageCode]?["removePhoto"] ?? "Remove photo";
+  // Photo grid (docs/recipe-photos-grid.md)
+  String photoCount(int count, int max) => (_localizedValues[locale.languageCode]?["photoCount"] ?? "{count} / {max}").replaceAll("{count}", "$count").replaceAll("{max}", "$max");
+  String get cropPhoto => _localizedValues[locale.languageCode]?["cropPhoto"] ?? "Crop";
+  String get photoRemoved => _localizedValues[locale.languageCode]?["photoRemoved"] ?? "Photo removed";
+  String get undo => _localizedValues[locale.languageCode]?["undo"] ?? "Undo";
+  String get photosReorderHint => _localizedValues[locale.languageCode]?["photosReorderHint"] ?? "Tap a photo to crop it. To reorder, press and hold a photo for 1–2 seconds and drag it where you want.";
+  String get photosDropHint => _localizedValues[locale.languageCode]?["photosDropHint"] ?? "Drop it where you want it · first place is the cover";
+  String photosSkippedLimit(int n, int max) => (_localizedValues[locale.languageCode]?["photosSkippedLimit"] ?? "{n} photos weren't added — max {max}").replaceAll("{n}", "$n").replaceAll("{max}", "$max");
+  String photosSkippedTooLarge(int n) => (_localizedValues[locale.languageCode]?["photosSkippedTooLarge"] ?? "{n} photos were too large and were skipped").replaceAll("{n}", "$n");
+  String get processingPhotos => _localizedValues[locale.languageCode]?["processingPhotos"] ?? "Processing photos…";
+  String get moveEarlier => _localizedValues[locale.languageCode]?["moveEarlier"] ?? "Move earlier";
+  String get moveLater => _localizedValues[locale.languageCode]?["moveLater"] ?? "Move later";
+  String get makeCover => _localizedValues[locale.languageCode]?["makeCover"] ?? "Make cover";
+  String photoLabel(int n) => (_localizedValues[locale.languageCode]?["photoLabel"] ?? "Photo {n}").replaceAll("{n}", "$n");
+  String get titleHint => _localizedValues[locale.languageCode]?["titleHint"] ?? "e.g. Adjarian khachapuri";
+  String get descriptionHint => _localizedValues[locale.languageCode]?["descriptionHint"] ?? "What makes this dish special?";
+  String get cookingTime => _localizedValues[locale.languageCode]?["cookingTime"] ?? "Cooking time";
+  String get minutesShort => _localizedValues[locale.languageCode]?["minutesShort"] ?? "min";
+  String get minHint => _localizedValues[locale.languageCode]?["minHint"] ?? "min";
+  String get maxHint => _localizedValues[locale.languageCode]?["maxHint"] ?? "max";
+  String increaseValue(String field) => (_localizedValues[locale.languageCode]?["increaseValue"] ?? "Increase {field}").replaceAll("{field}", field);
+  String decreaseValue(String field) => (_localizedValues[locale.languageCode]?["decreaseValue"] ?? "Decrease {field}").replaceAll("{field}", field);
+  String get addTagChip => _localizedValues[locale.languageCode]?["addTagChip"] ?? "Tag";
+  String get tagsHint => _localizedValues[locale.languageCode]?["tagsHint"] ?? "Category, diet or your own";
+  String get tagSearchHint => _localizedValues[locale.languageCode]?["tagSearchHint"] ?? "Search or add your own";
+  String get tagCategory => _localizedValues[locale.languageCode]?["tagCategory"] ?? "Category";
+  String get customTags => _localizedValues[locale.languageCode]?["customTags"] ?? "Your own";
+  String tagsDone(int n) => (_localizedValues[locale.languageCode]?["tagsDone"] ?? "Done · {n}").replaceAll("{n}", "$n");
+  String removeTag(String tag) => (_localizedValues[locale.languageCode]?["removeTag"] ?? "Remove {tag}").replaceAll("{tag}", tag);
+  String get addIngredient => _localizedValues[locale.languageCode]?["addIngredient"] ?? "Add ingredient";
+  String nIngredients(int n) => (_localizedValues[locale.languageCode]?["nIngredients"] ?? "{n} ingredients").replaceAll("{n}", "$n");
+  String get amountHint => _localizedValues[locale.languageCode]?["amountHint"] ?? "Qty";
+  String get otherUnit => _localizedValues[locale.languageCode]?["otherUnit"] ?? "Other…";
+  String get addStep => _localizedValues[locale.languageCode]?["addStep"] ?? "Add step";
+  String nSteps(int n) => (_localizedValues[locale.languageCode]?["nSteps"] ?? "{n} steps").replaceAll("{n}", "$n");
+  String get dragToReorder => _localizedValues[locale.languageCode]?["dragToReorder"] ?? "Drag to reorder";
+  String requiredProgress(int done, int total) => (_localizedValues[locale.languageCode]?["requiredProgress"] ?? "{done} / {total} required").replaceAll("{done}", "$done").replaceAll("{total}", "$total");
+  String get readyToPublish => _localizedValues[locale.languageCode]?["readyToPublish"] ?? "Ready to publish";
+  String get preview => _localizedValues[locale.languageCode]?["preview"] ?? "Preview";
+  String get previewSubtitle => _localizedValues[locale.languageCode]?["previewSubtitle"] ?? "This is how others will see it";
+  String get publish => _localizedValues[locale.languageCode]?["publish"] ?? "Publish";
+  String get edit => _localizedValues[locale.languageCode]?["edit"] ?? "Edit";
+
   // Nutrition
   String get nutritionFacts => _localizedValues[locale.languageCode]?["nutritionFacts"] ?? "Nutrition Facts";
   String get calories => _localizedValues[locale.languageCode]?["calories"] ?? "Calories";
@@ -1804,6 +1859,60 @@ class AppLocalizations {
       "draftFoundMessage": "You have an unsaved recipe draft. Would you like to continue editing it?",
       "continueDraft": "Continue Draft",
       "startFresh": "Start Fresh",
+
+      // Create / edit recipe
+      "optional": "Optional",
+      "draftSaved": "Draft saved",
+      "sectionPhotos": "Photos",
+      "sectionBasics": "Basics",
+      "sectionDetails": "Details",
+      "sectionMethod": "Method",
+      "addPhotos": "Add photos",
+      "coverPhotoHint": "The first photo will be the cover",
+      "coverBadge": "Cover",
+      "nPhotos": "{n} photos",
+      "removePhoto": "Remove photo",
+      "photoCount": "{count} / {max}",
+      "cropPhoto": "Crop",
+      "photoRemoved": "Photo removed",
+      "undo": "Undo",
+      "photosReorderHint": "Tap a photo to crop it. To reorder, press and hold a photo for 1–2 seconds and drag it where you want.",
+      "photosDropHint": "Drop it where you want it · first place is the cover",
+      "photosSkippedLimit": "{n} photos weren't added — max {max}",
+      "photosSkippedTooLarge": "{n} photos were too large and were skipped",
+      "processingPhotos": "Processing photos…",
+      "moveEarlier": "Move earlier",
+      "moveLater": "Move later",
+      "makeCover": "Make cover",
+      "photoLabel": "Photo {n}",
+      "titleHint": "e.g. Adjarian khachapuri",
+      "descriptionHint": "What makes this dish special?",
+      "cookingTime": "Cooking time",
+      "minutesShort": "min",
+      "minHint": "min",
+      "maxHint": "max",
+      "increaseValue": "Increase {field}",
+      "decreaseValue": "Decrease {field}",
+      "addTagChip": "Tag",
+      "tagsHint": "Category, diet or your own",
+      "tagSearchHint": "Search or add your own",
+      "tagCategory": "Category",
+      "customTags": "Your own",
+      "tagsDone": "Done · {n}",
+      "removeTag": "Remove {tag}",
+      "addIngredient": "Add ingredient",
+      "nIngredients": "{n} ingredients",
+      "amountHint": "Qty",
+      "otherUnit": "Other…",
+      "addStep": "Add step",
+      "nSteps": "{n} steps",
+      "dragToReorder": "Drag to reorder",
+      "requiredProgress": "{done} / {total} required",
+      "readyToPublish": "Ready to publish",
+      "preview": "Preview",
+      "previewSubtitle": "This is how others will see it",
+      "publish": "Publish",
+      "edit": "Edit",
       // Nutrition
       "nutritionFacts": "Nutrition Facts",
       "calories": "Calories",
@@ -2678,6 +2787,60 @@ class AppLocalizations {
       "draftFoundMessage": "თქვენ გაქვთ შენახული რეცეპტი, რომლის ატვირთვაც არ დაგისრულებიათ. გსურთ გაგრძელება?",
       "continueDraft": "გაგრძელება",
       "startFresh": "თავიდან დაწყება",
+
+      // Create / edit recipe
+      "optional": "არასავალდებულო",
+      "draftSaved": "მონახაზი შენახულია",
+      "sectionPhotos": "ფოტოები",
+      "sectionBasics": "მთავარი",
+      "sectionDetails": "დეტალები",
+      "sectionMethod": "მომზადება",
+      "addPhotos": "ფოტოების დამატება",
+      "coverPhotoHint": "პირველი ფოტო გამოჩნდება გარეკანად",
+      "coverBadge": "გარეკანი",
+      "nPhotos": "{n} ფოტო",
+      "removePhoto": "ფოტოს წაშლა",
+      "photoCount": "{count} / {max}",
+      "cropPhoto": "მოჭრა",
+      "photoRemoved": "ფოტო წაიშალა",
+      "undo": "დაბრუნება",
+      "photosReorderHint": "სურათზე სწრაფი დაჭერით შეძლებთ მის მოჭრას. მათთვის ადგილების შესაცვლელად დააჭირეთ სურათს 1-2 წამის განმავლობაში და გადაიტანეთ სასურველ ადგილას.",
+      "photosDropHint": "გაუშვი სასურველ ადგილას · პირველ ადგილზე — გარეკანი",
+      "photosSkippedLimit": "{n} ფოტო არ დაემატა — მაქსიმუმ {max}",
+      "photosSkippedTooLarge": "{n} ფოტო ძალიან დიდი იყო და გამოტოვებულია",
+      "processingPhotos": "ფოტოების დამუშავება…",
+      "moveEarlier": "წინ გადატანა",
+      "moveLater": "უკან გადატანა",
+      "makeCover": "გარეკანად დაყენება",
+      "photoLabel": "ფოტო {n}",
+      "titleHint": "მაგ. აჭარული ხაჭაპური",
+      "descriptionHint": "რით არის ეს კერძი გამორჩეული?",
+      "cookingTime": "მომზადების დრო",
+      "minutesShort": "წუთი",
+      "minHint": "მინ.",
+      "maxHint": "მაქს.",
+      "increaseValue": "{field}: მომატება",
+      "decreaseValue": "{field}: დაკლება",
+      "addTagChip": "თეგი",
+      "tagsHint": "კატეგორია, დიეტა ან საკუთარი",
+      "tagSearchHint": "მოძებნე ან დაამატე საკუთარი",
+      "tagCategory": "კატეგორია",
+      "customTags": "საკუთარი",
+      "tagsDone": "მზადაა · {n}",
+      "removeTag": "{tag}: წაშლა",
+      "addIngredient": "ინგრედიენტის დამატება",
+      "nIngredients": "{n} ინგრედიენტი",
+      "amountHint": "რაოდ.",
+      "otherUnit": "სხვა…",
+      "addStep": "ნაბიჯის დამატება",
+      "nSteps": "{n} ნაბიჯი",
+      "dragToReorder": "გადაათრიე რიგის შესაცვლელად",
+      "requiredProgress": "{done} / {total} სავალდებულო",
+      "readyToPublish": "მზადაა გამოსაქვეყნებლად",
+      "preview": "გადახედვა",
+      "previewSubtitle": "ასე დაინახავენ სხვები",
+      "publish": "გამოქვეყნება",
+      "edit": "რედაქტირება",
       // Nutrition
       "nutritionFacts": "კვებითი ღირებულება",
       "calories": "კალორია",

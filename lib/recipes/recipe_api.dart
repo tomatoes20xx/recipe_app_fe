@@ -319,8 +319,9 @@ class RecipeApi {
     await api.delete("/recipes/$recipeId/bookmark", auth: true);
   }
 
-  /// Add an image to a recipe
-  Future<void> addRecipeImage(String recipeId, File image) async {
+  /// Adds an image to a recipe (appended last) and returns the new image's
+  /// id. The backend answers 201 `{ id, url, width, height, sort_order }`.
+  Future<String> addRecipeImage(String recipeId, File image) async {
     final length = await image.length();
     final filename = image.path.split('/').last;
     final contentType = _getContentTypeFromFilename(filename);
@@ -333,12 +334,17 @@ class RecipeApi {
       contentType: http.MediaType.parse(contentType),
     );
 
-    await api.postMultipart(
+    final data = await api.postMultipart(
       "/recipes/$recipeId/images",
       fields: {}, // No additional fields needed for image upload
       files: [multipartFile],
       auth: true,
     );
+    final id = data is Map ? data["id"]?.toString() : null;
+    if (id == null || id.isEmpty) {
+      throw const FormatException("Image upload response has no id");
+    }
+    return id;
   }
 
   /// Delete an image from a recipe

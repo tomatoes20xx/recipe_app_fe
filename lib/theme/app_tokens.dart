@@ -1,7 +1,8 @@
 import "package:flutter/material.dart";
 
 /// Colors for the bottom nav, Home feed header, sort sheet and Profile tab
-/// (see docs/navigation-redesign.md). The rest of the app still uses the
+/// (see docs/navigation-redesign.md), and the create/edit recipe screen
+/// (docs/create-recipe-redesign.md). The rest of the app still uses the
 /// global [ThemeData]; these do not feed into it.
 ///
 /// [brand] is too light for text (about 2.6:1 on white): use [brandInk] for
@@ -17,6 +18,8 @@ class AppTokens {
     required this.brandInk,
     required this.soft,
     required this.scrim,
+    required this.field,
+    required this.dashed,
   });
 
   final Color bg;
@@ -29,11 +32,21 @@ class AppTokens {
   final Color soft;
   final Color scrim;
 
+  /// Text-field and stepper fill.
+  final Color field;
+
+  /// Dashed borders of "add" buttons and tiles.
+  final Color dashed;
+
   /// Tab underline, active dot, radio, avatar ring. Never text.
   Color get brand => const Color(0xFF53B175);
 
   /// "+" button and completed streak day (white content on it).
   Color get fill => const Color(0xFF3F9E64);
+
+  /// Primary button background, e.g. Publish. White text on it passes 4.5:1,
+  /// which [fill] does not.
+  Color get primary => const Color(0xFF2E7D4F);
 
   /// Notification count (white text on it).
   Color get badge => const Color(0xFFC93C3C);
@@ -48,6 +61,8 @@ class AppTokens {
     brandInk: Color(0xFF2C7A4B),
     soft: Color(0xFFE7F4EC),
     scrim: Color(0x73101612),
+    field: Color(0xFFF1F3F0),
+    dashed: Color(0xFFB9C4BD),
   );
 
   static const dark = AppTokens._(
@@ -60,6 +75,8 @@ class AppTokens {
     brandInk: Color(0xFF7ED19D),
     soft: Color(0xFF1C3125),
     scrim: Color(0x99000000),
+    field: Color(0xFF222925),
+    dashed: Color(0xFF3A4540),
   );
 
   static AppTokens of(BuildContext context) =>
