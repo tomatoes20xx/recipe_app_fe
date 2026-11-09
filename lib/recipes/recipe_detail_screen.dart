@@ -7,7 +7,6 @@ import "../api/api_client.dart";
 import "../auth/auth_controller.dart";
 import "../auth/require_account.dart";
 import "../collections/add_to_collection_bottom_sheet.dart";
-import "../constants/cuisines.dart";
 import "../localization/app_localizations.dart";
 import "../screens/create_recipe_screen.dart";
 import "../screens/profile_screen.dart";
@@ -17,18 +16,18 @@ import "../utils/error_utils.dart";
 import "../utils/ui_utils.dart";
 import "../widgets/ingredient_action_bar.dart";
 import "../widgets/streak_celebration_overlay.dart";
-import "../widgets/section_title_widget.dart";
 import "../widgets/sharing/follower_selection_bottom_sheet.dart";
 import "../reports/report_bottom_sheet.dart";
 import "../reports/report_models.dart";
-import "../search/filter_terms.dart";
 import "comments_bottom_sheet.dart";
 import "liked_by_bottom_sheet.dart";
 import "recipe_api.dart";
 import "recipe_detail_controller.dart";
 import "../theme/app_tokens.dart";
 import "../widgets/common/app_bottom_sheet.dart";
+import "../widgets/empty_state_widget.dart";
 import "recipe_detail_models.dart";
+import "recipe_detail_parts.dart";
 import "recipe_sharing_controller.dart";
 
 class RecipeDetailScreen extends StatefulWidget {
@@ -450,7 +449,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
             child: Container(
-              color: Colors.white.withValues(alpha: 0.50),
+              color: AppTokens.of(context).bg.withValues(alpha: 0.5),
               child: SafeArea(
                 bottom: false,
                 child: Row(
@@ -512,34 +511,18 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                         return Center(child: Text(localizations?.notFound ?? "Not found"));
                       },
                     )
-                  : Stack(
-                      children: [
-                        // Hero image section (top 60%)
-                        _HeroImageSection(
-                          images: r.images,
-                          onImageTap: (index) => _openImageViewer(index, r.images),
+                  : RecipeDetailLayout(
+                      hero: RecipeHeroImages(
+                        count: r.images.length,
+                        onImageTap: (index) => _openImageViewer(index, r.images),
+                        imageBuilder: (context, index, height) => RecipeImageWidget(
+                          imageUrl: r.images[index].url,
+                          width: double.infinity,
+                          height: height,
+                          fit: BoxFit.cover,
                         ),
-                        // Draggable content sheet
-                        DraggableScrollableSheet(
-                          initialChildSize: 0.55,
-                          minChildSize: 0.55,
-                          maxChildSize: 0.95,
-                          snap: true,
-                          snapSizes: const [0.55, 0.95],
-                          builder: (context, scrollController) {
-                            return Container(
-                              decoration: BoxDecoration(
-                                color: Theme.of(context).colorScheme.surface,
-                                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.1),
-                                    blurRadius: 10,
-                                    offset: const Offset(0, -2),
-                                  ),
-                                ],
-                              ),
-                              child: RefreshIndicator(
+                      ),
+                      sheetChild: (scrollController) => RefreshIndicator(
                                 onRefresh: c.refresh,
                                 child: SingleChildScrollView(
                                   controller: scrollController,
@@ -593,10 +576,6 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                                   ),
                                 ),
                               ),
-                            );
-                          },
-                        ),
-                      ],
                     ),
       bottomNavigationBar: _isSelectionMode && _selectedForShopping.isNotEmpty && r != null
           ? IngredientActionBar(
@@ -628,123 +607,8 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
   }
 }
 
-// Hero Image Section with gradient overlay
-class _HeroImageSection extends StatefulWidget {
-  const _HeroImageSection({
-    required this.images,
-    required this.onImageTap,
-  });
-
-  final List<RecipeImage> images;
-  final Function(int) onImageTap;
-
-  @override
-  State<_HeroImageSection> createState() => _HeroImageSectionState();
-}
-
-class _HeroImageSectionState extends State<_HeroImageSection> {
-  final PageController _pageController = PageController();
-  int _currentPage = 0;
-
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final height = MediaQuery.of(context).size.height * 0.6;
-
-    return SizedBox(
-      height: height,
-      width: double.infinity,
-      child: Stack(
-        children: [
-          // Image gallery
-          if (widget.images.isNotEmpty)
-            PageView.builder(
-              controller: _pageController,
-              onPageChanged: (index) => setState(() => _currentPage = index),
-              itemCount: widget.images.length,
-              itemBuilder: (context, index) {
-                final image = widget.images[index];
-                return GestureDetector(
-                  onTap: () => widget.onImageTap(index),
-                  child: RecipeImageWidget(
-                    imageUrl: image.url,
-                    width: double.infinity,
-                    height: height,
-                    fit: BoxFit.cover,
-                  ),
-                );
-              },
-            )
-          else
-            const RecipeFallbackImage(
-              width: double.infinity,
-              height: double.infinity,
-              iconSize: 120,
-            ),
-
-          // Gradient overlay at bottom
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              height: 150,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.transparent,
-                    Colors.black.withValues(alpha: 0.6),
-                  ],
-                ),
-              ),
-            ),
-          ),
-
-          // Page indicators
-          if (widget.images.length > 1)
-            Positioned(
-              bottom: 80,
-              left: 0,
-              right: 0,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(
-                  widget.images.length,
-                  (index) => Container(
-                    width: 8,
-                    height: 8,
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: _currentPage == index
-                          ? Colors.white
-                          : Colors.white.withValues(alpha: 0.5),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.3),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-// Content Body widget
+// Content Body widget: the published recipe in the shared layout
+// (recipe_detail_parts.dart), with the page's live counts and actions.
 class _ContentBody extends StatelessWidget {
   const _ContentBody({
     required this.recipe,
@@ -802,977 +666,98 @@ class _ContentBody extends StatelessWidget {
   final int shareCount;
   final VoidCallback onShareTap;
 
+  void _openAuthor(BuildContext context) {
+    if (auth == null) {
+      ErrorUtils.showError(context, AppLocalizations.of(context)?.logInToViewProfiles ?? "Log in to view profiles");
+      return;
+    }
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ProfileScreen(
+          auth: auth!,
+          apiClient: apiClient,
+          shoppingListController: shoppingListController,
+          username: recipe.authorUsername,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Drag handle
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
+    final servings = recipe.servingSize;
+    final scaleFactor = (servings != null && servings > 0 && selectedServings != null)
+        ? selectedServings! / servings
+        : 1.0;
 
-          // Title
-          Text(
-            recipe.title,
-            style: TextStyle(
-              fontSize: 26,
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).colorScheme.onSurface,
-              height: 1.2,
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          // User Info Row
-          _UserInfoRow(r: recipe, apiClient: apiClient, auth: auth, shoppingListController: shoppingListController),
-          const SizedBox(height: 16),
-
-          // Description
-          if (recipe.description != null && recipe.description!.trim().isNotEmpty) ...[
-            Text(
-              recipe.description!,
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    height: 1.6,
-                  ),
-            ),
-            const SizedBox(height: 16),
-          ],
-
-          // Engagement Bar
-          _EngagementBar(
-            counts: counts,
-            viewerHasLiked: viewerHasLiked,
-            viewerHasBookmarked: viewerHasBookmarked,
-            isLiking: isLiking,
-            isBookmarking: isBookmarking,
-            onLikeTap: onLikeTap,
-            onLikeLongPress: onLikeLongPress,
-            onBookmarkTap: onBookmarkTap,
-            onBookmarkLongPress: onBookmarkLongPress,
-            onCommentTap: onCommentTap,
-            isOwner: isOwner,
-            shareCount: shareCount,
-            onShareTap: onShareTap,
-          ),
-          const SizedBox(height: 16),
-
-          // Quick Info Bar
-          if (recipe.cookingTimeMin != null || recipe.cookingTimeMax != null || recipe.difficulty != null || recipe.servingSize != null) ...[
-            _QuickInfoBar(
+    return RecipeDetailContent(
+      title: recipe.title,
+      authorRow: RecipeAuthorRow(
+        username: recipe.authorUsername,
+        displayName: recipe.authorDisplayName,
+        avatarUrl: recipe.authorAvatarUrl,
+        date: recipe.createdAt,
+        onTap: () => _openAuthor(context),
+      ),
+      description: recipe.description,
+      engagement: RecipeEngagementBar(
+        likes: counts.likes,
+        comments: counts.comments,
+        bookmarks: counts.bookmarks,
+        shares: shareCount,
+        viewerHasLiked: viewerHasLiked,
+        viewerHasBookmarked: viewerHasBookmarked,
+        isLiking: isLiking,
+        isBookmarking: isBookmarking,
+        onLikeTap: onLikeTap,
+        onLikeLongPress: onLikeLongPress,
+        onCommentTap: onCommentTap,
+        onBookmarkTap: onBookmarkTap,
+        onBookmarkLongPress: onBookmarkLongPress,
+        onShareTap: onShareTap,
+      ),
+      quickInfo: RecipeQuickInfoBar.hasContent(
+        cookingTimeMin: recipe.cookingTimeMin,
+        cookingTimeMax: recipe.cookingTimeMax,
+        difficulty: recipe.difficulty,
+        servings: servings,
+      )
+          ? RecipeQuickInfoBar(
               cookingTimeMin: recipe.cookingTimeMin,
               cookingTimeMax: recipe.cookingTimeMax,
               difficulty: recipe.difficulty,
-              originalServings: recipe.servingSize,
+              originalServings: servings,
               selectedServings: selectedServings,
               onServingsChanged: onServingsChanged,
+            )
+          : null,
+      tags: recipe.tags,
+      ingredients: recipe.ingredients.isEmpty
+          ? null
+          : RecipeIngredientsSection(
+              lines: [
+                for (final ing in recipe.ingredients) RecipeIngredientLine.fromIngredient(ing, scaleFactor),
+              ],
+              checkedIds: checkedIngredients,
+              selectedIds: selectedForShopping,
+              isSelectionMode: isSelectionMode,
+              onToggle: onToggleIngredient,
             ),
-            const SizedBox(height: 16),
-          ],
-
-          // Tags
-          if (recipe.tags.isNotEmpty) ...[
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: recipe.tags.map((tag) => _HashtagPill(tag: tag)).toList(),
-            ),
-            const SizedBox(height: 28),
-          ],
-
-          // Ingredients Section
-          if (recipe.ingredients.isNotEmpty) ...[
-            Builder(builder: (context) {
-              final scaleFactor = (recipe.servingSize != null && recipe.servingSize! > 0 && selectedServings != null)
-                  ? selectedServings! / recipe.servingSize!
-                  : 1.0;
-              return _IngredientsSection(
-                ingredients: recipe.ingredients,
-                checkedIds: checkedIngredients,
-                selectedIds: selectedForShopping,
-                isSelectionMode: isSelectionMode,
-                onToggle: onToggleIngredient,
-                scaleFactor: scaleFactor,
-              );
-            }),
-            const SizedBox(height: 16),
-          ],
-
-          // Nutrition Panel
-          _NutritionPanel(
-            recipeId: recipe.id,
-            apiClient: apiClient,
-            scaleFactor: (recipe.servingSize != null && recipe.servingSize! > 0)
-                ? 1.0 / recipe.servingSize!
-                : 1.0,
-            isPerServing: recipe.servingSize != null,
-          ),
-          const SizedBox(height: 24),
-
-          // Steps Section
-          if (recipe.steps.isNotEmpty)
-            _StepsSection(steps: recipe.steps),
-
-          const SizedBox(height: 24),
-
-          // "Made It!" cook button (guests are asked to sign in on tap)
-          if (auth != null)
-            _MadeItButton(
+      nutrition: _NutritionPanel(
+        recipeId: recipe.id,
+        apiClient: apiClient,
+        scaleFactor: (servings != null && servings > 0) ? 1.0 / servings : 1.0,
+        isPerServing: servings != null,
+      ),
+      steps: [for (final step in recipe.steps) step.instruction],
+      // "Made It!" cook button (guests are asked to sign in on tap)
+      footer: auth == null
+          ? null
+          : _MadeItButton(
               isCooking: isCooking,
               cookedThisSession: cookedThisSession,
               onTap: onCookTap,
             ),
-        ],
-      ),
-    );
-  }
-}
-
-// Quick Info Bar widget
-class _QuickInfoBar extends StatelessWidget {
-  const _QuickInfoBar({
-    this.cookingTimeMin,
-    this.cookingTimeMax,
-    this.difficulty,
-    this.originalServings,
-    this.selectedServings,
-    this.onServingsChanged,
-  });
-
-  final int? cookingTimeMin;
-  final int? cookingTimeMax;
-  final String? difficulty;
-  final int? originalServings;
-  final int? selectedServings;
-  final ValueChanged<int>? onServingsChanged;
-
-  String _getLocalizedDifficulty(AppLocalizations? l) {
-    switch (difficulty?.toLowerCase()) {
-      case "easy":
-        return l?.easy ?? "Easy";
-      case "medium":
-        return l?.medium ?? "Medium";
-      case "hard":
-        return l?.hard ?? "Hard";
-      default:
-        return difficulty!;
-    }
-  }
-
-  Color _getDifficultyColor(BuildContext context) {
-    switch (difficulty?.toLowerCase()) {
-      case "easy":
-        return Colors.green;
-      case "medium":
-        return Colors.orange;
-      case "hard":
-        return Colors.red;
-      default:
-        return Theme.of(context).colorScheme.primary;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final localizations = AppLocalizations.of(context);
-    final primary = Theme.of(context).colorScheme.primary;
-
-    final hasTime = cookingTimeMin != null || cookingTimeMax != null;
-    final hasDifficulty = difficulty != null;
-    final hasServings = originalServings != null;
-    if (!hasTime && !hasDifficulty && !hasServings) return const SizedBox.shrink();
-
-    final divider = Container(
-      width: 1,
-      height: 32,
-      color: Theme.of(context).colorScheme.outlineVariant,
-    );
-
-    return Container(
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (hasTime)
-            Expanded(
-              child: _QuickInfoItem(
-                icon: Icons.schedule,
-                iconColor: primary,
-                label: localizations?.prepTime ?? "PREP TIME",
-                value: formatCookingTime(localizations, cookingTimeMin, cookingTimeMax)!,
-              ),
-            ),
-          if (hasTime && hasDifficulty) divider,
-          if (hasDifficulty)
-            Expanded(
-              child: _QuickInfoItem(
-                icon: Icons.bolt,
-                iconColor: primary,
-                label: localizations?.difficulty ?? "DIFFICULTY",
-                value: _getLocalizedDifficulty(localizations),
-              ),
-            ),
-          if ((hasTime || hasDifficulty) && hasServings) divider,
-          if (hasServings)
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.people_outline, size: 22, color: primary),
-                    const SizedBox(height: 4),
-                    FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Text(
-                        (localizations?.servingSize ?? "SERVINGS").toUpperCase(),
-                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
-                              letterSpacing: 0.8,
-                            ),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        GestureDetector(
-                          onTap: () {
-                            final current = selectedServings ?? originalServings!;
-                            if (current > 1) onServingsChanged?.call(current - 1);
-                          },
-                          child: Icon(
-                            Icons.remove_circle_outline,
-                            size: 20,
-                            color: (selectedServings ?? originalServings!) > 1
-                                ? primary
-                                : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          '${selectedServings ?? originalServings}',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                fontWeight: FontWeight.w700,
-                              ),
-                        ),
-                        const SizedBox(width: 6),
-                        GestureDetector(
-                          onTap: () {
-                            final current = selectedServings ?? originalServings!;
-                            if (current < 99) onServingsChanged?.call(current + 1);
-                          },
-                          child: Icon(Icons.add_circle_outline, size: 20, color: primary),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _QuickInfoItem extends StatelessWidget {
-  const _QuickInfoItem({
-    required this.icon,
-    required this.iconColor,
-    required this.label,
-    required this.value,
-    this.valueColor,
-  });
-
-  final IconData icon;
-  final Color iconColor;
-  final String label;
-  final String value;
-  final Color? valueColor;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 22, color: iconColor),
-          const SizedBox(height: 4),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text(
-              label.toUpperCase(),
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
-                    letterSpacing: 0.8,
-                  ),
-            ),
-          ),
-          const SizedBox(height: 2),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text(
-              value,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: valueColor ?? Theme.of(context).colorScheme.onSurface,
-                  ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _InfoChip extends StatelessWidget {
-  const _InfoChip({
-    required this.icon,
-    required this.label,
-    this.color,
-  });
-
-  final IconData icon;
-  final String label;
-  final Color? color;
-
-  @override
-  Widget build(BuildContext context) {
-    final chipColor = color ?? Theme.of(context).colorScheme.primary;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: chipColor.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: chipColor.withValues(alpha: 0.3),
-          width: 1,
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 16, color: chipColor),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: chipColor,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// Vertical Engagement sidebar widget
-class _VerticalEngagementBar extends StatelessWidget {
-  const _VerticalEngagementBar({
-    required this.counts,
-    required this.viewerHasLiked,
-    required this.viewerHasBookmarked,
-    required this.isLiking,
-    required this.isBookmarking,
-    required this.onLikeTap,
-    this.onLikeLongPress,
-    required this.onBookmarkTap,
-    this.onBookmarkLongPress,
-    required this.onCommentTap,
-    required this.isOwner,
-    required this.shareCount,
-    required this.onShareTap,
-  });
-
-  final RecipeCounts counts;
-  final bool viewerHasLiked;
-  final bool viewerHasBookmarked;
-  final bool isLiking;
-  final bool isBookmarking;
-  final VoidCallback onLikeTap;
-  final VoidCallback? onLikeLongPress;
-  final VoidCallback onBookmarkTap;
-  final VoidCallback? onBookmarkLongPress;
-  final VoidCallback onCommentTap;
-  final bool isOwner;
-  final int shareCount;
-  final VoidCallback onShareTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _EngagementButton(
-            icon: viewerHasLiked ? Icons.favorite : Icons.favorite_border,
-            count: counts.likes,
-            isActive: viewerHasLiked,
-            isLoading: isLiking,
-            onTap: onLikeTap,
-            onLongPress: onLikeLongPress,
-            activeColor: const Color(0xFFE53935),
-          ),
-          _EngagementButton(
-            icon: Icons.chat_bubble_outline,
-            count: counts.comments,
-            onTap: onCommentTap,
-          ),
-          _EngagementButton(
-            icon: viewerHasBookmarked ? Icons.bookmark : Icons.bookmark_border,
-            count: counts.bookmarks,
-            isActive: viewerHasBookmarked,
-            isLoading: isBookmarking,
-            onTap: onBookmarkTap,
-            onLongPress: onBookmarkLongPress,
-            // Saved = filled icon in the text color, as on the feed card;
-            // only likes are red.
-            activeColor: Theme.of(context).colorScheme.onSurface,
-          ),
-          _EngagementButton(
-            icon: Icons.share,
-            count: shareCount,
-            onTap: onShareTap,
-            activeColor: Theme.of(context).colorScheme.primary,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// Horizontal Engagement Bar widget
-class _EngagementBar extends StatelessWidget {
-  const _EngagementBar({
-    required this.counts,
-    required this.viewerHasLiked,
-    required this.viewerHasBookmarked,
-    required this.isLiking,
-    required this.isBookmarking,
-    required this.onLikeTap,
-    this.onLikeLongPress,
-    required this.onBookmarkTap,
-    this.onBookmarkLongPress,
-    required this.onCommentTap,
-    required this.isOwner,
-    required this.shareCount,
-    required this.onShareTap,
-  });
-
-  final RecipeCounts counts;
-  final bool viewerHasLiked;
-  final bool viewerHasBookmarked;
-  final bool isLiking;
-  final bool isBookmarking;
-  final VoidCallback onLikeTap;
-  final VoidCallback? onLikeLongPress;
-  final VoidCallback onBookmarkTap;
-  final VoidCallback? onBookmarkLongPress;
-  final VoidCallback onCommentTap;
-  final bool isOwner;
-  final int shareCount;
-  final VoidCallback onShareTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: _EngagementButton(
-            icon: viewerHasLiked ? Icons.favorite : Icons.favorite_border,
-            count: counts.likes,
-            isActive: viewerHasLiked,
-            isLoading: isLiking,
-            onTap: onLikeTap,
-            onLongPress: onLikeLongPress,
-            activeColor: const Color(0xFFE53935),
-          ),
-        ),
-        Expanded(
-          child: _EngagementButton(
-            icon: Icons.chat_bubble_outline,
-            count: counts.comments,
-            onTap: onCommentTap,
-          ),
-        ),
-        Expanded(
-          child: _EngagementButton(
-            icon: viewerHasBookmarked ? Icons.bookmark : Icons.bookmark_border,
-            count: counts.bookmarks,
-            isActive: viewerHasBookmarked,
-            isLoading: isBookmarking,
-            onTap: onBookmarkTap,
-            onLongPress: onBookmarkLongPress,
-            // Saved = filled icon in the text color, as on the feed card;
-            // only likes are red.
-            activeColor: Theme.of(context).colorScheme.onSurface,
-          ),
-        ),
-        Expanded(
-          child: _EngagementButton(
-            icon: Icons.share,
-            count: shareCount,
-            onTap: onShareTap,
-            activeColor: Theme.of(context).colorScheme.primary,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _EngagementButton extends StatelessWidget {
-  const _EngagementButton({
-    required this.icon,
-    required this.count,
-    required this.onTap,
-    this.onLongPress,
-    this.isActive = false,
-    this.isLoading = false,
-    this.activeColor,
-  });
-
-  final IconData icon;
-  final int count;
-  final VoidCallback onTap;
-  final VoidCallback? onLongPress;
-  final bool isActive;
-  final bool isLoading;
-  final Color? activeColor;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = isActive
-        ? (activeColor ?? Theme.of(context).colorScheme.primary)
-        : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7);
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: isLoading ? null : onTap,
-        onLongPress: isLoading ? null : onLongPress,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              if (isLoading)
-                SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(color),
-                  ),
-                )
-              else
-                Icon(icon, size: 22, color: color),
-              const SizedBox(width: 6),
-              Text(
-                "$count",
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: color,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _VerticalDivider extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 24,
-      width: 1,
-      color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
-    );
-  }
-}
-
-// Ingredients Section widget
-class _IngredientsSection extends StatelessWidget {
-  const _IngredientsSection({
-    required this.ingredients,
-    required this.checkedIds,
-    required this.selectedIds,
-    required this.isSelectionMode,
-    required this.onToggle,
-    this.scaleFactor = 1.0,
-  });
-
-  final List<RecipeIngredient> ingredients;
-  final Set<String> checkedIds;
-  final Set<String> selectedIds;
-  final bool isSelectionMode;
-  final Function(String) onToggle;
-  final double scaleFactor;
-
-  @override
-  Widget build(BuildContext context) {
-    final localizations = AppLocalizations.of(context);
-    final primary = Theme.of(context).colorScheme.primary;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              localizations?.ingredients ?? "Ingredients",
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-            ),
-            Text(
-              "${ingredients.length} ${localizations?.items ?? "items"}",
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: primary, fontWeight: FontWeight.w600),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        ...ingredients.map((ing) => Padding(
-          padding: const EdgeInsets.only(bottom: 8),
-          child: _IngredientTile(
-            ingredient: ing,
-            isChecked: checkedIds.contains(ing.id),
-            isSelected: selectedIds.contains(ing.id),
-            isSelectionMode: isSelectionMode,
-            onToggle: () => onToggle(ing.id),
-            scaleFactor: scaleFactor,
-          ),
-        )),
-      ],
-    );
-  }
-}
-
-class _IngredientTile extends StatelessWidget {
-  const _IngredientTile({
-    required this.ingredient,
-    required this.isChecked,
-    required this.isSelected,
-    required this.isSelectionMode,
-    required this.onToggle,
-    this.scaleFactor = 1.0,
-  });
-
-  final RecipeIngredient ingredient;
-  final bool isChecked;
-  final bool isSelected;
-  final bool isSelectionMode;
-  final VoidCallback onToggle;
-  final double scaleFactor;
-
-  String _formatAmount() {
-    if (ingredient.quantity == null) {
-      final unit = ingredient.unit == null ? "" : " ${ingredient.unit}";
-      return unit.trim();
-    }
-    final scaled = ingredient.quantity! * scaleFactor;
-    final String qtyStr;
-    if (scaled == scaled.roundToDouble()) {
-      qtyStr = scaled.toInt().toString();
-    } else {
-      qtyStr = scaled.toStringAsFixed(1).replaceAll(RegExp(r'\.?0+$'), '');
-    }
-    final unit = ingredient.unit == null ? "" : " ${ingredient.unit}";
-    return "$qtyStr$unit".trim();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isCheckedOrSelected = isSelectionMode ? isSelected : isChecked;
-    final amount = _formatAmount();
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onToggle,
-        borderRadius: BorderRadius.circular(14),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 14),
-          decoration: BoxDecoration(
-            color: isSelectionMode && isSelected
-                ? theme.colorScheme.primaryContainer.withValues(alpha: 0.4)
-                : theme.colorScheme.surfaceContainerLow,
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: Row(
-            children: [
-              SizedBox(
-                width: 24,
-                height: 24,
-                child: Checkbox(
-                  value: isCheckedOrSelected,
-                  onChanged: (_) => onToggle(),
-                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  visualDensity: VisualDensity.compact,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  ingredient.displayName,
-                  style: TextStyle(
-                    fontSize: 15,
-                    height: 1.4,
-                    decoration: !isSelectionMode && isChecked ? TextDecoration.lineThrough : null,
-                    color: !isSelectionMode && isChecked
-                        ? theme.colorScheme.onSurface.withValues(alpha: 0.45)
-                        : theme.colorScheme.onSurface,
-                  ),
-                ),
-              ),
-              if (amount.isNotEmpty) ...[
-                const SizedBox(width: 8),
-                Text(
-                  amount,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: theme.colorScheme.primary,
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// Steps Section widget
-class _StepsSection extends StatelessWidget {
-  const _StepsSection({required this.steps});
-
-  final List<RecipeStep> steps;
-
-  @override
-  Widget build(BuildContext context) {
-    final localizations = AppLocalizations.of(context);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SectionTitleWidget(
-          text: "${localizations?.steps ?? "Steps"} (${steps.length})",
-          variant: SectionTitleVariant.regular,
-        ),
-        const SizedBox(height: 12),
-        ...steps.asMap().entries.map((entry) => _StepCard(
-          stepNumber: entry.key + 1,
-          step: entry.value,
-          isLast: entry.key == steps.length - 1,
-        )),
-      ],
-    );
-  }
-}
-
-class _StepCard extends StatelessWidget {
-  const _StepCard({
-    required this.stepNumber,
-    required this.step,
-    required this.isLast,
-  });
-
-  final int stepNumber;
-  final RecipeStep step;
-  final bool isLast;
-
-  @override
-  Widget build(BuildContext context) {
-    final primary = Theme.of(context).colorScheme.primary;
-    final lineColor = Theme.of(context).colorScheme.outlineVariant;
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 24),
-      child: IntrinsicHeight(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Number + vertical line
-            Column(
-              children: [
-                Container(
-                  width: 32,
-                  height: 32,
-                  margin: const EdgeInsets.only(top: 2),
-                  decoration: BoxDecoration(color: primary, shape: BoxShape.circle),
-                  child: Center(
-                    child: Text(
-                      "$stepNumber",
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.onPrimary,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
-                ),
-                if (!isLast)
-                  Expanded(
-                    child: Container(
-                      width: 2,
-                      margin: const EdgeInsets.symmetric(vertical: 4),
-                      decoration: BoxDecoration(
-                        color: lineColor,
-                        borderRadius: BorderRadius.circular(1),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(width: 16),
-            // Step text
-            Expanded(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(minHeight: 64),
-                child: Text(
-                  step.instruction,
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(height: 1.5),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// User Info Row widget
-class _UserInfoRow extends StatelessWidget {
-  const _UserInfoRow({required this.r, required this.apiClient, this.auth, required this.shoppingListController});
-  final RecipeDetail r;
-  final ApiClient apiClient;
-  final AuthController? auth;
-  final ShoppingListController shoppingListController;
-
-  @override
-  Widget build(BuildContext context) {
-    final date = formatDate(context, r.createdAt);
-    final localizations = AppLocalizations.of(context);
-    final rawCuisine = r.cuisine;
-    final hasCuisine = rawCuisine != null && rawCuisine.trim().isNotEmpty;
-    final cuisine = hasCuisine ? getLocalizedCuisine(rawCuisine, localizations) : null;
-
-    return Row(
-      children: [
-        GestureDetector(
-          onTap: () {
-            if (auth == null) {
-              ErrorUtils.showError(context, AppLocalizations.of(context)?.logInToViewProfiles ?? "Log in to view profiles");
-              return;
-            }
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => ProfileScreen(
-                  auth: auth!,
-                  apiClient: apiClient,
-                  shoppingListController: shoppingListController,
-                  username: r.authorUsername,
-                ),
-              ),
-            );
-          },
-          child: buildUserAvatar(
-            context,
-            r.authorAvatarUrl,
-            r.authorUsername,
-            radius: 14,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text.rich(
-            TextSpan(
-              children: [
-                TextSpan(
-                  text: r.authorDisplayName ?? r.authorUsername,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                ),
-                TextSpan(
-                  text: " • $date",
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-                      ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-// Hashtag Pill widget
-class _HashtagPill extends StatelessWidget {
-  const _HashtagPill({required this.tag});
-  final String tag;
-
-  @override
-  Widget build(BuildContext context) {
-    final localizations = AppLocalizations.of(context);
-    // A predefined category or dietary preference, stored as its slug or as
-    // the English or Georgian label: show it in the current language.
-    final category = findCategory(tag);
-    final dietary = findDietary(tag);
-    final displayLabel = category != null
-        ? category.getLabel(localizations)
-        : dietary != null
-            ? dietary.getLabel(localizations)
-            : tag;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
-          width: 1,
-        ),
-      ),
-      child: Text(
-        "#$displayLabel",
-        style: TextStyle(
-          color: Theme.of(context).colorScheme.primary,
-          fontSize: 13,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
     );
   }
 }
@@ -1855,32 +840,7 @@ class _ErrorView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        const SizedBox(height: 80),
-        Builder(
-          builder: (context) {
-            final localizations = AppLocalizations.of(context);
-            return Center(child: Text(localizations?.somethingWentWrong ?? "Something went wrong"));
-          },
-        ),
-        const SizedBox(height: 12),
-        Text(error, textAlign: TextAlign.center),
-        const SizedBox(height: 16),
-        Center(
-          child: Builder(
-            builder: (context) {
-              final localizations = AppLocalizations.of(context);
-              return FilledButton(
-                onPressed: () async => onRetry(),
-                child: Text(localizations?.retry ?? "Retry"),
-              );
-            },
-          ),
-        ),
-      ],
-    );
+    return ErrorStateWidget(message: error, onRetry: () => onRetry());
   }
 }
 
@@ -1897,17 +857,15 @@ class _AppBarIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // The circle is white in both themes, so the icon keeps the light
-    // theme's green.
-    final primary = AppTokens.light.brandInk;
+    final t = AppTokens.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
       child: Material(
-        color: Colors.white,
+        color: t.card,
         shape: const CircleBorder(),
         elevation: 0,
         child: IconButton(
-          icon: Icon(icon, color: primary),
+          icon: Icon(icon, color: t.brandInk),
           tooltip: tooltip,
           onPressed: onPressed,
           constraints: const BoxConstraints(minWidth: 40, minHeight: 40),

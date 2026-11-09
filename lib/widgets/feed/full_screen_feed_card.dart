@@ -1,5 +1,4 @@
 import "package:flutter/material.dart";
-import "package:cached_network_image/cached_network_image.dart";
 
 import "../../analytics/analytics_service.dart";
 import "../../api/api_client.dart";
@@ -12,6 +11,7 @@ import "../../recipes/recipe_detail_screen.dart";
 import "../../screens/profile_screen.dart";
 import "../../shopping/shopping_list_controller.dart";
 import "../../utils/ui_utils.dart";
+import "../common/profile_avatar.dart";
 import "../engagement_stat_widget.dart";
 import "expandable_description.dart";
 import "feed_actions.dart";
@@ -325,31 +325,7 @@ class _AuthorInfo extends StatelessWidget {
       },
       child: Row(
         children: [
-          item.authorAvatarUrl != null && item.authorAvatarUrl!.isNotEmpty
-              ? CircleAvatar(
-                  radius: 16,
-                  backgroundColor: Theme.of(context).colorScheme.primary,
-                  backgroundImage: CachedNetworkImageProvider(
-                    buildImageUrl(item.authorAvatarUrl!),
-                    cacheKey: item.authorAvatarUrl!,
-                    maxWidth: 64,
-                    maxHeight: 64,
-                  ),
-                  onBackgroundImageError: (exception, stackTrace) {},
-                  child: null,
-                )
-              : CircleAvatar(
-                  radius: 16,
-                  backgroundColor: Theme.of(context).colorScheme.primary,
-                  child: Text(
-                    item.authorUsername.isNotEmpty ? item.authorUsername[0].toUpperCase() : "?",
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.onPrimary,
-                    ),
-                  ),
-                ),
+          ProfileAvatar(avatarUrl: item.authorAvatarUrl, name: item.authorUsername, size: 32),
           const SizedBox(width: 8),
           Expanded(
             child: Column(

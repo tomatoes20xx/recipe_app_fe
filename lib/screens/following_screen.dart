@@ -10,8 +10,9 @@ import "../users/following_controller.dart";
 import "../users/user_api.dart";
 import "../users/user_models.dart";
 import "../utils/error_utils.dart";
-import "../utils/ui_utils.dart";
 import "../widgets/common/common_widgets.dart";
+import "../widgets/common/skeletons.dart";
+import "../widgets/common/user_list_tile.dart";
 import "../widgets/empty_state_widget.dart";
 import "profile_screen.dart";
 
@@ -125,46 +126,15 @@ class _FollowingScreenState extends State<FollowingScreen> {
 
   Widget _buildBody() {
     if (controller.isLoading && controller.items.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
+      return const SingleChildScrollView(child: ListRowSkeleton(leadingSize: 44));
     }
 
     if (controller.isPrivate) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.lock_outline,
-              size: 64,
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
-            ),
-            const SizedBox(height: 16),
-            Builder(
-              builder: (context) {
-                final localizations = AppLocalizations.of(context);
-                return Text(
-                  localizations?.private ?? "Private",
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
-                      ),
-                );
-              },
-            ),
-            const SizedBox(height: 8),
-            Builder(
-              builder: (context) {
-                final localizations = AppLocalizations.of(context);
-                return Text(
-                  localizations?.thisUsersFollowingListIsPrivate ?? "This user's following list is private",
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
-                      ),
-                  textAlign: TextAlign.center,
-                );
-              },
-            ),
-          ],
-        ),
+      final localizations = AppLocalizations.of(context);
+      return EmptyStateWidget(
+        icon: Icons.lock_outline,
+        title: localizations?.private ?? "Private",
+        description: localizations?.thisUsersFollowingListIsPrivate ?? "This user's following list is private",
       );
     }
 
@@ -195,7 +165,7 @@ class _FollowingScreenState extends State<FollowingScreen> {
     return ListView.builder(
       controller: _scrollController,
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
       cacheExtent: 500,
       itemCount: controller.items.length + (controller.isLoadingMore ? 1 : 0),
       itemBuilder: (context, index) {
@@ -208,56 +178,30 @@ class _FollowingScreenState extends State<FollowingScreen> {
 
         final user = controller.items[index];
 
-        return RepaintBoundary(
-          child: Card(
-            margin: const EdgeInsets.only(bottom: 12),
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-              side: BorderSide(
-                color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
-                width: 1,
-              ),
-            ),
-            child: ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              leading: buildUserAvatar(
-                context,
-                user.avatarUrl,
-                user.username,
-                radius: 24,
-              ),
-              title: Text(
-                user.displayName ?? user.username,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-              ),
-              subtitle: Text(
-                "@${user.username}",
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-                    ),
-              ),
-              trailing: user.viewerIsMe
-                  ? null
-                  : FollowButton(
-                      isFollowing: user.viewerIsFollowing,
-                      onTap: () => _toggleFollow(user),
-                    ),
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => ProfileScreen(
-                      auth: widget.auth,
-                      apiClient: widget.apiClient,
-                      shoppingListController: widget.shoppingListController,
-                      username: user.username,
-                    ),
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: UserListTile(
+            username: user.username,
+            displayName: user.displayName,
+            avatarUrl: user.avatarUrl,
+            trailing: user.viewerIsMe
+                ? null
+                : FollowButton(
+                    isFollowing: user.viewerIsFollowing,
+                    onTap: () => _toggleFollow(user),
                   ),
-                );
-              },
-            ),
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => ProfileScreen(
+                    auth: widget.auth,
+                    apiClient: widget.apiClient,
+                    shoppingListController: widget.shoppingListController,
+                    username: user.username,
+                  ),
+                ),
+              );
+            },
           ),
         );
       },

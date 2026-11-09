@@ -22,7 +22,9 @@ import "../users/user_api.dart";
 import "../users/user_models.dart";
 import "../utils/error_utils.dart";
 import "../utils/ui_utils.dart";
-import "../widgets/common/app_bottom_sheet.dart";
+import "../widgets/common/recipe_grid_tile.dart";
+import "../widgets/common/skeletons.dart";
+import "../widgets/common/user_list_tile.dart";
 import "../widgets/common/common_widgets.dart";
 import "../widgets/empty_state_widget.dart";
 import "../widgets/search/search_notice.dart";
@@ -189,7 +191,6 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context);
-    final theme = Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -200,58 +201,20 @@ class _SearchScreenState extends State<SearchScreen> {
             Text(localizations?.search ?? "Search"),
             const SizedBox(width: 16),
             Expanded(
-              child: Container(
-                height: 40,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.surfaceContainerLow,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: theme.colorScheme.outline.withValues(alpha: 0.2),
-                  ),
-                ),
-                child: TextField(
-                  controller: _searchTextController,
-                  autofocus: false,
-                  style: theme.textTheme.bodyMedium,
-                  decoration: InputDecoration(
-                    hintText: localizations?.searchRecipes ?? "Search recipes, users...",
-                    hintStyle: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-                    ),
-                    prefixIcon: Icon(
-                      Icons.search,
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-                      size: 20,
-                    ),
-                    suffixIcon: _searchTextController.text.isNotEmpty
-                        ? IconButton(
-                            icon: Icon(
-                              Icons.clear,
-                              color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-                              size: 20,
-                            ),
-                            onPressed: () {
-                              _searchTextController.clear();
-                              // So submitting the same query again searches again.
-                              _lastSearchedQuery = null;
-                              searchController.clear();
-                            },
-                          )
-                        : null,
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                    isDense: true,
-                  ),
-                  textInputAction: TextInputAction.search,
-                  onSubmitted: (query) {
-                    if (query.trim().isNotEmpty) {
-                      _performSearch(query.trim());
-                    }
-                  },
-                  onChanged: (value) {
-                    setState(() {}); // Rebuild to show/hide clear button
-                  },
-                ),
+              child: TokenSearchField(
+                controller: _searchTextController,
+                hintText: localizations?.searchRecipes ?? "Search recipes, users...",
+                textInputAction: TextInputAction.search,
+                onSubmitted: (query) {
+                  if (query.trim().isNotEmpty) {
+                    _performSearch(query.trim());
+                  }
+                },
+                onCleared: () {
+                  // So submitting the same query again searches again.
+                  _lastSearchedQuery = null;
+                  searchController.clear();
+                },
               ),
             ),
           ],
@@ -274,7 +237,7 @@ class _SearchScreenState extends State<SearchScreen> {
     if (searchController.isLoading &&
         searchController.users.isEmpty &&
         searchController.recipes.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
+      return const SingleChildScrollView(child: ListRowSkeleton(leadingSize: 64));
     }
 
     if (searchController.error != null &&
@@ -323,59 +286,27 @@ class _SearchScreenState extends State<SearchScreen> {
               children: [
                 Text(
                   localizations?.recentSearches ?? "Recent Searches",
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: Theme.of(context)
-                            .colorScheme
-                            .onSurface
-                            .withValues(alpha: 0.7),
-                      ),
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTokens.of(context).ink2),
                 ),
-                GestureDetector(
-                  onTap: () => searchController.clearHistory(),
-                  child: Text(
-                    localizations?.clearAll ?? "Clear All",
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                  ),
+                TextButton(
+                  onPressed: () => searchController.clearHistory(),
+                  child: Text(localizations?.clearAll ?? "Clear All"),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 4),
             Wrap(
               spacing: 8,
-              runSpacing: 8,
               children: searchController.recentSearches.map((query) {
-                return InputChip(
-                  label: Text(
-                    query,
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                  avatar: Icon(
-                    Icons.history,
-                    size: 16,
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withValues(alpha: 0.6),
-                  ),
-                  deleteIcon: Icon(
-                    Icons.close,
-                    size: 16,
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withValues(alpha: 0.6),
-                  ),
+                return TokenChip(
+                  label: query,
+                  icon: Icons.history_rounded,
                   onDeleted: () => searchController.removeFromHistory(query),
-                  onPressed: () {
+                  onTap: () {
                     // Show the query in the box (with its clear button), then search it.
                     _searchTextController.text = query;
                     _performSearch(query, saveToHistory: true);
                   },
-                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  visualDensity: VisualDensity.compact,
                 );
               }).toList(),
             ),
@@ -464,12 +395,7 @@ class _SearchScreenState extends State<SearchScreen> {
               ),
             ),
           if (recipesLoading)
-            const SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.all(24),
-                child: Center(child: CircularProgressIndicator()),
-              ),
-            )
+            const SliverToBoxAdapter(child: ListRowSkeleton(count: 3, leadingSize: 64))
           else if (recipesError)
             SliverToBoxAdapter(
               child: ErrorStateWidget(
@@ -509,9 +435,7 @@ class _SearchScreenState extends State<SearchScreen> {
         children: [
           Text(
             title,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppTokens.of(context).ink),
           ),
           if (showAction && actionWidget != null) actionWidget,
         ],
@@ -545,99 +469,51 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Widget _buildUserCard(UserSearchResult user) {
-    final isCurrentUser = user.viewerIsMe;
-
-    return RepaintBoundary(
-      child: Card(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(
-            color:
-                Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
-            width: 1,
-          ),
-        ),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(16),
-          onTap: () {
-            // Save search to history when user taps a result
-            searchController.commitCurrentQueryToHistory();
-            if (widget.auth != null) {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => ProfileScreen(
-                    auth: widget.auth!,
-                    apiClient: widget.apiClient,
-                    shoppingListController: widget.shoppingListController,
-                    username: user.username,
-                  ),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      child: UserListTile(
+        username: user.username,
+        displayName: user.displayName,
+        avatarUrl: user.avatarUrl,
+        trailing: widget.auth != null && !user.viewerIsMe
+            ? FollowButton(isFollowing: user.viewerIsFollowing, onTap: () => _handleFollowToggle(user))
+            : null,
+        onTap: () {
+          // Save search to history when user taps a result
+          searchController.commitCurrentQueryToHistory();
+          if (widget.auth != null) {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => ProfileScreen(
+                  auth: widget.auth!,
+                  apiClient: widget.apiClient,
+                  shoppingListController: widget.shoppingListController,
+                  username: user.username,
                 ),
-              );
-            }
-          },
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                buildUserAvatar(context, user.avatarUrl, user.username,
-                    radius: 24),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        user.displayName ?? user.username,
-                        style:
-                            Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        "@${user.username}",
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurface
-                                  .withValues(alpha: 0.6),
-                            ),
-                      ),
-                    ],
-                  ),
-                ),
-                if (widget.auth != null && !isCurrentUser)
-                  FollowButton(
-                    isFollowing: user.viewerIsFollowing,
-                    onTap: () => _handleFollowToggle(user),
-                  ),
-              ],
-            ),
-          ),
-        ),
+              ),
+            );
+          }
+        },
       ),
     );
   }
 
+  /// Photo, title, then author and time, on a `card` row like the user rows.
   Widget _buildRecipeCard(SearchResult recipe) {
-    final date = formatDate(context, recipe.createdAt);
+    final t = AppTokens.of(context);
+    final l = AppLocalizations.of(context);
+    final author = recipe.authorDisplayName?.trim().isNotEmpty == true
+        ? recipe.authorDisplayName!.trim()
+        : recipe.authorUsername;
+    final time = formatCookingTime(l, recipe.cookingTimeMin, recipe.cookingTimeMax);
 
-    return RepaintBoundary(
-      child: Card(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(
-            color:
-                Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
-            width: 1,
-          ),
-        ),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      child: Material(
+        color: t.card,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: t.line)),
+        clipBehavior: Clip.antiAlias,
         child: InkWell(
-          borderRadius: BorderRadius.circular(16),
           onTap: () {
             // Save search to history when user taps a result
             searchController.commitCurrentQueryToHistory();
@@ -653,54 +529,32 @@ class _SearchScreenState extends State<SearchScreen> {
             );
           },
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(10),
             child: Row(
               children: [
+                RecipeThumb(imageUrl: recipe.imageUrl),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         recipe.title,
-                        style:
-                            Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
+                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: t.ink),
                       ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          buildUserAvatar(context, recipe.authorAvatarUrl,
-                              recipe.authorUsername),
-                          const SizedBox(width: 6),
-                          Expanded(
-                            child: Text(
-                              "${recipe.authorDisplayName ?? recipe.authorUsername} • @${recipe.authorUsername} • $date",
-                              style:
-                                  Theme.of(context).textTheme.bodySmall?.copyWith(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .onSurface
-                                            .withValues(alpha: 0.6),
-                                      ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
+                      const SizedBox(height: 4),
+                      Text(
+                        [author, ?time].join(" · "),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(fontSize: 13, color: t.ink2),
                       ),
                     ],
                   ),
                 ),
-                Icon(
-                  Icons.chevron_right,
-                  color: Theme.of(context)
-                      .colorScheme
-                      .onSurface
-                      .withValues(alpha: 0.3),
-                ),
+                Icon(Icons.chevron_right_rounded, size: 20, color: t.ink2),
               ],
             ),
           ),
@@ -916,9 +770,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                       final localizations = AppLocalizations.of(context);
                       return Text(
                         localizations?.filters ?? "Filters",
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.w700,
-                            ),
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppTokens.of(context).ink),
                       );
                     },
                   ),
@@ -943,7 +795,6 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                   Builder(
                     builder: (context) {
                       final localizations = AppLocalizations.of(context);
-                      final theme = Theme.of(context);
                       return _FilterSection(
                         title: localizations?.cuisine ?? "Cuisine",
                         child: Column(
@@ -959,50 +810,20 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                             ),
                             const SizedBox(height: 8),
                             SizedBox(
-                              height: 36,
+                              height: 44,
                               child: ListView.separated(
                                 scrollDirection: Axis.horizontal,
                                 itemCount: cuisineOptions.length,
-                                separatorBuilder: (_, __) => const SizedBox(width: 8),
+                                separatorBuilder: (_, _) => const SizedBox(width: 8),
                                 itemBuilder: (context, index) {
-                                  final option = cuisineOptions[index];
-                                  final label = option.getLabel(localizations);
+                                  final label = cuisineOptions[index].getLabel(localizations);
                                   final isSelected = _cuisineController.text == label;
-                                  return GestureDetector(
-                                    onTap: () {
-                                      setState(() {
-                                        _cuisineController.text =
-                                            isSelected ? "" : label;
-                                      });
-                                    },
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 12, vertical: 6),
-                                      decoration: BoxDecoration(
-                                        color: isSelected
-                                            ? theme.colorScheme.primary
-                                                .withValues(alpha: 0.15)
-                                            : theme.colorScheme.surfaceContainerHighest,
-                                        borderRadius: BorderRadius.circular(20),
-                                        border: isSelected
-                                            ? Border.all(
-                                                color: theme.colorScheme.primary,
-                                                width: 1)
-                                            : null,
-                                      ),
-                                      child: Text(
-                                        option.getLabel(localizations),
-                                        style: theme.textTheme.labelMedium?.copyWith(
-                                          color: isSelected
-                                              ? theme.colorScheme.primary
-                                              : theme.colorScheme.onSurface
-                                                  .withValues(alpha: 0.7),
-                                          fontWeight: isSelected
-                                              ? FontWeight.w600
-                                              : FontWeight.normal,
-                                        ),
-                                      ),
-                                    ),
+                                  return TokenChip(
+                                    label: label,
+                                    selected: isSelected,
+                                    onTap: () => setState(() {
+                                      _cuisineController.text = isSelected ? "" : label;
+                                    }),
                                   );
                                 },
                               ),
@@ -1022,31 +843,26 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             SizedBox(
-                              height: 40,
+                              height: 44,
                               child: ListView.separated(
                                 scrollDirection: Axis.horizontal,
                                 itemCount: recipeCategories.length,
-                                separatorBuilder: (_, __) =>
-                                    const SizedBox(width: 8),
+                                separatorBuilder: (_, _) => const SizedBox(width: 8),
                                 itemBuilder: (context, index) {
                                   final category = recipeCategories[index];
                                   final label = category.getLabel(localizations);
-                                  final isSelected =
-                                      _selectedTags.contains(label);
-                                  return FilterChip(
+                                  final isSelected = _selectedTags.contains(label);
+                                  return TokenChip(
+                                    label: label,
+                                    icon: category.icon,
                                     selected: isSelected,
-                                    label: Text(label),
-                                    avatar: Icon(category.icon, size: 18),
-                                    visualDensity: VisualDensity.compact,
-                                    onSelected: (selected) {
-                                      setState(() {
-                                        if (selected) {
-                                          _selectedTags.add(label);
-                                        } else {
-                                          _selectedTags.remove(label);
-                                        }
-                                      });
-                                    },
+                                    onTap: () => setState(() {
+                                      if (isSelected) {
+                                        _selectedTags.remove(label);
+                                      } else {
+                                        _selectedTags.add(label);
+                                      }
+                                    }),
                                   );
                                 },
                               ),
@@ -1067,31 +883,26 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                             ),
                             const SizedBox(height: 8),
                             SizedBox(
-                              height: 40,
+                              height: 44,
                               child: ListView.separated(
                                 scrollDirection: Axis.horizontal,
                                 itemCount: dietaryPreferences.length,
-                                separatorBuilder: (_, __) =>
-                                    const SizedBox(width: 8),
+                                separatorBuilder: (_, _) => const SizedBox(width: 8),
                                 itemBuilder: (context, index) {
                                   final pref = dietaryPreferences[index];
                                   final label = pref.getLabel(localizations);
-                                  final isSelected =
-                                      _selectedTags.contains(label);
-                                  return FilterChip(
+                                  final isSelected = _selectedTags.contains(label);
+                                  return TokenChip(
+                                    label: label,
+                                    icon: pref.icon,
                                     selected: isSelected,
-                                    label: Text(label),
-                                    avatar: Icon(pref.icon, size: 18),
-                                    visualDensity: VisualDensity.compact,
-                                    onSelected: (selected) {
-                                      setState(() {
-                                        if (selected) {
-                                          _selectedTags.add(label);
-                                        } else {
-                                          _selectedTags.remove(label);
-                                        }
-                                      });
-                                    },
+                                    onTap: () => setState(() {
+                                      if (isSelected) {
+                                        _selectedTags.remove(label);
+                                      } else {
+                                        _selectedTags.add(label);
+                                      }
+                                    }),
                                   );
                                 },
                               ),
@@ -1138,11 +949,10 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                                         !dietaryPreferences
                                             .any((d) => d.getLabel(localizations) == t))
                                     .map((tag) {
-                                  return Chip(
-                                    label: Text(tag),
+                                  return TokenChip(
+                                    label: tag,
+                                    selected: true,
                                     onDeleted: () => _removeTag(tag),
-                                    deleteIcon:
-                                        const Icon(Icons.close, size: 18),
                                   );
                                 }).toList(),
                               ),
@@ -1194,12 +1004,10 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                                 spacing: 8,
                                 runSpacing: 8,
                                 children: _selectedIngredients.map((ingredient) {
-                                  return Chip(
-                                    label: Text(ingredient),
-                                    onDeleted: () =>
-                                        _removeIngredient(ingredient),
-                                    deleteIcon:
-                                        const Icon(Icons.close, size: 18),
+                                  return TokenChip(
+                                    label: ingredient,
+                                    selected: true,
+                                    onDeleted: () => _removeIngredient(ingredient),
                                   );
                                 }).toList(),
                               ),
@@ -1291,27 +1099,24 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                       final localizations = AppLocalizations.of(context);
                       return _FilterSection(
                         title: localizations?.difficulty ?? "Difficulty",
-                        child: SegmentedButton<Difficulty?>(
-                          segments: [
-                            ButtonSegment(
-                                value: Difficulty.easy,
-                                label: Text(localizations?.easy ?? "Easy")),
-                            ButtonSegment(
-                                value: Difficulty.medium,
-                                label: Text(localizations?.medium ?? "Medium")),
-                            ButtonSegment(
-                                value: Difficulty.hard,
-                                label: Text(localizations?.hard ?? "Hard")),
+                        child: Wrap(
+                          spacing: 8,
+                          children: [
+                            for (final (value, label) in [
+                              (Difficulty.easy, localizations?.easy ?? "Easy"),
+                              (Difficulty.medium, localizations?.medium ?? "Medium"),
+                              (Difficulty.hard, localizations?.hard ?? "Hard"),
+                            ])
+                              TokenChip(
+                                label: label,
+                                selected: _currentFilters.difficulty == value,
+                                onTap: () => setState(() {
+                                  _currentFilters = _currentFilters.copyWith(
+                                    difficulty: _currentFilters.difficulty == value ? null : value,
+                                  );
+                                }),
+                              ),
                           ],
-                          selected: {_currentFilters.difficulty},
-                          onSelectionChanged: (Set<Difficulty?> newSelection) {
-                            setState(() {
-                              _currentFilters = _currentFilters.copyWith(
-                                difficulty: newSelection.firstOrNull,
-                              );
-                            });
-                          },
-                          multiSelectionEnabled: false,
                         ),
                       );
                     },
@@ -1357,11 +1162,9 @@ class _FilterSection extends StatelessWidget {
       children: [
         Text(
           title,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppTokens.of(context).ink),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 10),
         child,
       ],
     );
@@ -1375,70 +1178,48 @@ class _CookWithIngredientsCard extends StatelessWidget {
 
   final VoidCallback onTap;
 
+  /// Styled like the Profile tab's library tiles: `card`, 1px `line`,
+  /// radius 18, a `soft` icon tile.
   @override
   Widget build(BuildContext context) {
+    final t = AppTokens.of(context);
     final localizations = AppLocalizations.of(context);
 
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(
-          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
-          width: 1.5,
-        ),
-      ),
-      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.08),
+    return Material(
+      color: t.card,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18), side: BorderSide(color: t.line)),
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
-        borderRadius: BorderRadius.circular(16),
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [
               Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  Icons.kitchen_outlined,
-                  color: Theme.of(context).colorScheme.primary,
-                  size: 28,
-                ),
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(color: t.soft, borderRadius: BorderRadius.circular(12)),
+                child: Icon(Icons.kitchen_outlined, color: t.brandInk, size: 24),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       localizations?.cookWithWhatIHave ?? "Cook with What I Have",
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: Theme.of(context).colorScheme.primary,
-                          ),
+                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: t.ink),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 2),
                     Text(
                       localizations?.findRecipesWithIngredients ??
                           "Find recipes based on ingredients you have",
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurface
-                                .withValues(alpha: 0.7),
-                          ),
+                      style: TextStyle(fontSize: 13, color: t.ink2),
                     ),
                   ],
                 ),
               ),
-              Icon(
-                Icons.chevron_right,
-                color: Theme.of(context).colorScheme.primary,
-              ),
+              Icon(Icons.chevron_right_rounded, size: 20, color: t.ink2),
             ],
           ),
         ),

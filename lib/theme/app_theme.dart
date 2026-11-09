@@ -1,20 +1,21 @@
 import "package:flutter/material.dart";
-import "package:google_fonts/google_fonts.dart";
 
 import "app_tokens.dart";
 import "status_bar.dart";
 
+/// Bundled in assets/fonts with weights 400–800 (pubspec.yaml), so any
+/// `fontWeight` picks the matching file.
+const _fontFamily = "Nunito";
 const _fontFallback = ["Noto Sans Georgian", "Noto Sans"];
 
-/// Bold Nunito that really renders bold on Latin text.
-///
-/// The theme's Nunito (GoogleFonts.nunitoTextTheme) registers each weight as
-/// its own font family, so `copyWith(fontWeight: w700)` on a theme style keeps
-/// the regular file. GoogleFonts.nunito picks the family of the requested
-/// weight. Georgian falls back to Noto Sans Georgian either way.
 TextStyle _nunito(TextStyle? base, {required double fontSize, required FontWeight fontWeight, Color? color}) {
-  return GoogleFonts.nunito(textStyle: base, fontSize: fontSize, fontWeight: fontWeight, color: color)
-      .copyWith(fontFamilyFallback: _fontFallback);
+  return (base ?? const TextStyle()).copyWith(
+    fontFamily: _fontFamily,
+    fontFamilyFallback: _fontFallback,
+    fontSize: fontSize,
+    fontWeight: fontWeight,
+    color: color,
+  );
 }
 
 /// The app's [ThemeData]. Colors come from [AppTokens], so screens that rely
@@ -31,14 +32,16 @@ TextStyle _nunito(TextStyle? base, {required double fontSize, required FontWeigh
 ThemeData buildAppTheme(Brightness brightness) {
   final t = brightness == Brightness.dark ? AppTokens.dark : AppTokens.light;
   final scheme = t.roles(ColorScheme.fromSeed(seedColor: t.brand, brightness: brightness));
-  final textTheme = GoogleFonts.nunitoTextTheme(ThemeData(brightness: brightness).textTheme)
-      .apply(bodyColor: t.ink, displayColor: t.ink);
+  final textTheme = ThemeData(brightness: brightness)
+      .textTheme
+      .apply(fontFamily: _fontFamily, fontFamilyFallback: _fontFallback, bodyColor: t.ink, displayColor: t.ink);
 
   return ThemeData(
     useMaterial3: true,
     brightness: brightness,
     colorScheme: scheme,
     textTheme: textTheme,
+    fontFamily: _fontFamily,
     fontFamilyFallback: _fontFallback,
     chipTheme: const ChipThemeData(showCheckmark: false),
     pageTransitionsTheme: statusBarInsetPageTransitions,

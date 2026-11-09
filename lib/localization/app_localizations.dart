@@ -249,7 +249,6 @@ class AppLocalizations {
   String get cookingTimeMinutes => _localizedValues[locale.languageCode]?["cookingTimeMinutes"] ?? "Cooking Time (minutes)";
   String get minuteAbbreviation => _localizedValues[locale.languageCode]?["minuteAbbreviation"] ?? "min";
   String get servingSize => _localizedValues[locale.languageCode]?["servingSize"] ?? "Servings";
-  String get servingsAbbreviation => _localizedValues[locale.languageCode]?["servingsAbbreviation"] ?? "serv.";
   String get perServing => _localizedValues[locale.languageCode]?["perServing"] ?? "per serving";
 
   // Collections
@@ -912,6 +911,8 @@ class AppLocalizations {
       (_localizedValues[locale.languageCode]?["recipeCount"] ?? "{count} Recipes").replaceAll("{count}", count.toString());
   String get noLikedRecipesYet => _localizedValues[locale.languageCode]?["noLikedRecipesYet"] ?? "No liked recipes yet";
   String get likedRecipesEmptyDescription => _localizedValues[locale.languageCode]?["likedRecipesEmptyDescription"] ?? "Recipes you like will appear here";
+  String get select => _localizedValues[locale.languageCode]?["select"] ?? "Select";
+  String get moreOptions => _localizedValues[locale.languageCode]?["moreOptions"] ?? "More options";
   String get userNotFound => _localizedValues[locale.languageCode]?["userNotFound"] ?? "User not found";
 
   // Profile tabs
@@ -1241,7 +1242,6 @@ class AppLocalizations {
       "cookingTimeMinutes": "Cooking Time (minutes)",
       "minuteAbbreviation": "min",
       "servingSize": "Servings",
-      "servingsAbbreviation": "serv.",
       "perServing": "per serving",
       "collections": "Collections",
       "allSaved": "All",
@@ -1850,6 +1850,8 @@ class AppLocalizations {
       "recipeCount": "{count} Recipes",
       "noLikedRecipesYet": "No liked recipes yet",
       "likedRecipesEmptyDescription": "Recipes you like will appear here",
+      "select": "Select",
+      "moreOptions": "More options",
       "userNotFound": "User not found",
 
       // Profile tabs
@@ -2169,7 +2171,6 @@ class AppLocalizations {
       "cookingTimeMinutes": "მომზადების დრო (წუთები)",
       "minuteAbbreviation": "წთ",
       "servingSize": "პორცია",
-      "servingsAbbreviation": "პორც.",
       "perServing": "1 პორციაზე",
       "collections": "კოლექციები",
       "allSaved": "ყველა",
@@ -2779,6 +2780,8 @@ class AppLocalizations {
       "recipeCount": "{count} რეცეპტი",
       "noLikedRecipesYet": "მოწონებული რეცეპტი ჯერ არ არის",
       "likedRecipesEmptyDescription": "მოწონებული რეცეპტები აქ გამოჩნდება",
+      "select": "მონიშვნა",
+      "moreOptions": "მეტი",
       "userNotFound": "მომხმარებელი ვერ მოიძებნა",
 
       // Profile tabs

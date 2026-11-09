@@ -13,9 +13,13 @@ import "../users/user_api.dart";
 import "../users/user_models.dart";
 import "../users/user_recipes_controller.dart";
 import "../utils/error_utils.dart";
-import "../utils/ui_utils.dart";
 import "../theme/app_tokens.dart";
+import "../feed/feed_models.dart";
 import "../widgets/common/common_widgets.dart";
+import "../widgets/common/profile_stats_card.dart";
+import "../widgets/common/recipe_grid_tile.dart";
+import "../widgets/common/skeletons.dart";
+import "../widgets/profile/profile_cover_header.dart";
 import "../widgets/empty_state_widget.dart";
 import "followers_screen.dart";
 import "following_screen.dart";
@@ -274,46 +278,66 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // BUILD
   // ─────────────────────────────────────────────────────────────
 
+  /// Same cover height as the Profile tab's (300 there includes the status
+  /// bar, which a pushed page already sits below).
+  static const _coverHeight = 256.0;
+
   @override
   Widget build(BuildContext context) {
-    if (_isLoadingProfile) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    }
+    final t = AppTokens.of(context);
+    final l = AppLocalizations.of(context);
+    final profile = _userProfile;
 
-    if (_error != null || _userProfile == null) {
+    if (profile == null) {
       return Scaffold(
+        backgroundColor: t.bg,
         appBar: AppBar(),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.error_outline,
-                  size: 48, color: Theme.of(context).colorScheme.error),
-              const SizedBox(height: 16),
-              Text(
-                _error ?? (AppLocalizations.of(context)?.userNotFound ?? "User not found"),
-                textAlign: TextAlign.center,
+        body: _isLoadingProfile
+            ? Center(child: CircularProgressIndicator(color: t.brandInk))
+            : ErrorStateWidget(
+                message: _error ?? (l?.userNotFound ?? "User not found"),
+                onRetry: _loadUserProfile,
               ),
-              const SizedBox(height: 16),
-              FilledButton(
-                onPressed: _loadUserProfile,
-                child: Text(AppLocalizations.of(context)?.retry ?? "Retry"),
-              ),
-            ],
-          ),
-        ),
       );
     }
 
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: t.bg,
       body: RefreshIndicator(
+        color: t.brandInk,
         onRefresh: _refreshProfile,
         child: CustomScrollView(
           controller: _scrollController,
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
-            SliverToBoxAdapter(child: _buildHeader(context)),
+            SliverPersistentHeader(
+              pinned: true,
+              delegate: ProfileCoverHeaderDelegate(
+                minExtent: profileCoverToolbarHeight,
+                maxExtent: _coverHeight,
+                builder: (context, collapse) => _buildCoverHeader(t, l, profile, collapse),
+              ),
+            ),
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+              sliver: SliverList.list(
+                children: [
+                  if (profile.bio != null && profile.bio!.trim().isNotEmpty) ...[
+                    Text(profile.bio!.trim(), style: TextStyle(fontSize: 15, height: 1.5, color: t.ink)),
+                    const SizedBox(height: 16),
+                  ],
+                  _buildStatsCard(l, profile),
+                  // Your own public profile has nothing to follow.
+                  if (!profile.isViewer) ...[
+                    const SizedBox(height: 16),
+                    _FollowButton(isFollowing: _isFollowing, onPressed: _toggleFollow),
+                  ],
+                  const SizedBox(height: 24),
+                  _buildRecipesHeader(t, l, profile),
+                  const SizedBox(height: 12),
+                ],
+              ),
+            ),
             ..._buildContentSlivers(context),
           ],
         ),
@@ -325,234 +349,95 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // HEADER
   // ─────────────────────────────────────────────────────────────
 
-  Widget _buildHeader(BuildContext context) {
-    final theme = Theme.of(context);
-    final safeTop = MediaQuery.of(context).padding.top;
+  Widget _buildCoverHeader(AppTokens t, AppLocalizations? l, UserProfile profile, double collapse) {
+    final name = profile.displayName?.trim().isNotEmpty == true ? profile.displayName!.trim() : profile.username;
+    final back = MaterialLocalizations.of(context).backButtonTooltip;
+    final more = l?.moreOptions ?? "More options";
 
-    final profile = _userProfile!;
-    final username = profile.username;
-    final displayName = profile.displayName ?? profile.username;
-    final avatarUrl = profile.avatarUrl;
-    final bio = profile.bio;
-
-    final normalizedAvatarUrl =
-        (avatarUrl == null || avatarUrl.isEmpty || avatarUrl == "null")
-            ? null
-            : avatarUrl;
-
-    final coverImageUrl = profile.coverPhotoUrl;
-
-    const coverHeight = 180.0;
-    const avatarSize = 96.0;
-    const overlapAmount = 56.0;
-    const avatarOverflow = avatarSize - overlapAmount; // 40px below cover
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        // ── Cover + top bar + avatar ──────────────────────────
-        SizedBox(
-          height: coverHeight + avatarOverflow,
-          child: Stack(
-            children: [
-              // Cover image
-              Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                height: coverHeight,
-                child: coverImageUrl != null
-                    ? RecipeImageWidget(
-                        imageUrl: coverImageUrl,
-                        width: double.infinity,
-                        height: coverHeight,
-                        fit: BoxFit.cover,
-                        cacheHeight: 360,
-                      )
-                    : const DecoratedBox(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [Color(0xFF5AAE94), Color(0xFF2E7A5A)],
-                          ),
-                        ),
-                        child: SizedBox(
-                            height: coverHeight, width: double.infinity),
-                      ),
-              ),
-              // Scrim
-              Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                height: coverHeight,
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.black.withValues(alpha: 0.25),
-                        Colors.transparent,
-                      ],
-                      stops: const [0.0, 0.4],
-                    ),
-                  ),
-                ),
-              ),
-              // Top bar
-              Positioned(
-                top: safeTop + 8,
-                left: 8,
-                right: 8,
-                child: Row(
-                  children: [
-                    _TopBarButton(
-                      icon: Icons.arrow_back,
-                      onTap: () => Navigator.of(context).maybePop(),
-                    ),
-                    const Spacer(),
-                    if (!profile.isViewer)
-                      _TopBarButton(
-                        icon: Icons.more_vert,
-                        onTap: () => _showMoreMenu(context),
-                      ),
-                  ],
-                ),
-              ),
-              // Avatar
-              Positioned(
-                top: coverHeight - overlapAmount,
-                left: 20,
-                child: _buildAvatar(
-                    context, normalizedAvatarUrl, username, theme),
-              ),
-            ],
+    return ProfileCoverHeader(
+      collapse: collapse,
+      expandedHeight: _coverHeight,
+      topInset: 0,
+      coverUrl: profile.coverPhotoUrl,
+      name: name,
+      username: profile.username,
+      avatar: ProfileCoverAvatar(avatarUrl: profile.avatarUrl, name: profile.username),
+      coverLeading: ProfileCoverButton(
+        tooltip: back,
+        onPressed: () => Navigator.of(context).maybePop(),
+        icon: const Icon(Icons.arrow_back_rounded, size: 20),
+      ),
+      coverActions: [
+        if (!profile.isViewer)
+          ProfileCoverButton(
+            tooltip: more,
+            onPressed: () => _showMoreMenu(context),
+            icon: const Icon(Icons.more_vert_rounded, size: 20),
           ),
+      ],
+      toolbarLeading: IconButton(
+        tooltip: back,
+        onPressed: () => Navigator.of(context).maybePop(),
+        icon: Icon(Icons.arrow_back_rounded, color: t.ink),
+      ),
+      toolbarActions: [
+        if (!profile.isViewer)
+          IconButton(
+            tooltip: more,
+            onPressed: () => _showMoreMenu(context),
+            icon: Icon(Icons.more_vert_rounded, color: t.ink),
+          ),
+      ],
+    );
+  }
+
+  /// The Profile tab's stats card: recipes, followers, following.
+  Widget _buildStatsCard(AppLocalizations? l, UserProfile profile) {
+    void push(Widget screen) => Navigator.of(context).push(MaterialPageRoute(builder: (_) => screen));
+    return ProfileStatsCard(
+      stats: [
+        ProfileStat(value: profile.recipesCount, label: l?.recipes ?? "Recipes"),
+        ProfileStat(
+          value: profile.followersCount,
+          label: l?.followers ?? "Followers",
+          onTap: () => push(FollowersScreen(
+            username: profile.username,
+            apiClient: widget.apiClient,
+            auth: widget.auth,
+            shoppingListController: widget.shoppingListController,
+          )),
         ),
-
-        // ── Name, stats, actions ─────────────────────────────
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Flexible(
-                    child: Text(
-                      displayName,
-                      style: const TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: -0.5,
-                        height: 1.1,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 2),
-              Text(
-                "@$username",
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                ),
-              ),
-              if (bio != null && bio.isNotEmpty) ...[
-                const SizedBox(height: 10),
-                Text(
-                  bio,
-                  style: TextStyle(
-                    fontSize: 14,
-                    height: 1.5,
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
-                  ),
-                ),
-              ],
-              const SizedBox(height: 14),
-              // Stats card
-              _StatsCard(
-                followersCount: profile.followersCount,
-                followingCount: profile.followingCount,
-                totalLikes: profile.totalLikesCount,
-                username: username,
-                auth: widget.auth,
-                apiClient: widget.apiClient,
-                shoppingListController: widget.shoppingListController,
-              ),
-              // Your own public profile has nothing to follow.
-              if (!profile.isViewer) ...[
-                const SizedBox(height: 14),
-                _OtherActionRow(
-                  isFollowing: _isFollowing,
-                  onFollow: _toggleFollow,
-                ),
-              ],
-              const SizedBox(height: 14),
-            ],
-          ),
+        ProfileStat(
+          value: profile.followingCount,
+          label: l?.followingTitle ?? "Following",
+          onTap: () => push(FollowingScreen(
+            username: profile.username,
+            apiClient: widget.apiClient,
+            auth: widget.auth,
+            shoppingListController: widget.shoppingListController,
+          )),
         ),
       ],
     );
   }
 
-  Widget _buildAvatar(BuildContext context, String? avatarUrl, String username,
-      ThemeData theme) {
-    Widget avatarContent;
-    if (avatarUrl != null) {
-      avatarContent = RecipeImageWidget(
-        imageUrl: avatarUrl,
-        width: 96,
-        height: 96,
-        fit: BoxFit.cover,
-        cacheWidth: 192,
-        cacheHeight: 192,
-      );
-    } else {
-      avatarContent = Container(
-        width: 96,
-        height: 96,
-        color: theme.colorScheme.primary,
-        child: Center(
-          child: username.isNotEmpty
-              ? Text(
-                  username[0].toUpperCase(),
-                  style: TextStyle(
-                    fontSize: 36,
-                    fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.onPrimary,
-                  ),
-                )
-              : Icon(Icons.person_outline_rounded,
-                  size: 48, color: theme.colorScheme.onPrimary),
+  /// "Recipes  12", like the Profile tab's "My recipes" header.
+  Widget _buildRecipesHeader(AppTokens t, AppLocalizations? l, UserProfile profile) {
+    return Semantics(
+      header: true,
+      child: Text.rich(
+        TextSpan(
+          children: [
+            TextSpan(
+              text: l?.recipes ?? "Recipes",
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: t.ink),
+            ),
+            TextSpan(
+              text: "  ${profile.recipesCount}",
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: t.ink2),
+            ),
+          ],
         ),
-      );
-    }
-
-    return Container(
-      width: 96,
-      height: 96,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: theme.colorScheme.surface, width: 4),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x2E000000),
-            blurRadius: 22,
-            offset: Offset(0, 8),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: avatarContent,
       ),
     );
   }
@@ -612,334 +497,122 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // CONTENT SLIVERS (recipe grid)
   // ─────────────────────────────────────────────────────────────
 
+  /// The user's recipes as the Profile tab shows them: 2-column photo +
+  /// title tiles, loaded page by page as the list scrolls.
   List<Widget> _buildContentSlivers(BuildContext context) {
+    final t = AppTokens.of(context);
+    final l = AppLocalizations.of(context);
     final controller = _recipesController;
+    final items = controller.items;
+    const padding = EdgeInsets.fromLTRB(16, 0, 16, 24);
 
-    if (controller.isLoading && controller.items.isEmpty) {
+    if (controller.isLoading && items.isEmpty) {
+      return const [
+        SliverPadding(padding: padding, sliver: SliverToBoxAdapter(child: RecipeGridSkeleton())),
+      ];
+    }
+    if (controller.error != null && items.isEmpty) {
       return [
-        const SliverFillRemaining(
-          child: Center(child: CircularProgressIndicator()),
+        SliverToBoxAdapter(
+          child: ErrorStateWidget(message: controller.error!, onRetry: controller.loadInitial),
         ),
       ];
     }
-
-    if (controller.error != null && controller.items.isEmpty) {
+    if (items.isEmpty) {
       return [
-        SliverFillRemaining(
-          child: Center(
-            child: ErrorStateWidget(
-              message: controller.error!,
-              onRetry: controller.loadInitial,
-            ),
-          ),
-        ),
-      ];
-    }
-
-    if (controller.items.isEmpty) {
-      final localizations = AppLocalizations.of(context);
-      return [
-        SliverFillRemaining(
+        SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.all(24),
             child: EmptyStateWidget(
               icon: Icons.restaurant_menu_outlined,
-              title: localizations?.noRecipesYet ?? "No recipes yet",
-              description: localizations?.userNoRecipesYet ?? "This user hasn't created any recipes yet",
+              title: l?.noRecipesYet ?? "No recipes yet",
+              description: l?.userNoRecipesYet ?? "This user hasn't created any recipes yet",
             ),
           ),
         ),
       ];
     }
 
-    final recipeCount = controller.items.length;
-
+    final rows = (items.length + 1) ~/ 2;
     return [
-      SliverToBoxAdapter(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
-          child: Text(
-            AppLocalizations.of(context)?.recipeCount(recipeCount) ??
-                "$recipeCount Recipes",
-            style: Theme.of(context)
-                .textTheme
-                .titleMedium
-                ?.copyWith(fontWeight: FontWeight.w700),
-          ),
-        ),
-      ),
       SliverPadding(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-        sliver: SliverGrid(
-          delegate: SliverChildBuilderDelegate(
-            (context, index) {
-              if (index >= controller.items.length) {
-                return Container(
-                  color:
-                      Theme.of(context).colorScheme.surfaceContainerLow,
-                  child: const Center(child: CircularProgressIndicator()),
-                );
-              }
-              final recipe = controller.items[index];
-              return RepaintBoundary(
-                child: RecipeGridCard(
-                  recipe: recipe,
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => RecipeDetailScreen(
-                        recipeId: recipe.id,
-                        apiClient: widget.apiClient,
-                        auth: widget.auth,
-                        shoppingListController: widget.shoppingListController,
-                      ),
-                    ),
-                  ),
-                ),
+        padding: padding,
+        sliver: SliverList.builder(
+          itemCount: rows + (controller.isLoadingMore ? 1 : 0),
+          itemBuilder: (context, row) {
+            if (row >= rows) {
+              return Padding(
+                padding: const EdgeInsets.all(16),
+                child: Center(child: CircularProgressIndicator(color: t.brandInk)),
               );
-            },
-            childCount: controller.items.length +
-                (controller.isLoadingMore ? 1 : 0),
-          ),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 3,
-            crossAxisSpacing: 2,
-            mainAxisSpacing: 2,
-            childAspectRatio: 0.75,
-          ),
+            }
+            final i = row * 2;
+            return Padding(
+              padding: EdgeInsets.only(bottom: row < rows - 1 ? 16 : 0),
+              child: RecipeGridRow(
+                left: items[i],
+                right: i + 1 < items.length ? items[i + 1] : null,
+                onTap: _openRecipe,
+              ),
+            );
+          },
         ),
       ),
-      if (controller.isLoadingMore)
-        const SliverToBoxAdapter(
-          child: Padding(
-            padding: EdgeInsets.all(16),
-            child: Center(child: CircularProgressIndicator()),
-          ),
-        ),
     ];
   }
-}
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Helper widgets
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _TopBarButton extends StatelessWidget {
-  const _TopBarButton({required this.icon, required this.onTap});
-
-  final IconData icon;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.85),
-          shape: BoxShape.circle,
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x1A000000),
-              blurRadius: 3,
-              offset: Offset(0, 1),
-            ),
-          ],
-        ),
-        // White circle in both themes: keep the light theme's green.
-        child: Icon(icon, size: 22, color: AppTokens.light.brandInk),
-      ),
-    );
-  }
-}
-
-class _StatsCard extends StatelessWidget {
-  const _StatsCard({
-    required this.followersCount,
-    required this.followingCount,
-    required this.totalLikes,
-    required this.username,
-    required this.auth,
-    required this.apiClient,
-    required this.shoppingListController,
-  });
-
-  final int followersCount;
-  final int followingCount;
-  final int totalLikes;
-  final String username;
-  final AuthController auth;
-  final ApiClient apiClient;
-  final ShoppingListController shoppingListController;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final localizations = AppLocalizations.of(context);
-
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: theme.colorScheme.onSurface.withValues(alpha: 0.15),
-        ),
-      ),
-      child: Row(
-        children: [
-          _StatCell(
-            value: followersCount.toString(),
-            label: localizations?.followers ?? "Followers",
-            onTap: () => Navigator.of(context).push(MaterialPageRoute(
-              builder: (_) => FollowersScreen(
-                username: username,
-                apiClient: apiClient,
-                auth: auth,
-                shoppingListController: shoppingListController,
-              ),
-            )),
-            leftRadius: 16,
-          ),
-          _StatDivider(),
-          _StatCell(
-            value: followingCount.toString(),
-            label: localizations?.followingTitle ?? "Following",
-            onTap: () => Navigator.of(context).push(MaterialPageRoute(
-              builder: (_) => FollowingScreen(
-                username: username,
-                apiClient: apiClient,
-                auth: auth,
-                shoppingListController: shoppingListController,
-              ),
-            )),
-          ),
-          _StatDivider(),
-          _StatCell(
-            value: totalLikes.toString(),
-            label: localizations?.totalLikes ?? "Likes",
-            rightRadius: 16,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _StatCell extends StatelessWidget {
-  const _StatCell({
-    required this.value,
-    required this.label,
-    this.onTap,
-    this.leftRadius = 0,
-    this.rightRadius = 0,
-  });
-
-  final String value;
-  final String label;
-  final VoidCallback? onTap;
-  final double leftRadius;
-  final double rightRadius;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final content = Padding(
-      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 4),
-      child: Column(
-        children: [
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-              letterSpacing: -0.3,
-              height: 1.0,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label.toUpperCase(),
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.5,
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-            ),
-          ),
-        ],
-      ),
-    );
-
-    if (onTap == null) {
-      return Expanded(child: Center(child: content));
-    }
-
-    return Expanded(
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(leftRadius),
-            bottomLeft: Radius.circular(leftRadius),
-            topRight: Radius.circular(rightRadius),
-            bottomRight: Radius.circular(rightRadius),
-          ),
-          child: Center(child: content),
+  void _openRecipe(FeedItem recipe) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => RecipeDetailScreen(
+          recipeId: recipe.id,
+          apiClient: widget.apiClient,
+          auth: widget.auth,
+          shoppingListController: widget.shoppingListController,
         ),
       ),
     );
   }
 }
 
-class _StatDivider extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 1,
-      height: 40,
-      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
-    );
-  }
-}
-
-class _OtherActionRow extends StatelessWidget {
-  const _OtherActionRow({
-    required this.isFollowing,
-    required this.onFollow,
-  });
+/// Follow / Following, full width like the Profile tab's Edit profile
+/// button: the primary button to follow, the outlined one once following.
+class _FollowButton extends StatelessWidget {
+  const _FollowButton({required this.isFollowing, required this.onPressed});
 
   final bool isFollowing;
-  final VoidCallback onFollow;
+  final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return SizedBox(
-      width: double.infinity,
-      height: 46,
-      child: FilledButton.icon(
-        onPressed: onFollow,
-        icon: Icon(
-          isFollowing ? Icons.check : Icons.person_add_outlined,
-          size: 18,
+    final t = AppTokens.of(context);
+    final l = AppLocalizations.of(context);
+    final shape = RoundedRectangleBorder(borderRadius: BorderRadius.circular(12));
+    const textStyle = TextStyle(fontSize: 14, fontWeight: FontWeight.w600);
+
+    if (isFollowing) {
+      return OutlinedButton.icon(
+        onPressed: onPressed,
+        icon: const Icon(Icons.check_rounded, size: 18),
+        label: Text(l?.followingUser ?? "Following"),
+        style: OutlinedButton.styleFrom(
+          minimumSize: const Size.fromHeight(44),
+          backgroundColor: t.card,
+          foregroundColor: t.ink,
+          side: BorderSide(color: t.line),
+          shape: shape,
+          textStyle: textStyle,
         ),
-        label: Text(isFollowing
-            ? (AppLocalizations.of(context)?.followingUser ?? "Following")
-            : (AppLocalizations.of(context)?.follow ?? "Follow")),
-        style: FilledButton.styleFrom(
-          backgroundColor: isFollowing
-              ? theme.colorScheme.surfaceContainerLow
-              : theme.colorScheme.onSurface,
-          foregroundColor: isFollowing
-              ? theme.colorScheme.onSurface
-              : theme.colorScheme.surface,
-          textStyle:
-              const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14)),
-        ),
+      );
+    }
+    return FilledButton.icon(
+      onPressed: onPressed,
+      icon: const Icon(Icons.person_add_outlined, size: 18),
+      label: Text(l?.follow ?? "Follow"),
+      style: FilledButton.styleFrom(
+        minimumSize: const Size.fromHeight(44),
+        shape: shape,
+        textStyle: textStyle,
       ),
     );
   }

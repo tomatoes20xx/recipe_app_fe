@@ -43,6 +43,10 @@ class SearchResult {
   final String authorUsername;
   final String? authorDisplayName;
   final String? authorAvatarUrl;
+
+  /// First photo, shown as the result's thumbnail. Null when the recipe has
+  /// none, or the backend predates `image_url`.
+  final String? imageUrl;
   final IngredientMatch? ingredientMatch;
 
   SearchResult({
@@ -55,6 +59,7 @@ class SearchResult {
     required this.authorUsername,
     this.authorDisplayName,
     this.authorAvatarUrl,
+    this.imageUrl,
     this.ingredientMatch,
   });
 
@@ -73,6 +78,7 @@ class SearchResult {
       authorUsername: json["author_username"].toString(),
       authorDisplayName: json["author_display_name"]?.toString(),
       authorAvatarUrl: authorAvatarUrl,
+      imageUrl: normalizeAvatarUrl(json["image_url"]),
       ingredientMatch: ingredientMatchData != null ? IngredientMatch.fromJson(ingredientMatchData) : null,
     );
   }

@@ -3,6 +3,9 @@ import "../auth/auth_api.dart";
 import "../auth/auth_controller.dart";
 import "../feed/feed_view_controller.dart";
 import "../localization/app_localizations.dart";
+import "../widgets/common/profile_avatar.dart";
+import "../widgets/common/token_widgets.dart";
+import "../theme/app_tokens.dart";
 import "../localization/language_controller.dart";
 import "../theme/theme_controller.dart";
 import "package:package_info_plus/package_info_plus.dart";
@@ -134,191 +137,106 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context);
-    final theme = Theme.of(context);
+    final t = AppTokens.of(context);
     final isLoggedIn = widget.auth?.isLoggedIn == true;
+    const gap = SizedBox(height: 24);
 
     return Scaffold(
-      backgroundColor: theme.colorScheme.surface,
+      backgroundColor: t.bg,
       body: CustomScrollView(
         slivers: [
-          // App Bar
           SliverAppBar(
             pinned: true,
             title: Text(localizations?.settings ?? "Settings"),
           ),
-
-          // User Header (if logged in)
-          if (isLoggedIn)
-            SliverToBoxAdapter(
-              child: Container(
-                margin: const EdgeInsets.fromLTRB(20, 8, 20, 0),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      theme.colorScheme.primary.withValues(alpha: 0.08),
-                      theme.colorScheme.primary.withValues(alpha: 0.03),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: _buildUserHeader(context),
-              ),
-            ),
-
-          // Settings Content
           SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            sliver: SliverList(
-              delegate: SliverChildListDelegate([
-                const SizedBox(height: 8),
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
+            sliver: SliverList.list(
+              children: [
+                if (isLoggedIn) ...[
+                  _buildUserHeader(context),
+                  gap,
+                ],
 
-                // Preferences Section
-                _buildSectionLabel(
-                  context,
-                  localizations?.appPreferences ?? "Preferences",
-                ),
-                const SizedBox(height: 12),
-                _buildSettingsGroup(
-                  context,
+                // Preferences
+                TokenSectionLabel(localizations?.appPreferences ?? "Preferences"),
+                TokenGroup(
                   children: [
-                    _buildSettingsTile(
-                      context,
+                    TokenListRow(
                       icon: Icons.palette_outlined,
-                      iconColor: theme.colorScheme.primary,
-                      title: localizations?.themeMode ?? "Theme",
-                      subtitle: _getThemeModeLabel(context),
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => ThemeSelectionScreen(
-                              themeController: widget.themeController,
-                            ),
-                          ),
-                        );
-                      },
+                      label: localizations?.themeMode ?? "Theme",
+                      value: _getThemeModeLabel(context),
+                      showDivider: true,
+                      onTap: () => _push(ThemeSelectionScreen(themeController: widget.themeController)),
                     ),
-                    _buildSettingsTile(
-                      context,
+                    TokenListRow(
                       icon: Icons.translate_rounded,
-                      iconColor: Colors.orange,
-                      title: localizations?.language ?? "Language",
-                      subtitle: _getLanguageLabel(context),
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => LanguageSelectionScreen(
-                              languageController: widget.languageController,
-                            ),
-                          ),
-                        );
-                      },
+                      label: localizations?.language ?? "Language",
+                      value: _getLanguageLabel(context),
+                      showDivider: widget.feedViewController != null,
+                      onTap: () => _push(LanguageSelectionScreen(languageController: widget.languageController)),
                     ),
                     if (widget.feedViewController != null)
                       AnimatedBuilder(
                         animation: widget.feedViewController!,
-                        builder: (context, _) => _buildSettingsTile(
-                          context,
-                          icon: Icons.view_carousel_rounded,
-                          iconColor: Colors.teal,
-                          title: localizations?.feedViewType ?? "Feed View",
-                          subtitle: widget.feedViewController!.isFullScreenView
+                        builder: (context, _) => TokenListRow(
+                          icon: Icons.view_carousel_outlined,
+                          label: localizations?.feedViewType ?? "Feed View",
+                          value: widget.feedViewController!.isFullScreenView
                               ? (localizations?.fullScreenView ?? "Full Screen View")
                               : (localizations?.listView ?? "List View"),
-                          onTap: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => FeedViewScreen(
-                                  feedViewController: widget.feedViewController!,
-                                ),
-                              ),
-                            );
-                          },
+                          onTap: () => _push(FeedViewScreen(feedViewController: widget.feedViewController!)),
                         ),
                       ),
                   ],
                 ),
 
-                const SizedBox(height: 28),
-
-                // Privacy Section (only if logged in)
+                // Privacy (only if logged in)
                 if (isLoggedIn) ...[
-                  _buildSectionLabel(
-                    context,
-                    localizations?.privacy ?? "Privacy",
-                  ),
-                  const SizedBox(height: 12),
+                  gap,
+                  TokenSectionLabel(localizations?.privacy ?? "Privacy"),
                   _buildPrivacySettings(context),
-                  const SizedBox(height: 28),
                 ],
 
-                // Support Section
-                _buildSectionLabel(
-                  context,
-                  localizations?.about ?? "Support",
-                ),
-                const SizedBox(height: 12),
-                _buildSettingsGroup(
-                  context,
+                // Support
+                gap,
+                TokenSectionLabel(localizations?.about ?? "Support"),
+                TokenGroup(
                   children: [
-                    _buildSettingsTile(
-                      context,
+                    TokenListRow(
                       icon: Icons.help_outline_rounded,
-                      iconColor: Colors.blue,
-                      title: localizations?.helpAndSupport ?? "Help & Support",
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => const HelpAndSupportScreen(),
-                          ),
-                        );
-                      },
+                      label: localizations?.helpAndSupport ?? "Help & Support",
+                      showDivider: true,
+                      onTap: () => _push(const HelpAndSupportScreen()),
                     ),
-                    _buildSettingsTile(
-                      context,
+                    TokenListRow(
                       icon: Icons.shield_outlined,
-                      iconColor: Colors.teal,
-                      title: localizations?.termsAndPrivacy ?? "Terms & Privacy",
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => const TermsAndPrivacyScreen(),
-                          ),
-                        );
-                      },
+                      label: localizations?.termsAndPrivacy ?? "Terms & Privacy",
+                      onTap: () => _push(const TermsAndPrivacyScreen()),
                     ),
                   ],
                 ),
 
-                const SizedBox(height: 28),
-
                 // Sign out + delete account (if logged in)
                 if (isLoggedIn) ...[
-                  _buildSettingsGroup(
-                    context,
+                  gap,
+                  TokenGroup(
                     children: [
-                      _buildSettingsTile(
-                        context,
+                      TokenListRow(
                         icon: Icons.logout_rounded,
-                        iconColor: theme.colorScheme.error,
-                        titleColor: theme.colorScheme.error,
-                        title: localizations?.signOut ?? "Sign out",
+                        label: localizations?.signOut ?? "Sign out",
+                        destructive: true,
                         onTap: () => _confirmSignOut(context, localizations),
                       ),
                     ],
                   ),
                   const SizedBox(height: 12),
                   _buildDeleteAccountButton(context),
-                  const SizedBox(height: 28),
                 ],
 
-                // App Info Footer
+                const SizedBox(height: 28),
                 _buildAppInfoFooter(context),
-
-                const SizedBox(height: 40),
-              ]),
+              ],
             ),
           ),
         ],
@@ -326,218 +244,83 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildUserHeader(BuildContext context) {
-    final theme = Theme.of(context);
-    final username = widget.auth?.me?["username"]?.toString();
-    final email = widget.auth?.me?["email"]?.toString();
-    final displayName = widget.auth?.me?["display_name"]?.toString();
-    final avatarUrl = widget.auth?.me?["avatar_url"]?.toString();
+  void _push(Widget screen) {
+    Navigator.of(context).push(MaterialPageRoute(builder: (_) => screen));
+  }
 
-    return Row(
-      children: [
-        // Avatar
-        Container(
-          width: 56,
-          height: 56,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: theme.colorScheme.primary.withValues(alpha: 0.15),
-            image: avatarUrl != null && avatarUrl.isNotEmpty
-                ? DecorationImage(
-                    image: NetworkImage(avatarUrl),
-                    fit: BoxFit.cover,
-                  )
-                : null,
-          ),
-          child: avatarUrl == null || avatarUrl.isEmpty
-              ? Icon(
-                  Icons.person_rounded,
-                  size: 28,
-                  color: theme.colorScheme.primary,
-                )
-              : null,
-        ),
-        const SizedBox(width: 16),
-        // User Info
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                displayName ?? username ?? "",
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              if (email != null) ...[
-                const SizedBox(height: 2),
+  /// Avatar, name and email on a `card`, like the Profile tab's cards.
+  Widget _buildUserHeader(BuildContext context) {
+    final t = AppTokens.of(context);
+    final me = widget.auth?.me;
+    final username = me?["username"]?.toString() ?? "";
+    final email = me?["email"]?.toString();
+    final displayName = me?["display_name"]?.toString();
+    final name = displayName?.trim().isNotEmpty == true ? displayName!.trim() : username;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: t.card,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: t.line),
+      ),
+      child: Row(
+        children: [
+          ProfileAvatar(avatarUrl: me?["avatar_url"]?.toString(), name: name, size: 52),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 Text(
-                  email,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                  ),
+                  name,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: t.ink),
                 ),
+                if (email != null) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    email,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontSize: 13, color: t.ink2),
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSectionLabel(BuildContext context, String text) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.only(left: 4),
-      child: Text(
-        text.toUpperCase(),
-        style: theme.textTheme.labelSmall?.copyWith(
-          color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-          fontWeight: FontWeight.w600,
-          letterSpacing: 1.2,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSettingsGroup(
-    BuildContext context, {
-    required List<Widget> children,
-  }) {
-    final theme = Theme.of(context);
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        children: children,
-      ),
-    );
-  }
-
-  Widget _buildSettingsTile(
-    BuildContext context, {
-    required IconData icon,
-    required Color iconColor,
-    required String title,
-    String? subtitle,
-    Color? titleColor,
-    required VoidCallback onTap,
-  }) {
-    final theme = Theme.of(context);
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          child: Row(
-            children: [
-              // Icon with background
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: iconColor.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(
-                  icon,
-                  size: 20,
-                  color: iconColor,
-                ),
-              ),
-              const SizedBox(width: 14),
-              // Title & Subtitle
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        fontWeight: FontWeight.w500,
-                        color: titleColor,
-                      ),
-                    ),
-                    if (subtitle != null) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        subtitle,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              // Chevron
-              Icon(
-                Icons.chevron_right_rounded,
-                size: 22,
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
-              ),
-            ],
-          ),
-        ),
+        ],
       ),
     );
   }
 
   Widget _buildPrivacySettings(BuildContext context) {
-    final theme = Theme.of(context);
     final localizations = AppLocalizations.of(context);
+    final t = AppTokens.of(context);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-              children: [
-                SwitchListTile(
-                  title: Text(localizations?.privateFollowers ?? "Private Followers"),
-                  subtitle: Text(localizations?.hideYourFollowersListFromOthers ?? "Hide your followers list from others"),
-                  value: _privacySettings.followersPrivate,
-                  onChanged: _isLoadingPrivacy
-                      ? null
-                      : (value) {
-                          _updatePrivacy(followersPrivate: value);
-                        },
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
-                Divider(
-                  height: 1,
-                  indent: 16,
-                  endIndent: 16,
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.08),
-                ),
-                SwitchListTile(
-                  title: Text(localizations?.privateFollowing ?? "Private Following"),
-                  subtitle: Text(localizations?.hideYourFollowingListFromOthers ?? "Hide your following list from others"),
-                  value: _privacySettings.followingPrivate,
-                  onChanged: _isLoadingPrivacy
-                      ? null
-                      : (value) {
-                          _updatePrivacy(followingPrivate: value);
-                        },
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
-              ],
-            ),
+    Widget toggle(bool value, ValueChanged<bool> onChanged) => Switch(
+          value: value,
+          onChanged: _isLoadingPrivacy ? null : onChanged,
+          activeTrackColor: t.fill,
+        );
+
+    return TokenGroup(
+      children: [
+        TokenListRow(
+          icon: Icons.people_outline_rounded,
+          label: localizations?.privateFollowers ?? "Private Followers",
+          description: localizations?.hideYourFollowersListFromOthers ?? "Hide your followers list from others",
+          showDivider: true,
+          trailing: toggle(_privacySettings.followersPrivate, (v) => _updatePrivacy(followersPrivate: v)),
+        ),
+        TokenListRow(
+          icon: Icons.person_outline_rounded,
+          label: localizations?.privateFollowing ?? "Private Following",
+          description: localizations?.hideYourFollowingListFromOthers ?? "Hide your following list from others",
+          trailing: toggle(_privacySettings.followingPrivate, (v) => _updatePrivacy(followingPrivate: v)),
+        ),
+      ],
     );
   }
 
@@ -571,39 +354,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildDeleteAccountButton(BuildContext context) {
-    final theme = Theme.of(context);
+    final error = Theme.of(context).colorScheme.error;
     final localizations = AppLocalizations.of(context);
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () => _showDeleteAccountDialog(context),
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          decoration: BoxDecoration(
-            border: Border.all(color: theme.colorScheme.error.withValues(alpha: 0.4)),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.delete_forever_outlined,
-                size: 20,
-                color: theme.colorScheme.error,
-              ),
-              const SizedBox(width: 10),
-              Text(
-                localizations?.deleteAccount ?? "Delete Account",
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  color: theme.colorScheme.error,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-        ),
+    return OutlinedButton.icon(
+      onPressed: () => _showDeleteAccountDialog(context),
+      icon: const Icon(Icons.delete_forever_outlined, size: 20),
+      label: Text(localizations?.deleteAccount ?? "Delete Account"),
+      style: OutlinedButton.styleFrom(
+        minimumSize: const Size.fromHeight(44),
+        foregroundColor: error,
+        side: BorderSide(color: error.withValues(alpha: 0.5)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
       ),
     );
   }

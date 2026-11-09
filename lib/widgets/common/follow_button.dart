@@ -1,8 +1,11 @@
 import "package:flutter/material.dart";
-import "../../localization/app_localizations.dart";
 
-/// Reusable follow/following button widget.
-/// Displays different styles based on follow state.
+import "../../localization/app_localizations.dart";
+import "../../theme/app_tokens.dart";
+
+/// Follow / Following in a user row. Same look as the profile's follow
+/// button, at chip height: the primary button to follow, an outlined `card`
+/// button once following.
 class FollowButton extends StatelessWidget {
   const FollowButton({
     super.key,
@@ -17,45 +20,38 @@ class FollowButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final t = AppTokens.of(context);
+    final l = AppLocalizations.of(context);
+    const size = Size(0, 36);
+    const padding = EdgeInsets.symmetric(horizontal: 16);
+    final shape = RoundedRectangleBorder(borderRadius: BorderRadius.circular(18));
+    const textStyle = TextStyle(fontSize: 13, fontWeight: FontWeight.w700);
+    final label = Text(isFollowing ? (l?.followingUser ?? "Following") : (l?.follow ?? "Follow"));
+    final spinner = SizedBox(
+      width: 16,
+      height: 16,
+      child: CircularProgressIndicator(strokeWidth: 2, color: t.brandInk),
+    );
 
-    return OutlinedButton(
+    if (isFollowing) {
+      return OutlinedButton(
+        onPressed: isLoading ? null : onTap,
+        style: OutlinedButton.styleFrom(
+          minimumSize: size,
+          padding: padding,
+          shape: shape,
+          backgroundColor: t.card,
+          foregroundColor: t.ink,
+          side: BorderSide(color: t.line),
+          textStyle: textStyle,
+        ),
+        child: isLoading ? spinner : label,
+      );
+    }
+    return FilledButton(
       onPressed: isLoading ? null : onTap,
-      style: OutlinedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        side: BorderSide(
-          color: isFollowing
-              ? theme.colorScheme.outline
-              : theme.colorScheme.primary,
-        ),
-      ),
-      child: isLoading
-          ? SizedBox(
-              width: 16,
-              height: 16,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  isFollowing
-                      ? theme.colorScheme.onSurface
-                      : theme.colorScheme.primary,
-                ),
-              ),
-            )
-          : Text(
-              isFollowing
-                  ? (AppLocalizations.of(context)?.followingUser ?? "Following")
-                  : (AppLocalizations.of(context)?.follow ?? "Follow"),
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                color: isFollowing
-                    ? theme.colorScheme.onSurface
-                    : theme.colorScheme.primary,
-              ),
-            ),
+      style: FilledButton.styleFrom(minimumSize: size, padding: padding, shape: shape, textStyle: textStyle),
+      child: isLoading ? spinner : label,
     );
   }
 }

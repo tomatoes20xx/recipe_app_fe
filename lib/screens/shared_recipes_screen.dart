@@ -4,7 +4,9 @@ import "../api/api_client.dart";
 import "../auth/auth_controller.dart";
 import "../feed/feed_models.dart";
 import "../recipes/recipe_detail_screen.dart";
-import "../widgets/common/recipe_grid_card.dart";
+import "../widgets/common/recipe_grid_tile.dart";
+import "../widgets/common/skeletons.dart";
+import "../widgets/common/token_widgets.dart";
 import "../localization/app_localizations.dart";
 import "../utils/error_utils.dart";
 import "../utils/ui_utils.dart";
@@ -141,7 +143,6 @@ class _SharedRecipesScreenState extends State<SharedRecipesScreen> {
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context);
-    final theme = Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -152,40 +153,16 @@ class _SharedRecipesScreenState extends State<SharedRecipesScreen> {
         child: Builder(
           builder: (context) {
             if (controller.isLoading && controller.items.isEmpty) {
-              return const Center(child: CircularProgressIndicator());
+              return const SingleChildScrollView(
+                padding: EdgeInsets.all(16),
+                child: RecipeGridSkeleton(),
+              );
             }
 
             if (controller.error != null && controller.items.isEmpty) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.error_outline,
-                      size: 48,
-                      color: theme.colorScheme.error,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      localizations?.error ?? "Error",
-                      style: theme.textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 8),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 32),
-                      child: Text(
-                        controller.error!,
-                        style: theme.textTheme.bodySmall,
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    FilledButton(
-                      onPressed: () => controller.refresh(),
-                      child: Text(localizations?.retry ?? "Retry"),
-                    ),
-                  ],
-                ),
+              return ErrorStateWidget(
+                message: controller.error!,
+                onRetry: () => controller.refresh(),
               );
             }
 
@@ -208,54 +185,32 @@ class _SharedRecipesScreenState extends State<SharedRecipesScreen> {
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
-                      child: Text(
-                        group.label,
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
-                          letterSpacing: 0.3,
-                        ),
-                      ),
+                      child: TokenSectionLabel(group.label),
                     ),
                   ),
                   SliverPadding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
-                    sliver: SliverGrid(
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 3,
-                        crossAxisSpacing: 2,
-                        mainAxisSpacing: 2,
-                        childAspectRatio: 0.75,
-                      ),
-                      delegate: SliverChildBuilderDelegate(
-                        (context, index) {
-                          final recipe = group.recipes[index];
-                          return RepaintBoundary(
-                            child: GestureDetector(
-                              onLongPress: () {
-                                if (recipe.shareId != null) {
-                                  _showDeleteConfirmation(recipe.shareId!, recipe.title);
-                                }
-                              },
-                              child: RecipeGridCard(
-                                recipe: recipe,
-                                onTap: () async {
-                                  await Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (_) => RecipeDetailScreen(
-                                        recipeId: recipe.id,
-                                        apiClient: widget.apiClient,
-                                        auth: widget.auth,
-                                        shoppingListController: widget.shoppingListController,
-                                      ),
-                                    ),
-                                  );
-                                },
+                    sliver: SliverRecipeTileGrid(
+                      items: group.recipes,
+                      tileBuilder: (context, recipe) => GestureDetector(
+                        onLongPress: () {
+                          if (recipe.shareId != null) {
+                            _showDeleteConfirmation(recipe.shareId!, recipe.title);
+                          }
+                        },
+                        child: RecipeGridTile(
+                          recipe: recipe,
+                          onTap: () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => RecipeDetailScreen(
+                                recipeId: recipe.id,
+                                apiClient: widget.apiClient,
+                                auth: widget.auth,
+                                shoppingListController: widget.shoppingListController,
                               ),
                             ),
-                          );
-                        },
-                        childCount: group.recipes.length,
+                          ),
+                        ),
                       ),
                     ),
                   ),

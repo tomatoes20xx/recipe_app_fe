@@ -7,14 +7,16 @@ import '../auth/auth_controller.dart';
 import '../collections/collection_api.dart';
 import '../collections/collection_picker_bottom_sheet.dart';
 import '../collections/collections_controller.dart';
-import '../feed/feed_models.dart';
 import '../feed/saved_recipes_controller.dart';
 import '../localization/app_localizations.dart';
 import '../recipes/recipe_detail_screen.dart';
 import '../shopping/shopping_list_controller.dart';
 import '../users/user_api.dart';
 import '../utils/error_utils.dart';
-import '../utils/ui_utils.dart';
+import '../theme/app_tokens.dart';
+import '../widgets/common/recipe_grid_tile.dart';
+import '../widgets/common/skeletons.dart';
+import '../widgets/common/token_widgets.dart';
 import '../widgets/empty_state_widget.dart';
 import 'collection_detail_screen.dart';
 
@@ -314,9 +316,8 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen>
               ? null
               : TabBar(
                   controller: _tabController,
-                  isScrollable: true,
-                  tabAlignment: TabAlignment.start,
-                  dividerColor: Colors.transparent,
+                  indicatorSize: TabBarIndicatorSize.tab,
+                  indicatorWeight: 3,
                   tabs: [
                     Tab(text: localizations?.allSaved ?? 'All'),
                     Tab(text: localizations?.collections ?? 'Collections'),
@@ -569,7 +570,10 @@ class _AllSavedTabState extends State<_AllSavedTab>
 
     // Full-screen spinner only on the very first load, before any data arrives.
     if (!_hasLoadedOnce && controller.isLoading && controller.items.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
+      return const SingleChildScrollView(
+        padding: EdgeInsets.fromLTRB(16, 16, 16, 16),
+        child: RecipeGridSkeleton(),
+      );
     }
 
     if (controller.error != null && controller.items.isEmpty) {
@@ -592,7 +596,7 @@ class _AllSavedTabState extends State<_AllSavedTab>
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                child: _SearchBar(
+                child: TokenSearchField(
                   controller: _searchController,
                   hintText: AppLocalizations.of(context)?.searchSavedRecipes ??
                       'Search saved recipes',
@@ -615,7 +619,7 @@ class _AllSavedTabState extends State<_AllSavedTab>
           if (controller.isLoading && _hasLoadedOnce)
             const SliverPadding(
               padding: EdgeInsets.fromLTRB(16, 8, 16, 16),
-              sliver: _SkeletonGrid(),
+              sliver: SliverToBoxAdapter(child: RecipeGridSkeleton()),
             )
 
           // Empty state
@@ -647,39 +651,25 @@ class _AllSavedTabState extends State<_AllSavedTab>
                 16,
                 widget.isSelectionMode ? 80 : 16,
               ),
-              sliver: SliverGrid(
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 10,
-                  mainAxisSpacing: 10,
-                  childAspectRatio: 0.75,
-                ),
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final recipe = items[index];
-                    return RepaintBoundary(
-                      child: _SavedRecipeCard(
-                        recipe: recipe,
-                        isSelectionMode: widget.isSelectionMode,
-                        isSelected: widget.selectedIds.contains(recipe.id),
-                        onTap: () {
-                          if (widget.isSelectionMode) {
-                            widget.onToggleSelection(recipe.id);
-                          } else {
-                            _navigateToDetail(recipe.id);
-                          }
-                        },
-                        onCheckboxTap: () {
-                          if (widget.isSelectionMode) {
-                            widget.onToggleSelection(recipe.id);
-                          } else {
-                            widget.onEnterSelectionMode(recipe.id);
-                          }
-                        },
-                      ),
-                    );
+              sliver: SliverRecipeTileGrid(
+                items: items,
+                tileBuilder: (context, recipe) => RecipeGridTile(
+                  recipe: recipe,
+                  selected: widget.selectedIds.contains(recipe.id),
+                  onTap: () {
+                    if (widget.isSelectionMode) {
+                      widget.onToggleSelection(recipe.id);
+                    } else {
+                      _navigateToDetail(recipe.id);
+                    }
                   },
-                  childCount: items.length,
+                  onSelectTap: () {
+                    if (widget.isSelectionMode) {
+                      widget.onToggleSelection(recipe.id);
+                    } else {
+                      widget.onEnterSelectionMode(recipe.id);
+                    }
+                  },
                 ),
               ),
             ),
@@ -711,72 +701,6 @@ class _AllSavedTabState extends State<_AllSavedTab>
   }
 }
 
-// ─── Search Bar ────────────────────────────────────────────────────────────
-
-class _SearchBar extends StatelessWidget {
-  const _SearchBar({
-    required this.controller,
-    required this.onChanged,
-    required this.hintText,
-  });
-
-  final TextEditingController controller;
-  final ValueChanged<String> onChanged;
-  final String hintText;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      height: 44,
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Row(
-        children: [
-          const SizedBox(width: 12),
-          Icon(Icons.search_rounded, size: 20, color: theme.colorScheme.onSurfaceVariant),
-          const SizedBox(width: 8),
-          Expanded(
-            child: TextField(
-              controller: controller,
-              onChanged: onChanged,
-              style: theme.textTheme.bodyMedium,
-              decoration: InputDecoration(
-                hintText: hintText,
-                hintStyle: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-                border: InputBorder.none,
-                isDense: true,
-                contentPadding: EdgeInsets.zero,
-              ),
-            ),
-          ),
-          if (controller.text.isNotEmpty)
-            GestureDetector(
-              onTap: () {
-                controller.clear();
-                onChanged('');
-              },
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                child: Icon(
-                  Icons.close_rounded,
-                  size: 18,
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-            )
-          else
-            const SizedBox(width: 12),
-        ],
-      ),
-    );
-  }
-}
-
 // ─── Sort Bar ──────────────────────────────────────────────────────────────
 
 class _SortBar extends StatelessWidget {
@@ -792,20 +716,16 @@ class _SortBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final primary = theme.colorScheme.primary;
+    final t = AppTokens.of(context);
     final loc = AppLocalizations.of(context);
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 2),
+      padding: const EdgeInsets.fromLTRB(16, 6, 16, 2),
       child: Row(
         children: [
           Text(
             loc?.nSaved(count) ?? '$count saved',
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-              fontWeight: FontWeight.w600,
-            ),
+            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: t.ink2),
           ),
           const SizedBox(width: 8),
           Expanded(
@@ -815,24 +735,21 @@ class _SortBar extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  _SortChip(
+                  TokenChip(
                     label: loc?.recent ?? 'Recent',
-                    active: sort == _SortMode.recent,
-                    primaryColor: primary,
+                    selected: sort == _SortMode.recent,
                     onTap: () => onChanged(_SortMode.recent),
                   ),
-                  const SizedBox(width: 4),
-                  _SortChip(
+                  const SizedBox(width: 8),
+                  TokenChip(
                     label: loc?.sortMostLiked ?? 'Most liked',
-                    active: sort == _SortMode.mostLiked,
-                    primaryColor: primary,
+                    selected: sort == _SortMode.mostLiked,
                     onTap: () => onChanged(_SortMode.mostLiked),
                   ),
-                  const SizedBox(width: 4),
-                  _SortChip(
+                  const SizedBox(width: 8),
+                  TokenChip(
                     label: loc?.sortAZ ?? 'A–Z',
-                    active: sort == _SortMode.az,
-                    primaryColor: primary,
+                    selected: sort == _SortMode.az,
                     onTap: () => onChanged(_SortMode.az),
                   ),
                 ],
@@ -841,231 +758,6 @@ class _SortBar extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _SortChip extends StatelessWidget {
-  const _SortChip({
-    required this.label,
-    required this.active,
-    required this.primaryColor,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool active;
-  final Color primaryColor;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-        decoration: BoxDecoration(
-          color: active
-              ? primaryColor.withValues(alpha: 0.12)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(999),
-        ),
-        child: Text(
-          label,
-          style: theme.textTheme.labelSmall?.copyWith(
-            fontWeight: FontWeight.w600,
-            color: active ? primaryColor : theme.colorScheme.onSurfaceVariant,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ─── Saved Recipe Card ─────────────────────────────────────────────────────
-
-class _SavedRecipeCard extends StatelessWidget {
-  const _SavedRecipeCard({
-    required this.recipe,
-    required this.isSelectionMode,
-    required this.isSelected,
-    required this.onTap,
-    required this.onCheckboxTap,
-  });
-
-  final FeedItem recipe;
-  final bool isSelectionMode;
-  final bool isSelected;
-  final VoidCallback onTap;
-  final VoidCallback onCheckboxTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final firstImage = recipe.images.isNotEmpty ? recipe.images.first : null;
-    final cookTime =
-        formatCookingTime(AppLocalizations.of(context), recipe.cookingTimeMin, recipe.cookingTimeMax) ?? '';
-
-    return GestureDetector(
-      onTap: onTap,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            // Image or fallback
-            if (firstImage != null)
-              RecipeImageWidget(
-                imageUrl: firstImage.url,
-                width: double.infinity,
-                height: double.infinity,
-                fit: BoxFit.cover,
-                cacheWidth: 400,
-              )
-            else
-              const RecipeFallbackImage(
-                width: double.infinity,
-                height: double.infinity,
-                iconSize: 40,
-              ),
-
-            // Scrim gradient
-            Positioned.fill(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.transparent,
-                      Colors.black.withValues(alpha: 0.75),
-                    ],
-                    stops: const [0.35, 1.0],
-                  ),
-                ),
-              ),
-            ),
-
-            // Selection highlight overlay
-            if (isSelected)
-              Positioned.fill(
-                child: ColoredBox(
-                  color: theme.colorScheme.primary.withValues(alpha: 0.25),
-                ),
-              ),
-
-            // Cook time badge — bottom left
-            if (cookTime.isNotEmpty)
-              Positioned(
-                left: 8,
-                bottom: 8,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.92),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.schedule_rounded,
-                        size: 11,
-                        color: Colors.black.withValues(alpha: 0.7),
-                      ),
-                      const SizedBox(width: 3),
-                      Text(
-                        cookTime,
-                        style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black87,
-                          height: 1.2,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-            // Title — bottom, above badge
-            Positioned(
-              left: 10,
-              right: 36,
-              bottom: cookTime.isNotEmpty ? 30 : 10,
-              child: Text(
-                recipe.title,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  height: 1.3,
-                  shadows: [
-                    Shadow(color: Colors.black54, blurRadius: 4),
-                  ],
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-
-            // Checkbox circle — top right (always visible)
-            Positioned(
-              top: 8,
-              right: 8,
-              child: GestureDetector(
-                onTap: onCheckboxTap,
-                child: _SelectCircle(selected: isSelected),
-              ),
-            ),
-
-            // Selected outline ring
-            if (isSelected)
-              Positioned.fill(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      color: theme.colorScheme.primary,
-                      width: 3,
-                    ),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _SelectCircle extends StatelessWidget {
-  const _SelectCircle({required this.selected});
-
-  final bool selected;
-
-  @override
-  Widget build(BuildContext context) {
-    final primary = Theme.of(context).colorScheme.primary;
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 150),
-      width: 22,
-      height: 22,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: selected ? primary : Colors.white.withValues(alpha: 0.8),
-        border: selected
-            ? null
-            : Border.all(color: Colors.white.withValues(alpha: 0.9), width: 1.5),
-        boxShadow: const [
-          BoxShadow(color: Colors.black26, blurRadius: 3, offset: Offset(0, 1)),
-        ],
-      ),
-      child: selected
-          ? const Icon(Icons.check_rounded, size: 14, color: Colors.white)
-          : null,
     );
   }
 }
@@ -1143,7 +835,7 @@ class _CollectionsTabState extends State<_CollectionsTab>
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-              child: _SearchBar(
+              child: TokenSearchField(
                 controller: _searchController,
                 hintText: localizations?.searchCollections ?? 'Search collections',
                 onChanged: _onSearchChanged,
@@ -1156,8 +848,8 @@ class _CollectionsTabState extends State<_CollectionsTab>
               child: LinearProgressIndicator(minHeight: 2),
             )
           else if (controller.isLoading && !_hasLoadedOnce)
-            const SliverFillRemaining(
-              child: Center(child: CircularProgressIndicator()),
+            const SliverToBoxAdapter(
+              child: ListRowSkeleton(count: 4, leadingSize: 44),
             ),
           if (!controller.isLoading && isEmpty)
             SliverFillRemaining(
@@ -1223,150 +915,56 @@ class _CollectionCard extends StatelessWidget {
   final int recipeCount;
   final VoidCallback onTap;
 
+  /// Styled like the Profile tab's library tiles: `card`, 1px `line`,
+  /// radius 18, and a `soft` icon tile.
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final t = AppTokens.of(context);
 
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surfaceContainerLow,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: theme.colorScheme.outlineVariant),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            // Thumb
-            Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(12),
+    return Material(
+      color: t.card,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
+        side: BorderSide(color: t.line),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(color: t.soft, borderRadius: BorderRadius.circular(12)),
+                child: Icon(Icons.collections_bookmark_outlined, color: t.brandInk, size: 22),
               ),
-              child: Icon(
-                Icons.collections_bookmark_rounded,
-                color: theme.colorScheme.primary,
-                size: 26,
-              ),
-            ),
-            const SizedBox(width: 14),
-            // Info
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    name,
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      name,
+                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: t.ink),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    AppLocalizations.of(context)?.nRecipes(recipeCount) ??
-                        '$recipeCount ${recipeCount == 1 ? 'recipe' : 'recipes'}',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
+                    const SizedBox(height: 2),
+                    Text(
+                      AppLocalizations.of(context)?.nRecipes(recipeCount) ??
+                          '$recipeCount ${recipeCount == 1 ? 'recipe' : 'recipes'}',
+                      style: TextStyle(fontSize: 13, color: t.ink2),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            Icon(
-              Icons.chevron_right_rounded,
-              size: 22,
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ],
+              Icon(Icons.chevron_right_rounded, size: 20, color: t.ink2),
+            ],
+          ),
         ),
       ),
     );
   }
 }
-
-// ─── Skeleton loader ───────────────────────────────────────────────────────
-
-class _SkeletonGrid extends StatelessWidget {
-  const _SkeletonGrid();
-
-  static const int _itemCount = 6;
-
-  @override
-  Widget build(BuildContext context) {
-    return SliverGrid(
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 10,
-        mainAxisSpacing: 10,
-        childAspectRatio: 0.75,
-      ),
-      delegate: SliverChildBuilderDelegate(
-        (context, index) => _SkeletonCard(
-          delay: Duration(milliseconds: index * 80),
-        ),
-        childCount: _itemCount,
-      ),
-    );
-  }
-}
-
-class _SkeletonCard extends StatefulWidget {
-  const _SkeletonCard({this.delay = Duration.zero});
-
-  final Duration delay;
-
-  @override
-  State<_SkeletonCard> createState() => _SkeletonCardState();
-}
-
-class _SkeletonCardState extends State<_SkeletonCard>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _ctrl;
-  late final Animation<double> _anim;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 900),
-    );
-    _anim = Tween<double>(begin: 0.35, end: 0.85).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut),
-    );
-    Future.delayed(widget.delay, () {
-      if (mounted) _ctrl.repeat(reverse: true);
-    });
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final color = Theme.of(context).colorScheme.surfaceContainerLow;
-    return FadeTransition(
-      opacity: _anim,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: ColoredBox(color: color),
-      ),
-    );
-  }
-}
-

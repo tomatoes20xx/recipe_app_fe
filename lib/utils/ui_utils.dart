@@ -3,6 +3,7 @@ import "package:cached_network_image/cached_network_image.dart";
 
 import "../config.dart";
 import "../localization/app_localizations.dart";
+import "../widgets/common/profile_avatar.dart";
 
 /// Cooking time as every screen shows it: "25 min", or "10–20 min" for a
 /// range. Null when the recipe has no time.
@@ -69,55 +70,15 @@ String formatRelativeTime(BuildContext context, DateTime dateTime) {
   return '$monthName ${local.day}, ${local.year}';
 }
 
-/// Builds a user avatar widget with fallback to initials or icon
+/// A user's round avatar: their photo, or their initial on `soft` in
+/// `brandInk` ([ProfileAvatar], the redesign's avatar).
 Widget buildUserAvatar(
   BuildContext context,
   String? avatarUrl,
   String username, {
   double radius = 20,
 }) {
-  // Normalize avatarUrl: treat null, empty string, or "null" string as no avatar
-  final normalizedAvatarUrl = avatarUrl == null || 
-      avatarUrl.isEmpty || 
-      avatarUrl == "null" 
-      ? null 
-      : avatarUrl;
-  
-  if (normalizedAvatarUrl != null && normalizedAvatarUrl.isNotEmpty) {
-    final avatarSize = (radius * 2 * MediaQuery.of(context).devicePixelRatio).round();
-    return CircleAvatar(
-      radius: radius,
-      backgroundColor: Theme.of(context).colorScheme.primary,
-      backgroundImage: CachedNetworkImageProvider(
-        buildImageUrl(normalizedAvatarUrl),
-        cacheKey: normalizedAvatarUrl,
-        maxWidth: avatarSize,
-        maxHeight: avatarSize,
-      ),
-      onBackgroundImageError: (exception, stackTrace) {
-        // Image failed to load, will show child as fallback
-      },
-      child: null,
-    );
-  }
-  return CircleAvatar(
-    radius: radius,
-    backgroundColor: Theme.of(context).colorScheme.primary,
-    child: username.isNotEmpty
-        ? Text(
-            username[0].toUpperCase(),
-            style: TextStyle(
-              fontSize: radius * 0.8,
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).colorScheme.onPrimary,
-            ),
-          )
-        : Icon(
-            Icons.person_outline_rounded,
-            size: radius,
-            color: Theme.of(context).colorScheme.onPrimary,
-          ),
-  );
+  return ProfileAvatar(avatarUrl: avatarUrl, name: username, size: radius * 2);
 }
 
 /// Reusable widget for recipe fallback images

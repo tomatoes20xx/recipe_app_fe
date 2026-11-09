@@ -1,7 +1,10 @@
 import "package:flutter/material.dart";
 import "../localization/app_localizations.dart";
+import "../theme/app_tokens.dart";
 import "../theme/theme_controller.dart";
+import "../widgets/common/token_widgets.dart";
 
+/// Theme picker: one grouped radio list, like the Home sort sheet.
 class ThemeSelectionScreen extends StatelessWidget {
   const ThemeSelectionScreen({
     super.key,
@@ -13,109 +16,43 @@ class ThemeSelectionScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context);
-    
+
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      appBar: AppBar(
-        title: Builder(
-          builder: (context) {
-            final localizations = AppLocalizations.of(context);
-            return Text(
-              localizations?.themeMode ?? "Theme Mode",
-            );
-          },
-        ),
-      ),
+      backgroundColor: AppTokens.of(context).bg,
+      appBar: AppBar(title: Text(localizations?.themeMode ?? "Theme Mode")),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           AnimatedBuilder(
             animation: themeController,
             builder: (context, _) {
-              return Column(
+              final options = [
+                (ThemeMode.system, Icons.brightness_auto_outlined, localizations?.system ?? "System",
+                    localizations?.followSystemTheme ?? "Follow system theme"),
+                (ThemeMode.light, Icons.light_mode_outlined, localizations?.light ?? "Light",
+                    localizations?.lightTheme ?? "Light theme"),
+                (ThemeMode.dark, Icons.dark_mode_outlined, localizations?.dark ?? "Dark",
+                    localizations?.darkTheme ?? "Dark theme"),
+              ];
+              return TokenGroup(
                 children: [
-                  _ThemeOption(
-                    themeController: themeController,
-                    mode: ThemeMode.system,
-                    icon: Icons.brightness_auto,
-                    title: localizations?.system ?? "System",
-                    subtitle: localizations?.followSystemTheme ?? "Follow system theme",
-                  ),
-                  const SizedBox(height: 12),
-                  _ThemeOption(
-                    themeController: themeController,
-                    mode: ThemeMode.light,
-                    icon: Icons.light_mode,
-                    title: localizations?.light ?? "Light",
-                    subtitle: localizations?.lightTheme ?? "Light theme",
-                  ),
-                  const SizedBox(height: 12),
-                  _ThemeOption(
-                    themeController: themeController,
-                    mode: ThemeMode.dark,
-                    icon: Icons.dark_mode,
-                    title: localizations?.dark ?? "Dark",
-                    subtitle: localizations?.darkTheme ?? "Dark theme",
-                  ),
+                  for (var i = 0; i < options.length; i++)
+                    TokenRadioRow(
+                      leading: options[i].$2,
+                      label: options[i].$3,
+                      description: options[i].$4,
+                      selected: themeController.themeMode == options[i].$1,
+                      showDivider: i < options.length - 1,
+                      onTap: () {
+                        themeController.setThemeMode(options[i].$1);
+                        Navigator.of(context).pop();
+                      },
+                    ),
                 ],
               );
             },
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _ThemeOption extends StatelessWidget {
-  const _ThemeOption({
-    required this.themeController,
-    required this.mode,
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-  });
-
-  final ThemeController themeController;
-  final ThemeMode mode;
-  final IconData icon;
-  final String title;
-  final String subtitle;
-
-  @override
-  Widget build(BuildContext context) {
-    final isSelected = themeController.themeMode == mode;
-    
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: isSelected
-              ? Theme.of(context).colorScheme.primary
-              : Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
-          width: isSelected ? 2 : 1,
-        ),
-      ),
-      child: ListTile(
-        leading: Icon(
-          icon,
-          color: isSelected
-              ? Theme.of(context).colorScheme.primary
-              : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-        ),
-        title: Text(title),
-        subtitle: Text(subtitle),
-        trailing: isSelected
-            ? Icon(
-                Icons.check_circle,
-                color: Theme.of(context).colorScheme.primary,
-              )
-            : const Icon(Icons.circle_outlined),
-        onTap: () {
-          themeController.setThemeMode(mode);
-          Navigator.of(context).pop();
-        },
       ),
     );
   }

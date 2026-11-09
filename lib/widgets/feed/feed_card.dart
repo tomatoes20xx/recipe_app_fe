@@ -1,6 +1,5 @@
 import "package:flutter/material.dart";
 import "package:cached_network_image/cached_network_image.dart";
-import "package:google_fonts/google_fonts.dart";
 
 import "../../analytics/analytics_service.dart";
 import "../../api/api_client.dart";
@@ -21,11 +20,6 @@ import "../../utils/ui_utils.dart";
 import "feed_actions.dart";
 
 const _likeRed = Color(0xFFE53935);
-
-// The theme's Nunito (GoogleFonts.nunitoTextTheme) registers each weight as its
-// own font family, so a bare `fontWeight: w700` on Latin text stays regular.
-// Bold Latin text here goes through GoogleFonts.nunito to get the 700 file;
-// Georgian falls back to Noto Sans Georgian either way.
 
 /// Recipe card in the Home feed list: author header, full-width photo, title,
 /// time / servings / category, then like, comment and save.
@@ -135,7 +129,7 @@ class _FeedCardState extends State<FeedCard> {
                 children: [
                   Text(
                     widget.item.title,
-                    style: GoogleFonts.nunito(
+                    style: TextStyle(
                       fontSize: 17,
                       fontWeight: FontWeight.w700,
                       height: 1.3,
@@ -218,7 +212,7 @@ class _Header extends StatelessWidget {
                         children: [
                           Text(
                             displayName,
-                            style: GoogleFonts.nunito(
+                            style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w700,
                               color: t.ink,

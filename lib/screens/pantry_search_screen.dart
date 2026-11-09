@@ -7,6 +7,9 @@ import "../localization/app_localizations.dart";
 import "../theme/app_tokens.dart";
 import "../theme/token_input.dart";
 import "../utils/ui_utils.dart";
+import "../widgets/common/recipe_grid_tile.dart";
+import "../widgets/common/skeletons.dart";
+import "../widgets/common/token_widgets.dart";
 import "../recipes/recipe_detail_screen.dart";
 import "../search/search_api.dart";
 import "../search/search_models.dart";
@@ -243,25 +246,11 @@ class _PantrySearchScreenState extends State<PantrySearchScreen> {
     final localizations = AppLocalizations.of(context);
 
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const SingleChildScrollView(child: ListRowSkeleton(leadingSize: 64));
     }
 
     if (_error != null) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(localizations?.somethingWentWrong ?? "Something went wrong"),
-            const SizedBox(height: 8),
-            Text(_error!, style: Theme.of(context).textTheme.bodySmall, textAlign: TextAlign.center),
-            const SizedBox(height: 16),
-            FilledButton(
-              onPressed: _search,
-              child: Text(localizations?.retry ?? "Retry"),
-            ),
-          ],
-        ),
-      );
+      return ErrorStateWidget(message: _error!, onRetry: _search);
     }
 
     if (!_hasSearched) {
@@ -464,42 +453,50 @@ class _RecipeMatchCard extends StatelessWidget {
     final match = recipe.ingredientMatch;
     final localizations = AppLocalizations.of(context);
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
+    final t = AppTokens.of(context);
+    final author = recipe.authorDisplayName?.trim().isNotEmpty == true
+        ? recipe.authorDisplayName!.trim()
+        : recipe.authorUsername;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Material(
+      color: t.card,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: t.line)),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Title and match percentage
+              // Photo, title and author, match percentage
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  RecipeThumb(imageUrl: recipe.imageUrl),
+                  const SizedBox(width: 12),
                   Expanded(
-                    child: Text(
-                      recipe.title,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          recipe.title,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: t.ink),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(author, style: TextStyle(fontSize: 13, color: t.ink2)),
+                      ],
                     ),
                   ),
                   if (match != null) ...[
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 8),
                     _MatchBadge(percentage: match.percentage),
                   ],
                 ],
-              ),
-              const SizedBox(height: 8),
-
-              // Author
-              Text(
-                "${recipe.authorDisplayName ?? recipe.authorUsername} • @${recipe.authorUsername}",
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-                    ),
               ),
 
               // Ingredient match info
@@ -512,7 +509,8 @@ class _RecipeMatchCard extends StatelessWidget {
                   child: LinearProgressIndicator(
                     value: match.percentage / 100,
                     minHeight: 6,
-                    backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                    color: t.brand,
+                    backgroundColor: t.field,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -608,6 +606,7 @@ class _RecipeMatchCard extends StatelessWidget {
           ),
         ),
       ),
+      ),
     );
   }
 
@@ -640,24 +639,13 @@ class _IngredientsChipRow extends StatelessWidget {
 
   static const int _collapsedMax = 4;
 
-  Widget _chip(String ingredient) => InputChip(
-        label: Text(ingredient, style: const TextStyle(fontSize: 12)),
+  Widget _chip(String ingredient) => TokenChip(
+        label: ingredient,
+        selected: true,
         onDeleted: () => onRemove(ingredient),
-        deleteIcon: const Icon(Icons.close, size: 14),
-        visualDensity: VisualDensity.compact,
-        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-        padding: const EdgeInsets.symmetric(horizontal: 2),
       );
 
-  Widget _toggleChip(BuildContext context, String label) => ActionChip(
-        label: Text(label, style: const TextStyle(fontSize: 12)),
-        onPressed: onToggle,
-        visualDensity: VisualDensity.compact,
-        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-        padding: const EdgeInsets.symmetric(horizontal: 2),
-        side: BorderSide(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.4)),
-        labelStyle: TextStyle(color: Theme.of(context).colorScheme.primary),
-      );
+  Widget _toggleChip(BuildContext context, String label) => TokenChip(label: label, onTap: onToggle);
 
   @override
   Widget build(BuildContext context) {
@@ -670,8 +658,7 @@ class _IngredientsChipRow extends StatelessWidget {
         constraints: const BoxConstraints(maxHeight: 200),
         child: SingleChildScrollView(
           child: Wrap(
-            spacing: 6,
-            runSpacing: 6,
+            spacing: 8,
             children: [
               ...ingredients.map(_chip),
               _toggleChip(context, localizations?.showLess ?? 'show less'),
@@ -685,8 +672,7 @@ class _IngredientsChipRow extends StatelessWidget {
     final hiddenCount = ingredients.length - visible.length;
 
     return Wrap(
-      spacing: 6,
-      runSpacing: 6,
+      spacing: 8,
       children: [
         ...visible.map(_chip),
         if (hasOverflow) _toggleChip(context, localizations?.nMore(hiddenCount) ?? '+$hiddenCount more'),
@@ -700,28 +686,20 @@ class _MatchBadge extends StatelessWidget {
 
   final int percentage;
 
+  /// 80%+ in the brand greens, lower in neutral `field`/`ink2`.
   @override
   Widget build(BuildContext context) {
-    final color = percentage >= 100
-        ? Colors.green
-        : percentage >= 80
-            ? Theme.of(context).colorScheme.primary
-            : Colors.orange;
-
+    final t = AppTokens.of(context);
+    final good = percentage >= 80;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.15),
+        color: good ? t.soft : t.field,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Text(
         "$percentage%",
-        style: TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.bold,
-          color: color,
-        ),
+        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: good ? t.brandInk : t.ink2),
       ),
     );
   }

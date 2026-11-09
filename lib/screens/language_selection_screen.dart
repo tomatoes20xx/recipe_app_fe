@@ -1,7 +1,10 @@
 import "package:flutter/material.dart";
 import "../localization/app_localizations.dart";
 import "../localization/language_controller.dart";
+import "../theme/app_tokens.dart";
+import "../widgets/common/token_widgets.dart";
 
+/// Language picker: one grouped radio list, like the Home sort sheet.
 class LanguageSelectionScreen extends StatelessWidget {
   const LanguageSelectionScreen({
     super.key,
@@ -13,83 +16,33 @@ class LanguageSelectionScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context);
-    
+    final options = [
+      ("ka", localizations?.georgian ?? "Georgian"),
+      ("en", localizations?.english ?? "English"),
+    ];
+
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      appBar: AppBar(
-        title: Builder(
-          builder: (context) {
-            final localizations = AppLocalizations.of(context);
-            return Text(
-              localizations?.language ?? "Language",
-            );
-          },
-        ),
-      ),
+      backgroundColor: AppTokens.of(context).bg,
+      appBar: AppBar(title: Text(localizations?.language ?? "Language")),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          _LanguageOption(
-            languageController: languageController,
-            languageCode: "en",
-            title: localizations?.english ?? "English",
-          ),
-          const SizedBox(height: 12),
-          _LanguageOption(
-            languageController: languageController,
-            languageCode: "ka",
-            title: localizations?.georgian ?? "Georgian",
+          TokenGroup(
+            children: [
+              for (var i = 0; i < options.length; i++)
+                TokenRadioRow(
+                  leading: Icons.translate_rounded,
+                  label: options[i].$2,
+                  selected: languageController.languageCode == options[i].$1,
+                  showDivider: i < options.length - 1,
+                  onTap: () {
+                    languageController.setLanguageCode(options[i].$1);
+                    Navigator.of(context).pop();
+                  },
+                ),
+            ],
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _LanguageOption extends StatelessWidget {
-  const _LanguageOption({
-    required this.languageController,
-    required this.languageCode,
-    required this.title,
-  });
-
-  final LanguageController languageController;
-  final String languageCode;
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    final isSelected = languageController.languageCode == languageCode;
-    
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: isSelected
-              ? Theme.of(context).colorScheme.primary
-              : Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
-          width: isSelected ? 2 : 1,
-        ),
-      ),
-      child: ListTile(
-        leading: Icon(
-          Icons.language,
-          color: isSelected
-              ? Theme.of(context).colorScheme.primary
-              : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-        ),
-        title: Text(title),
-        trailing: isSelected
-            ? Icon(
-                Icons.check_circle,
-                color: Theme.of(context).colorScheme.primary,
-              )
-            : const Icon(Icons.circle_outlined),
-        onTap: () {
-          languageController.setLanguageCode(languageCode);
-          Navigator.of(context).pop();
-        },
       ),
     );
   }

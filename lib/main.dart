@@ -1,6 +1,6 @@
 import "dart:io" show Platform;
 import "dart:ui";
-import "package:flutter/foundation.dart" show kIsWeb;
+import "package:flutter/foundation.dart" show kIsWeb, LicenseEntryWithLineBreaks, LicenseRegistry;
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:flutter_localizations/flutter_localizations.dart";
@@ -31,6 +31,13 @@ import "theme/theme_controller.dart";
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Nunito is bundled (assets/fonts); its SIL Open Font License must ship
+  // with it, so it is listed on the app's licenses page.
+  LicenseRegistry.addLicense(() async* {
+    final license = await rootBundle.loadString("assets/fonts/OFL.txt");
+    yield LicenseEntryWithLineBreaks(const ["Nunito"], license);
+  });
 
   // Enable edge-to-edge display (required for Android 15+)
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
