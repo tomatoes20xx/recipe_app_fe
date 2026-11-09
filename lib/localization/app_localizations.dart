@@ -970,7 +970,7 @@ class AppLocalizations {
   String get addIngredient => _localizedValues[locale.languageCode]?["addIngredient"] ?? "Add ingredient";
   String nIngredients(int n) => (_localizedValues[locale.languageCode]?["nIngredients"] ?? "{n} ingredients").replaceAll("{n}", "$n");
   String get amountHint => _localizedValues[locale.languageCode]?["amountHint"] ?? "Qty";
-  String get otherUnit => _localizedValues[locale.languageCode]?["otherUnit"] ?? "Other…";
+  String get otherUnit => _localizedValues[locale.languageCode]?["otherUnit"] ?? "Other";
   String get addStep => _localizedValues[locale.languageCode]?["addStep"] ?? "Add step";
   String nSteps(int n) => (_localizedValues[locale.languageCode]?["nSteps"] ?? "{n} steps").replaceAll("{n}", "$n");
   String get dragToReorder => _localizedValues[locale.languageCode]?["dragToReorder"] ?? "Drag to reorder";
@@ -1908,7 +1908,7 @@ class AppLocalizations {
       "addIngredient": "Add ingredient",
       "nIngredients": "{n} ingredients",
       "amountHint": "Qty",
-      "otherUnit": "Other…",
+      "otherUnit": "Other",
       "addStep": "Add step",
       "nSteps": "{n} steps",
       "dragToReorder": "Drag to reorder",
@@ -2838,7 +2838,7 @@ class AppLocalizations {
       "addIngredient": "ინგრედიენტის დამატება",
       "nIngredients": "{n} ინგრედიენტი",
       "amountHint": "რაოდ.",
-      "otherUnit": "სხვა…",
+      "otherUnit": "სხვა",
       "addStep": "ნაბიჯის დამატება",
       "nSteps": "{n} ნაბიჯი",
       "dragToReorder": "გადაათრიე რიგის შესაცვლელად",

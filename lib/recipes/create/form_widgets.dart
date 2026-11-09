@@ -293,30 +293,6 @@ class DashedAddButton extends StatelessWidget {
   }
 }
 
-/// Fades [child] out over the last [width] px of its right edge, to hint
-/// that a horizontal list scrolls.
-class RightEdgeFade extends StatelessWidget {
-  const RightEdgeFade({super.key, required this.child, this.width = 32});
-
-  final Widget child;
-  final double width;
-
-  @override
-  Widget build(BuildContext context) {
-    return ShaderMask(
-      blendMode: BlendMode.dstIn,
-      shaderCallback: (rect) {
-        final stop = rect.width <= 0 ? 1.0 : (1 - width / rect.width).clamp(0.0, 1.0);
-        return LinearGradient(
-          colors: const [Colors.black, Colors.black, Colors.transparent],
-          stops: [0, stop, 1],
-        ).createShader(rect);
-      },
-      child: child,
-    );
-  }
-}
-
 /// Selectable pill (34–36 tall) with a ≥44 tall hit area. Selected = `soft`
 /// background and `brandInk` w700 text.
 class TokenChip extends StatelessWidget {

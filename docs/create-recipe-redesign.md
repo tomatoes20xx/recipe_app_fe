@@ -65,14 +65,14 @@ Selected tags as `soft` chips with a ✕ (26px target), then a dashed "+ თე�
 ### 5 · ინგრედიენტები (Ingredients) — card
 Rows are **collapsed** except the one being edited (max one expanded).
 - **Collapsed row** (min 54, divider `line`): drag handle (existing reorder) · amount+unit 14 w700 `brandInk`, 64 wide (e.g. "500 გრ"; just the unit if no amount) · name 15 `ink`. Tap → expand it.
-- **Expanded row** (inside the card, 10 margin, 1.5px `brand` border, radius 16, padding 12): name field (44 tall) + trash 44px; then amount field (72 wide, centered, decimal formatter as today) + **unit chips** (40 tall, radius 10; selected `brandInk` bg + white; scroll horizontally with a right-edge fade, no scrollbar).
+- **Expanded row** (inside the card, 10 margin, 1.5px `brand` border, radius 16, padding 12): name field (44 tall) + trash 44px; then amount field (72 wide, centered, decimal formatter as today) + **unit dropdown** (44 tall, radius 10, `field` fill, chevron; open = 1.5px `brand` border on `card`). Its menu is anchor-wide, `card` with a `line` border, 44-tall options; the chosen one is `soft` + `brandInk` w700 with a check. Implemented as a `MenuAnchor`, not a popup route, so opening it doesn't take focus out of the row and collapse it.
 - New ingredient: dashed "+ ინგრედიენტის დამატება" (52 tall) appends a row expanded with the name focused. Collapsing a row (tap another row / outside / keyboard done) keeps it even if empty — `_submit` reports it.
 
-**Unit chips store backend-recognised unit text.** The backend's nutrition calculator (`recipe_app_be/api/src/nutrition/nutrition.service.ts`, `UNIT_MAP` / `UNMEASURABLE_UNITS`) only understands certain tokens, so the chip value written to `unitController` must be exactly:
+**Unit presets store backend-recognised unit text.** The backend's nutrition calculator (`recipe_app_be/api/src/nutrition/nutrition.service.ts`, `UNIT_MAP` / `UNMEASURABLE_UNITS`) only understands certain tokens, so the preset value written to `unitController` must be exactly:
 - ka: `გრ`, `კგ`, `მლ`, `ლიტრი`, `ჭიქა`, `ს/კ`, `ჩ/კ`, `ცალი`, `კბილი`, `გემოვნებით`
 - en: `g`, `kg`, `ml`, `l`, `cup`, `tbsp`, `tsp`, `piece`, `clove`, `to taste`
-- Chip label = that text (the mock's "გ"/"ლ" are superseded). Choose the list by app language.
-- Last chip "სხვა…" reveals a free-text unit field (existing controller). A unit that matches no chip (e.g. old recipes with "გრამი") shows as "სხვა…" selected with the text filled.
+- Option label = that text (the mock's "გ"/"ლ" are superseded). Choose the list by app language.
+- Last option "სხვა" reveals a free-text unit field (existing controller) and focuses it. A unit that matches no preset (e.g. old recipes with "გრამი") shows as "სხვა" selected with the text filled.
 - Selecting `გემოვნებით` / `to taste` may leave the amount empty.
 
 ### 6 · მომზადება (Method)
@@ -100,10 +100,10 @@ Reuse existing keys where the wording matches (`createRecipe`, `editRecipe`, `ta
 - `flutter analyze` passes with no new warnings.
 - Light and dark match the tokens.
 - Create: empty → fill everything → preview → publish; the API payload is identical to the old screen for the same input (compare a request before/after).
-- Edit an existing recipe: all fields, existing images, tags (including custom), units prefill correctly; unknown units show under "სხვა…"; save works, including image add/delete/reorder calls.
+- Edit an existing recipe: all fields, existing images, tags (including custom), units prefill correctly; unknown units show under "სხვა"; save works, including image add/delete/reorder calls.
 - Drafts: debounced save appears ("მონახაზი შენახულია"), kill the app mid-edit, reopen → "Draft found" restores everything.
 - Validation: tapping Publish with missing title/ingredient/step scrolls to and highlights the first problem; min > max time still rejected.
-- Unit chips write exactly the tokens listed above; nutrition for a test recipe with `ს/კ`, `ჭიქა`, `გრ` still computes on the backend.
+- Unit presets write exactly the tokens listed above; nutrition for a test recipe with `ს/კ`, `ჭიქა`, `გრ` still computes on the backend.
 - Steppers: +/− and typing both work; empty states as specified.
 - Tag sheet: search filters, custom tag add/remove, selection count, categories/diet labels match the old ones in `_tags`.
 - Final summary: what moved/split, what was deleted, anything left unused.

@@ -5,12 +5,12 @@ import "../../localization/app_localizations.dart";
 import "../../theme/app_tokens.dart";
 import "form_widgets.dart";
 
-/// Unit chips, in Georgian. Each value is exactly a token the backend's
+/// Unit presets, in Georgian. Each value is exactly a token the backend's
 /// nutrition calculator understands (`UNIT_MAP` / `UNMEASURABLE_UNITS` in
 /// recipe_app_be/api/src/nutrition/), so do not "fix" the spelling here.
 const List<String> kaIngredientUnits = ["გრ", "კგ", "მლ", "ლიტრი", "ჭიქა", "ს/კ", "ჩ/კ", "ცალი", "კბილი", "გემოვნებით"];
 
-/// Unit chips, in English. Same rule as [kaIngredientUnits].
+/// Unit presets, in English. Same rule as [kaIngredientUnits].
 const List<String> enIngredientUnits = ["g", "kg", "ml", "l", "cup", "tbsp", "tsp", "piece", "clove", "to taste"];
 
 List<String> ingredientUnitsFor(String languageCode) => languageCode == "ka" ? kaIngredientUnits : enIngredientUnits;
@@ -37,8 +37,8 @@ class DecimalNumberFormatter extends TextInputFormatter {
 }
 
 /// One ingredient in the Ingredients card. Collapsed: drag handle · amount
-/// and unit · name; tap to expand. Expanded: name + delete, then amount and
-/// unit chips ("Other…" reveals a free-text unit).
+/// and unit · name; tap to expand. Expanded: name + delete, then amount and a
+/// unit dropdown whose last option, "Other", reveals a free-text unit field.
 ///
 /// The row collapses itself ([onCollapse]) when focus leaves it or on keyboard
 /// done; the parent collapses it when another row expands or on a tap outside.
@@ -76,8 +76,8 @@ class _IngredientRowState extends State<IngredientRow> {
   final _quantityFocus = FocusNode();
   final _unitFocus = FocusNode();
 
-  /// Set when the user picks "Other…" with an empty or chip unit; otherwise
-  /// "Other…" is derived from the unit text.
+  /// Set when the user picks "Other" with an empty or preset unit; otherwise
+  /// "Other" is derived from the unit text.
   bool _otherPicked = false;
 
   @override
@@ -92,9 +92,9 @@ class _IngredientRowState extends State<IngredientRow> {
     widget.onCollapse();
   }
 
-  void _pickUnit(String unit, bool selected) {
+  void _pickUnit(String unit) {
     setState(() => _otherPicked = false);
-    widget.unitController.text = selected ? "" : unit;
+    widget.unitController.text = unit;
   }
 
   void _pickOther(List<String> units) {
@@ -242,29 +242,12 @@ class _IngredientRowState extends State<IngredientRow> {
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: RightEdgeFade(
-                    child: ScrollConfiguration(
-                      behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
-                      child: SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        padding: const EdgeInsets.only(right: 32),
-                        child: Row(
-                          children: [
-                            for (final u in units)
-                              _UnitChip(
-                                label: u,
-                                selected: !isOther && unit == u,
-                                onTap: () => _pickUnit(u, !isOther && unit == u),
-                              ),
-                            _UnitChip(
-                              label: l?.otherUnit ?? "Other…",
-                              selected: isOther,
-                              onTap: () => _pickOther(units),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
+                  child: _UnitDropdown(
+                    units: units,
+                    selected: isOther || unit.isEmpty ? null : unit,
+                    isOther: isOther,
+                    onUnit: _pickUnit,
+                    onOther: () => _pickOther(units),
                   ),
                 ),
               ],
@@ -291,48 +274,186 @@ class _IngredientRowState extends State<IngredientRow> {
   }
 }
 
-class _UnitChip extends StatelessWidget {
-  const _UnitChip({required this.label, required this.selected, required this.onTap});
+/// Unit picker: a field showing the chosen unit that opens a menu of [units]
+/// with "Other" last.
+///
+/// It's a [MenuAnchor] (an overlay inside this widget's focus subtree) rather
+/// than a popup route: a route would take focus out of the expanded row and
+/// collapse it. Opening moves focus to the field itself, which closes the
+/// keyboard so the menu has room while the row stays expanded.
+class _UnitDropdown extends StatefulWidget {
+  const _UnitDropdown({
+    required this.units,
+    required this.selected,
+    required this.isOther,
+    required this.onUnit,
+    required this.onOther,
+  });
 
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
+  final List<String> units;
+
+  /// The chosen preset, or null when the unit is empty or "Other".
+  final String? selected;
+  final bool isOther;
+  final ValueChanged<String> onUnit;
+  final VoidCallback onOther;
+
+  @override
+  State<_UnitDropdown> createState() => _UnitDropdownState();
+}
+
+class _UnitDropdownState extends State<_UnitDropdown> {
+  final _controller = MenuController();
+  final _focusNode = FocusNode(debugLabel: "Unit dropdown");
+  bool _open = false;
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  void _toggle() {
+    if (_controller.isOpen) {
+      _controller.close();
+    } else {
+      _focusNode.requestFocus();
+      _controller.open();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final t = AppTokens.of(context);
-    return Padding(
-      padding: const EdgeInsets.only(right: 6),
-      child: Semantics(
-        button: true,
-        selected: selected,
-        label: label,
-        excludeSemantics: true,
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 2),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 150),
-              constraints: const BoxConstraints(minHeight: 40, minWidth: 40),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: selected ? t.brandInk : t.field,
-                borderRadius: BorderRadius.circular(10),
+    final l = AppLocalizations.of(context);
+    final otherLabel = l?.otherUnit ?? "Other";
+    final hint = l?.unit ?? "Unit";
+    final shown = widget.isOther ? otherLabel : widget.selected;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        return MenuAnchor(
+          controller: _controller,
+          childFocusNode: _focusNode,
+          consumeOutsideTap: true,
+          onOpen: () => setState(() => _open = true),
+          onClose: () {
+            if (mounted) setState(() => _open = false);
+          },
+          alignmentOffset: const Offset(0, 4),
+          style: MenuStyle(
+            backgroundColor: WidgetStatePropertyAll(t.card),
+            surfaceTintColor: const WidgetStatePropertyAll(Colors.transparent),
+            elevation: const WidgetStatePropertyAll(6),
+            shape: WidgetStatePropertyAll(
+              RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: BorderSide(color: t.line),
               ),
-              child: Text(
-                label,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                  // `card` = white in light mode; dark text on the light-green
-                  // dark-mode brandInk keeps the contrast.
-                  color: selected ? t.card : t.ink,
+            ),
+            padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(vertical: 6)),
+            minimumSize: WidgetStatePropertyAll(Size(width, 0)),
+            maximumSize: WidgetStatePropertyAll(Size(width, double.infinity)),
+          ),
+          menuChildren: [
+            for (final u in widget.units)
+              _UnitMenuItem(
+                label: u,
+                width: width,
+                selected: !widget.isOther && widget.selected == u,
+                onPressed: () => widget.onUnit(u),
+              ),
+            _UnitMenuItem(
+              label: otherLabel,
+              width: width,
+              selected: widget.isOther,
+              onPressed: widget.onOther,
+            ),
+          ],
+          child: Semantics(
+            button: true,
+            expanded: _open,
+            label: hint,
+            value: shown,
+            excludeSemantics: true,
+            child: Focus(
+              focusNode: _focusNode,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: _toggle,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 150),
+                  constraints: const BoxConstraints(minHeight: 44),
+                  padding: const EdgeInsets.fromLTRB(14, 8, 8, 8),
+                  alignment: Alignment.centerLeft,
+                  decoration: BoxDecoration(
+                    color: _open ? t.card : t.field,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: _open ? t.brand : Colors.transparent, width: 1.5),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          shown ?? hint,
+                          style: shown == null
+                              ? TextStyle(fontSize: 15, color: t.ink2)
+                              : tokenFieldStyle(t).copyWith(fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      AnimatedRotation(
+                        turns: _open ? 0.5 : 0,
+                        duration: const Duration(milliseconds: 150),
+                        child: Icon(Icons.keyboard_arrow_down_rounded, size: 22, color: t.ink2),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// One option of [_UnitDropdown]: full menu width, 44 tall; the chosen one
+/// is `soft` with `brandInk` w700 text and a check.
+class _UnitMenuItem extends StatelessWidget {
+  const _UnitMenuItem({required this.label, required this.width, required this.selected, required this.onPressed});
+
+  final String label;
+  final double width;
+  final bool selected;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppTokens.of(context);
+    return SizedBox(
+      width: width,
+      // Like DropdownMenu: items never take focus, so focus stays in the row.
+      child: ExcludeFocus(
+        child: MenuItemButton(
+          onPressed: onPressed,
+          requestFocusOnHover: false,
+          trailingIcon: selected ? Icon(Icons.check_rounded, size: 18, color: t.brandInk) : null,
+          style: MenuItemButton.styleFrom(
+            minimumSize: const Size(0, 44),
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            backgroundColor: selected ? t.soft : Colors.transparent,
+            foregroundColor: selected ? t.brandInk : t.ink,
+            iconColor: t.brandInk,
+            overlayColor: t.brandInk,
+          ),
+          // Sized here, not via the button's textStyle, so the theme's font
+          // family (from the button's default text style) is kept.
+          child: Text(
+            label,
+            style: TextStyle(fontSize: 15, fontWeight: selected ? FontWeight.w700 : FontWeight.w500),
           ),
         ),
       ),
