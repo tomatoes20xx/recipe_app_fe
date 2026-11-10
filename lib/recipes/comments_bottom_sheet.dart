@@ -73,6 +73,9 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
   String? _replyingToId;
   String? _replyingToUsername;
 
+  /// The comment the user just posted; the list animates it in and scrolls to it.
+  String? _newCommentId;
+
   CommentsUIState get _uiState => commentsUIStateCache.putIfAbsent(
     widget.recipeId,
     () => CommentsUIState(collapsedIds: {}, fullyExpandedIds: {}),
@@ -82,8 +85,6 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
   Set<String> get _fullyExpandedIds => _uiState.fullyExpandedIds;
   bool get _hasInitializedCollapsedState => _uiState.hasInitializedCollapsedState;
 
-  double _savedScrollPosition = 0.0;
-  bool _shouldRestoreScrollPosition = false;
   bool _hasRestoredInitialScroll = false;
 
   @override
@@ -165,24 +166,20 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
     if (mounted) {
       _initializeCollapsedState();
       setState(() {});
-
-      if (_shouldRestoreScrollPosition && !widget.commentsController.isLoading) {
-        _shouldRestoreScrollPosition = false;
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          Future.delayed(const Duration(milliseconds: 100), () {
-            if (mounted && _scrollController.hasClients && _savedScrollPosition > 0) {
-              final maxScroll = _scrollController.position.maxScrollExtent;
-              if (_savedScrollPosition <= maxScroll) {
-                _scrollController.jumpTo(_savedScrollPosition);
-              } else if (maxScroll > 0) {
-                _scrollController.jumpTo(maxScroll);
-              }
-              _updateUIState(scrollPosition: _savedScrollPosition);
-            }
-          });
-        });
-      }
     }
+  }
+
+  /// Opens [commentId] and every thread above it, so a reply posted to it shows.
+  void _expandThreadTo(String commentId) {
+    final byId = {for (final c in widget.commentsController.comments) c.id: c};
+    final collapsed = Set<String>.from(_collapsedIds);
+    final fullyExpanded = Set<String>.from(_fullyExpandedIds)..add(commentId);
+    String? id = commentId;
+    while (id != null && id.isNotEmpty) {
+      collapsed.remove(id);
+      id = byId[id]?.parentId;
+    }
+    _updateUIState(collapsedIds: collapsed, fullyExpandedIds: fullyExpanded);
   }
 
   /// Commenting needs a verified account. Returns true once the user has one
@@ -254,11 +251,6 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
 
     if (confirmed != true) return;
 
-    if (_scrollController.hasClients) {
-      _savedScrollPosition = _scrollController.offset;
-      _shouldRestoreScrollPosition = true;
-    }
-
     try {
       await widget.commentsController.deleteComment(commentId);
     } catch (e) {
@@ -294,23 +286,27 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
 
     HapticFeedback.lightImpact();
 
-    if (_scrollController.hasClients) {
-      _savedScrollPosition = _scrollController.offset;
-      _shouldRestoreScrollPosition = true;
-    }
-
     setState(() => _isSubmitting = true);
     final parentId = _replyingToId;
+    final me = widget.auth?.me;
 
     try {
-      await widget.commentsController.addComment(content, parentId: parentId);
+      final comment = await widget.commentsController.addComment(
+        content,
+        parentId: parentId,
+        authorUsername: me?["username"]?.toString() ?? "",
+        authorAvatarUrl: me?["avatar_url"]?.toString(),
+      );
       AnalyticsService().logComment(widget.recipeId);
+      widget.onCommentPosted?.call();
+      if (!mounted) return;
       _commentController.clear();
       setState(() {
+        if (parentId != null) _expandThreadTo(parentId);
+        _newCommentId = comment?.id;
         _replyingToId = null;
         _replyingToUsername = null;
       });
-      widget.onCommentPosted?.call();
     } catch (e) {
       final auth = widget.auth;
       if (mounted && !(auth != null && await handleAuthError(context, auth, e, AccountReason.comment)) && mounted) {
@@ -327,16 +323,17 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
   Widget build(BuildContext context) {
     _initializeCollapsedState();
 
-    // Restore scroll position after build if not already restored
+    // Restore the scroll position from the last time this sheet was open. Only
+    // once: a later rebuild (e.g. after posting) must not jump the list back.
     if (!_hasRestoredInitialScroll &&
         !widget.commentsController.isLoading &&
         widget.commentsController.comments.isNotEmpty) {
+      _hasRestoredInitialScroll = true;
       final savedPosition = _uiState.scrollPosition;
       if (savedPosition > 0) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           Future.delayed(const Duration(milliseconds: 100), () {
-            if (mounted && _scrollController.hasClients && !_hasRestoredInitialScroll) {
-              _hasRestoredInitialScroll = true;
+            if (mounted && _scrollController.hasClients) {
               final maxScroll = _scrollController.position.maxScrollExtent;
               if (savedPosition <= maxScroll) {
                 _scrollController.jumpTo(savedPosition);
@@ -416,6 +413,7 @@ class _CommentsBottomSheetState extends State<_CommentsBottomSheet> {
                 collapsedIds: _collapsedIds,
                 fullyExpandedIds: _fullyExpandedIds,
                 scrollController: _scrollController,
+                newCommentId: _newCommentId,
                 auth: widget.auth,
                 onReply: _onReply,
                 onDeleteComment: _onDeleteComment,

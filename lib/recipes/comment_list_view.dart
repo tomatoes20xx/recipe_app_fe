@@ -55,6 +55,7 @@ class CommentListView extends StatefulWidget {
     required this.collapsedIds,
     required this.fullyExpandedIds,
     required this.scrollController,
+    this.newCommentId,
     required this.auth,
     required this.onReply,
     required this.onDeleteComment,
@@ -67,6 +68,9 @@ class CommentListView extends StatefulWidget {
   final Set<String> collapsedIds;
   final Set<String> fullyExpandedIds;
   final ScrollController scrollController;
+
+  /// A comment the user just posted: it animates in and is scrolled into view.
+  final String? newCommentId;
   final AuthController? auth;
   final void Function(Comment) onReply;
   final Future<void> Function(String) onDeleteComment;
@@ -78,8 +82,54 @@ class CommentListView extends StatefulWidget {
   State<CommentListView> createState() => _CommentListViewState();
 }
 
+const _entranceDuration = Duration(milliseconds: 300);
+
 class _CommentListViewState extends State<CommentListView> {
   final Set<String> _showFlaggedComments = {};
+
+  /// New comments whose entrance already played, so it doesn't replay when the
+  /// lazy list rebuilds them after scrolling away and back.
+  final Set<String> _entrancePlayed = {};
+  GlobalKey _newCommentKey = GlobalKey();
+
+  @override
+  void didUpdateWidget(covariant CommentListView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final id = widget.newCommentId;
+    if (id != null && id != oldWidget.newCommentId) {
+      _newCommentKey = GlobalKey();
+      _revealNewComment(id);
+    }
+  }
+
+  void _revealNewComment(String id) {
+    final key = _newCommentKey;
+    final isTopLevel = widget.commentsController.comments
+        .any((c) => c.id == id && (c.parentId == null || c.parentId!.isEmpty));
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final scroll = widget.scrollController;
+      if (!mounted || !scroll.hasClients) return;
+      if (isTopLevel) {
+        // Top-level comments sort oldest first, so a new one is at the bottom.
+        await scroll.animateTo(
+          scroll.position.maxScrollExtent,
+          duration: _entranceDuration,
+          curve: Curves.easeOutCubic,
+        );
+      } else {
+        // Let the reply finish growing before measuring where it is.
+        await Future<void>.delayed(_entranceDuration);
+      }
+      final ctx = key.currentContext;
+      if (!mounted || ctx == null || !ctx.mounted) return;
+      await Scrollable.ensureVisible(
+        ctx,
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOutCubic,
+        alignmentPolicy: ScrollPositionAlignmentPolicy.keepVisibleAtEnd,
+      );
+    });
+  }
 
   int _countAllReplies(CommentNode node) {
     int count = node.children.length;
@@ -161,6 +211,21 @@ class _CommentListViewState extends State<CommentListView> {
   }
 
   Widget _buildCommentBlock(CommentNode node, int depth, {String? parentCommentId, bool isLastChild = false}) {
+    final block = _buildCommentBlockBody(node, depth, parentCommentId: parentCommentId, isLastChild: isLastChild);
+    final id = node.comment.id;
+    if (id != widget.newCommentId) return block;
+    return _CommentEntrance(
+      key: _newCommentKey,
+      animate: !_entrancePlayed.contains(id),
+      // A reply is inserted mid-list, so it grows to push the rest down. A
+      // top-level comment lands at the bottom and only needs to fade in.
+      grow: depth > 0,
+      onPlayed: () => _entrancePlayed.add(id),
+      child: block,
+    );
+  }
+
+  Widget _buildCommentBlockBody(CommentNode node, int depth, {String? parentCommentId, bool isLastChild = false}) {
     final c = node.comment;
     final localizations = AppLocalizations.of(context);
     final timeAgo = formatRelativeTime(context, c.createdAt);
@@ -549,5 +614,61 @@ class _CommentListViewState extends State<CommentListView> {
         0,
       ),
     );
+  }
+}
+
+/// Plays a one-time entrance for a freshly posted comment.
+class _CommentEntrance extends StatefulWidget {
+  const _CommentEntrance({
+    super.key,
+    required this.animate,
+    required this.grow,
+    required this.onPlayed,
+    required this.child,
+  });
+
+  final bool animate;
+  final bool grow;
+  final VoidCallback onPlayed;
+  final Widget child;
+
+  @override
+  State<_CommentEntrance> createState() => _CommentEntranceState();
+}
+
+class _CommentEntranceState extends State<_CommentEntrance> with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: _entranceDuration,
+    value: widget.animate ? 0 : 1,
+  );
+  late final Animation<double> _curve = CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic);
+  late final Animation<Offset> _slide = Tween(begin: const Offset(0, 0.2), end: Offset.zero).animate(_curve);
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.animate) {
+      widget.onPlayed();
+      _controller.forward();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    Widget child = FadeTransition(
+      opacity: _curve,
+      child: SlideTransition(position: _slide, child: widget.child),
+    );
+    if (widget.grow) {
+      child = SizeTransition(sizeFactor: _curve, alignment: AlignmentDirectional.topStart, child: child);
+    }
+    return child;
   }
 }
