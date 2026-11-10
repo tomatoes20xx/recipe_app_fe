@@ -102,7 +102,8 @@ class _FeedShellScreenState extends State<FeedShellScreen>
       isSignedIn: () => widget.auth.isLoggedIn,
     );
     _feedViewController = FeedViewController();
-    _flushPendingSeenIds().then((_) => feed.loadInitial());
+    Future.wait([_flushPendingSeenIds(), feed.restorePreferences()])
+        .then((_) => feed.loadInitial());
 
     _notificationApi = NotificationApi(widget.apiClient);
     _notificationController = NotificationController(notificationApi: _notificationApi);

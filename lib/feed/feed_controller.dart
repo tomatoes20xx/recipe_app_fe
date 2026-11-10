@@ -59,6 +59,35 @@ class FeedController extends PaginatedListController<feed_models.FeedItem> {
   PopularPeriod popularPeriod = PopularPeriod.allTime;
   int trendingDays = 7; // 1-30
 
+  static const _sortPrefKey = 'feed_sort';
+  static const _popularPeriodPrefKey = 'feed_popular_period';
+  static const _trendingDaysPrefKey = 'feed_trending_days';
+
+  /// Restores the sort and period choices saved by [setSort],
+  /// [setPopularPeriod] and [setTrendingDays], so the feed opens the way the
+  /// user last left it. Call before the first [loadInitial]; it doesn't load.
+  Future<void> restorePreferences() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final savedSort = FeedSort.values.asNameMap()[prefs.getString(_sortPrefKey)];
+      if (savedSort != null) sort = savedSort;
+      final savedPeriod = PopularPeriod.values.asNameMap()[prefs.getString(_popularPeriodPrefKey)];
+      if (savedPeriod != null) popularPeriod = savedPeriod;
+      final savedDays = prefs.getInt(_trendingDaysPrefKey);
+      if (savedDays != null && savedDays >= 1 && savedDays <= 30) trendingDays = savedDays;
+    } catch (_) {
+      // Unreadable prefs just leave the defaults.
+    }
+  }
+
+  /// Only explicit choices are saved, not the automatic Discovery → Recent
+  /// switch on the Following tab, so For you keeps the user's own pick.
+  Future<void> _savePreference(Future<bool> Function(SharedPreferences prefs) write) async {
+    try {
+      await write(await SharedPreferences.getInstance());
+    } catch (_) {}
+  }
+
   @override
   Future<void> loadInitial() async {
     if (scope == FeedScope.global &&
@@ -145,6 +174,7 @@ class FeedController extends PaginatedListController<feed_models.FeedItem> {
   Future<void> setPopularPeriod(PopularPeriod value) async {
     if (popularPeriod == value) return;
     popularPeriod = value;
+    _savePreference((prefs) => prefs.setString(_popularPeriodPrefKey, value.name));
     if (scope == FeedScope.popular) {
       await loadInitial();
     } else {
@@ -155,6 +185,7 @@ class FeedController extends PaginatedListController<feed_models.FeedItem> {
   Future<void> setTrendingDays(int value) async {
     if (trendingDays == value) return;
     trendingDays = value;
+    _savePreference((prefs) => prefs.setInt(_trendingDaysPrefKey, value));
     if (scope == FeedScope.trending) {
       await loadInitial();
     } else {
@@ -165,6 +196,7 @@ class FeedController extends PaginatedListController<feed_models.FeedItem> {
   Future<void> setSort(FeedSort value) async {
     if (sort == value) return;
     sort = value;
+    _savePreference((prefs) => prefs.setString(_sortPrefKey, value.name));
     await loadInitial();
   }
 
