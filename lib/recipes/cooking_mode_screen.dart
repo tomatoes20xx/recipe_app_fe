@@ -1,9 +1,15 @@
+import "dart:async";
+
 import "package:flutter/material.dart";
 import "package:wakelock_plus/wakelock_plus.dart";
 
 import "../localization/app_localizations.dart";
+import "../services/proximity_sensor.dart";
 import "../theme/app_tokens.dart";
+import "../utils/error_utils.dart";
 import "../widgets/common/app_bottom_sheet.dart";
+import "cooking_mode_prefs.dart";
+import "hand_wave_detector.dart";
 import "recipe_detail_parts.dart";
 
 /// Opens cooking mode for a recipe. Resolves to true when the user taps
@@ -37,6 +43,10 @@ Future<bool> openCookingMode(
 /// One step at a time in large text, swipe or Back/Next, the ingredients
 /// (with the page's ticks) one tap away, and the screen kept awake. The last
 /// page is "Done!" with "Made it".
+///
+/// Hand wave (Android phones with a proximity sensor): a quick wave over the
+/// top of the phone goes to the next step, covering it for about a second
+/// goes back. On by default, toggled from the top bar, explained once.
 class CookingModeScreen extends StatefulWidget {
   const CookingModeScreen({
     super.key,
@@ -64,6 +74,15 @@ class _CookingModeScreenState extends State<CookingModeScreen> {
   late Set<String> _ticked = {...widget.tickedIds};
   int _page = 0;
 
+  final HandWaveDetector _handWave = HandWaveDetector();
+  final Stopwatch _clock = Stopwatch()..start();
+  late final AppLifecycleListener _lifecycle;
+  StreamSubscription<bool>? _proximity;
+  bool _handWaveAvailable = false;
+  bool _handWaveOn = false;
+  bool _appVisible = true;
+  bool _sheetOpen = false;
+
   /// The steps, then the "Done!" page.
   int get _pageCount => widget.steps.length + 1;
   bool get _onDonePage => _page == widget.steps.length;
@@ -72,17 +91,109 @@ class _CookingModeScreenState extends State<CookingModeScreen> {
   void initState() {
     super.initState();
     WakelockPlus.enable();
+    _lifecycle = AppLifecycleListener(
+      onShow: () => _setAppVisible(true),
+      onHide: () => _setAppVisible(false),
+    );
+    _initHandWave();
   }
 
   @override
   void dispose() {
     WakelockPlus.disable();
+    _lifecycle.dispose();
+    _proximity?.cancel();
     _pages.dispose();
     super.dispose();
   }
 
   void _goTo(int page) {
     _pages.animateToPage(page, duration: const Duration(milliseconds: 250), curve: Curves.easeOut);
+  }
+
+  Future<void> _initHandWave() async {
+    if (!await ProximitySensor.isAvailable()) return;
+    final on = await CookingModePrefs.handWaveEnabled();
+    if (!mounted) return;
+    setState(() {
+      _handWaveAvailable = true;
+      _handWaveOn = on;
+    });
+    _syncProximity();
+    if (!on || await CookingModePrefs.handWaveHintSeen()) return;
+    if (!mounted) return;
+    CookingModePrefs.markHandWaveHintSeen();
+    _showHandWaveHint();
+  }
+
+  void _setAppVisible(bool visible) {
+    _appVisible = visible;
+    _syncProximity();
+  }
+
+  /// The sensor runs only while hand wave is on and the app is on screen.
+  void _syncProximity() {
+    final listen = _handWaveAvailable && _handWaveOn && _appVisible;
+    if (listen && _proximity == null) {
+      _handWave.reset();
+      _proximity = ProximitySensor.changes.listen(
+        _onProximity,
+        onError: (Object _) => _stopProximity(unavailable: true),
+      );
+    } else if (!listen) {
+      _stopProximity();
+    }
+  }
+
+  void _stopProximity({bool unavailable = false}) {
+    _proximity?.cancel();
+    _proximity = null;
+    if (unavailable && mounted) setState(() => _handWaveAvailable = false);
+  }
+
+  void _onProximity(bool near) {
+    final gesture = _handWave.onReading(near: near, at: _clock.elapsed);
+    // While the ingredients sheet is up, a wave would turn the page behind it.
+    if (gesture == null || _sheetOpen || !mounted) return;
+    switch (gesture) {
+      case HandGesture.wave:
+        if (!_onDonePage) _goTo(_page + 1);
+      case HandGesture.hold:
+        if (_page > 0) _goTo(_page - 1);
+    }
+  }
+
+  void _toggleHandWave() {
+    final on = !_handWaveOn;
+    _applyHandWave(on);
+    if (on) {
+      _showHandWaveHint();
+    } else {
+      final l = AppLocalizations.of(context);
+      ErrorUtils.showInfo(context, l?.handWaveTurnedOff ?? "Hand wave turned off");
+    }
+  }
+
+  /// Saves the setting even if cooking mode has closed meanwhile (the hint's
+  /// "Turn off" can still be tapped on the recipe page).
+  void _applyHandWave(bool on) {
+    CookingModePrefs.setHandWaveEnabled(on);
+    if (on) CookingModePrefs.markHandWaveHintSeen();
+    if (!mounted) return;
+    setState(() => _handWaveOn = on);
+    _syncProximity();
+  }
+
+  void _showHandWaveHint() {
+    final l = AppLocalizations.of(context);
+    ErrorUtils.showInfo(
+      context,
+      l?.handWaveHint ??
+          "Wave over the top of the phone for the next step. To go back, cover it with your hand for a second.",
+      duration: const Duration(seconds: 8),
+      actionLabel: l?.turnOff ?? "Turn off",
+      onActionPressed: () => _applyHandWave(false),
+    );
   }
 
   void _toggleTick(String id) {
@@ -100,6 +211,7 @@ class _CookingModeScreenState extends State<CookingModeScreen> {
 
   void _showIngredients() {
     final t = AppTokens.of(context);
+    _sheetOpen = true;
     showAppBottomSheet<void>(
       context: context,
       builder: (sheetContext) => StatefulBuilder(
@@ -134,7 +246,7 @@ class _CookingModeScreenState extends State<CookingModeScreen> {
           ),
         ),
       ),
-    );
+    ).whenComplete(() => _sheetOpen = false);
   }
 
   @override
@@ -176,6 +288,16 @@ class _CookingModeScreenState extends State<CookingModeScreen> {
                     ],
                   ),
                 ),
+                if (_handWaveAvailable)
+                  IconButton(
+                    tooltip: _handWaveOn
+                        ? (l?.handWaveOnTooltip ?? "Hand wave: on")
+                        : (l?.handWaveOffTooltip ?? "Hand wave: off"),
+                    onPressed: _toggleHandWave,
+                    isSelected: _handWaveOn,
+                    icon: Icon(Icons.waving_hand_outlined, color: t.ink2),
+                    selectedIcon: Icon(Icons.waving_hand_rounded, color: t.brand),
+                  ),
                 if (widget.ingredients.isNotEmpty)
                   TextButton.icon(
                     onPressed: _showIngredients,

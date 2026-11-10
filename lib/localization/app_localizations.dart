@@ -958,6 +958,11 @@ class AppLocalizations {
   String get finishCooking => _localizedValues[locale.languageCode]?["finishCooking"] ?? "Finish";
   String get cookingDoneTitle => _localizedValues[locale.languageCode]?["cookingDoneTitle"] ?? "Done!";
   String get cookingDoneBody => _localizedValues[locale.languageCode]?["cookingDoneBody"] ?? "Mark it as cooked to keep your streak going.";
+  String get handWaveOnTooltip => _localizedValues[locale.languageCode]?["handWaveOnTooltip"] ?? "Hand wave: on";
+  String get handWaveOffTooltip => _localizedValues[locale.languageCode]?["handWaveOffTooltip"] ?? "Hand wave: off";
+  String get handWaveTurnedOff => _localizedValues[locale.languageCode]?["handWaveTurnedOff"] ?? "Hand wave turned off";
+  String get handWaveHint => _localizedValues[locale.languageCode]?["handWaveHint"] ?? "Wave over the top of the phone for the next step. To go back, cover it with your hand for a second.";
+  String get turnOff => _localizedValues[locale.languageCode]?["turnOff"] ?? "Turn off";
   String get addIngredientsToShoppingList => _localizedValues[locale.languageCode]?["addIngredientsToShoppingList"] ?? "Add to shopping list";
   String get addNItems => _localizedValues[locale.languageCode]?["addNItems"] ?? "Add {n} items";
   String get deselectAll => _localizedValues[locale.languageCode]?["deselectAll"] ?? "Deselect all";
@@ -1914,6 +1919,11 @@ class AppLocalizations {
       "finishCooking": "Finish",
       "cookingDoneTitle": "Done!",
       "cookingDoneBody": "Mark it as cooked to keep your streak going.",
+      "handWaveOnTooltip": "Hand wave: on",
+      "handWaveOffTooltip": "Hand wave: off",
+      "handWaveTurnedOff": "Hand wave turned off",
+      "handWaveHint": "Wave over the top of the phone for the next step. To go back, cover it with your hand for a second.",
+      "turnOff": "Turn off",
       "addIngredientsToShoppingList": "Add to shopping list",
       "addNItems": "Add {n} items",
       "deselectAll": "Deselect all",
@@ -2862,6 +2872,11 @@ class AppLocalizations {
       "finishCooking": "დასრულება",
       "cookingDoneTitle": "მზადაა!",
       "cookingDoneBody": "მონიშნე მომზადებულად და გააგრძელე სერია.",
+      "handWaveOnTooltip": "ხელის აქნევა: ჩართულია",
+      "handWaveOffTooltip": "ხელის აქნევა: გამორთულია",
+      "handWaveTurnedOff": "ხელის აქნევა გამოირთო",
+      "handWaveHint": "შემდეგ ნაბიჯზე გადასასვლელად ხელი გადაატარე ტელეფონის ზედა ნაწილს. უკან დასაბრუნებლად ერთი წამით დააფარე ხელი.",
+      "turnOff": "გამორთვა",
       "addIngredientsToShoppingList": "საყიდლების სიაში",
       "addNItems": "{n} პროდუქტის დამატება",
       "deselectAll": "მონიშვნის მოხსნა",
