@@ -1,6 +1,7 @@
 import "package:flutter/material.dart";
 
 import "../../theme/app_tokens.dart";
+import "../common/skeletons.dart";
 
 /// Skeleton loading widget for feed cards. Mirrors [FeedCard]: author header,
 /// 5:3 photo, title, meta row, actions.
@@ -19,12 +20,12 @@ class FeedCardSkeleton extends StatelessWidget {
         borderRadius: radius,
         border: Border.all(color: t.line),
       ),
-      child: Column(
+      child: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
           // Author header
-          const Padding(
+          Padding(
             padding: EdgeInsets.fromLTRB(16, 12, 16, 12),
             child: Row(
               children: [
@@ -33,44 +34,35 @@ class FeedCardSkeleton extends StatelessWidget {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    SkeletonBox(width: 110, height: 14),
-                    SizedBox(height: 6),
-                    SkeletonBox(width: 70, height: 11),
+                    SkeletonBox(width: 112, height: 12),
+                    SizedBox(height: 8),
+                    SkeletonBox(width: 68, height: 10),
                   ],
                 ),
               ],
             ),
           ),
           // Photo
-          AspectRatio(
-            aspectRatio: 5 / 3,
-            child: ColoredBox(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-              child: const SkeletonBox(
-                width: double.infinity,
-                height: double.infinity,
-              ),
-            ),
-          ),
-          const Padding(
-            padding: EdgeInsets.fromLTRB(16, 14, 16, 16),
+          AspectRatio(aspectRatio: 5 / 3, child: SkeletonBone()),
+          Padding(
+            padding: EdgeInsets.fromLTRB(16, 16, 16, 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Title
-                SkeletonBox(width: 220, height: 18),
-                SizedBox(height: 10),
+                SkeletonBox(width: 220, height: 16),
+                SizedBox(height: 12),
                 // Time, servings, category
-                SkeletonBox(width: 180, height: 14),
-                SizedBox(height: 18),
+                SkeletonBox(width: 168, height: 10),
+                SizedBox(height: 20),
                 // Like, comment, save
                 Row(
                   children: [
-                    SkeletonBox(width: 44, height: 22),
-                    SizedBox(width: 20),
-                    SkeletonBox(width: 44, height: 22),
+                    SkeletonBox(width: 48, height: 20),
+                    SizedBox(width: 16),
+                    SkeletonBox(width: 48, height: 20),
                     Spacer(),
-                    SkeletonBox(width: 22, height: 22),
+                    SkeletonCircle(size: 22),
                   ],
                 ),
               ],
@@ -78,112 +70,6 @@ class FeedCardSkeleton extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-/// Animated skeleton box for loading states
-class SkeletonBox extends StatefulWidget {
-  const SkeletonBox({
-    super.key,
-    required this.width,
-    required this.height,
-  });
-
-  final double width;
-  final double height;
-
-  @override
-  State<SkeletonBox> createState() => _SkeletonBoxState();
-}
-
-class _SkeletonBoxState extends State<SkeletonBox> with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 1500),
-      vsync: this,
-    )..repeat(reverse: true);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        return Opacity(
-          opacity: 0.3 + (0.4 * _controller.value),
-          child: Container(
-            width: widget.width,
-            height: widget.height,
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(4),
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
-
-/// Animated skeleton circle for avatar loading states
-class SkeletonCircle extends StatefulWidget {
-  const SkeletonCircle({
-    super.key,
-    required this.size,
-  });
-
-  final double size;
-
-  @override
-  State<SkeletonCircle> createState() => _SkeletonCircleState();
-}
-
-class _SkeletonCircleState extends State<SkeletonCircle> with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 1500),
-      vsync: this,
-    )..repeat(reverse: true);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        return Opacity(
-          opacity: 0.3 + (0.4 * _controller.value),
-          child: Container(
-            width: widget.size,
-            height: widget.size,
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-              shape: BoxShape.circle,
-            ),
-          ),
-        );
-      },
     );
   }
 }

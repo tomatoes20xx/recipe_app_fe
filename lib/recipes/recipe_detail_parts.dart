@@ -4,6 +4,7 @@ import "../localization/app_localizations.dart";
 import "../search/filter_terms.dart";
 import "../utils/ui_utils.dart";
 import "../widgets/common/app_bottom_sheet.dart";
+import "../widgets/common/skeletons.dart";
 import "../widgets/section_title_widget.dart";
 import "recipe_detail_models.dart";
 
@@ -159,14 +160,57 @@ class RecipeStartCookingButton extends StatelessWidget {
 
   final VoidCallback onPressed;
 
+  static const double height = 48;
+
+  /// The filled-button theme's corner radius (app_theme.dart).
+  static const double radius = 14;
+
   @override
   Widget build(BuildContext context) {
     return FilledButton.icon(
       onPressed: onPressed,
-      style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(48)),
+      style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(height)),
       icon: const Icon(Icons.play_arrow_rounded),
       label: Text(AppLocalizations.of(context)?.startCooking ?? "Start cooking"),
     );
+  }
+}
+
+/// [RecipeStartCookingButton]'s place while the recipe loads, at its size and
+/// shape, so the button doesn't push the page down when it arrives.
+class RecipeStartCookingSkeleton extends StatelessWidget {
+  const RecipeStartCookingSkeleton({super.key});
+
+  @override
+  Widget build(BuildContext context) => const SkeletonBox(
+        width: double.infinity,
+        height: RecipeStartCookingButton.height,
+        radius: RecipeStartCookingButton.radius,
+      );
+}
+
+/// [RecipeEngagementBar]'s place while the recipe loads, for openers that
+/// don't have the counts (search results): four icon-and-count bones in the
+/// bar's columns, at its height.
+class RecipeEngagementSkeleton extends StatelessWidget {
+  const RecipeEngagementSkeleton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    const cell = Expanded(
+      child: Padding(
+        padding: EdgeInsets.symmetric(vertical: 8),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SkeletonCircle(size: 22),
+            SizedBox(width: 6),
+            SkeletonBox(width: 18, height: 12),
+          ],
+        ),
+      ),
+    );
+    return const Row(children: [cell, cell, cell, cell]);
   }
 }
 

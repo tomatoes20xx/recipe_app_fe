@@ -308,7 +308,7 @@ class _SearchScreenState extends State<SearchScreen> {
     if (searchController.isLoading &&
         searchController.users.isEmpty &&
         searchController.recipes.isEmpty) {
-      return const SingleChildScrollView(child: ListRowSkeleton(leadingSize: 64));
+      return const SingleChildScrollView(child: RecipeRowSkeleton());
     }
 
     if (searchController.error != null &&
@@ -465,7 +465,7 @@ class _SearchScreenState extends State<SearchScreen> {
               ),
             ),
           if (recipesLoading)
-            const SliverToBoxAdapter(child: ListRowSkeleton(count: 3, leadingSize: 64))
+            const SliverToBoxAdapter(child: RecipeRowSkeleton(count: 3))
           else if (recipesError)
             SliverToBoxAdapter(
               child: ErrorStateWidget(

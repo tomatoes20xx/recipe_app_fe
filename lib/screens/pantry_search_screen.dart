@@ -247,7 +247,9 @@ class _PantrySearchScreenState extends State<PantrySearchScreen> {
     final localizations = AppLocalizations.of(context);
 
     if (_isLoading) {
-      return const SingleChildScrollView(child: ListRowSkeleton(leadingSize: 64));
+      return const SingleChildScrollView(
+        child: RecipeRowSkeleton(gap: 12, padding: EdgeInsets.all(16)),
+      );
     }
 
     if (_error != null) {

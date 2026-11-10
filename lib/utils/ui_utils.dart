@@ -4,6 +4,7 @@ import "package:cached_network_image/cached_network_image.dart";
 import "../config.dart";
 import "../localization/app_localizations.dart";
 import "../widgets/common/profile_avatar.dart";
+import "../widgets/common/skeletons.dart";
 
 /// A quantity as every screen shows it: "2", "1.5", never "2.0".
 String formatQuantity(double value) {
@@ -259,9 +260,10 @@ class RecipeImageWidget extends StatelessWidget {
   }
 }
 
-/// Shimmer placeholder for progressive image loading
-/// Creates a smooth animated loading effect while images download
-class _ImageShimmerPlaceholder extends StatefulWidget {
+/// Placeholder while a photo downloads: a skeleton bone filling the photo's
+/// box (see widgets/common/skeletons.dart), with the download progress on top
+/// when [progress] is set.
+class _ImageShimmerPlaceholder extends StatelessWidget {
   const _ImageShimmerPlaceholder({
     this.width,
     this.height,
@@ -273,61 +275,17 @@ class _ImageShimmerPlaceholder extends StatefulWidget {
   final double? progress;
 
   @override
-  State<_ImageShimmerPlaceholder> createState() => _ImageShimmerPlaceholderState();
-}
-
-class _ImageShimmerPlaceholderState extends State<_ImageShimmerPlaceholder>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _animation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 1500),
-      vsync: this,
-    )..repeat();
-    _animation = Tween<double>(begin: -1.0, end: 2.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final baseColor = Theme.of(context).colorScheme.surfaceContainerHighest;
-    final highlightColor = Theme.of(context).colorScheme.surface;
-
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        return Container(
-          width: widget.width?.isFinite == true ? widget.width : null,
-          height: widget.height?.isFinite == true ? widget.height : null,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-              colors: [
-                baseColor,
-                highlightColor,
-                baseColor,
-              ],
-              stops: [
-                (_animation.value - 0.3).clamp(0.0, 1.0),
-                _animation.value.clamp(0.0, 1.0),
-                (_animation.value + 0.3).clamp(0.0, 1.0),
-              ],
-            ),
-          ),
-          child: widget.progress != null
-              ? Center(
+    final progress = this.progress;
+    return SizedBox(
+      width: width?.isFinite == true ? width : null,
+      height: height?.isFinite == true ? height : null,
+      child: progress == null
+          ? const SkeletonBone()
+          : Stack(
+              children: [
+                const Positioned.fill(child: SkeletonBone()),
+                Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -335,17 +293,17 @@ class _ImageShimmerPlaceholderState extends State<_ImageShimmerPlaceholder>
                         width: 32,
                         height: 32,
                         child: CircularProgressIndicator(
-                          value: widget.progress,
+                          value: progress,
                           strokeWidth: 2,
                           valueColor: AlwaysStoppedAnimation<Color>(
                             Theme.of(context).colorScheme.primary.withValues(alpha: 0.7),
                           ),
                         ),
                       ),
-                      if (widget.progress != null && widget.progress! > 0) ...[
+                      if (progress > 0) ...[
                         const SizedBox(height: 8),
                         Text(
-                          "${(widget.progress! * 100).toInt()}%",
+                          "${(progress * 100).toInt()}%",
                           style: TextStyle(
                             fontSize: 11,
                             color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
@@ -354,10 +312,9 @@ class _ImageShimmerPlaceholderState extends State<_ImageShimmerPlaceholder>
                       ],
                     ],
                   ),
-                )
-              : null,
-        );
-      },
+                ),
+              ],
+            ),
     );
   }
 }

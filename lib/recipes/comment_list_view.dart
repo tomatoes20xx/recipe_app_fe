@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../auth/auth_controller.dart';
 import '../localization/app_localizations.dart';
 import '../utils/ui_utils.dart';
+import '../widgets/common/skeletons.dart';
 import 'comment_models.dart';
 import 'comment_tree.dart';
 import 'comments_controller.dart';
@@ -413,17 +414,13 @@ class _CommentListViewState extends State<CommentListView> {
   }
 
   Widget _buildShimmerLoading(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final shimmerBase = colorScheme.onSurface.withValues(alpha: 0.06);
-    final shimmerHighlight = colorScheme.onSurface.withValues(alpha: 0.1);
-
-    Widget shimmerBlock({double avatarRadius = 16, double nameWidth = 100, double contentWidth = 200}) {
+    Widget block({required double nameWidth, required double contentWidth}) {
       return Padding(
-        padding: const EdgeInsets.only(bottom: 20),
+        padding: const EdgeInsets.only(bottom: 22),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            CircleAvatar(radius: avatarRadius, backgroundColor: shimmerBase),
+            const SkeletonCircle(size: 32),
             const SizedBox(width: 10),
             Expanded(
               child: Column(
@@ -431,63 +428,21 @@ class _CommentListViewState extends State<CommentListView> {
                 children: [
                   Row(
                     children: [
-                      Container(
-                        width: nameWidth,
-                        height: 12,
-                        decoration: BoxDecoration(
-                          color: shimmerHighlight,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                      ),
+                      SkeletonBox(width: nameWidth, height: 12),
                       const Spacer(),
-                      Container(
-                        width: 40,
-                        height: 10,
-                        decoration: BoxDecoration(
-                          color: shimmerBase,
-                          borderRadius: BorderRadius.circular(5),
-                        ),
-                      ),
+                      const SkeletonBox(width: 36, height: 10),
                     ],
                   ),
-                  const SizedBox(height: 8),
-                  Container(
-                    width: contentWidth,
-                    height: 12,
-                    decoration: BoxDecoration(
-                      color: shimmerBase,
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Container(
-                    width: contentWidth * 0.6,
-                    height: 12,
-                    decoration: BoxDecoration(
-                      color: shimmerBase,
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                  ),
                   const SizedBox(height: 10),
-                  Row(
+                  SkeletonBox(width: contentWidth, height: 10),
+                  const SizedBox(height: 8),
+                  SkeletonBox(width: contentWidth * 0.6, height: 10),
+                  const SizedBox(height: 12),
+                  const Row(
                     children: [
-                      Container(
-                        width: 40,
-                        height: 10,
-                        decoration: BoxDecoration(
-                          color: shimmerBase,
-                          borderRadius: BorderRadius.circular(5),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Container(
-                        width: 50,
-                        height: 10,
-                        decoration: BoxDecoration(
-                          color: shimmerBase,
-                          borderRadius: BorderRadius.circular(5),
-                        ),
-                      ),
+                      SkeletonBox(width: 40, height: 10),
+                      SizedBox(width: 16),
+                      SkeletonBox(width: 50, height: 10),
                     ],
                   ),
                 ],
@@ -502,9 +457,9 @@ class _CommentListViewState extends State<CommentListView> {
       physics: const NeverScrollableScrollPhysics(),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       children: [
-        shimmerBlock(nameWidth: 120, contentWidth: 240),
-        shimmerBlock(nameWidth: 90, contentWidth: 200),
-        shimmerBlock(nameWidth: 110, contentWidth: 180),
+        block(nameWidth: 120, contentWidth: 240),
+        block(nameWidth: 90, contentWidth: 200),
+        block(nameWidth: 110, contentWidth: 180),
       ],
     );
   }

@@ -933,9 +933,9 @@ class _FullScreenImageViewerState extends State<_FullScreenImageViewer> {
 }
 
 /// The page laid out from a [RecipeSeed] while the recipe loads: photos,
-/// title, author, description, quick info and tags right away, with
-/// placeholders where the ingredients and steps will be. Nothing is tappable
-/// until the real recipe arrives.
+/// title, author, description, quick info and tags right away, with skeletons
+/// where the counts (when the seed has none), "Start cooking" and the
+/// ingredients will be. Nothing is tappable until the real recipe arrives.
 class _SeededLoadingView extends StatelessWidget {
   const _SeededLoadingView({required this.seed});
 
@@ -975,7 +975,7 @@ class _SeededLoadingView extends StatelessWidget {
                     viewerHasLiked: seed.viewerHasLiked,
                     viewerHasBookmarked: seed.viewerHasBookmarked,
                   )
-                : null,
+                : const RecipeEngagementSkeleton(),
             quickInfo: RecipeQuickInfoBar.hasContent(
               cookingTimeMin: seed.cookingTimeMin,
               cookingTimeMax: seed.cookingTimeMax,
@@ -989,6 +989,8 @@ class _SeededLoadingView extends StatelessWidget {
                     originalServings: seed.servingSize,
                   )
                 : null,
+            // Nearly every recipe has steps, so hold the button's place.
+            startCooking: const RecipeStartCookingSkeleton(),
             tags: seed.tags,
             ingredients: const _IngredientsPlaceholder(),
           ),
@@ -998,23 +1000,72 @@ class _SeededLoadingView extends StatelessWidget {
   }
 }
 
-/// Pulsing stand-ins for the ingredients header and rows.
+/// [RecipeIngredientsSection] while the recipe loads: the real heading, then
+/// skeletons of the item count, the "Add to shopping list" row and the first
+/// ingredient tiles, at their sizes.
 class _IngredientsPlaceholder extends StatelessWidget {
   const _IngredientsPlaceholder();
 
+  static const _nameWidths = [0.55, 0.4, 0.65, 0.5];
+  static const _amountWidths = [40.0, 28.0, 48.0, 34.0];
+
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SkeletonBox(width: 140, height: 22),
-        const SizedBox(height: 16),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              AppLocalizations.of(context)?.ingredients ?? "Ingredients",
+              style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SkeletonBox(width: 56, height: 12),
+          ],
+        ),
+        // "Add to shopping list", a 48px text button.
+        const SizedBox(
+          height: 48,
+          child: Row(
+            children: [
+              SizedBox(width: 4),
+              SkeletonBox(width: 20, height: 20, radius: 6),
+              SizedBox(width: 8),
+              SkeletonBox(width: 150, height: 12),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
         for (var i = 0; i < 4; i++)
-          const Padding(
-            padding: EdgeInsets.only(bottom: 8),
-            child: ClipRRect(
-              borderRadius: BorderRadius.all(Radius.circular(14)),
-              child: SkeletonBox(width: double.infinity, height: 52),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Row(
+                children: [
+                  const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: Center(child: SkeletonBox(width: 18, height: 18, radius: 5)),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: FractionallySizedBox(
+                      alignment: Alignment.centerLeft,
+                      widthFactor: _nameWidths[i],
+                      child: const SkeletonBox(width: double.infinity, height: 12),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  SkeletonBox(width: _amountWidths[i], height: 12),
+                ],
+              ),
             ),
           ),
       ],

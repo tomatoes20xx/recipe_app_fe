@@ -26,6 +26,8 @@ class AppTokens {
     required this.field,
     required this.dashed,
     required this.warning,
+    required this.skeleton,
+    required this.skeletonShine,
   });
 
   final Color bg;
@@ -47,6 +49,12 @@ class AppTokens {
   /// Warnings (e.g. the account violation banner): text and icons on `card`
   /// or on a light tint of itself, readable in both themes.
   final Color warning;
+
+  /// Loading placeholders (skeleton bones): a faintly green neutral that
+  /// shows on both [bg] and [card], and the lighter band that sweeps across
+  /// them (see widgets/common/skeletons.dart).
+  final Color skeleton;
+  final Color skeletonShine;
 
   /// Tab underline, active dot, radio, avatar ring. Never text.
   Color get brand => const Color(0xFF53B175);
@@ -79,6 +87,8 @@ class AppTokens {
     field: Color(0xFFF1F3F0),
     dashed: Color(0xFFB9C4BD),
     warning: Color(0xFFA15C00),
+    skeleton: Color(0xFFE6ECE8),
+    skeletonShine: Color(0xFFF7FAF8),
   );
 
   static const dark = AppTokens._(
@@ -94,6 +104,8 @@ class AppTokens {
     field: Color(0xFF222925),
     dashed: Color(0xFF3A4540),
     warning: Color(0xFFF2B65C),
+    skeleton: Color(0xFF242C27),
+    skeletonShine: Color(0xFF323C36),
   );
 
   static AppTokens of(BuildContext context) =>
