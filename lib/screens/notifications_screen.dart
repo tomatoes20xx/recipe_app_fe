@@ -254,31 +254,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }
   }
 
-  Future<bool> _confirmDeleteNotification() async {
-    final localizations = AppLocalizations.of(context);
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(localizations?.deleteNotificationTitle ?? "Delete notification?"),
-        content: Text(localizations?.deleteNotificationMessage ?? "Are you sure you want to delete this notification?"),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(localizations?.cancel ?? "Cancel"),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: TextButton.styleFrom(
-              foregroundColor: Theme.of(context).colorScheme.error,
-            ),
-            child: Text(localizations?.delete ?? "Delete"),
-          ),
-        ],
-      ),
-    );
-    return result ?? false;
-  }
-
   Future<bool> _confirmClearAllNotifications() async {
     final localizations = AppLocalizations.of(context);
     final result = await showDialog<bool>(
@@ -541,21 +516,22 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     return Dismissible(
       key: Key(notification.id),
       direction: DismissDirection.endToStart,
-      confirmDismiss: (direction) async {
-        return await _confirmDeleteNotification();
-      },
-      onDismissed: (direction) async {
-        try {
-          await widget.notificationController.deleteNotification(notification.id);
-          if (mounted) {
-            final localizations = AppLocalizations.of(context);
-            ErrorUtils.showSuccess(context, localizations?.notificationDeleted ?? "Notification deleted");
-          }
-        } catch (e) {
-          if (mounted) {
-            ErrorUtils.showError(context, e);
-          }
-        }
+      // Deleted right away, with Undo for a few seconds (no confirmation).
+      onDismissed: (direction) {
+        final localizations = AppLocalizations.of(context);
+        final undo = widget.notificationController.removeWithUndo(
+          notification.id,
+          onError: (e) {
+            if (mounted) ErrorUtils.showError(context, e);
+          },
+        );
+        ErrorUtils.showInfo(
+          context,
+          localizations?.notificationDeleted ?? "Notification deleted",
+          duration: const Duration(seconds: 4),
+          actionLabel: localizations?.undo ?? "Undo",
+          onActionPressed: undo,
+        );
       },
       background: Container(
         alignment: Alignment.centerRight,

@@ -7,8 +7,8 @@ class ShoppingListItem {
     required this.name,
     this.quantity,
     this.unit,
-    required this.recipeId,
-    required this.recipeName,
+    this.recipeId,
+    this.recipeName,
     this.recipeImage,
     this.isChecked = false,
     required this.addedAt,
@@ -20,12 +20,15 @@ class ShoppingListItem {
   final String name;
   final double? quantity;
   final String? unit;
-  final String recipeId;
-  final String recipeName;
+  /// Null for a manual item ("milk") added on the Manual tab.
+  final String? recipeId;
+  final String? recipeName;
   final String? recipeImage;
   bool isChecked;
   final DateTime addedAt;
   final List<SharedWithUser> sharedWith;
+
+  bool get isManual => recipeId == null;
 
   String get displayText {
     final qty = quantity == null ? "" : "${quantity}";
@@ -80,8 +83,8 @@ class ShoppingListItem {
       name: json["name"].toString(),
       quantity: parseQuantity(json["quantity"]),
       unit: json["unit"]?.toString(),
-      recipeId: json["recipeId"].toString(),
-      recipeName: json["recipeName"].toString(),
+      recipeId: json["recipeId"]?.toString(),
+      recipeName: json["recipeName"]?.toString(),
       recipeImage: json["recipeImage"]?.toString(),
       isChecked: json["isChecked"] == true,
       addedAt: DateTime.parse(json["addedAt"].toString()),
@@ -135,4 +138,46 @@ class GroupedShoppingItems {
   int get checkedCount => items.where((i) => i.isChecked).length;
   bool get allChecked => items.isNotEmpty && items.every((i) => i.isChecked);
   bool get someChecked => items.any((i) => i.isChecked) && !allChecked;
+}
+
+
+/// One line of the "By ingredient" view: every item with the same name
+/// (ignoring case and spacing) across recipes, amounts added up per unit.
+class MergedShoppingRow {
+  MergedShoppingRow({required this.name, required this.items});
+
+  final String name;
+  final List<ShoppingListItem> items;
+
+  List<String> get itemIds => [for (final item in items) item.id];
+  bool get allChecked => items.every((i) => i.isChecked);
+
+  /// Names of the recipes the items come from, without repeats.
+  List<String> get recipeNames => {
+        for (final item in items)
+          if (item.recipeName != null) item.recipeName!,
+      }.toList();
+
+  /// Quantity per unit ("" for no unit), in the order units first appear.
+  /// Items without a quantity count as nothing.
+  Map<String, double> get totals {
+    final totals = <String, double>{};
+    for (final item in items) {
+      final q = item.quantity;
+      if (q == null) continue;
+      final unit = item.unit?.trim() ?? "";
+      totals[unit] = (totals[unit] ?? 0) + q;
+    }
+    return totals;
+  }
+
+  /// Merges [items] by name, keeping the order of each name's first item.
+  static List<MergedShoppingRow> merge(List<ShoppingListItem> items) {
+    final rows = <String, MergedShoppingRow>{};
+    for (final item in items) {
+      final key = item.name.trim().toLowerCase().replaceAll(RegExp(r"\s+"), " ");
+      rows.putIfAbsent(key, () => MergedShoppingRow(name: item.name.trim(), items: [])).items.add(item);
+    }
+    return rows.values.toList();
+  }
 }

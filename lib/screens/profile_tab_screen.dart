@@ -1181,6 +1181,7 @@ class _ProfileTabScreenState extends State<ProfileTabScreen> {
   void _openRecipe(FeedItem recipe) {
     _push(RecipeDetailScreen(
       recipeId: recipe.id,
+      seed: RecipeSeed.fromFeedItem(recipe),
       apiClient: widget.apiClient,
       auth: widget.auth,
       shoppingListController: widget.shoppingListController,

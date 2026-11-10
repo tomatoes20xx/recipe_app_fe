@@ -204,6 +204,7 @@ class _SharedRecipesScreenState extends State<SharedRecipesScreen> {
                             MaterialPageRoute(
                               builder: (_) => RecipeDetailScreen(
                                 recipeId: recipe.id,
+                                seed: RecipeSeed.fromFeedItem(recipe),
                                 apiClient: widget.apiClient,
                                 auth: widget.auth,
                                 shoppingListController: widget.shoppingListController,

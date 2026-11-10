@@ -5,6 +5,7 @@ import "../auth/auth_controller.dart";
 import "../feed/feed_models.dart";
 import "../localization/app_localizations.dart";
 import "../recipes/recipe_detail_screen.dart";
+import "shell_navigation.dart";
 import "../shopping/shopping_list_controller.dart";
 import "../theme/app_tokens.dart";
 import "../users/user_api.dart";
@@ -66,6 +67,7 @@ class _MyRecipesScreenState extends State<MyRecipesScreen> {
     Navigator.of(context).push(MaterialPageRoute(
       builder: (_) => RecipeDetailScreen(
         recipeId: recipe.id,
+        seed: RecipeSeed.fromFeedItem(recipe),
         apiClient: widget.apiClient,
         auth: widget.auth,
         shoppingListController: widget.shoppingListController,
@@ -100,6 +102,9 @@ class _MyRecipesScreenState extends State<MyRecipesScreen> {
               onRefresh: _loadSummary,
               onOpen: _openRecipe,
               emptyIcon: Icons.restaurant_menu_outlined,
+              emptyActionLabel: l?.createRecipe ?? "Create Recipe",
+              emptyActionIcon: Icons.add_rounded,
+              onEmptyAction: () => ShellNavigation.go(context, ShellRequest.create),
               emptyTitle: l?.noRecipesYet ?? "No recipes yet",
               emptyDescription: l?.createYourFirstRecipe ?? "Create your first recipe!",
             ),

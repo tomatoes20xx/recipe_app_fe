@@ -30,6 +30,7 @@ import "../users/user_api.dart";
 import "../utils/ui_utils.dart";
 import "../widgets/common/profile_avatar.dart";
 import "create_recipe_screen.dart";
+import "shell_navigation.dart";
 import "home_screen.dart";
 import "notifications_screen.dart";
 import "profile_screen.dart";
@@ -116,6 +117,7 @@ class _FeedShellScreenState extends State<FeedShellScreen>
       _registerFcmToken();
     }
     widget.auth.addListener(_onAuthChanged);
+    ShellNavigation.requests.addListener(_onShellRequest);
     NotificationService().onNotificationTap = _navigateFromNotification;
     final pendingTap = NotificationService().pendingTap;
     if (pendingTap != null) {
@@ -226,6 +228,8 @@ class _FeedShellScreenState extends State<FeedShellScreen>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     widget.auth.removeListener(_onAuthChanged);
+    ShellNavigation.requests.removeListener(_onShellRequest);
+    _searchFocusRequests.dispose();
     feed.dispose();
     _feedViewController.dispose();
     _feedScrollController.dispose();
@@ -340,6 +344,34 @@ class _FeedShellScreenState extends State<FeedShellScreen>
     });
   }
 
+  /// Bumped to focus the Search tab's box (a second tap on Search).
+  final ValueNotifier<int> _searchFocusRequests = ValueNotifier(0);
+
+  /// A request from a screen deep in the stack (e.g. an empty state's
+  /// "Explore recipes"); ShellNavigation.go has already popped back here.
+  void _onShellRequest() {
+    final request = ShellNavigation.requests.value;
+    if (request == null || !mounted) return;
+    switch (request) {
+      case ShellRequest.home:
+        _setPage(_homePage);
+      case ShellRequest.searchFocus:
+        _setPage(_searchPage);
+        // After the tab is visible, so the field can take focus.
+        WidgetsBinding.instance.addPostFrameCallback((_) => _searchFocusRequests.value++);
+      case ShellRequest.create:
+        _onAddRecipeTap();
+    }
+  }
+
+  void _onSearchTap() {
+    if (_currentIndex == _searchPage) {
+      _searchFocusRequests.value++;
+    } else {
+      _setPage(_searchPage);
+    }
+  }
+
   void _onHomeTap() {
     if (_currentIndex == _homePage) {
       if (_feedScrollController.hasClients) {
@@ -430,6 +462,7 @@ class _FeedShellScreenState extends State<FeedShellScreen>
               apiClient: widget.apiClient,
               auth: widget.auth,
               shoppingListController: widget.shoppingListController,
+              focusRequests: _searchFocusRequests,
             ),
           ),
           StatusBarInset(
@@ -463,7 +496,7 @@ class _FeedShellScreenState extends State<FeedShellScreen>
             username: me?["username"]?.toString() ?? "",
             avatarUrl: me?["avatar_url"]?.toString(),
             onHomeTap: _onHomeTap,
-            onSearchTap: () => _setPage(_searchPage),
+            onSearchTap: _onSearchTap,
             onAddRecipeTap: _onAddRecipeTap,
             onNotificationsTap: () {
               _setPage(_notificationsPage);

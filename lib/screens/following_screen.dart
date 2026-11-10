@@ -14,6 +14,7 @@ import "../widgets/common/common_widgets.dart";
 import "../widgets/common/skeletons.dart";
 import "../widgets/common/user_list_tile.dart";
 import "../widgets/empty_state_widget.dart";
+import "shell_navigation.dart";
 import "profile_screen.dart";
 
 class FollowingScreen extends StatefulWidget {
@@ -153,10 +154,14 @@ class _FollowingScreenState extends State<FollowingScreen> {
       return Builder(
         builder: (context) {
           final localizations = AppLocalizations.of(context);
+          final isOwnList = widget.auth.me?["username"]?.toString() == widget.username;
           return EmptyStateWidget(
             icon: Icons.person_outline,
             title: localizations?.notFollowingAnyone ?? "Not following anyone",
             description: localizations?.thisUserIsntFollowingAnyoneYet ?? "This user isn't following anyone yet",
+            actionLabel: isOwnList ? (localizations?.findPeople ?? "Find people") : null,
+            actionIcon: Icons.person_search_outlined,
+            onAction: isOwnList ? () => ShellNavigation.go(context, ShellRequest.searchFocus) : null,
           );
         },
       );

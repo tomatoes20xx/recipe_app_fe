@@ -51,8 +51,6 @@ class AppLocalizations {
   String get allNotifications => _localizedValues[locale.languageCode]?["allNotifications"] ?? "All notifications";
   String get unreadOnly => _localizedValues[locale.languageCode]?["unreadOnly"] ?? "Unread only";
   String get clearAllNotifications => _localizedValues[locale.languageCode]?["clearAllNotifications"] ?? "Clear all notifications";
-  String get deleteNotificationTitle => _localizedValues[locale.languageCode]?["deleteNotificationTitle"] ?? "Delete notification?";
-  String get deleteNotificationMessage => _localizedValues[locale.languageCode]?["deleteNotificationMessage"] ?? "Are you sure you want to delete this notification?";
   String get notificationDeleted => _localizedValues[locale.languageCode]?["notificationDeleted"] ?? "Notification deleted";
   String get clearAllNotificationsTitle => _localizedValues[locale.languageCode]?["clearAllNotificationsTitle"] ?? "Clear all notifications?";
   String get clearAllNotificationsMessage => _localizedValues[locale.languageCode]?["clearAllNotificationsMessage"] ?? "Are you sure you want to delete all notifications? This action cannot be undone.";
@@ -619,8 +617,6 @@ class AppLocalizations {
   String get checkAll => _localizedValues[locale.languageCode]?["checkAll"] ?? "Check All";
   String get uncheckAll => _localizedValues[locale.languageCode]?["uncheckAll"] ?? "Uncheck All";
   String get removeRecipe => _localizedValues[locale.languageCode]?["removeRecipe"] ?? "Remove Recipe";
-  String get nItemsSelected => _localizedValues[locale.languageCode]?["nItemsSelected"] ?? "{n} items selected";
-  String get alreadyHave => _localizedValues[locale.languageCode]?["alreadyHave"] ?? "Already Have";
   String get addToShoppingList => _localizedValues[locale.languageCode]?["addToShoppingList"] ?? "Add to List";
   String get nItemsAddedToList => _localizedValues[locale.languageCode]?["nItemsAddedToList"] ?? "{n} items added to shopping list";
   String get view => _localizedValues[locale.languageCode]?["view"] ?? "View";
@@ -942,6 +938,29 @@ class AppLocalizations {
   String get cropPhoto => _localizedValues[locale.languageCode]?["cropPhoto"] ?? "Crop";
   String get photoRemoved => _localizedValues[locale.languageCode]?["photoRemoved"] ?? "Photo removed";
   String get undo => _localizedValues[locale.languageCode]?["undo"] ?? "Undo";
+  String get shoppingManualTab => _localizedValues[locale.languageCode]?["shoppingManualTab"] ?? "Manual";
+  String get byRecipe => _localizedValues[locale.languageCode]?["byRecipe"] ?? "By recipe";
+  String get byIngredient => _localizedValues[locale.languageCode]?["byIngredient"] ?? "By ingredient";
+  String get asAdded => _localizedValues[locale.languageCode]?["asAdded"] ?? "As added";
+  String get manualItemHint => _localizedValues[locale.languageCode]?["manualItemHint"] ?? "Add an item, e.g. milk";
+  String get noUnit => _localizedValues[locale.languageCode]?["noUnit"] ?? "No unit";
+  String get manualEmptyTitle => _localizedValues[locale.languageCode]?["manualEmptyTitle"] ?? "No items yet";
+  String get manualEmptyBody => _localizedValues[locale.languageCode]?["manualEmptyBody"] ?? "Add things that aren't in a recipe, like milk or bread.";
+  String removeMergedItems(Object name, Object n) => (_localizedValues[locale.languageCode]?["removeMergedItems"] ?? "Remove {name} ({n} items)?").replaceAll("{name}", "$name").replaceAll("{n}", "$n");
+  String get exploreRecipes => _localizedValues[locale.languageCode]?["exploreRecipes"] ?? "Explore recipes";
+  String get findPeople => _localizedValues[locale.languageCode]?["findPeople"] ?? "Find people";
+  String get clearFilters => _localizedValues[locale.languageCode]?["clearFilters"] ?? "Clear filters";
+  String get addAnItem => _localizedValues[locale.languageCode]?["addAnItem"] ?? "Add an item";
+  String get startCooking => _localizedValues[locale.languageCode]?["startCooking"] ?? "Start cooking";
+  String stepNOfM(Object n, Object m) => (_localizedValues[locale.languageCode]?["stepNOfM"] ?? "Step {n} of {m}").replaceAll("{n}", "$n").replaceAll("{m}", "$m");
+  String get nextStep => _localizedValues[locale.languageCode]?["nextStep"] ?? "Next";
+  String get previousStep => _localizedValues[locale.languageCode]?["previousStep"] ?? "Back";
+  String get finishCooking => _localizedValues[locale.languageCode]?["finishCooking"] ?? "Finish";
+  String get cookingDoneTitle => _localizedValues[locale.languageCode]?["cookingDoneTitle"] ?? "Done!";
+  String get cookingDoneBody => _localizedValues[locale.languageCode]?["cookingDoneBody"] ?? "Mark it as cooked to keep your streak going.";
+  String get addIngredientsToShoppingList => _localizedValues[locale.languageCode]?["addIngredientsToShoppingList"] ?? "Add to shopping list";
+  String get addNItems => _localizedValues[locale.languageCode]?["addNItems"] ?? "Add {n} items";
+  String get deselectAll => _localizedValues[locale.languageCode]?["deselectAll"] ?? "Deselect all";
   String get photosReorderHint => _localizedValues[locale.languageCode]?["photosReorderHint"] ?? "Tap a photo to crop it. To reorder, press and hold a photo for 1–2 seconds and drag it where you want.";
   String get photosDropHint => _localizedValues[locale.languageCode]?["photosDropHint"] ?? "Drop it where you want it · first place is the cover";
   String photosSkippedLimit(int n, int max) => (_localizedValues[locale.languageCode]?["photosSkippedLimit"] ?? "{n} photos weren't added — max {max}").replaceAll("{n}", "$n").replaceAll("{max}", "$max");
@@ -1089,8 +1108,6 @@ class AppLocalizations {
       "allNotifications": "All notifications",
       "unreadOnly": "Unread only",
       "clearAllNotifications": "Clear all notifications",
-      "deleteNotificationTitle": "Delete notification?",
-      "deleteNotificationMessage": "Are you sure you want to delete this notification?",
       "notificationDeleted": "Notification deleted",
       "clearAllNotificationsTitle": "Clear all notifications?",
       "clearAllNotificationsMessage": "Are you sure you want to delete all notifications? This action cannot be undone.",
@@ -1528,8 +1545,6 @@ class AppLocalizations {
       "checkAll": "Check All",
       "uncheckAll": "Uncheck All",
       "removeRecipe": "Remove Recipe",
-      "nItemsSelected": "{n} items selected",
-      "alreadyHave": "Already Have",
       "addToShoppingList": "Add to List",
       "nItemsAddedToList": "{n} items added to shopping list",
       "view": "View",
@@ -1879,6 +1894,29 @@ class AppLocalizations {
       "cropPhoto": "Crop",
       "photoRemoved": "Photo removed",
       "undo": "Undo",
+      "shoppingManualTab": "Manual",
+      "byRecipe": "By recipe",
+      "byIngredient": "By ingredient",
+      "asAdded": "As added",
+      "manualItemHint": "Add an item, e.g. milk",
+      "noUnit": "No unit",
+      "manualEmptyTitle": "No items yet",
+      "manualEmptyBody": "Add things that aren't in a recipe, like milk or bread.",
+      "removeMergedItems": "Remove {name} ({n} items)?",
+      "exploreRecipes": "Explore recipes",
+      "findPeople": "Find people",
+      "clearFilters": "Clear filters",
+      "addAnItem": "Add an item",
+      "startCooking": "Start cooking",
+      "stepNOfM": "Step {n} of {m}",
+      "nextStep": "Next",
+      "previousStep": "Back",
+      "finishCooking": "Finish",
+      "cookingDoneTitle": "Done!",
+      "cookingDoneBody": "Mark it as cooked to keep your streak going.",
+      "addIngredientsToShoppingList": "Add to shopping list",
+      "addNItems": "Add {n} items",
+      "deselectAll": "Deselect all",
       "photosReorderHint": "Tap a photo to crop it. To reorder, press and hold a photo for 1–2 seconds and drag it where you want.",
       "photosDropHint": "Drop it where you want it · first place is the cover",
       "photosSkippedLimit": "{n} photos weren't added — max {max}",
@@ -2017,8 +2055,6 @@ class AppLocalizations {
       "allNotifications": "ყველა შეტყობინება",
       "unreadOnly": "მხოლოდ წაუკითხავი",
       "clearAllNotifications": "ყველა შეტყობინების წაშლა",
-      "deleteNotificationTitle": "შეტყობინების წაშლა?",
-      "deleteNotificationMessage": "დარწმუნებული ხართ, რომ გსურთ ამ შეტყობინების წაშლა?",
       "notificationDeleted": "შეტყობინება წაშლილია",
       "clearAllNotificationsTitle": "ყველა შეტყობინების წაშლა?",
       "clearAllNotificationsMessage": "დარწმუნებული ხართ, რომ გსურთ ყველა შეტყობინების წაშლა? ეს მოქმედება შეუქცევადია.",
@@ -2456,8 +2492,6 @@ class AppLocalizations {
       "checkAll": "ყველას მონიშვნა",
       "uncheckAll": "ყველას მოხსნა",
       "removeRecipe": "რეცეპტის ამოშლა",
-      "nItemsSelected": "{n} ელემენტი არჩეულია",
-      "alreadyHave": "უკვე მაქვს",
       "addToShoppingList": "სიაში დამატება",
       "nItemsAddedToList": "{n} ელემენტი დაემატა საყიდლების სიას",
       "view": "ნახვა",
@@ -2808,6 +2842,29 @@ class AppLocalizations {
       "cropPhoto": "მოჭრა",
       "photoRemoved": "ფოტო წაიშალა",
       "undo": "დაბრუნება",
+      "shoppingManualTab": "ხელით დამატებული",
+      "byRecipe": "რეცეპტებით",
+      "byIngredient": "ინგრედიენტებით",
+      "asAdded": "დამატების მიხედვით",
+      "manualItemHint": "დაამატე, მაგ. რძე",
+      "noUnit": "ერთეულის გარეშე",
+      "manualEmptyTitle": "ჯერ არაფერია",
+      "manualEmptyBody": "დაამატე ის, რაც რეცეპტში არ არის — მაგალითად, რძე ან პური.",
+      "removeMergedItems": "წაიშალოს {name} ({n} პროდუქტი)?",
+      "exploreRecipes": "რეცეპტების ნახვა",
+      "findPeople": "ადამიანების ძებნა",
+      "clearFilters": "ფილტრების მოხსნა",
+      "addAnItem": "დამატება",
+      "startCooking": "მომზადების დაწყება",
+      "stepNOfM": "ნაბიჯი {n} / {m}",
+      "nextStep": "შემდეგი",
+      "previousStep": "უკან",
+      "finishCooking": "დასრულება",
+      "cookingDoneTitle": "მზადაა!",
+      "cookingDoneBody": "მონიშნე მომზადებულად და გააგრძელე სერია.",
+      "addIngredientsToShoppingList": "საყიდლების სიაში",
+      "addNItems": "{n} პროდუქტის დამატება",
+      "deselectAll": "მონიშვნის მოხსნა",
       "photosReorderHint": "სურათზე სწრაფი დაჭერით შეძლებთ მის მოჭრას. მათთვის ადგილების შესაცვლელად დააჭირეთ სურათს 1-2 წამის განმავლობაში და გადაიტანეთ სასურველ ადგილას.",
       "photosDropHint": "გაუშვი სასურველ ადგილას · პირველ ადგილზე — გარეკანი",
       "photosSkippedLimit": "{n} ფოტო არ დაემატა — მაქსიმუმ {max}",

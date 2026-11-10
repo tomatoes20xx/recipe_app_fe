@@ -6,6 +6,7 @@ import "../collections/collection_api.dart";
 import "../collections/collection_detail_controller.dart";
 import "../collections/collection_models.dart";
 import "../collections/collection_picker_bottom_sheet.dart";
+import "../feed/feed_models.dart";
 import "../localization/app_localizations.dart";
 import "../recipes/recipe_detail_screen.dart";
 import "../shopping/shopping_list_controller.dart";
@@ -13,6 +14,7 @@ import "../utils/error_utils.dart";
 import "../widgets/common/recipe_grid_tile.dart";
 import "../widgets/common/skeletons.dart";
 import "../widgets/empty_state_widget.dart";
+import "shell_navigation.dart";
 
 class CollectionDetailScreen extends StatefulWidget {
   const CollectionDetailScreen({
@@ -452,6 +454,9 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
             "No recipes in this collection",
         description: localizations?.addRecipesToCollection ??
             "Add recipes to this collection by bookmarking them",
+        actionLabel: localizations?.exploreRecipes ?? "Explore recipes",
+        actionIcon: Icons.explore_outlined,
+        onAction: () => ShellNavigation.go(context, ShellRequest.home),
       );
     }
 
@@ -477,7 +482,7 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
                   if (_isSelectionMode) {
                     _toggleSelection(recipe.id);
                   } else {
-                    _navigateToDetail(recipe.id);
+                    _navigateToDetail(recipe);
                   }
                 },
                 onSelectTap: () {
@@ -502,11 +507,12 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
     );
   }
 
-  Future<void> _navigateToDetail(String recipeId) async {
+  Future<void> _navigateToDetail(FeedItem recipe) async {
     await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => RecipeDetailScreen(
-          recipeId: recipeId,
+          recipeId: recipe.id,
+          seed: RecipeSeed.fromFeedItem(recipe),
           apiClient: widget.apiClient,
           auth: widget.auth,
           shoppingListController: widget.shoppingListController,

@@ -310,9 +310,11 @@ class TokenSearchField extends StatelessWidget {
     this.onSubmitted,
     this.onCleared,
     this.textInputAction,
+    this.focusNode,
   });
 
   final TextEditingController controller;
+  final FocusNode? focusNode;
   final String hintText;
   final ValueChanged<String>? onChanged;
   final ValueChanged<String>? onSubmitted;
@@ -339,6 +341,7 @@ class TokenSearchField extends StatelessWidget {
           Expanded(
             child: TextField(
               controller: controller,
+              focusNode: focusNode,
               onChanged: onChanged,
               onSubmitted: onSubmitted,
               textInputAction: textInputAction,

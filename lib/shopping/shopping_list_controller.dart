@@ -4,6 +4,8 @@ import "dart:io";
 
 import "package:flutter/foundation.dart";
 import "package:flutter_secure_storage/flutter_secure_storage.dart";
+import "package:uuid/uuid.dart";
+
 import "shopping_list_api.dart";
 import "shopping_list_models.dart";
 
@@ -13,6 +15,7 @@ class ShoppingListController extends ChangeNotifier {
   }
 
   final ShoppingListApi? api;
+  static const _uuid = Uuid();
   static const _storage = FlutterSecureStorage();
   static const String _storageKey = "shopping_list_items";
   static const String _lastSyncKey = "shopping_list_last_sync";
@@ -29,6 +32,12 @@ class ShoppingListController extends ChangeNotifier {
   int get totalCount => _items.length;
   int get uncheckedCount => _items.where((i) => !i.isChecked).length;
   int get checkedCount => _items.where((i) => i.isChecked).length;
+
+  /// Items added from recipes (the Recipes tab).
+  List<ShoppingListItem> get recipeItems => _items.where((i) => !i.isManual).toList();
+
+  /// Items typed in on the Manual tab, newest first.
+  List<ShoppingListItem> get manualItems => _items.where((i) => i.isManual).toList();
   DateTime? get lastSyncTime => _lastSyncTime;
 
   /// Get items grouped by recipe
@@ -37,18 +46,20 @@ class ShoppingListController extends ChangeNotifier {
     final Map<String, DateTime> latestDates = {};
 
     for (final item in _items) {
-      if (!groups.containsKey(item.recipeId)) {
-        groups[item.recipeId] = GroupedShoppingItems(
-          recipeId: item.recipeId,
-          recipeName: item.recipeName,
+      final recipeId = item.recipeId;
+      if (recipeId == null) continue; // manual items live on their own tab
+      if (!groups.containsKey(recipeId)) {
+        groups[recipeId] = GroupedShoppingItems(
+          recipeId: recipeId,
+          recipeName: item.recipeName ?? "",
           recipeImage: item.recipeImage,
           items: [],
         );
-        latestDates[item.recipeId] = item.addedAt;
-      } else if (item.addedAt.isAfter(latestDates[item.recipeId]!)) {
-        latestDates[item.recipeId] = item.addedAt;
+        latestDates[recipeId] = item.addedAt;
+      } else if (item.addedAt.isAfter(latestDates[recipeId]!)) {
+        latestDates[recipeId] = item.addedAt;
       }
-      groups[item.recipeId]!.items.add(item);
+      groups[recipeId]!.items.add(item);
     }
 
     return groups.values.toList()
@@ -214,6 +225,72 @@ class ShoppingListController extends ChangeNotifier {
     }
   }
 
+  /// Add a manual item (not from a recipe) to the Manual tab.
+  Future<void> addManualItem({required String name, double? quantity, String? unit}) async {
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) return;
+    final id = _uuid.v4();
+    await addItems([
+      ShoppingListItem(
+        id: id,
+        ingredientId: id,
+        name: trimmed,
+        quantity: quantity,
+        unit: (unit == null || unit.trim().isEmpty) ? null : unit.trim(),
+        addedAt: DateTime.now(),
+      ),
+    ]);
+  }
+
+  /// Check or uncheck several items at once (a merged "By ingredient" row).
+  Future<void> toggleItems(List<String> ids, bool checked) async {
+    final changed = <String>[];
+    for (int i = 0; i < _items.length; i++) {
+      if (ids.contains(_items[i].id) && _items[i].isChecked != checked) {
+        changed.add(_items[i].id);
+        _items[i] = _items[i].copyWith(isChecked: checked);
+      }
+    }
+    if (changed.isEmpty) return;
+
+    notifyListeners();
+    await _saveToCache();
+
+    if (api != null) {
+      try {
+        await Future.wait([
+          for (final itemId in changed) api!.updateItem(itemId, isChecked: checked),
+        ]);
+      } on SocketException {
+        // Offline - toggled locally
+      } catch (e) {
+        log("Error syncing items toggle to server: $e", name: "ShoppingListController");
+      }
+    }
+  }
+
+  /// Remove several items at once (a merged row).
+  Future<void> removeItems(List<String> ids) => _removeWhere((i) => ids.contains(i.id));
+
+  Future<void> _removeWhere(bool Function(ShoppingListItem) test) async {
+    final ids = _items.where(test).map((i) => i.id).toList();
+    if (ids.isEmpty) return;
+
+    _items.removeWhere(test);
+    notifyListeners();
+    await _saveToCache();
+
+    if (api != null) {
+      try {
+        await api!.deleteItems(ids);
+      } on SocketException {
+        // Offline - removed locally
+      } catch (e) {
+        log("Error syncing items deletion to server: $e", name: "ShoppingListController");
+      }
+    }
+  }
+
   /// Toggle all items in a recipe group
   Future<void> toggleRecipeGroup(String recipeId, bool checked) async {
     final itemsToToggle = <String>[];
@@ -288,26 +365,9 @@ class ShoppingListController extends ChangeNotifier {
     }
   }
 
-  /// Clear all checked items
-  Future<void> clearCheckedItems() async {
-    final checkedItemIds = _items.where((i) => i.isChecked).map((i) => i.id).toList();
-    if (checkedItemIds.isEmpty) return;
-
-    _items.removeWhere((i) => i.isChecked);
-    notifyListeners();
-    await _saveToCache();
-
-    // Sync with server
-    if (api != null) {
-      try {
-        await api!.deleteItems(checkedItemIds);
-      } on SocketException {
-        // Offline - checked items cleared locally
-      } catch (e) {
-        log("Error syncing checked items deletion to server: $e", name: "ShoppingListController");
-      }
-    }
-  }
+  /// Clear checked items; with [manual] set, only that tab's items.
+  Future<void> clearCheckedItems({bool? manual}) =>
+      _removeWhere((i) => i.isChecked && (manual == null || i.isManual == manual));
 
   /// Forget the local copy without touching the server (used on sign-out,
   /// so the next person on this device doesn't see the list).
@@ -323,24 +383,6 @@ class ShoppingListController extends ChangeNotifier {
     }
   }
 
-  /// Clear all items
-  Future<void> clearAll() async {
-    if (_items.isEmpty) return;
-
-    final allItemIds = _items.map((i) => i.id).toList();
-    _items.clear();
-    notifyListeners();
-    await _saveToCache();
-
-    // Sync with server
-    if (api != null) {
-      try {
-        await api!.deleteItems(allItemIds);
-      } on SocketException {
-        // Offline - all items cleared locally
-      } catch (e) {
-        log("Error syncing clear all to server: $e", name: "ShoppingListController");
-      }
-    }
-  }
+  /// Clear all items; with [manual] set, only that tab's items.
+  Future<void> clearAll({bool? manual}) => _removeWhere((i) => manual == null || i.isManual == manual);
 }

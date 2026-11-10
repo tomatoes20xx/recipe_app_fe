@@ -3,6 +3,9 @@ import "dart:ui";
 import "package:flutter/material.dart";
 
 import "../analytics/analytics_service.dart";
+import "../feed/feed_models.dart" show FeedItem;
+import "../search/search_models.dart";
+import "../widgets/common/skeletons.dart";
 import "../api/api_client.dart";
 import "../auth/auth_controller.dart";
 import "../auth/require_account.dart";
@@ -14,7 +17,6 @@ import "../shopping/shopping_list_controller.dart";
 import "../services/push_prompt_service.dart";
 import "../utils/error_utils.dart";
 import "../utils/ui_utils.dart";
-import "../widgets/ingredient_action_bar.dart";
 import "../widgets/streak_celebration_overlay.dart";
 import "../widgets/sharing/follower_selection_bottom_sheet.dart";
 import "../reports/report_bottom_sheet.dart";
@@ -27,8 +29,90 @@ import "../theme/app_tokens.dart";
 import "../widgets/common/app_bottom_sheet.dart";
 import "../widgets/empty_state_widget.dart";
 import "recipe_detail_models.dart";
+import "add_to_shopping_list_sheet.dart";
+import "cooking_mode_screen.dart";
+import "ingredient_ticks_store.dart";
 import "recipe_detail_parts.dart";
 import "recipe_sharing_controller.dart";
+
+/// What the screen that opens a recipe already knows about it (a feed card,
+/// a grid tile, a search result), shown while the full recipe loads.
+class RecipeSeed {
+  const RecipeSeed({
+    required this.title,
+    required this.authorUsername,
+    this.imageUrls = const [],
+    this.authorDisplayName,
+    this.authorAvatarUrl,
+    this.createdAt,
+    this.description,
+    this.tags = const [],
+    this.cookingTimeMin,
+    this.cookingTimeMax,
+    this.difficulty,
+    this.servingSize,
+    this.likes,
+    this.comments,
+    this.bookmarks,
+    this.shares,
+    this.viewerHasLiked = false,
+    this.viewerHasBookmarked = false,
+  });
+
+  final String title;
+  final String authorUsername;
+  final List<String> imageUrls;
+  final String? authorDisplayName;
+  final String? authorAvatarUrl;
+  final DateTime? createdAt;
+  final String? description;
+  final List<String> tags;
+  final int? cookingTimeMin;
+  final int? cookingTimeMax;
+  final String? difficulty;
+  final int? servingSize;
+
+  /// Counts, when the opener has them (feed items do, search results don't).
+  final int? likes;
+  final int? comments;
+  final int? bookmarks;
+  final int? shares;
+  final bool viewerHasLiked;
+  final bool viewerHasBookmarked;
+
+  factory RecipeSeed.fromFeedItem(FeedItem item) => RecipeSeed(
+        title: item.title,
+        authorUsername: item.authorUsername,
+        imageUrls: [for (final image in item.images) image.url],
+        authorDisplayName: item.authorDisplayName,
+        authorAvatarUrl: item.authorAvatarUrl,
+        createdAt: item.createdAt,
+        description: item.description,
+        tags: item.tags,
+        cookingTimeMin: item.cookingTimeMin,
+        cookingTimeMax: item.cookingTimeMax,
+        difficulty: item.difficulty,
+        servingSize: item.servingSize,
+        likes: item.likes,
+        comments: item.comments,
+        bookmarks: item.bookmarks,
+        shares: item.shares,
+        viewerHasLiked: item.viewerHasLiked,
+        viewerHasBookmarked: item.viewerHasBookmarked,
+      );
+
+  factory RecipeSeed.fromSearchResult(SearchResult result) => RecipeSeed(
+        title: result.title,
+        authorUsername: result.authorUsername,
+        imageUrls: [if (result.imageUrl != null) result.imageUrl!],
+        authorDisplayName: result.authorDisplayName,
+        authorAvatarUrl: result.authorAvatarUrl,
+        createdAt: result.createdAt,
+        cookingTimeMin: result.cookingTimeMin,
+        cookingTimeMax: result.cookingTimeMax,
+        difficulty: result.difficulty,
+      );
+}
 
 class RecipeDetailScreen extends StatefulWidget {
   const RecipeDetailScreen({
@@ -38,6 +122,7 @@ class RecipeDetailScreen extends StatefulWidget {
     this.auth,
     required this.shoppingListController,
     this.openComments = false,
+    this.seed,
   });
 
   final String recipeId;
@@ -45,6 +130,11 @@ class RecipeDetailScreen extends StatefulWidget {
   final AuthController? auth;
   final ShoppingListController shoppingListController;
   final bool openComments;
+
+  /// Shown right away while the full recipe loads, so the page doesn't open
+  /// to a blank spinner. Null where the opener has nothing (notifications,
+  /// the shopping list, links).
+  final RecipeSeed? seed;
 
   @override
   State<RecipeDetailScreen> createState() => _RecipeDetailScreenState();
@@ -64,9 +154,9 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
   int? _localLikes;
   int? _localBookmarks;
   int? _localComments;
-  final Set<String> _checkedIngredients = {};
-  final Set<String> _selectedForShopping = {};
-  bool _isSelectionMode = false;
+  /// Ingredients ticked off ("I have it" / done), kept per recipe on the
+  /// phone (IngredientTicksStore) and shared with cooking mode.
+  Set<String> _tickedIngredients = {};
   bool _viewContentLogged = false;
   int? _selectedServings;
 
@@ -77,6 +167,9 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     c = RecipeDetailController(api: recipeApi, recipeId: widget.recipeId);
     c.addListener(_onChanged);
     c.load();
+    IngredientTicksStore.load(widget.recipeId).then((ticks) {
+      if (mounted && ticks.isNotEmpty) setState(() => _tickedIngredients = ticks);
+    });
 
     // Initialize sharing controller
     _sharingController = RecipeSharingController(
@@ -129,39 +222,51 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
 
   void _toggleIngredient(String id) {
     setState(() {
-      if (_isSelectionMode) {
-        // In selection mode, toggle for shopping list
-        if (_selectedForShopping.contains(id)) {
-          _selectedForShopping.remove(id);
-          // Exit selection mode if no ingredients are selected
-          if (_selectedForShopping.isEmpty) {
-            _isSelectionMode = false;
-          }
-        } else {
-          _selectedForShopping.add(id);
-        }
-      } else {
-        // Normal mode - enter selection mode and select the ingredient
-        _isSelectionMode = true;
-        _selectedForShopping.clear();
-        _selectedForShopping.add(id);
-      }
+      _tickedIngredients = {..._tickedIngredients};
+      if (!_tickedIngredients.remove(id)) _tickedIngredients.add(id);
     });
+    IngredientTicksStore.save(widget.recipeId, _tickedIngredients);
   }
 
-  void _exitSelectionMode() {
-    setState(() {
-      _isSelectionMode = false;
-      _selectedForShopping.clear();
-    });
+  void _setTicks(Set<String> ticks) {
+    setState(() => _tickedIngredients = {...ticks});
+    IngredientTicksStore.save(widget.recipeId, _tickedIngredients);
   }
 
-  void _markSelectedAsHave() {
-    setState(() {
-      // Add to checked ingredients (strikethrough)
-      _checkedIngredients.addAll(_selectedForShopping);
-      _exitSelectionMode();
-    });
+  double get _scaleFactor {
+    final servings = c.recipe?.servingSize;
+    final selected = _selectedServings;
+    return (servings != null && servings > 0 && selected != null) ? selected / servings : 1.0;
+  }
+
+  Future<void> _startCooking() async {
+    final r = c.recipe;
+    if (r == null) return;
+    final scale = _scaleFactor;
+    final madeIt = await openCookingMode(
+      context,
+      title: r.title,
+      steps: [for (final step in r.steps) step.instruction],
+      ingredients: [for (final ing in r.ingredients) RecipeIngredientLine.fromIngredient(ing, scale)],
+      tickedIds: _tickedIngredients,
+      onTicksChanged: _setTicks,
+      canMarkCooked: widget.auth != null && !_cookedThisSession,
+    );
+    if (madeIt && mounted) await _cookRecipe();
+  }
+
+  Future<void> _addToShoppingList() async {
+    final r = c.recipe;
+    if (r == null) return;
+    await showAddToShoppingListSheet(
+      context: context,
+      recipe: r,
+      scaleFactor: _scaleFactor,
+      tickedIds: _tickedIngredients,
+      shoppingListController: widget.shoppingListController,
+      apiClient: widget.apiClient,
+      auth: widget.auth,
+    );
   }
 
   /// Login-tier gate for this screen. After a fresh sign-in the recipe is
@@ -278,7 +383,11 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
       AnalyticsService().logRecipeCook(r.id);
 
       if (!mounted) return;
-      setState(() => _cookedThisSession = true);
+      setState(() {
+        _cookedThisSession = true;
+        _tickedIngredients = {};
+      });
+      IngredientTicksStore.clear(r.id);
 
       if (!firstCookToday) return;
 
@@ -498,7 +607,9 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
         ),
       ),
       body: c.isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? (c.recipe == null && widget.seed != null
+              ? _SeededLoadingView(seed: widget.seed!)
+              : const Center(child: CircularProgressIndicator()))
           : c.error != null
               ? _ErrorView(
                   error: c.error!,
@@ -564,10 +675,11 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                                       );
                                     },
                                     onCookTap: _cookRecipe,
-                                    checkedIngredients: _checkedIngredients,
-                                    selectedForShopping: _selectedForShopping,
-                                    isSelectionMode: _isSelectionMode,
+                                    tickedIngredients: _tickedIngredients,
                                     onToggleIngredient: _toggleIngredient,
+                                    onClearTicks: () => _setTicks(const {}),
+                                    onAddToShoppingList: _addToShoppingList,
+                                    onStartCooking: _startCooking,
                                     selectedServings: _selectedServings,
                                     onServingsChanged: (v) => setState(() => _selectedServings = v),
                                     isOwner: isOwner,
@@ -577,21 +689,6 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                                 ),
                               ),
                     ),
-      bottomNavigationBar: _isSelectionMode && _selectedForShopping.isNotEmpty && r != null
-          ? IngredientActionBar(
-              selectedIngredients: r.ingredients
-                  .where((ing) => _selectedForShopping.contains(ing.id))
-                  .toList(),
-              recipeId: r.id,
-              recipeName: r.title,
-              recipeImage: r.images.isNotEmpty ? r.images.first.url : null,
-              shoppingListController: widget.shoppingListController,
-              apiClient: widget.apiClient,
-              auth: widget.auth,
-              onMarkAsHave: _markSelectedAsHave,
-              onCancel: _exitSelectionMode,
-            )
-          : null,
     );
   }
 
@@ -628,10 +725,11 @@ class _ContentBody extends StatelessWidget {
     this.onBookmarkLongPress,
     required this.onCommentTap,
     required this.onCookTap,
-    required this.checkedIngredients,
-    required this.selectedForShopping,
-    required this.isSelectionMode,
+    required this.tickedIngredients,
     required this.onToggleIngredient,
+    required this.onClearTicks,
+    required this.onAddToShoppingList,
+    required this.onStartCooking,
     this.selectedServings,
     required this.onServingsChanged,
     required this.isOwner,
@@ -656,10 +754,11 @@ class _ContentBody extends StatelessWidget {
   final VoidCallback? onBookmarkLongPress;
   final VoidCallback onCommentTap;
   final VoidCallback onCookTap;
-  final Set<String> checkedIngredients;
-  final Set<String> selectedForShopping;
-  final bool isSelectionMode;
-  final Function(String) onToggleIngredient;
+  final Set<String> tickedIngredients;
+  final ValueChanged<String> onToggleIngredient;
+  final VoidCallback onClearTicks;
+  final VoidCallback onAddToShoppingList;
+  final VoidCallback onStartCooking;
   final int? selectedServings;
   final ValueChanged<int> onServingsChanged;
   final bool isOwner;
@@ -731,6 +830,7 @@ class _ContentBody extends StatelessWidget {
               onServingsChanged: onServingsChanged,
             )
           : null,
+      startCooking: recipe.steps.isEmpty ? null : RecipeStartCookingButton(onPressed: onStartCooking),
       tags: recipe.tags,
       ingredients: recipe.ingredients.isEmpty
           ? null
@@ -738,10 +838,10 @@ class _ContentBody extends StatelessWidget {
               lines: [
                 for (final ing in recipe.ingredients) RecipeIngredientLine.fromIngredient(ing, scaleFactor),
               ],
-              checkedIds: checkedIngredients,
-              selectedIds: selectedForShopping,
-              isSelectionMode: isSelectionMode,
+              tickedIds: tickedIngredients,
               onToggle: onToggleIngredient,
+              onClearTicks: onClearTicks,
+              onAddToShoppingList: onAddToShoppingList,
             ),
       nutrition: _NutritionPanel(
         recipeId: recipe.id,
@@ -828,6 +928,96 @@ class _FullScreenImageViewerState extends State<_FullScreenImageViewer> {
           );
         },
       ),
+    );
+  }
+}
+
+/// The page laid out from a [RecipeSeed] while the recipe loads: photos,
+/// title, author, description, quick info and tags right away, with
+/// placeholders where the ingredients and steps will be. Nothing is tappable
+/// until the real recipe arrives.
+class _SeededLoadingView extends StatelessWidget {
+  const _SeededLoadingView({required this.seed});
+
+  final RecipeSeed seed;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasCounts = seed.likes != null;
+    return IgnorePointer(
+      child: RecipeDetailLayout(
+        hero: RecipeHeroImages(
+          count: seed.imageUrls.length,
+          imageBuilder: (context, index, height) => RecipeImageWidget(
+            imageUrl: seed.imageUrls[index],
+            width: double.infinity,
+            height: height,
+            fit: BoxFit.cover,
+          ),
+        ),
+        sheetChild: (scrollController) => SingleChildScrollView(
+          controller: scrollController,
+          child: RecipeDetailContent(
+            title: seed.title,
+            authorRow: RecipeAuthorRow(
+              username: seed.authorUsername,
+              displayName: seed.authorDisplayName,
+              avatarUrl: seed.authorAvatarUrl,
+              date: seed.createdAt ?? DateTime.now(),
+            ),
+            description: seed.description,
+            engagement: hasCounts
+                ? RecipeEngagementBar(
+                    likes: seed.likes ?? 0,
+                    comments: seed.comments ?? 0,
+                    bookmarks: seed.bookmarks ?? 0,
+                    shares: seed.shares ?? 0,
+                    viewerHasLiked: seed.viewerHasLiked,
+                    viewerHasBookmarked: seed.viewerHasBookmarked,
+                  )
+                : null,
+            quickInfo: RecipeQuickInfoBar.hasContent(
+              cookingTimeMin: seed.cookingTimeMin,
+              cookingTimeMax: seed.cookingTimeMax,
+              difficulty: seed.difficulty,
+              servings: seed.servingSize,
+            )
+                ? RecipeQuickInfoBar(
+                    cookingTimeMin: seed.cookingTimeMin,
+                    cookingTimeMax: seed.cookingTimeMax,
+                    difficulty: seed.difficulty,
+                    originalServings: seed.servingSize,
+                  )
+                : null,
+            tags: seed.tags,
+            ingredients: const _IngredientsPlaceholder(),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Pulsing stand-ins for the ingredients header and rows.
+class _IngredientsPlaceholder extends StatelessWidget {
+  const _IngredientsPlaceholder();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SkeletonBox(width: 140, height: 22),
+        const SizedBox(height: 16),
+        for (var i = 0; i < 4; i++)
+          const Padding(
+            padding: EdgeInsets.only(bottom: 8),
+            child: ClipRRect(
+              borderRadius: BorderRadius.all(Radius.circular(14)),
+              child: SkeletonBox(width: double.infinity, height: 52),
+            ),
+          ),
+      ],
     );
   }
 }

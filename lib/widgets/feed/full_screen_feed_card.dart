@@ -58,6 +58,7 @@ class _FullScreenFeedCardState extends State<FullScreenFeedCard> {
       MaterialPageRoute(
         builder: (_) => RecipeDetailScreen(
           recipeId: widget.item.id,
+          seed: RecipeSeed.fromFeedItem(widget.item),
           apiClient: widget.apiClient,
           auth: widget.auth,
           shoppingListController: widget.shoppingListController,

@@ -1,3 +1,5 @@
+import "dart:async";
+
 import "package:flutter/foundation.dart";
 import "notification_api.dart";
 import "notification_models.dart" as notification_models;
@@ -32,7 +34,7 @@ class NotificationController extends ChangeNotifier {
         cursor: null,
         unreadOnly: unreadOnly,
       );
-      items.addAll(res.items);
+      items.addAll(res.items.where((n) => !_pendingDeletes.containsKey(n.id)));
       nextCursor = res.nextCursor;
       unreadCount = res.unreadCount;
     } catch (e) {
@@ -58,7 +60,7 @@ class NotificationController extends ChangeNotifier {
         cursor: nextCursor,
         unreadOnly: unreadOnly,
       );
-      items.addAll(res.items);
+      items.addAll(res.items.where((n) => !_pendingDeletes.containsKey(n.id)));
       nextCursor = res.nextCursor;
       unreadCount = res.unreadCount;
     } catch (e) {
@@ -174,6 +176,52 @@ class NotificationController extends ChangeNotifier {
     }
   }
 
+  /// Deletes waiting for their undo window to pass, by notification id.
+  final Map<String, Timer> _pendingDeletes = {};
+
+  /// Removes [notificationId] from the list right away and deletes it on the
+  /// server after [delay], unless the returned undo callback runs first.
+  /// If the server delete fails, the notification comes back and [onError]
+  /// gets the error.
+  VoidCallback removeWithUndo(
+    String notificationId, {
+    Duration delay = const Duration(seconds: 4),
+    void Function(Object error)? onError,
+  }) {
+    final index = items.indexWhere((n) => n.id == notificationId);
+    if (index < 0) return () {};
+
+    final removed = items[index];
+    final wasUnread = !removed.isRead;
+    items.removeAt(index);
+    if (wasUnread && unreadCount > 0) unreadCount--;
+    _notify();
+
+    void restore() {
+      if (_isDisposed) return;
+      items.insert(index.clamp(0, items.length), removed);
+      if (wasUnread) unreadCount++;
+      _notify();
+    }
+
+    _pendingDeletes[notificationId] = Timer(delay, () async {
+      _pendingDeletes.remove(notificationId);
+      try {
+        await notificationApi.deleteNotification(notificationId);
+      } catch (e) {
+        restore();
+        onError?.call(e);
+      }
+    });
+
+    return () {
+      final timer = _pendingDeletes.remove(notificationId);
+      if (timer == null) return; // already sent
+      timer.cancel();
+      restore();
+    };
+  }
+
   /// Delete a single notification
   Future<void> deleteNotification(String notificationId) async {
     final index = items.indexWhere((n) => n.id == notificationId);
@@ -242,6 +290,12 @@ class NotificationController extends ChangeNotifier {
   @override
   void dispose() {
     _isDisposed = true;
+    // Send deletes still waiting for their undo window.
+    for (final entry in _pendingDeletes.entries) {
+      entry.value.cancel();
+      notificationApi.deleteNotification(entry.key).catchError((_) {});
+    }
+    _pendingDeletes.clear();
     super.dispose();
   }
 

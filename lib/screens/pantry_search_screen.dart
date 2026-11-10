@@ -200,6 +200,7 @@ class _PantrySearchScreenState extends State<PantrySearchScreen> {
       MaterialPageRoute(
         builder: (_) => RecipeDetailScreen(
           recipeId: recipe.id,
+          seed: RecipeSeed.fromSearchResult(recipe),
           apiClient: widget.apiClient,
           auth: widget.auth,
           shoppingListController: widget.shoppingListController,

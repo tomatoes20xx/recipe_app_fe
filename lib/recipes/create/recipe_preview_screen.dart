@@ -135,6 +135,9 @@ class _RecipePreviewScreenState extends State<RecipePreviewScreen> {
                           ),
                         )
                       : null,
+                  startCooking: d.steps.isEmpty
+                      ? null
+                      : IgnorePointer(child: RecipeStartCookingButton(onPressed: () {})),
                   tags: d.tags,
                   ingredients: d.ingredients.isEmpty
                       ? null
@@ -148,8 +151,10 @@ class _RecipePreviewScreenState extends State<RecipePreviewScreen> {
                                   amount: d.ingredients[i].amount,
                                 ),
                             ],
-                            // Enabled like the page's (a null callback greys the checkboxes out).
+                            // Enabled like the page's (a null callback greys the checkboxes
+                            // out) and with its header button; IgnorePointer keeps it inert.
                             onToggle: (_) {},
+                            onAddToShoppingList: () {},
                           ),
                         ),
                   steps: d.steps,

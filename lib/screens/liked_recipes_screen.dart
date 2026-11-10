@@ -5,6 +5,7 @@ import "../auth/auth_controller.dart";
 import "../feed/feed_models.dart";
 import "../localization/app_localizations.dart";
 import "../recipes/recipe_detail_screen.dart";
+import "shell_navigation.dart";
 import "../shopping/shopping_list_controller.dart";
 import "../theme/app_tokens.dart";
 import "../users/liked_recipes_controller.dart";
@@ -43,6 +44,7 @@ class _LikedRecipesScreenState extends State<LikedRecipesScreen> {
     Navigator.of(context).push(MaterialPageRoute(
       builder: (_) => RecipeDetailScreen(
         recipeId: recipe.id,
+        seed: RecipeSeed.fromFeedItem(recipe),
         apiClient: widget.apiClient,
         auth: widget.auth,
         shoppingListController: widget.shoppingListController,
@@ -64,6 +66,9 @@ class _LikedRecipesScreenState extends State<LikedRecipesScreen> {
         controller: _liked,
         onOpen: _openRecipe,
         emptyIcon: Icons.favorite_border,
+        emptyActionLabel: l?.exploreRecipes ?? "Explore recipes",
+        emptyActionIcon: Icons.explore_outlined,
+        onEmptyAction: () => ShellNavigation.go(context, ShellRequest.home),
         emptyTitle: l?.noLikedRecipesYet ?? "No liked recipes yet",
         emptyDescription: l?.likedRecipesEmptyDescription ?? "Recipes you like will appear here",
       ),

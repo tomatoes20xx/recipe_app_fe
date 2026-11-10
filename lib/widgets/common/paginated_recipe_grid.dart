@@ -18,6 +18,9 @@ class PaginatedRecipeGrid extends StatefulWidget {
     required this.emptyIcon,
     required this.emptyTitle,
     required this.emptyDescription,
+    this.emptyActionLabel,
+    this.emptyActionIcon,
+    this.onEmptyAction,
     this.onRefresh,
   });
 
@@ -26,6 +29,11 @@ class PaginatedRecipeGrid extends StatefulWidget {
   final IconData emptyIcon;
   final String emptyTitle;
   final String emptyDescription;
+
+  /// The empty state's next step (e.g. "Explore recipes").
+  final String? emptyActionLabel;
+  final IconData? emptyActionIcon;
+  final VoidCallback? onEmptyAction;
 
   /// Extra work for pull to refresh, run alongside reloading the list.
   final Future<void> Function()? onRefresh;
@@ -101,6 +109,9 @@ class _PaginatedRecipeGridState extends State<PaginatedRecipeGrid> {
           icon: widget.emptyIcon,
           title: widget.emptyTitle,
           description: widget.emptyDescription,
+          actionLabel: widget.emptyActionLabel,
+          actionIcon: widget.emptyActionIcon ?? Icons.arrow_forward_rounded,
+          onAction: widget.onEmptyAction,
         ),
       ));
     } else {

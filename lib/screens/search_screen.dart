@@ -1,3 +1,6 @@
+import "dart:async";
+
+import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "../api/api_client.dart";
@@ -38,12 +41,17 @@ class SearchScreen extends StatefulWidget {
     required this.shoppingListController,
     this.auth,
     this.searchQuery,
+    this.focusRequests,
   });
 
   final ApiClient apiClient;
   final ShoppingListController shoppingListController;
   final AuthController? auth;
   final String? searchQuery;
+
+  /// Each change focuses the search box (a second tap on the Search tab,
+  /// "Find people").
+  final ValueListenable<int>? focusRequests;
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
@@ -55,8 +63,18 @@ class _SearchScreenState extends State<SearchScreen> {
   late final UserApi userApi;
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _searchTextController = TextEditingController();
+  final FocusNode _searchFocus = FocusNode();
+
+  /// Searches run while typing, this long after the last keystroke.
+  static const _typingDelay = Duration(milliseconds: 350);
+  Timer? _typingTimer;
 
   String? _lastSearchedQuery;
+
+  /// A query searched while typing but not yet counted in analytics: it is
+  /// counted on submit or when a result is opened, not on every pause.
+  String? _untrackedQuery;
+  Map<String, dynamic>? _untrackedFilters;
 
   @override
   void initState() {
@@ -72,6 +90,7 @@ class _SearchScreenState extends State<SearchScreen> {
     searchController.loadRecentSearches();
 
     _scrollController.addListener(_onScroll);
+    widget.focusRequests?.addListener(_focusSearch);
 
     if (widget.searchQuery != null && widget.searchQuery!.isNotEmpty) {
       _performSearch(widget.searchQuery!);
@@ -123,8 +142,60 @@ class _SearchScreenState extends State<SearchScreen> {
     }
   }
 
+  void _focusSearch() {
+    if (!mounted) return;
+    _searchFocus.requestFocus();
+    if (_scrollController.hasClients) {
+      _scrollController.animateTo(0, duration: const Duration(milliseconds: 250), curve: Curves.easeOut);
+    }
+  }
+
+  void _onQueryChanged(String value) {
+    _typingTimer?.cancel();
+    final query = value.trim();
+    if (query.isEmpty) {
+      // Back to recent searches.
+      _lastSearchedQuery = null;
+      searchController.clear();
+      return;
+    }
+    _typingTimer = Timer(_typingDelay, () {
+      if (mounted) _performSearch(query, track: false);
+    });
+  }
+
+  void _onSubmitted(String value) {
+    _typingTimer?.cancel();
+    final query = value.trim();
+    if (query.isEmpty) return;
+    if (query == _lastSearchedQuery) {
+      // Already searched while typing: just count it.
+      _trackPending();
+    } else {
+      _performSearch(query);
+    }
+  }
+
+  /// Counts a query searched while typing once the user commits to it.
+  void _trackPending() {
+    final query = _untrackedQuery;
+    if (query == null) return;
+    analyticsApi.trackSearch(query: query, filters: _untrackedFilters);
+    _untrackedQuery = null;
+    _untrackedFilters = null;
+  }
+
+  /// Opening a result: save the query to history and count it.
+  void _commitQuery() {
+    _trackPending();
+    searchController.commitCurrentQueryToHistory();
+  }
+
   @override
   void dispose() {
+    _typingTimer?.cancel();
+    widget.focusRequests?.removeListener(_focusSearch);
+    _searchFocus.dispose();
     _scrollController.dispose();
     _searchTextController.dispose();
     searchController.removeListener(_onSearchChanged);
@@ -132,7 +203,7 @@ class _SearchScreenState extends State<SearchScreen> {
     super.dispose();
   }
 
-  Future<void> _performSearch(String query, {bool saveToHistory = false}) async {
+  Future<void> _performSearch(String query, {bool saveToHistory = false, bool track = true}) async {
     final trimmedQuery = query.trim();
 
     if (trimmedQuery.isEmpty) {
@@ -172,12 +243,18 @@ class _SearchScreenState extends State<SearchScreen> {
       filterData["difficulty"] = filters.difficulty!.apiValue;
     }
 
-    analyticsApi.trackSearch(
-      query: trimmedQuery,
-      filters: filterData.isEmpty ? null : filterData,
-    );
+    if (track) {
+      analyticsApi.trackSearch(
+        query: trimmedQuery,
+        filters: filterData.isEmpty ? null : filterData,
+      );
+      _untrackedQuery = null;
+      _untrackedFilters = null;
+    } else {
+      _untrackedQuery = trimmedQuery;
+      _untrackedFilters = filterData.isEmpty ? null : filterData;
+    }
 
-    // Search runs on submit, so there is nothing to debounce.
     _lastSearchedQuery = trimmedQuery;
     await searchController.search(trimmedQuery, saveToHistory: saveToHistory);
     // A failed search must not block submitting the same text again.
@@ -203,18 +280,12 @@ class _SearchScreenState extends State<SearchScreen> {
             Expanded(
               child: TokenSearchField(
                 controller: _searchTextController,
+                focusNode: _searchFocus,
                 hintText: localizations?.searchRecipes ?? "Search recipes, users...",
                 textInputAction: TextInputAction.search,
-                onSubmitted: (query) {
-                  if (query.trim().isNotEmpty) {
-                    _performSearch(query.trim());
-                  }
-                },
-                onCleared: () {
-                  // So submitting the same query again searches again.
-                  _lastSearchedQuery = null;
-                  searchController.clear();
-                },
+                // Results appear while typing (debounced); Enter searches now.
+                onChanged: _onQueryChanged,
+                onSubmitted: _onSubmitted,
               ),
             ),
           ],
@@ -331,14 +402,13 @@ class _SearchScreenState extends State<SearchScreen> {
         title: localizations?.noResultsFound ?? "No results found",
         description:
             localizations?.tryDifferentSearch ?? "Try a different search query",
-        titleStyle: Theme.of(context).textTheme.titleLarge?.copyWith(
-              color:
-                  Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
-            ),
-        descriptionStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color:
-                  Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
-            ),
+        actionLabel: searchController.recipeFilters.hasActiveFilters
+            ? (localizations?.clearFilters ?? "Clear filters")
+            : null,
+        actionIcon: Icons.filter_alt_off_outlined,
+        onAction: searchController.recipeFilters.hasActiveFilters
+            ? () => searchController.updateFilters(RecipeSearchFilters())
+            : null,
       );
     }
 
@@ -479,8 +549,8 @@ class _SearchScreenState extends State<SearchScreen> {
             ? FollowButton(isFollowing: user.viewerIsFollowing, onTap: () => _handleFollowToggle(user))
             : null,
         onTap: () {
-          // Save search to history when user taps a result
-          searchController.commitCurrentQueryToHistory();
+          // Save search to history (and count it) when user taps a result
+          _commitQuery();
           if (widget.auth != null) {
             Navigator.of(context).push(
               MaterialPageRoute(
@@ -515,12 +585,13 @@ class _SearchScreenState extends State<SearchScreen> {
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: () {
-            // Save search to history when user taps a result
-            searchController.commitCurrentQueryToHistory();
+            // Save search to history (and count it) when user taps a result
+            _commitQuery();
             Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (_) => RecipeDetailScreen(
                   recipeId: recipe.id,
+                  seed: RecipeSeed.fromSearchResult(recipe),
                   apiClient: widget.apiClient,
                   auth: widget.auth,
                   shoppingListController: widget.shoppingListController,

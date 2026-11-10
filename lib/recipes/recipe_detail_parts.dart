@@ -63,6 +63,7 @@ class RecipeDetailContent extends StatelessWidget {
     this.description,
     this.engagement,
     this.quickInfo,
+    this.startCooking,
     this.tags = const [],
     this.ingredients,
     this.nutrition,
@@ -75,6 +76,9 @@ class RecipeDetailContent extends StatelessWidget {
   final String? description;
   final Widget? engagement;
   final Widget? quickInfo;
+
+  /// The "Start cooking" button, right below the quick-info bar.
+  final Widget? startCooking;
   final List<String> tags;
   final Widget? ingredients;
   final Widget? nutrition;
@@ -118,6 +122,10 @@ class RecipeDetailContent extends StatelessWidget {
             quickInfo!,
             const SizedBox(height: 16),
           ],
+          if (startCooking != null) ...[
+            startCooking!,
+            const SizedBox(height: 16),
+          ],
           if (tags.isNotEmpty) ...[
             Wrap(
               spacing: 8,
@@ -141,6 +149,23 @@ class RecipeDetailContent extends StatelessWidget {
           ],
         ],
       ),
+    );
+  }
+}
+
+/// "Start cooking": opens cooking mode (step by step, screen kept awake).
+class RecipeStartCookingButton extends StatelessWidget {
+  const RecipeStartCookingButton({super.key, required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return FilledButton.icon(
+      onPressed: onPressed,
+      style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(48)),
+      icon: const Icon(Icons.play_arrow_rounded),
+      label: Text(AppLocalizations.of(context)?.startCooking ?? "Start cooking"),
     );
   }
 }
@@ -496,6 +521,7 @@ class RecipeQuickInfoBar extends StatelessWidget {
     final divider = Container(
       width: 1,
       height: 32,
+      margin: const EdgeInsets.only(top: 27),
       color: Theme.of(context).colorScheme.outlineVariant,
     );
 
@@ -506,6 +532,9 @@ class RecipeQuickInfoBar extends StatelessWidget {
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
+        // Top-aligned: the servings cell is a little taller (its +/- have
+        // 36px tap areas), and the icons and labels should still line up.
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (time != null)
             Expanded(
@@ -550,31 +579,25 @@ class RecipeQuickInfoBar extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        GestureDetector(
+                        _StepperIcon(
+                          icon: Icons.remove_circle_outline,
+                          enabled: (selectedServings ?? originalServings!) > 1,
                           onTap: () {
                             final current = selectedServings ?? originalServings!;
                             if (current > 1) onServingsChanged?.call(current - 1);
                           },
-                          child: Icon(
-                            Icons.remove_circle_outline,
-                            size: 20,
-                            color: (selectedServings ?? originalServings!) > 1
-                                ? primary
-                                : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
-                          ),
                         ),
-                        const SizedBox(width: 6),
                         Text(
                           '${selectedServings ?? originalServings}',
                           style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
                         ),
-                        const SizedBox(width: 6),
-                        GestureDetector(
+                        _StepperIcon(
+                          icon: Icons.add_circle_outline,
+                          enabled: true,
                           onTap: () {
                             final current = selectedServings ?? originalServings!;
                             if (current < 99) onServingsChanged?.call(current + 1);
                           },
-                          child: Icon(Icons.add_circle_outline, size: 20, color: primary),
                         ),
                       ],
                     ),
@@ -583,6 +606,30 @@ class RecipeQuickInfoBar extends StatelessWidget {
               ),
             ),
         ],
+      ),
+    );
+  }
+}
+
+/// A 20px servings +/- icon with a 36px tap area.
+class _StepperIcon extends StatelessWidget {
+  const _StepperIcon({required this.icon, required this.enabled, required this.onTap});
+
+  final IconData icon;
+  final bool enabled;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = enabled
+        ? Theme.of(context).colorScheme.primary
+        : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3);
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.all(8),
+        child: Icon(icon, size: 20, color: color),
       ),
     );
   }
@@ -658,29 +705,33 @@ class RecipeIngredientLine {
   }
 }
 
-/// "Ingredients" with the item count, then one tile per line. Tapping a line
-/// calls [onToggle] (shopping-list selection on the page); without it the
-/// list is read-only.
+/// "Ingredients" with the item count, then one tile per line.
+///
+/// Tapping a line ticks it off ([onToggle]: "I have it" / done while cooking).
+/// [onAddToShoppingList] shows the always-visible "Add to shopping list"
+/// button, and [onClearTicks] a "Clear" link while anything is ticked.
+/// Without callbacks the list is read-only.
 class RecipeIngredientsSection extends StatelessWidget {
   const RecipeIngredientsSection({
     super.key,
     required this.lines,
-    this.checkedIds = const {},
-    this.selectedIds = const {},
-    this.isSelectionMode = false,
+    this.tickedIds = const {},
     this.onToggle,
+    this.onAddToShoppingList,
+    this.onClearTicks,
   });
 
   final List<RecipeIngredientLine> lines;
-  final Set<String> checkedIds;
-  final Set<String> selectedIds;
-  final bool isSelectionMode;
+  final Set<String> tickedIds;
   final ValueChanged<String>? onToggle;
+  final VoidCallback? onAddToShoppingList;
+  final VoidCallback? onClearTicks;
 
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context);
     final primary = Theme.of(context).colorScheme.primary;
+    final anyTicked = lines.any((line) => tickedIds.contains(line.id));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -698,14 +749,30 @@ class RecipeIngredientsSection extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        if (onAddToShoppingList != null || (onClearTicks != null && anyTicked))
+          Row(
+            children: [
+              if (onAddToShoppingList != null)
+                TextButton.icon(
+                  onPressed: onAddToShoppingList,
+                  style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 4)),
+                  icon: const Icon(Icons.add_shopping_cart_rounded, size: 20),
+                  label: Text(localizations?.addIngredientsToShoppingList ?? "Add to shopping list"),
+                ),
+              const Spacer(),
+              if (onClearTicks != null && anyTicked)
+                TextButton(
+                  onPressed: onClearTicks,
+                  child: Text(localizations?.clear ?? "Clear"),
+                ),
+            ],
+          ),
+        const SizedBox(height: 8),
         ...lines.map((line) => Padding(
               padding: const EdgeInsets.only(bottom: 8),
               child: _IngredientTile(
                 line: line,
-                isChecked: checkedIds.contains(line.id),
-                isSelected: selectedIds.contains(line.id),
-                isSelectionMode: isSelectionMode,
+                isTicked: tickedIds.contains(line.id),
                 onToggle: onToggle == null ? null : () => onToggle!(line.id),
               ),
             )),
@@ -717,75 +784,71 @@ class RecipeIngredientsSection extends StatelessWidget {
 class _IngredientTile extends StatelessWidget {
   const _IngredientTile({
     required this.line,
-    required this.isChecked,
-    required this.isSelected,
-    required this.isSelectionMode,
+    required this.isTicked,
     required this.onToggle,
   });
 
   final RecipeIngredientLine line;
-  final bool isChecked;
-  final bool isSelected;
-  final bool isSelectionMode;
+  final bool isTicked;
   final VoidCallback? onToggle;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isCheckedOrSelected = isSelectionMode ? isSelected : isChecked;
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onToggle,
-        borderRadius: BorderRadius.circular(14),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 14),
-          decoration: BoxDecoration(
-            color: isSelectionMode && isSelected
-                ? theme.colorScheme.primaryContainer.withValues(alpha: 0.4)
-                : theme.colorScheme.surfaceContainerLow,
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: Row(
-            children: [
-              SizedBox(
-                width: 24,
-                height: 24,
-                child: Checkbox(
-                  value: isCheckedOrSelected,
-                  onChanged: onToggle == null ? null : (_) => onToggle!(),
-                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  visualDensity: VisualDensity.compact,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  line.name,
-                  style: TextStyle(
-                    fontSize: 15,
-                    height: 1.4,
-                    decoration: !isSelectionMode && isChecked ? TextDecoration.lineThrough : null,
-                    color: !isSelectionMode && isChecked
-                        ? theme.colorScheme.onSurface.withValues(alpha: 0.45)
-                        : theme.colorScheme.onSurface,
+    return Semantics(
+      checked: isTicked,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onToggle,
+          borderRadius: BorderRadius.circular(14),
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 14),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surfaceContainerLow,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Row(
+              children: [
+                SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: Checkbox(
+                    value: isTicked,
+                    onChanged: onToggle == null ? null : (_) => onToggle!(),
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    visualDensity: VisualDensity.compact,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                   ),
                 ),
-              ),
-              if (line.amount.isNotEmpty) ...[
-                const SizedBox(width: 8),
-                Text(
-                  line.amount,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: theme.colorScheme.primary,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    line.name,
+                    style: TextStyle(
+                      fontSize: 15,
+                      height: 1.4,
+                      decoration: isTicked ? TextDecoration.lineThrough : null,
+                      color: isTicked
+                          ? theme.colorScheme.onSurface.withValues(alpha: 0.45)
+                          : theme.colorScheme.onSurface,
+                    ),
                   ),
                 ),
+                if (line.amount.isNotEmpty) ...[
+                  const SizedBox(width: 8),
+                  Text(
+                    line.amount,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: theme.colorScheme.primary,
+                    ),
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),

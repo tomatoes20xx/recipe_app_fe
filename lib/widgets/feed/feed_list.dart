@@ -244,6 +244,7 @@ class _FeedListState extends State<FeedList> {
                     MaterialPageRoute(
                       builder: (_) => RecipeDetailScreen(
                         recipeId: item.id,
+                        seed: RecipeSeed.fromFeedItem(item),
                         apiClient: widget.apiClient,
                         auth: widget.auth,
                         shoppingListController: widget.shoppingListController,

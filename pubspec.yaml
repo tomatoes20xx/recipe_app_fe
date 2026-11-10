@@ -80,6 +80,7 @@ dependencies:
   # Lottie animations
   lottie: ^3.3.3
   flutter_timezone: ^5.1.1
+  wakelock_plus: ^1.5.2
 
 dev_dependencies:
   flutter_test:

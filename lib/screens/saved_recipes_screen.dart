@@ -8,6 +8,7 @@ import '../collections/collection_api.dart';
 import '../collections/collection_picker_bottom_sheet.dart';
 import '../collections/collections_controller.dart';
 import '../feed/saved_recipes_controller.dart';
+import '../feed/feed_models.dart';
 import '../localization/app_localizations.dart';
 import '../recipes/recipe_detail_screen.dart';
 import '../shopping/shopping_list_controller.dart';
@@ -19,6 +20,7 @@ import '../widgets/common/skeletons.dart';
 import '../widgets/common/token_widgets.dart';
 import '../widgets/empty_state_widget.dart';
 import 'collection_detail_screen.dart';
+import 'shell_navigation.dart';
 
 class SavedRecipesScreen extends StatefulWidget {
   const SavedRecipesScreen({
@@ -633,6 +635,9 @@ class _AllSavedTabState extends State<_AllSavedTab>
                       description:
                           AppLocalizations.of(context)?.startBookmarkingRecipes ??
                               'Start bookmarking recipes to save them here',
+                      actionLabel: AppLocalizations.of(context)?.exploreRecipes ?? 'Explore recipes',
+                      actionIcon: Icons.explore_outlined,
+                      onAction: () => ShellNavigation.go(context, ShellRequest.home),
                     )
                   : EmptyStateWidget(
                       icon: Icons.search_off_rounded,
@@ -660,7 +665,7 @@ class _AllSavedTabState extends State<_AllSavedTab>
                     if (widget.isSelectionMode) {
                       widget.onToggleSelection(recipe.id);
                     } else {
-                      _navigateToDetail(recipe.id);
+                      _navigateToDetail(recipe);
                     }
                   },
                   onSelectTap: () {
@@ -686,11 +691,12 @@ class _AllSavedTabState extends State<_AllSavedTab>
     );
   }
 
-  Future<void> _navigateToDetail(String recipeId) async {
+  Future<void> _navigateToDetail(FeedItem recipe) async {
     await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => RecipeDetailScreen(
-          recipeId: recipeId,
+          recipeId: recipe.id,
+          seed: RecipeSeed.fromFeedItem(recipe),
           apiClient: widget.apiClient,
           auth: widget.auth,
           shoppingListController: widget.shoppingListController,
@@ -861,6 +867,11 @@ class _CollectionsTabState extends State<_CollectionsTab>
                         'Nothing matches "${_searchController.text}"')
                     : (localizations?.createFirstCollection ??
                         'Create your first collection to organize your saved recipes'),
+                actionLabel: _searchController.text.isNotEmpty
+                    ? null
+                    : (localizations?.createCollection ?? 'Create collection'),
+                actionIcon: Icons.add_rounded,
+                onAction: _searchController.text.isNotEmpty ? null : widget.onCreateCollection,
               ),
             )
           else
