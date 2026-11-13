@@ -101,12 +101,11 @@ class AnalyticsService {
     _faLog('feed_view');
   }
 
+  // Firebase only: the backend stopped recording impressions (2026-11-13) and
+  // discards any it still receives from older builds.
   void logFeedCardImpression(String recipeId, {int? position}) {
     if (_impressedCards.contains(recipeId)) return;
     _impressedCards.add(recipeId);
-    _track('feed_card_impression', recipeId: recipeId, metadata: {
-      if (position != null) 'position': position,
-    });
     _faLog('feed_card_impression', params: {
       'recipe_id': recipeId,
       if (position != null) 'position': position,
