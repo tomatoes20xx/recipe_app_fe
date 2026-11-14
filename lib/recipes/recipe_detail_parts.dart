@@ -1,3 +1,5 @@
+import "dart:math" as math;
+
 import "package:flutter/material.dart";
 
 import "../localization/app_localizations.dart";
@@ -21,17 +23,21 @@ class RecipeDetailLayout extends StatelessWidget {
   final Widget hero;
   final Widget Function(ScrollController controller) sheetChild;
 
+  /// The sheet's resting size, as a fraction of the layout's height. The
+  /// photos above it show through the remaining `1 - sheetMinSize`.
+  static const double sheetMinSize = 0.55;
+
   @override
   Widget build(BuildContext context) {
     return Stack(
       children: [
         hero,
         DraggableScrollableSheet(
-          initialChildSize: 0.55,
-          minChildSize: 0.55,
+          initialChildSize: sheetMinSize,
+          minChildSize: sheetMinSize,
           maxChildSize: 0.95,
           snap: true,
-          snapSizes: const [0.55, 0.95],
+          snapSizes: const [sheetMinSize, 0.95],
           builder: (context, scrollController) {
             return Container(
               decoration: BoxDecoration(
@@ -216,6 +222,8 @@ class RecipeEngagementSkeleton extends StatelessWidget {
 
 /// Photos with a bottom gradient and page dots. [imageBuilder] draws photo
 /// [index] (a network image on the page, a picked file in the preview).
+/// The dots sit just above the resting sheet's top edge, the lowest strip of
+/// photo that is still visible, so they read as part of the sheet's edge.
 class RecipeHeroImages extends StatefulWidget {
   const RecipeHeroImages({
     super.key,
@@ -242,9 +250,24 @@ class _RecipeHeroImagesState extends State<RecipeHeroImages> {
     super.dispose();
   }
 
+  static const double _dotSize = 6;
+  static const double _activeDotWidth = 16;
+
+  /// Gap between the dots and the resting sheet's top edge.
+  static const double _dotsGap = 14;
+
   @override
   Widget build(BuildContext context) {
+    // In RecipeDetailLayout's Stack the hero gets loose constraints whose
+    // max height is the layout's height, which the sheet's size is relative to.
+    return LayoutBuilder(builder: _buildHero);
+  }
+
+  Widget _buildHero(BuildContext context, BoxConstraints constraints) {
     final height = MediaQuery.of(context).size.height * 0.6;
+    final visibleHeight = constraints.maxHeight.isFinite
+        ? math.min(height, constraints.maxHeight * (1 - RecipeDetailLayout.sheetMinSize))
+        : height;
 
     return SizedBox(
       height: height,
@@ -288,32 +311,36 @@ class _RecipeHeroImagesState extends State<RecipeHeroImages> {
             ),
           ),
 
-          // Page indicators
+          // Page dots: the current photo's dot stretches into a short pill.
           if (widget.count > 1)
             Positioned(
-              bottom: 80,
+              top: math.max(0, visibleHeight - _dotsGap - _dotSize),
               left: 0,
               right: 0,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(
-                  widget.count,
-                  (index) => Container(
-                    width: 8,
-                    height: 8,
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: _currentPage == index ? Colors.white : Colors.white.withValues(alpha: 0.5),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.3),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                  ),
+              child: IgnorePointer(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(widget.count, (index) {
+                    final active = _currentPage == index;
+                    return AnimatedContainer(
+                      duration: const Duration(milliseconds: 220),
+                      curve: Curves.easeOutCubic,
+                      width: active ? _activeDotWidth : _dotSize,
+                      height: _dotSize,
+                      margin: const EdgeInsets.symmetric(horizontal: 2.5),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(_dotSize / 2),
+                        color: active ? Colors.white : Colors.white.withValues(alpha: 0.55),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.25),
+                            blurRadius: 3,
+                            offset: const Offset(0, 1),
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
                 ),
               ),
             ),
